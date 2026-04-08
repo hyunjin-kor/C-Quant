@@ -1,0 +1,65 @@
+{
+  "name": "c-quant",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Desktop research and strategy workstation for carbon allowance markets.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:renderer": "vite",
+    "dev:electron": "wait-on tcp:5173 && electron .",
+    "build": "vite build",
+    "preview": "vite preview",
+    "package:dir": "npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win dir",
+    "package:portable": "npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win portable"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "author": "Codex",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react-swc": "^4.3.0",
+    "concurrently": "^9.2.1",
+    "electron": "^41.2.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.7",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.cquant.desktop",
+    "productName": "C-Quant",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "electron/**/*",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "python",
+        "to": "python"
+      }
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "icon": "assets/app-icon.ico",
+      "target": [
+        "portable"
+      ],
+      "artifactName": "C-Quant-${version}.${ext}"
+    }
+  }
+}
