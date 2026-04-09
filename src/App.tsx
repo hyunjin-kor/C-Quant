@@ -63,6 +63,7 @@ import type {
   ConnectedSourcePayload,
   ConnectedSourceSeriesPoint,
   DecisionAssistantResponse,
+  DecisionReasonItem,
   MarketDriver,
   MarketProfile,
   ParsedSeriesPoint,
@@ -820,26 +821,98 @@ function buildRuleDecision(
   }
   confidence = clamp(confidence - highAlerts * 0.07 - mediumAlerts * 0.03, 0.18, 0.92);
 
-  const thesis = forecast.contributions.slice(0, 3).map((driver) => {
-    const value = state[driver.driverId] ?? 0;
-    if (locale === "ko") {
-      return `${driver.variable}: 현재 압력 ${value >= 0 ? "상방" : "하방"} ${formatNumber(
-        locale,
-        Math.abs(driver.contribution),
-        2
-      )}`;
-    }
-    return `${driver.variable}: current pressure ${value >= 0 ? "upside" : "downside"} ${formatNumber(
-      locale,
-      Math.abs(driver.contribution),
-      2
-    )}`;
+  const detailedDrivers = forecast.contributions.slice(0, 6).map((entry) => {
+    const driverMeta = market.drivers.find((driver) => driver.id === entry.driverId);
+    const stateValue = state[entry.driverId] ?? 0;
+    const directionWord =
+      entry.contribution >= 0
+        ? t(locale, "상방", "upside")
+        : t(locale, "하방", "downside");
+    const importanceLabel = driverMeta
+      ? getImportanceLabel(locale, driverMeta.importance)
+      : t(locale, "기본", "Base");
+
+    return {
+      ...entry,
+      title: entry.variable,
+      detail:
+        locale === "ko"
+          ? `${entry.variable}는 현재 ${directionWord} 압력 ${formatNumber(
+              locale,
+              Math.abs(entry.contribution),
+              2
+            )}점을 만들고 있습니다. 중요도는 ${importanceLabel}이고, 현재 시나리오 값은 ${formatNumber(
+              locale,
+              stateValue,
+              2
+            )}입니다. ${driverMeta?.note ?? "시장에 주는 방향성을 계속 확인해야 합니다."}`
+          : `${entry.variable} is contributing ${formatNumber(
+              locale,
+              Math.abs(entry.contribution),
+              2
+            )} points of ${directionWord} pressure. Importance is ${importanceLabel}, the current scenario state is ${formatNumber(
+              locale,
+              stateValue,
+              2
+            )}. ${driverMeta?.note ?? "Keep checking whether this driver is still active."}`
+    };
   });
+
+  const positiveDrivers = detailedDrivers.filter((entry) => entry.contribution > 0.03);
+  const negativeDrivers = detailedDrivers.filter((entry) => entry.contribution < -0.03);
+
+  const supportingEvidence =
+    stance === "Reduce Bias"
+      ? negativeDrivers.slice(0, 3)
+      : positiveDrivers.slice(0, 3);
+
+  const counterEvidence = [
+    ...(stance === "Reduce Bias" ? positiveDrivers.slice(0, 2) : negativeDrivers.slice(0, 2)),
+    ...alerts.slice(0, 2).map((alert) => ({
+      title: alert.title,
+      detail: alert.body
+    }))
+  ].slice(0, 4);
+
+  const thesis = supportingEvidence.map((item) => item.detail);
 
   const risks = [
     ...(card?.notes.slice(0, 2) ?? []),
     ...alerts.slice(0, 2).map((alert) => alert.title)
   ].slice(0, 4);
+
+  const metricSummary = (card?.metrics ?? [])
+    .slice(0, 3)
+    .map((metric) => `${metric.label}: ${metric.value}`);
+
+  const dataHealth = [
+    card
+      ? locale === "ko"
+        ? `공식 데이터 상태는 ${getStatusLabel(locale, card.status)}입니다. 마지막 갱신 시각은 ${formatDate(
+            locale,
+            card.asOf
+          )}입니다.`
+        : `Official data status is ${getStatusLabel(locale, card.status)}. Last update time is ${formatDate(
+            locale,
+            card.asOf
+          )}.`
+      : t(locale, "공식 데이터가 아직 연결되지 않았습니다.", "Official data is not connected yet."),
+    ...(metricSummary.length > 0
+      ? [
+          locale === "ko"
+            ? `지금 바로 확인 가능한 핵심 수치는 ${metricSummary.join(", ")} 입니다.`
+            : `Key values currently visible are ${metricSummary.join(", ")}.`
+        ]
+      : []),
+    ...(card?.notes.slice(0, 2) ?? []),
+    ...(alerts.length > 0
+      ? [
+          locale === "ko"
+            ? `현재 활성 알림은 ${alerts.length}건이고, 그중 높은 우선순위는 ${highAlerts}건입니다.`
+            : `There are ${alerts.length} active alerts, including ${highAlerts} high-priority items.`
+        ]
+      : [])
+  ].slice(0, 6);
 
   const actions = [
     nextCatalysts[0]?.title ?? t(locale, "다음 촉매 일정 확인", "Check the next catalyst"),
@@ -852,6 +925,24 @@ function buildRuleDecision(
       locale,
       "워치리스트에서 선물·ETF 프록시와 괴리가 있는지 비교",
       "Compare futures and ETF proxies against the official tape"
+    )
+  ];
+
+  const checkpoints = [
+    nextCatalysts[0]
+      ? locale === "ko"
+        ? `${nextCatalysts[0].title}: ${nextCatalysts[0].whyItMatters}`
+        : `${nextCatalysts[0].title}: ${nextCatalysts[0].whyItMatters}`
+      : t(locale, "예정된 촉매 일정을 다시 확인하세요.", "Review the next scheduled catalyst."),
+    t(
+      locale,
+      "공식 가격, 거래량, 경매 결과가 같은 방향인지 다시 맞춰보세요.",
+      "Re-check whether official price, volume, and auction results still point in the same direction."
+    ),
+    t(
+      locale,
+      "ETF나 외부 차트는 참고만 하고, 최종 판단은 공식 데이터 기준으로 하세요.",
+      "Use ETFs and external charts as references only, and anchor the final call to official data."
     )
   ];
 
@@ -876,9 +967,303 @@ function buildRuleDecision(
     thesis,
     risks,
     actions,
+    supportingEvidence:
+      supportingEvidence.length > 0
+        ? supportingEvidence.map((item) => ({ title: item.title, detail: item.detail }))
+        : [
+            {
+              title: t(locale, "결정적 우위 부족", "No dominant edge"),
+              detail: t(
+                locale,
+                "매수나 매도를 강하게 밀어주는 요인이 아직 뚜렷하지 않습니다.",
+                "No single factor is strong enough yet to justify an aggressive buy or reduce posture."
+              )
+            }
+          ],
+    counterEvidence:
+      counterEvidence.length > 0
+        ? counterEvidence
+        : [
+            {
+              title: t(locale, "반대 근거 제한적", "Limited counter-evidence"),
+              detail: t(
+                locale,
+                "현재 규칙 엔진 기준으로는 반대 방향 근거가 크지 않습니다.",
+                "The rule engine currently sees only limited evidence against the base stance."
+              )
+            }
+          ],
+    dataHealth,
+    checkpoints,
     disclaimer: t(
       locale,
       "참고용 리서치 오버레이입니다. 이 플랫폼은 주문을 중개하지 않으며 개인 맞춤 자문을 제공하지 않습니다.",
+      "Research overlay only. The platform does not route trades or provide individualized advice."
+    ),
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function buildExplainableRuleDecision(
+  locale: AppLocale,
+  market: MarketProfile,
+  card: ConnectedSourceCard | undefined,
+  forecast: ReturnType<typeof buildForecast>,
+  alerts: AlertItem[],
+  nextCatalysts: ReturnType<typeof useLocalizedCatalysts>,
+  state: Record<string, number>
+): DecisionAssistantResponse {
+  let stance: DecisionAssistantResponse["stance"] =
+    forecast.direction === "Bullish"
+      ? "Buy Bias"
+      : forecast.direction === "Bearish"
+        ? "Reduce Bias"
+        : "Hold / Wait";
+
+  const highAlerts = alerts.filter((item) => item.severity === "High").length;
+  const mediumAlerts = alerts.filter((item) => item.severity === "Medium").length;
+  let confidence = forecast.confidence;
+
+  if (card?.status === "limited") {
+    confidence -= 0.1;
+  }
+  if (card?.status === "error") {
+    confidence -= 0.22;
+    stance = "Hold / Wait";
+  }
+  if (highAlerts > 0 && stance === "Buy Bias") {
+    stance = "Hold / Wait";
+  }
+  confidence = clamp(confidence - highAlerts * 0.07 - mediumAlerts * 0.03, 0.18, 0.92);
+
+  const detailedDrivers = forecast.contributions.slice(0, 6).map((entry) => {
+    const driverMeta = market.drivers.find((driver) => driver.id === entry.driverId);
+    const stateValue = state[entry.driverId] ?? 0;
+    const importanceLabel = driverMeta
+      ? getImportanceLabel(locale, driverMeta.importance)
+      : t(locale, "기본", "Base");
+    const driverNote =
+      driverMeta?.note ??
+      t(
+        locale,
+        "이 요인이 지금도 계속 유지되는지 다시 확인할 필요가 있습니다.",
+        "Check whether this driver is still active right now."
+      );
+
+    return {
+      title: entry.variable,
+      contribution: entry.contribution,
+      detail:
+        locale === "ko"
+          ? `${entry.variable}는 현재 가격을 ${
+              entry.contribution >= 0 ? "올리는" : "누르는"
+            } 핵심 요인입니다. 의사결정 점수 기준 ${formatNumber(
+              locale,
+              Math.abs(entry.contribution),
+              2
+            )}점 규모의 압력을 만들고 있고, 중요도는 ${importanceLabel}, 현재 시나리오 값은 ${formatNumber(
+              locale,
+              stateValue,
+              2
+            )}입니다. ${driverNote}`
+          : `${entry.variable} is a key driver that is currently ${
+              entry.contribution >= 0 ? "lifting" : "pressuring"
+            } the market. It contributes ${formatNumber(
+              locale,
+              Math.abs(entry.contribution),
+              2
+            )} points to the decision score. Importance is ${importanceLabel}, and the current scenario state is ${formatNumber(
+              locale,
+              stateValue,
+              2
+            )}. ${driverNote}`
+    };
+  });
+
+  const positiveDrivers = detailedDrivers.filter((entry) => entry.contribution > 0.03);
+  const negativeDrivers = detailedDrivers.filter((entry) => entry.contribution < -0.03);
+  const topPositiveNames = positiveDrivers.slice(0, 2).map((entry) => entry.title).join(", ");
+  const topNegativeNames = negativeDrivers.slice(0, 2).map((entry) => entry.title).join(", ");
+
+  const holdReason: DecisionReasonItem = {
+    title: t(locale, "신호가 한쪽으로 기울지 않음", "Signals are not one-sided"),
+    detail:
+      locale === "ko"
+        ? `상방 요인${topPositiveNames ? `(${topPositiveNames})` : ""}과 하방 요인${
+            topNegativeNames ? `(${topNegativeNames})` : ""
+          }이 동시에 보입니다. 그래서 지금은 추격 매수나 성급한 매도보다, 공식 데이터가 같은 방향을 유지하는지 확인하는 쪽이 더 중요합니다.`
+        : `Bullish drivers${topPositiveNames ? ` (${topPositiveNames})` : ""} and bearish drivers${
+            topNegativeNames ? ` (${topNegativeNames})` : ""
+          } are both active. Confirmation matters more than chasing the move right now.`
+  };
+
+  const supportingEvidence: DecisionReasonItem[] =
+    stance === "Reduce Bias"
+      ? negativeDrivers.slice(0, 4).map((item) => ({ title: item.title, detail: item.detail }))
+      : stance === "Buy Bias"
+        ? positiveDrivers.slice(0, 4).map((item) => ({ title: item.title, detail: item.detail }))
+        : [
+            holdReason,
+            ...detailedDrivers.slice(0, 3).map((item) => ({ title: item.title, detail: item.detail }))
+          ];
+
+  const counterEvidenceCandidates =
+    stance === "Reduce Bias"
+      ? positiveDrivers
+      : stance === "Buy Bias"
+        ? negativeDrivers
+        : detailedDrivers.filter((entry) => Math.abs(entry.contribution) > 0.04);
+
+  const counterEvidence: DecisionReasonItem[] = [
+    ...counterEvidenceCandidates
+      .slice(0, 3)
+      .map((item) => ({ title: item.title, detail: item.detail })),
+    ...alerts.slice(0, 2).map((alert) => ({
+      title: alert.title,
+      detail: alert.body
+    }))
+  ].slice(0, 4);
+
+  const safeSupportingEvidence =
+    supportingEvidence.length > 0
+      ? supportingEvidence
+      : [
+          {
+            title: t(locale, "결정적 우위 부족", "No dominant edge"),
+            detail: t(
+              locale,
+              "매수나 매도 한쪽으로 강하게 기울 정도의 결정적 신호는 아직 부족합니다.",
+              "There is not yet enough evidence to justify an aggressive buy or reduce call."
+            )
+          }
+        ];
+
+  const safeCounterEvidence =
+    counterEvidence.length > 0
+      ? counterEvidence
+      : [
+          {
+            title: t(locale, "반대 근거 제한적", "Limited counter-evidence"),
+            detail: t(
+              locale,
+              "현재 규칙 엔진 기준으로는 반대 방향을 강하게 뒷받침하는 근거가 많지 않습니다.",
+              "The rule engine currently sees only limited evidence against the base stance."
+            )
+          }
+        ];
+
+  const thesis = safeSupportingEvidence.map((item) => item.detail);
+  const risks = [
+    ...(card?.notes.slice(0, 2) ?? []),
+    ...alerts.slice(0, 2).map((alert) => alert.title)
+  ].slice(0, 4);
+
+  const metricSummary = (card?.metrics ?? [])
+    .slice(0, 3)
+    .map((metric) => `${metric.label}: ${metric.value}`);
+
+  const dataHealth = [
+    card
+      ? locale === "ko"
+        ? `공식 데이터 상태는 ${getStatusLabel(locale, card.status)}이며, 마지막 갱신 시각은 ${formatDate(
+            locale,
+            card.asOf
+          )}입니다.`
+        : `Official data status is ${getStatusLabel(locale, card.status)}. Last update time is ${formatDate(
+            locale,
+            card.asOf
+          )}.`
+      : t(locale, "공식 데이터가 아직 연결되지 않았습니다.", "Official data is not connected yet."),
+    ...(metricSummary.length > 0
+      ? [
+          locale === "ko"
+            ? `지금 바로 확인 가능한 핵심 수치는 ${metricSummary.join(", ")} 입니다.`
+            : `Key values currently visible are ${metricSummary.join(", ")}.`
+        ]
+      : []),
+    ...(card?.notes.slice(0, 2) ?? []),
+    ...(alerts.length > 0
+      ? [
+          locale === "ko"
+            ? `현재 활성 알림은 ${alerts.length}건이며, 그중 높은 우선순위는 ${highAlerts}건입니다.`
+            : `There are ${alerts.length} active alerts, including ${highAlerts} high-priority items.`
+        ]
+      : [])
+  ].slice(0, 6);
+
+  const actions = [
+    nextCatalysts[0]?.title ?? t(locale, "다음 핵심 일정 확인", "Check the next catalyst"),
+    t(
+      locale,
+      "공식 시세의 갱신 시각과 거래량을 다시 확인",
+      "Re-check the official timestamp and volume before acting"
+    ),
+    t(
+      locale,
+      "외부 차트나 ETF 프록시와 공식 시세가 같은 방향인지 비교",
+      "Compare futures and ETF proxies against the official tape"
+    )
+  ];
+
+  const checkpoints = [
+    nextCatalysts[0]
+      ? `${nextCatalysts[0].title}: ${nextCatalysts[0].whyItMatters}`
+      : t(locale, "예정된 핵심 일정을 다시 확인하세요.", "Review the next scheduled catalyst."),
+    t(
+      locale,
+      "공식 가격, 거래량, 경매 결과가 같은 방향을 가리키는지 다시 맞춰보세요.",
+      "Re-check whether official price, volume, and auction results still point in the same direction."
+    ),
+    t(
+      locale,
+      "ETF와 외부 차트는 참고용으로만 보고, 최종 판단은 공식 데이터에 맞추세요.",
+      "Use ETFs and external charts as references only, and anchor the final call to official data."
+    )
+  ];
+
+  const summaryLead =
+    stance === "Buy Bias"
+      ? topPositiveNames
+      : stance === "Reduce Bias"
+        ? topNegativeNames
+        : [topPositiveNames, topNegativeNames].filter(Boolean).join(" / ");
+
+  return {
+    provider: "rule",
+    stance,
+    confidence,
+    summary:
+      locale === "ko"
+        ? `${getMarketDisplayName(locale, market.id)} 기준 현재 판단은 ${stanceLabel(
+            locale,
+            stance
+          )}입니다. ${
+            summaryLead ? `${summaryLead}가 현재 방향을 가장 크게 만들고 있습니다. ` : ""
+          }${
+            highAlerts > 0
+              ? "높은 우선순위 경고가 있어 공격적으로 보기보다 한 번 더 확인하는 편이 좋습니다."
+              : "지금 보이는 데이터가 계속 유지되는지 확인하면서 따라가는 접근이 좋습니다."
+          }`
+        : `The current posture for ${getMarketDisplayName(
+            locale,
+            market.id
+          )} is ${stance}. ${
+            summaryLead ? `${summaryLead} is currently shaping the direction. ` : ""
+          }${
+            highAlerts > 0
+              ? "High-priority alerts mean the stance should be treated more defensively."
+              : "The read remains conditional on the current data holding up."
+          }`,
+    thesis,
+    risks,
+    actions,
+    supportingEvidence: safeSupportingEvidence,
+    counterEvidence: safeCounterEvidence,
+    dataHealth,
+    checkpoints,
+    disclaimer: t(
+      locale,
+      "참고용 리서치 화면입니다. 주문을 중계하지 않으며, 개인 맞춤형 투자 자문을 제공하지 않습니다.",
       "Research overlay only. The platform does not route trades or provide individualized advice."
     ),
     generatedAt: new Date().toISOString()
@@ -1294,7 +1679,7 @@ export default function App() {
 
           return [
             profile.id,
-            buildRuleDecision(
+            buildExplainableRuleDecision(
               appLocale,
               profile,
               profileCard,
@@ -1321,7 +1706,43 @@ export default function App() {
 
   const selectedDecision = decisionsByMarket[marketId];
 
-  const decisionView = assistantResponse ?? selectedDecision;
+  const decisionView = useMemo(
+    () =>
+      assistantResponse
+        ? {
+            ...selectedDecision,
+            ...assistantResponse,
+            supportingEvidence:
+              assistantResponse.supportingEvidence.length > 0
+                ? assistantResponse.supportingEvidence
+                : selectedDecision.supportingEvidence,
+            counterEvidence:
+              assistantResponse.counterEvidence.length > 0
+                ? assistantResponse.counterEvidence
+                : selectedDecision.counterEvidence,
+            dataHealth:
+              assistantResponse.dataHealth.length > 0
+                ? assistantResponse.dataHealth
+                : selectedDecision.dataHealth,
+            checkpoints:
+              assistantResponse.checkpoints.length > 0
+                ? assistantResponse.checkpoints
+                : selectedDecision.checkpoints
+          }
+        : selectedDecision,
+    [assistantResponse, selectedDecision]
+  );
+  const decisionReasonHeader = useMemo(
+    () => ({
+      title: t(appLocale, "매수·매도 판단 근거", "Decision reasoning"),
+      subtitle: t(
+        appLocale,
+        "왜 이런 판단이 나왔는지, 반대로 볼 이유는 무엇인지, 지금 무엇을 다시 확인해야 하는지 한 번에 보여줍니다.",
+        "See why the current stance exists, what could invalidate it, and what should be re-checked now."
+      )
+    }),
+    [appLocale]
+  );
   const snapshotCards = useMemo(
     () =>
       marketProfiles.map((profile) =>
@@ -1635,11 +2056,23 @@ export default function App() {
       `${t(appLocale, "핵심 포인트", "Key points")}`,
       ...decisionView.thesis.map((item) => `- ${item}`),
       "",
+      `${t(appLocale, "매수/매도 근거", "Supporting evidence")}`,
+      ...decisionView.supportingEvidence.map((item) => `- ${item.title}: ${item.detail}`),
+      "",
+      `${t(appLocale, "반대로 볼 근거", "Counter-evidence")}`,
+      ...decisionView.counterEvidence.map((item) => `- ${item.title}: ${item.detail}`),
+      "",
+      `${t(appLocale, "데이터 상태", "Data health")}`,
+      ...decisionView.dataHealth.map((item) => `- ${item}`),
+      "",
       `${t(appLocale, "리스크", "Risks")}`,
       ...decisionView.risks.map((item) => `- ${item}`),
       "",
       `${t(appLocale, "체크리스트", "Checklist")}`,
       ...decisionView.actions.map((item) => `- ${item}`),
+      "",
+      `${t(appLocale, "다음 확인 사항", "Next checkpoints")}`,
+      ...decisionView.checkpoints.map((item) => `- ${item}`),
       "",
       `${t(appLocale, "면책", "Disclaimer")}: ${decisionView.disclaimer}`
     ].join("\n");
@@ -2184,8 +2617,9 @@ export default function App() {
                       "규칙 기반 판단과 LLM 브리프를 같은 패널에 둡니다.",
                       "Rule-based posture and LLM brief live on the same panel."
                     )}
+                    {...decisionReasonHeader}
                   />
-                  <DecisionPanel
+                  <ExplainableDecisionPanel
                     locale={appLocale}
                     decision={decisionView}
                     assistantLoading={assistantLoading}
@@ -2797,6 +3231,332 @@ function MarketPulsePanel({
             {formatNumber(locale, item.contribution, 2)}
           </span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function DetailedDecisionPanel({
+  locale,
+  decision,
+  assistantLoading,
+  assistantError,
+  hasApiKey,
+  question,
+  onQuestionChange,
+  onRunAssistant
+}: {
+  locale: AppLocale;
+  decision: DecisionAssistantResponse;
+  assistantLoading: boolean;
+  assistantError: string | null;
+  hasApiKey: boolean;
+  question: string;
+  onQuestionChange: (value: string) => void;
+  onRunAssistant: () => void;
+}) {
+  return (
+    <div className="decision-stack">
+      <div className="decision-topline">
+        <DonutMeter
+          value={decision.confidence}
+          label={t(locale, "신뢰도", "Confidence")}
+          subLabel={stanceLabel(locale, decision.stance)}
+          color={
+            decision.stance === "Reduce Bias"
+              ? NEGATIVE
+              : decision.stance === "Buy Bias"
+                ? POSITIVE
+                : "#2f7bf6"
+          }
+        />
+        <div className="decision-copy">
+          <span className={`stance-badge ${stanceBadgeClass(decision.stance)}`}>
+            {stanceLabel(locale, decision.stance)}
+          </span>
+          <p>{decision.summary}</p>
+          <small>{decision.disclaimer}</small>
+        </div>
+      </div>
+
+      <div className="decision-block">
+        <strong>{t(locale, "핵심 요약", "Key points")}</strong>
+        <ul>
+          {decision.thesis.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="decision-block two-column">
+        <div className="decision-subsection">
+          <strong>{t(locale, "왜 이런 판단이 나왔나", "Why this stance")}</strong>
+          <div className="reason-list">
+            {decision.supportingEvidence.map((item) => (
+              <div key={`${item.title}-${item.detail}`} className="reason-item support">
+                <span>{item.title}</span>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="decision-subsection">
+          <strong>{t(locale, "반대로 볼 이유", "What argues against it")}</strong>
+          <div className="reason-list">
+            {decision.counterEvidence.map((item) => (
+              <div key={`${item.title}-${item.detail}`} className="reason-item caution">
+                <span>{item.title}</span>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="decision-block two-column">
+        <div>
+          <strong>{t(locale, "리스크", "Risks")}</strong>
+          <ul>
+            {decision.risks.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <strong>{t(locale, "체크리스트", "Checklist")}</strong>
+          <ul>
+            {decision.actions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="decision-block two-column">
+        <div>
+          <strong>{t(locale, "데이터 상태", "Data health")}</strong>
+          <ul>
+            {decision.dataHealth.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <strong>{t(locale, "다음에 확인할 것", "Next checkpoints")}</strong>
+          <ul>
+            {decision.checkpoints.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="decision-ask">
+        <label>
+          <span>{t(locale, "AI에게 추가 질문", "Ask AI a follow-up")}</span>
+          <textarea
+            value={question}
+            onChange={(event) => onQuestionChange(event.target.value)}
+            rows={3}
+          />
+        </label>
+        <div className="decision-actions">
+          <button
+            className="primary-button"
+            onClick={onRunAssistant}
+            disabled={assistantLoading || !hasApiKey}
+          >
+            {assistantLoading
+              ? t(locale, "생성 중...", "Generating...")
+              : t(locale, "AI 상세 설명 만들기", "Generate detailed AI brief")}
+          </button>
+          {!hasApiKey ? (
+            <small>
+              {t(
+                locale,
+                "AI 상세 설명을 쓰려면 먼저 API key를 저장하세요.",
+                "Save an API key first to use the detailed AI brief."
+              )}
+            </small>
+          ) : null}
+          {assistantError ? <small className="error-text">{assistantError}</small> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExplainableDecisionPanel({
+  locale,
+  decision,
+  assistantLoading,
+  assistantError,
+  hasApiKey,
+  question,
+  onQuestionChange,
+  onRunAssistant
+}: {
+  locale: AppLocale;
+  decision: DecisionAssistantResponse;
+  assistantLoading: boolean;
+  assistantError: string | null;
+  hasApiKey: boolean;
+  question: string;
+  onQuestionChange: (value: string) => void;
+  onRunAssistant: () => void;
+}) {
+  return (
+    <div className="explainable-decision">
+      <div className="decision-topline explainable-topline">
+        <DonutMeter
+          value={decision.confidence}
+          label={t(locale, "신뢰도", "Confidence")}
+          subLabel={stanceLabel(locale, decision.stance)}
+          color={
+            decision.stance === "Reduce Bias"
+              ? NEGATIVE
+              : decision.stance === "Buy Bias"
+                ? POSITIVE
+                : "#2f7bf6"
+          }
+        />
+        <div className="decision-copy">
+          <span className={`stance-badge ${stanceBadgeClass(decision.stance)}`}>
+            {stanceLabel(locale, decision.stance)}
+          </span>
+          <h3>{t(locale, "한눈에 결론", "Bottom line")}</h3>
+          <p>{decision.summary}</p>
+          <small>{decision.disclaimer}</small>
+        </div>
+      </div>
+
+      <div className="decision-summary-block">
+        <strong>{t(locale, "핵심 요약", "Key takeaway")}</strong>
+        <ul>
+          {decision.thesis.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="decision-section-grid">
+        <section className="decision-section">
+          <strong>{t(locale, "왜 이렇게 보나", "Why it leans this way")}</strong>
+          <p className="decision-section-note">
+            {t(
+              locale,
+              "현재 판단을 밀어주는 근거입니다. 각 항목이 가격을 어느 쪽으로 움직이는지 풀어서 보여줍니다.",
+              "These are the points supporting the current stance and explain which way they push the market."
+            )}
+          </p>
+          <div className="decision-reason-list">
+            {decision.supportingEvidence.map((item) => (
+              <div key={`${item.title}-${item.detail}`} className="decision-reason-card support">
+                <span>{item.title}</span>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="decision-section">
+          <strong>{t(locale, "반대로 볼 이유", "What argues against it")}</strong>
+          <p className="decision-section-note">
+            {t(
+              locale,
+              "이 부분은 지금 판단이 틀릴 수 있는 이유입니다. 한쪽으로 단정하지 않도록 같이 봐야 합니다.",
+              "These are the reasons the current stance could be wrong and should be checked before acting."
+            )}
+          </p>
+          <div className="decision-reason-list">
+            {decision.counterEvidence.map((item) => (
+              <div key={`${item.title}-${item.detail}`} className="decision-reason-card caution">
+                <span>{item.title}</span>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="decision-section-grid compact">
+        <section className="decision-section">
+          <strong>{t(locale, "주의할 점", "Risks")}</strong>
+          <ul>
+            {decision.risks.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="decision-section">
+          <strong>{t(locale, "지금 다시 확인할 것", "What to re-check now")}</strong>
+          <ul>
+            {decision.actions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <div className="decision-section-grid compact">
+        <section className="decision-section">
+          <strong>{t(locale, "데이터 신뢰 상태", "Data health")}</strong>
+          <ul>
+            {decision.dataHealth.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="decision-section">
+          <strong>{t(locale, "다음 확인 포인트", "Next checkpoints")}</strong>
+          <ul>
+            {decision.checkpoints.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <div className="decision-ask decision-helper">
+        <label>
+          <span>{t(locale, "AI에게 추가 질문", "Ask AI a follow-up")}</span>
+          <textarea
+            value={question}
+            onChange={(event) => onQuestionChange(event.target.value)}
+            rows={3}
+          />
+        </label>
+        <div className="decision-actions">
+          <button
+            className="primary-button"
+            onClick={onRunAssistant}
+            disabled={assistantLoading || !hasApiKey}
+          >
+            {assistantLoading
+              ? t(locale, "생성 중...", "Generating...")
+              : t(locale, "AI가 근거 더 자세히 설명", "Ask AI for a deeper explanation")}
+          </button>
+          {!hasApiKey ? (
+            <small>
+              {t(
+                locale,
+                "상세 AI 설명을 쓰려면 먼저 API key를 저장해야 합니다.",
+                "Save an API key first to use the detailed AI explanation."
+              )}
+            </small>
+          ) : (
+            <small>
+              {t(
+                locale,
+                "위 근거들을 바탕으로 AI가 더 긴 해석, 반론, 체크포인트를 정리합니다.",
+                "The AI will expand the current evidence into a longer explanation, counter-arguments, and checkpoints."
+              )}
+            </small>
+          )}
+          {assistantError ? <small className="error-text">{assistantError}</small> : null}
+        </div>
       </div>
     </div>
   );

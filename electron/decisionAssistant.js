@@ -32,14 +32,37 @@ function extractJson(text) {
   }
 }
 
-function sanitizeStringList(value) {
+function sanitizeStringList(value, limit = 6) {
   if (!Array.isArray(value)) {
     return [];
   }
+
   return value
     .filter((entry) => typeof entry === "string" && entry.trim())
-    .slice(0, 6)
+    .slice(0, limit)
     .map((entry) => entry.trim());
+}
+
+function sanitizeReasonItems(value, limit = 6) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(
+      (entry) =>
+        entry &&
+        typeof entry === "object" &&
+        typeof entry.title === "string" &&
+        entry.title.trim() &&
+        typeof entry.detail === "string" &&
+        entry.detail.trim()
+    )
+    .slice(0, limit)
+    .map((entry) => ({
+      title: entry.title.trim(),
+      detail: entry.detail.trim()
+    }));
 }
 
 function normalizeResponse(payload, provider, model) {
@@ -64,6 +87,10 @@ function normalizeResponse(payload, provider, model) {
     thesis: sanitizeStringList(payload?.thesis),
     risks: sanitizeStringList(payload?.risks),
     actions: sanitizeStringList(payload?.actions),
+    supportingEvidence: sanitizeReasonItems(payload?.supportingEvidence),
+    counterEvidence: sanitizeReasonItems(payload?.counterEvidence),
+    dataHealth: sanitizeStringList(payload?.dataHealth, 8),
+    checkpoints: sanitizeStringList(payload?.checkpoints, 8),
     disclaimer:
       typeof payload?.disclaimer === "string" && payload.disclaimer.trim()
         ? payload.disclaimer.trim()
@@ -81,10 +108,10 @@ function buildPrompt(payload, locale) {
       system:
         "당신은 탄소배출권 의사결정 지원 분석가다. " +
         sharedInstruction +
-        " 반드시 JSON만 출력하라. 스키마는 {\"stance\":\"Buy Bias|Hold / Wait|Reduce Bias\",\"confidence\":0~1,\"summary\":\"...\",\"thesis\":[\"...\"],\"risks\":[\"...\"],\"actions\":[\"...\"],\"disclaimer\":\"...\"} 이다.",
+        ' JSON만 출력하라. 스키마는 {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0~1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."} 이다.',
       user:
-        "아래 JSON을 읽고, 현재 사용자가 참고할 수 있는 판단을 요약하라. " +
-        "매수 우위는 Buy Bias, 관망은 Hold / Wait, 매도 우위는 Reduce Bias로만 표시하라.\n\n" +
+        "아래 JSON을 읽고 현재 시장을 왜 매수 우위/관망/매도 우위로 보는지 자세히 정리하라. " +
+        "반드시 근거, 반대 근거, 데이터 상태, 다음 체크 항목을 분리해서 적어라.\n\n" +
         JSON.stringify(payload, null, 2)
     };
   }
@@ -93,10 +120,41 @@ function buildPrompt(payload, locale) {
     system:
       "You are a carbon allowance decision-support analyst. " +
       sharedInstruction +
-      ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"disclaimer":"..."}',
+      ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."}',
     user:
-      "Read the following JSON and summarize the current decision posture for the user. " +
-      "Use only Buy Bias, Hold / Wait, or Reduce Bias for stance.\n\n" +
+      "Read the following JSON and explain in detail why the market currently leans buy, hold, or reduce. " +
+      "Separate supporting evidence, counter-evidence, data health, and next checkpoints.\n\n" +
+      JSON.stringify(payload, null, 2)
+  };
+}
+
+function buildExplainablePrompt(payload, locale) {
+  const sharedInstruction =
+    "Use only the supplied data. Do not invent prices, history, regulations, or catalysts. If the supplied data is stale, missing, or weak, say that clearly. This product is a decision-support platform only, so do not present the output as individualized financial advice.";
+
+  if (locale === "ko") {
+    return {
+      system:
+        "당신은 탄소배출권 의사결정 지원 분석가다. " +
+        sharedInstruction +
+        ' JSON만 출력하라. 스키마는 {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0~1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."} 이다.',
+      user:
+        "아래 JSON만 읽고 현재 시장을 왜 매수 우위, 관망, 매도 우위로 보는지 아주 자세하게 설명하라. " +
+        "반드시 쉬운 말로 쓰고, 각 항목에서 가격을 어느 방향으로 움직이는지, 왜 중요한지, 무엇을 다시 확인해야 하는지 분리해서 정리하라. " +
+        "특히 supportingEvidence와 counterEvidence는 제목 한 줄이 아니라 사용자가 바로 이해할 수 있는 상세 설명으로 채워라.\n\n" +
+        JSON.stringify(payload, null, 2)
+    };
+  }
+
+  return {
+    system:
+      "You are a carbon allowance decision-support analyst. " +
+      sharedInstruction +
+      ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."}',
+    user:
+      "Read the following JSON and explain in detail why the market currently leans buy, hold, or reduce. " +
+      "Use plain language. Separate supporting evidence, counter-evidence, data health, and next checkpoints. " +
+      "For each evidence item, explain which way it pushes the market, why it matters, and what could invalidate it.\n\n" +
       JSON.stringify(payload, null, 2)
   };
 }
@@ -107,7 +165,7 @@ async function runOpenAIDecisionAssistant({
   locale,
   payload
 }) {
-  const prompt = buildPrompt(payload, locale);
+  const prompt = buildExplainablePrompt(payload, locale);
   const response = await fetch(OPENAI_RESPONSES_URL, {
     method: "POST",
     headers: {

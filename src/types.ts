@@ -274,6 +274,11 @@ export type DecisionAssistantStance =
   | "Hold / Wait"
   | "Reduce Bias";
 
+export type DecisionReasonItem = {
+  title: string;
+  detail: string;
+};
+
 export type DecisionAssistantResponse = {
   provider: "rule" | "openai";
   model?: string;
@@ -283,6 +288,10 @@ export type DecisionAssistantResponse = {
   thesis: string[];
   risks: string[];
   actions: string[];
+  supportingEvidence: DecisionReasonItem[];
+  counterEvidence: DecisionReasonItem[];
+  dataHealth: string[];
+  checkpoints: string[];
   disclaimer: string;
   generatedAt: string;
 };

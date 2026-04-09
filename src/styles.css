@@ -830,6 +830,115 @@ textarea {
   gap: 0.32rem;
 }
 
+.explainable-decision {
+  display: grid;
+  gap: 1rem;
+}
+
+.explainable-topline {
+  align-items: center;
+}
+
+.decision-copy h3 {
+  margin: 0.5rem 0 0;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  color: var(--text-strong);
+}
+
+.decision-summary-block {
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(130, 146, 182, 0.12);
+}
+
+.decision-summary-block strong {
+  color: var(--text-strong);
+}
+
+.decision-summary-block ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.42rem;
+  color: var(--text-soft);
+}
+
+.decision-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.decision-section-grid.compact {
+  align-items: start;
+}
+
+.decision-section {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(130, 146, 182, 0.12);
+}
+
+.decision-section strong {
+  color: var(--text-strong);
+}
+
+.decision-section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.38rem;
+  color: var(--text-soft);
+}
+
+.decision-section-note {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+.decision-reason-list {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.decision-reason-card {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(130, 146, 182, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.decision-reason-card span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.decision-reason-card p {
+  margin: 0.42rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.62;
+  color: var(--text-soft);
+}
+
+.decision-reason-card.support {
+  border-color: rgba(34, 199, 122, 0.2);
+  background: rgba(34, 199, 122, 0.05);
+}
+
+.decision-reason-card.caution {
+  border-color: rgba(255, 111, 97, 0.2);
+  background: rgba(255, 111, 97, 0.05);
+}
+
+.decision-helper {
+  padding-top: 0.2rem;
+}
+
 .decision-ask label {
   display: grid;
   gap: 0.45rem;
@@ -1369,6 +1478,7 @@ textarea {
   .market-board-row,
   .pulse-metric-strip,
   .decision-topline,
+  .decision-section-grid,
   .decision-block.two-column,
   .watch-row {
     grid-template-columns: 1fr;
