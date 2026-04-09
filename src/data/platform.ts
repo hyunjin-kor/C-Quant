@@ -1,4 +1,5 @@
 import type {
+  MarketWatchItem,
   SourceRegistryItem,
   SubscriptionFeature,
   TrustPrinciple
@@ -190,5 +191,96 @@ export const subscriptionFeatures: SubscriptionFeature[] = [
     audience: "Subscriber",
     description:
       "A slower research product that explains how policy, energy, and liquidity conditions changed during the week."
+  }
+];
+
+export const marketWatchItems: MarketWatchItem[] = [
+  {
+    id: "ice-eua-official",
+    title: "ICE EUA Futures",
+    category: "Official futures venue",
+    role: "Primary futures contract reference",
+    url: "https://www.ice.com/products/197",
+    note: "Official contract page for European Union Allowance futures."
+  },
+  {
+    id: "eex-eu-auctions",
+    title: "EEX EU ETS Auctions",
+    category: "Official exchange page",
+    role: "Primary auction and supply watch",
+    url: "https://www.eex.com/en/markets/environmental-markets/eu-ets-auctions",
+    note: "Use for auction clears, cover ratios, and calendar events."
+  },
+  {
+    id: "krx-ets-watch",
+    title: "KRX ETS Platform",
+    category: "Official exchange page",
+    role: "K-ETS tape and venue rules",
+    url: "https://ets.krx.co.kr/contents/ETS/03/03010000/ETS03010000.jsp",
+    note: "Official Korean allowance market screen and information platform."
+  },
+  {
+    id: "cneeex-overview",
+    title: "Shanghai Environment and Energy Exchange",
+    category: "Official exchange page",
+    role: "China daily market overview",
+    url: "https://overview.cneeex.com/c/2025-12-24/496960.shtml",
+    note: "Official daily market overview page for the national carbon market."
+  },
+  {
+    id: "krbn-official",
+    title: "KRBN",
+    category: "Official issuer page",
+    role: "Global carbon ETF benchmark product",
+    url: "https://kraneshares.com/krbn/",
+    note: "KraneShares global carbon strategy ETF product page."
+  },
+  {
+    id: "kcca-official",
+    title: "KCCA",
+    category: "Official issuer page",
+    role: "California carbon allowance ETF",
+    url: "https://kraneshares.com/etf/kcca/",
+    note: "KraneShares California carbon allowance strategy ETF page."
+  },
+  {
+    id: "keua-official",
+    title: "KEUA",
+    category: "Official issuer page",
+    role: "European carbon allowance ETF",
+    url: "https://kraneshares.com/etf/keua/",
+    note: "KraneShares European carbon allowance strategy ETF page."
+  },
+  {
+    id: "yahoo-krbn",
+    title: "Yahoo KRBN",
+    category: "External market watch",
+    role: "Quick ETF chart and news check",
+    url: "https://de.finance.yahoo.com/quote/KRBN/",
+    note: "Use as an external watch page only, not as an internal licensed core data feed."
+  },
+  {
+    id: "yahoo-keua",
+    title: "Yahoo KEUA",
+    category: "External market watch",
+    role: "Quick EUA-focused ETF watch",
+    url: "https://de.finance.yahoo.com/quote/KEUA/",
+    note: "Useful for fast public chart checks of an EUA-focused product."
+  },
+  {
+    id: "yahoo-co2",
+    title: "Yahoo CO2.L",
+    category: "External market watch",
+    role: "SparkChange EUA ETC watch",
+    url: "https://uk.finance.yahoo.com/quote/CO2.L/",
+    note: "Useful for a listed carbon ETC watch page tied to EU allowance exposure."
+  },
+  {
+    id: "yahoo-iceeua",
+    title: "Yahoo ^ICEEUA",
+    category: "External market watch",
+    role: "ICE EUA carbon futures excess return watch",
+    url: "https://uk.finance.yahoo.com/quote/%5EICEEUA/",
+    note: "Useful as a public reference page for an ICE EUA carbon-linked index view."
   }
 ];

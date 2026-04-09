@@ -60,6 +60,7 @@ npm.cmd run package:portable
 - K-ETS price panel currently uses the official KRX ETS information flow.
 - China ETS currently combines official MEE releases and official exchange overview pages.
 - Some deeper market data paths are commercial APIs and are labeled separately from public routes.
+- Yahoo Finance and similar pages are treated as external market-watch links, not as the platform's licensed core data source.
 
 ## Model Notes
 

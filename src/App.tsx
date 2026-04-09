@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { marketDatasetSchemas } from "./data/dataHub";
-import { sourceRegistry, subscriptionFeatures, trustPrinciples } from "./data/platform";
+import {
+  marketWatchItems,
+  sourceRegistry,
+  subscriptionFeatures,
+  trustPrinciples
+} from "./data/platform";
 import { marketProfiles, quantIndicators } from "./data/research";
 import { parseCsv, runBacktest } from "./lib/backtest";
 import { buildForecast } from "./lib/forecast";
@@ -629,6 +634,8 @@ function TodaySurface(props: {
             </article>
           </aside>
         </section>
+
+        <MarketWatchSection />
       </section>
     </section>
   );
@@ -715,6 +722,8 @@ function DriversSurface({ focusMarket }: { focusMarket: MarketProfile["id"] }) {
             </article>
           </aside>
         </section>
+
+        <MarketWatchSection />
       </section>
     </section>
   );
@@ -815,6 +824,56 @@ function RegistryItem({ item }: { item: SourceRegistryItem }) {
         Open official source
       </a>
     </div>
+  );
+}
+
+function MarketWatchSection() {
+  const groups = [
+    "Official futures venue",
+    "Official exchange page",
+    "Official issuer page",
+    "External market watch"
+  ].map((category) => ({
+    category,
+    items: marketWatchItems.filter((item) => item.category === category)
+  }));
+
+  return (
+    <section className="section-block">
+      <div className="section-head">
+        <div>
+          <span className="section-kicker">Market watch</span>
+          <h2>All-in-one external watch layer</h2>
+        </div>
+      </div>
+      <div className="watch-groups">
+        {groups.map((group) => (
+          <div key={group.category} className="watch-group">
+            <div className="registry-group-head">
+              <strong>{group.category}</strong>
+              <span>{group.items.length} links</span>
+            </div>
+            <div className="watch-list">
+              {group.items.map((item) => (
+                <a
+                  key={item.id}
+                  className="watch-item"
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <div className="watch-item-head">
+                    <strong>{item.title}</strong>
+                    <span className="soft-badge">{item.role}</span>
+                  </div>
+                  <p>{item.note}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

@@ -254,7 +254,9 @@ button {
 .factor-groups,
 .slider-groups,
 .feature-list,
-.connection-list {
+.connection-list,
+.watch-groups,
+.watch-list {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -290,7 +292,9 @@ button {
 .premium-item,
 .schema-item,
 .connection-item,
-.feature-item {
+.feature-item,
+.watch-item,
+.watch-group {
   border-radius: var(--radius-md);
 }
 
@@ -586,6 +590,43 @@ button {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.watch-group {
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: #fbfcff;
+}
+
+.watch-list {
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.watch-item {
+  display: block;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.watch-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(49, 130, 246, 0.18);
+  box-shadow: 0 14px 30px rgba(49, 130, 246, 0.08);
+}
+
+.watch-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .lab-switch {

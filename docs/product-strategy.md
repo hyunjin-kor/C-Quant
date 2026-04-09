@@ -45,6 +45,7 @@ The terminal should help a user answer four questions quickly:
 
 - Show confirmed sources separately from future source opportunities.
 - Do not label a web workflow as an API unless official API documentation was confirmed.
+- External finance portals such as Yahoo Finance should be positioned as watch links or discovery surfaces, not as the trusted core source layer.
 
 ## Subscription Value
 
