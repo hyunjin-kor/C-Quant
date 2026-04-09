@@ -48,6 +48,7 @@ export type BenchmarkPlatform = {
   differentiator: string;
   source: SourceLink;
   featuresToBorrow: string[];
+  implementedAs?: string[];
 };
 
 export type DataColumnSpec = {
@@ -135,6 +136,60 @@ export type MarketWatchItem = {
   role: string;
   url: string;
   note: string;
+};
+
+export type WorkspacePreset = {
+  id: string;
+  title: string;
+  summary: string;
+  objective: string;
+  moduleLabels: string[];
+  benchmarkIds: string[];
+  recommendedMarket: SourceRegistryMarket;
+};
+
+export type WatchlistPreset = {
+  id: string;
+  title: string;
+  summary: string;
+  itemIds: string[];
+  benchmarkIds: string[];
+};
+
+export type WatchViewPreset = {
+  id: string;
+  title: string;
+  summary: string;
+  columns: string[];
+};
+
+export type AlertTemplate = {
+  id: string;
+  title: string;
+  scope: string;
+  trigger: string;
+  delivery: string;
+  severity: "High" | "Medium" | "Low";
+  benchmarkId: string;
+  enabledByDefault: boolean;
+};
+
+export type CatalystWindow = {
+  id: string;
+  marketId: SourceRegistryMarket;
+  windowLabel: string;
+  title: string;
+  trigger: string;
+  whyItMatters: string;
+  source: SourceLink;
+};
+
+export type AutonomousPlanStep = {
+  id: string;
+  timeBlock: string;
+  title: string;
+  goal: string;
+  outputs: string[];
 };
 
 export type WalkForwardSummary = {

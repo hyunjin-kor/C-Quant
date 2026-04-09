@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { execFile } = require("node:child_process");
@@ -152,6 +152,8 @@ ipcMain.handle("window-is-maximized", (event) => {
   const window = BrowserWindow.fromWebContents(event.sender);
   return window?.isMaximized() ?? false;
 });
+
+ipcMain.handle("open-external", async (_event, url) => shell.openExternal(url));
 
 ipcMain.handle("save-text-file", async (_event, { defaultPath, content }) => {
   const result = await dialog.showSaveDialog({

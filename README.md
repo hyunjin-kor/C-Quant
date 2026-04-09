@@ -2,26 +2,56 @@
 
 C-Quant is a desktop carbon intelligence terminal for EU ETS, K-ETS, and China ETS.
 
-The product is designed as a subscription-ready research and monitoring platform:
+It is built for research, monitoring, and alerting. It does not execute carbon allowance trades.
 
-- official-source-first market board
-- cross-market driver map
-- feed-style daily briefing
-- source registry and trust center
-- scenario, walk-forward, and backtest lab
+## What Changed
 
-It is **not** a brokerage product and does not execute carbon allowance trades.
+The product now follows a benchmark-driven structure:
+
+- `개요`
+  - official market board
+  - driver matrix
+  - catalyst windows
+  - feed-style briefing
+- `워크스페이스`
+  - saved workspace presets
+  - watchlist presets
+  - watch-view modes
+  - benchmark feature map
+- `알림`
+  - alert templates
+  - inbox
+  - saveable daily brief
+- `연구실`
+  - scenario overlay
+  - walk-forward model runner
+  - local CSV backtest
+  - dataset template export
+- `출처`
+  - trust center
+  - source registry
+  - full driver atlas
+  - autonomous development plan
+
+## Benchmarks Used
+
+- Toss Securities
+- TradingView
+- Koyfin
+- Carbon Pulse
+- Sylvera
+- ClearBlue Vantage
+
+Official links and feature mapping are documented in `docs/product-strategy.md`.
 
 ## Run
-
-Development:
 
 ```powershell
 npm.cmd install
 npm.cmd run dev
 ```
 
-Build:
+## Build
 
 ```powershell
 npm.cmd run build
@@ -34,19 +64,13 @@ npm.cmd run package:portable
 - `release/C-Quant-0.1.0.exe`
 - `release/win-unpacked/C-Quant.exe`
 
-## Product Docs
-
-- `AGENTS.md`
-- `docs/product-strategy.md`
-- `docs/research.md`
-- `docs/data-schema.md`
-
 ## Core Files
 
 - `src/App.tsx`
 - `src/styles.css`
-- `src/data/research.ts`
+- `src/data/experience.ts`
 - `src/data/platform.ts`
+- `src/data/research.ts`
 - `src/data/dataHub.ts`
 - `src/lib/forecast.ts`
 - `src/lib/backtest.ts`
@@ -54,16 +78,10 @@ npm.cmd run package:portable
 - `main.js`
 - `preload.js`
 
-## Source Notes
+## Product Notes
 
-- EU ETS price panel currently uses official EEX primary auction data.
-- K-ETS price panel currently uses the official KRX ETS information flow.
-- China ETS currently combines official MEE releases and official exchange overview pages.
-- Some deeper market data paths are commercial APIs and are labeled separately from public routes.
-- Yahoo Finance and similar pages are treated as external market-watch links, not as the platform's licensed core data source.
-
-## Model Notes
-
-- The scenario engine is a research overlay, not a calibrated production target price on its own.
-- The walk-forward model depends on local Python with `pandas`, `numpy`, and `scikit-learn`.
-- The backtest module uses local CSV files and simple research strategies for validation.
+- Official-source-first cards remain the core decision surface.
+- ETF, ETC, and Yahoo-style pages are watch links only.
+- The scenario engine is a research overlay, not an execution signal.
+- The walk-forward model requires local Python with `pandas`, `numpy`, and `scikit-learn`.
+- The backtest module uses local CSV files and simple research strategies.
