@@ -163,6 +163,25 @@ type MarketBoardRow = SnapshotCard & {
   operationsCheck: string;
 };
 
+type TapeCompareStats = {
+  overlapCount: number;
+  normalizedGapPct: number | null;
+  officialFiveDayReturnPct: number | null;
+  quoteFiveDayReturnPct: number | null;
+  recentCorrelation: number | null;
+  directionMatchPct: number | null;
+};
+
+type OperatorDeskConfig = {
+  primaryQuoteId: string;
+  supportQuoteIds: string[];
+  focus: string;
+  check: string;
+  executionNote: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
+};
+
 const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
   { id: "overview", ko: "한눈에 보기", en: "Overview" },
   { id: "signals", ko: "지금 판단", en: "Decision" },
@@ -660,6 +679,27 @@ function buildNormalizedTapeCompare(
   officialSeries?: ConnectedSourceSeriesPoint[],
   quoteSeries?: ConnectedSourceSeriesPoint[]
 ): MultiLinePoint[] {
+  const overlap = buildTapeOverlap(officialSeries, quoteSeries);
+  if (overlap.length < 2) {
+    return [];
+  }
+
+  const officialBase = overlap[0]?.official || 1;
+  const quoteBase = overlap[0]?.quote || 1;
+
+  return overlap.map((point) => ({
+      label: point.label,
+      values: {
+        official: officialBase === 0 ? 100 : (point.official / officialBase) * 100,
+        quote: quoteBase === 0 ? 100 : (point.quote / quoteBase) * 100
+      }
+    }));
+}
+
+function buildTapeOverlap(
+  officialSeries?: ConnectedSourceSeriesPoint[],
+  quoteSeries?: ConnectedSourceSeriesPoint[]
+) {
   const officialPoints = getSeriesPoints(officialSeries);
   const quotePoints = getSeriesPoints(quoteSeries);
 
@@ -667,19 +707,104 @@ function buildNormalizedTapeCompare(
     return [];
   }
 
-  const officialBase = officialPoints[0]?.value || 1;
-  const quoteBase = quotePoints[0]?.value || 1;
   const quoteByLabel = new Map(quotePoints.map((point) => [point.label, point.value]));
-
   return officialPoints
     .filter((point) => quoteByLabel.has(point.label))
     .map((point) => ({
       label: point.label,
-      values: {
-        official: officialBase === 0 ? 100 : (point.value / officialBase) * 100,
-        quote: quoteBase === 0 ? 100 : ((quoteByLabel.get(point.label) ?? 0) / quoteBase) * 100
-      }
+      official: point.value,
+      quote: quoteByLabel.get(point.label) ?? 0
     }));
+}
+
+function calculateCorrelation(left: number[], right: number[]) {
+  if (left.length !== right.length || left.length < 2) {
+    return null;
+  }
+
+  const leftMean = left.reduce((sum, value) => sum + value, 0) / left.length;
+  const rightMean = right.reduce((sum, value) => sum + value, 0) / right.length;
+
+  let covariance = 0;
+  let leftVariance = 0;
+  let rightVariance = 0;
+
+  for (let index = 0; index < left.length; index += 1) {
+    const leftDelta = left[index] - leftMean;
+    const rightDelta = right[index] - rightMean;
+    covariance += leftDelta * rightDelta;
+    leftVariance += leftDelta ** 2;
+    rightVariance += rightDelta ** 2;
+  }
+
+  if (leftVariance === 0 || rightVariance === 0) {
+    return null;
+  }
+
+  return covariance / Math.sqrt(leftVariance * rightVariance);
+}
+
+function buildTapeCompareStats(
+  officialSeries?: ConnectedSourceSeriesPoint[],
+  quoteSeries?: ConnectedSourceSeriesPoint[]
+): TapeCompareStats {
+  const overlap = buildTapeOverlap(officialSeries, quoteSeries);
+  if (overlap.length < 2) {
+    return {
+      overlapCount: overlap.length,
+      normalizedGapPct: null,
+      officialFiveDayReturnPct: null,
+      quoteFiveDayReturnPct: null,
+      recentCorrelation: null,
+      directionMatchPct: null
+    };
+  }
+
+  const recentWindow = overlap.slice(-6);
+  const first = recentWindow[0];
+  const last = recentWindow[recentWindow.length - 1];
+  const officialFiveDayReturnPct =
+    first.official === 0 ? null : ((last.official - first.official) / first.official) * 100;
+  const quoteFiveDayReturnPct =
+    first.quote === 0 ? null : ((last.quote - first.quote) / first.quote) * 100;
+  const normalizedGapPct =
+    officialFiveDayReturnPct === null || quoteFiveDayReturnPct === null
+      ? null
+      : quoteFiveDayReturnPct - officialFiveDayReturnPct;
+
+  const officialReturns: number[] = [];
+  const quoteReturns: number[] = [];
+  let directionMatches = 0;
+  let directionCount = 0;
+
+  for (let index = 1; index < recentWindow.length; index += 1) {
+    const previous = recentWindow[index - 1];
+    const current = recentWindow[index];
+    if (previous.official === 0 || previous.quote === 0) {
+      continue;
+    }
+
+    const officialReturn = (current.official - previous.official) / previous.official;
+    const quoteReturn = (current.quote - previous.quote) / previous.quote;
+    officialReturns.push(officialReturn);
+    quoteReturns.push(quoteReturn);
+
+    const officialDirection = Math.abs(officialReturn) < 0.000001 ? 0 : Math.sign(officialReturn);
+    const quoteDirection = Math.abs(quoteReturn) < 0.000001 ? 0 : Math.sign(quoteReturn);
+    if (officialDirection === quoteDirection) {
+      directionMatches += 1;
+    }
+    directionCount += 1;
+  }
+
+  return {
+    overlapCount: overlap.length,
+    normalizedGapPct,
+    officialFiveDayReturnPct,
+    quoteFiveDayReturnPct,
+    recentCorrelation: calculateCorrelation(officialReturns, quoteReturns),
+    directionMatchPct: directionCount > 0 ? (directionMatches / directionCount) * 100 : null
+  };
 }
 
 function getLiveQuoteStatusLabel(locale: AppLocale, quote: MarketLiveQuote | undefined) {
@@ -733,6 +858,211 @@ function getOperatorDesk(locale: AppLocale, marketId: MarketProfile["id"]) {
       "Check whether expansion notices conflict with the direction of the global carbon proxy"
     )
   };
+}
+
+function getInstitutionDesk(locale: AppLocale, marketId: MarketProfile["id"]): OperatorDeskConfig {
+  if (marketId === "eu-ets") {
+    return {
+      primaryQuoteId: "eua-dec-benchmark",
+      supportQuoteIds: ["ttf-gas-future", "keua-proxy"],
+      focus: t(
+        locale,
+        "EEX 공식 가격을 기준으로 두고, ICE EUA 선물로 상장 시장이 먼저 움직이는지 같이 봅니다.",
+        "Anchor on the EEX official tape and use ICE EUA futures to see whether the listed market is moving first."
+      ),
+      check: t(
+        locale,
+        "TTF 가스, 다음 경매 일정, 오늘 거래량이 같은 방향을 가리키는지 다시 확인합니다.",
+        "Confirm that TTF gas, the next auction date, and today's volume are still pointing the same way."
+      ),
+      executionNote: t(
+        locale,
+        "EU ETS는 상장 선물이 먼저 반응할 수 있지만, 최종 기준은 공식 경매와 공식 시세입니다.",
+        "EU ETS can react first through the listed future, but the final anchor is still the official auction and official market tape."
+      ),
+      priorityItems: [
+        t(
+          locale,
+          "ICE EUA와 공식 시세가 같은 방향으로 움직이는지 먼저 확인합니다.",
+          "Check whether ICE EUA and the official tape are moving in the same direction."
+        ),
+        t(
+          locale,
+          "TTF 가스가 탄소 가격을 밀어주고 있는지, 아니면 반대로 꺾고 있는지 봅니다.",
+          "Check whether TTF gas is reinforcing the carbon move or leaning against it."
+        ),
+        t(
+          locale,
+          "다음 EEX 경매 일정과 오늘 거래량이 공격적으로 볼 만한 수준인지 확인합니다.",
+          "Check whether the next EEX auction and today's volume support taking a stronger view."
+        )
+      ],
+      invalidationChecks: [
+        t(
+          locale,
+          "선물만 급등하고 공식 시세가 따라오지 않으면 신호를 약하게 봅니다.",
+          "If the future jumps but the official tape does not follow, treat the signal as weaker."
+        ),
+        t(
+          locale,
+          "경매 결과가 약하거나 거래량이 급감하면 확신을 낮춥니다.",
+          "If auction results soften or volume drops sharply, lower conviction."
+        ),
+        t(
+          locale,
+          "정책 경고나 공급 변화 공지가 나오면 공식 업데이트 전까지 기다립니다.",
+          "If policy or supply alerts rise, wait for the official update before leaning harder."
+        )
+      ]
+    };
+  }
+
+  if (marketId === "k-ets") {
+    return {
+      primaryQuoteId: "krbn-proxy",
+      supportQuoteIds: ["eua-dec-benchmark"],
+      focus: t(
+        locale,
+        "KRX 공식 시세를 기준으로 두고, KRBN은 글로벌 분위기를 보는 참고용으로만 씁니다.",
+        "Anchor on the KRX official tape and treat KRBN only as global context, not as a local settlement substitute."
+      ),
+      check: t(
+        locale,
+        "이행 시즌, 오늘 거래량, 최근 정책 공지가 그대로 유지되는지 확인합니다.",
+        "Check whether compliance timing, today's volume, and policy notices still support the read."
+      ),
+      executionNote: t(
+        locale,
+        "K-ETS는 글로벌 프록시보다 국내 이행 일정과 유동성의 영향이 더 크게 작동할 수 있습니다.",
+        "K-ETS can be driven more by domestic compliance timing and local liquidity than by the global proxy."
+      ),
+      priorityItems: [
+        t(
+          locale,
+          "KRX 공식 가격과 거래량이 실제로 살아 있는지 먼저 확인합니다.",
+          "Check whether the KRX official price and volume are genuinely active first."
+        ),
+        t(
+          locale,
+          "KRBN 방향은 참고하되, 국내 이행 시즌과 충돌하면 KRX 쪽을 우선합니다.",
+          "Use KRBN as context, but if it conflicts with the domestic compliance season, prioritize the KRX tape."
+        ),
+        t(
+          locale,
+          "환경부·KRX 공지로 공급이나 제도 변화가 없는지 같이 확인합니다.",
+          "Check MOE and KRX notices for supply or rule changes alongside the tape."
+        )
+      ],
+      invalidationChecks: [
+        t(
+          locale,
+          "거래량이 얇아지면 방향 신호보다 유동성 리스크를 더 크게 봅니다.",
+          "If volume dries up, give liquidity risk more weight than the directional signal."
+        ),
+        t(
+          locale,
+          "글로벌 프록시만 움직이고 KRX 공식 가격이 정지되면 과하게 따라가지 않습니다.",
+          "If only the global proxy moves while the KRX tape stays flat, avoid overreacting."
+        ),
+        t(
+          locale,
+          "이행 일정이나 제도 공지가 바뀌면 기존 판단을 바로 다시 검토합니다.",
+          "If compliance timing or policy notices change, re-open the call immediately."
+        )
+      ]
+    };
+  }
+
+  return {
+    primaryQuoteId: "krbn-proxy",
+    supportQuoteIds: ["eua-dec-benchmark"],
+    focus: t(
+      locale,
+      "중국은 MEE 공식 공지와 운영 발표를 먼저 보고, KRBN은 글로벌 분위기 확인용으로만 씁니다.",
+      "Anchor on the MEE bulletin and operating release first, and use KRBN only as global mood context."
+    ),
+    check: t(
+      locale,
+      "부문 확대 공지, 공식 발표 날짜, 공식 거래 지표가 계속 같은 방향을 가리키는지 확인합니다.",
+      "Check whether sector-expansion notices, bulletin timing, and official turnover still support the same direction."
+    ),
+    executionNote: t(
+      locale,
+      "China ETS는 글로벌 프록시보다 정책 범위 확대나 공식 운영 공지가 가격 판단에 더 크게 작용할 수 있습니다.",
+      "China ETS can be moved more by policy scope changes and official operating releases than by the global proxy."
+    ),
+    priorityItems: [
+      t(
+        locale,
+        "MEE 공식 발표 날짜와 최신 운영 수치를 먼저 확인합니다.",
+        "Start with the latest MEE bulletin date and operating figures."
+      ),
+      t(
+        locale,
+        "부문 확대나 규정 변경 공지가 나오면 가격보다 정책 해석을 먼저 봅니다.",
+        "If there is a sector-expansion or rule-change notice, prioritize policy interpretation over the proxy price."
+      ),
+      t(
+        locale,
+        "KRBN은 글로벌 위험 선호를 보는 보조 지표로만 사용합니다.",
+        "Use KRBN only as a secondary read on global carbon risk appetite."
+      )
+    ],
+    invalidationChecks: [
+      t(
+        locale,
+        "정책 공지가 바뀌면 기존 방향 판단을 즉시 보류합니다.",
+        "If the policy bulletin changes, put the old directional call on hold immediately."
+      ),
+      t(
+        locale,
+        "공식 거래 통계가 약해지면 글로벌 프록시 신호를 과대해석하지 않습니다.",
+        "If official turnover weakens, do not over-read the global proxy signal."
+      ),
+      t(
+        locale,
+        "공식 발표와 프록시 방향이 크게 충돌하면 이벤트 리스크 구간으로 봅니다.",
+        "If the official release and proxy direction conflict sharply, treat it as an event-risk window."
+      )
+    ]
+  };
+}
+
+function localizeLiveQuoteCategory(locale: AppLocale, category: MarketLiveQuote["category"]) {
+  if (category === "Benchmark futures") {
+    return t(locale, "대표 선물", "Benchmark futures");
+  }
+  if (category === "Driver future") {
+    return t(locale, "가격 변수 선물", "Driver future");
+  }
+  return t(locale, "상장 프록시", "Listed proxy");
+}
+
+function formatPercentStat(
+  locale: AppLocale,
+  value: number | null,
+  digits = 1,
+  signed = false
+) {
+  if (value === null || !Number.isFinite(value)) {
+    return t(locale, "계산 불가", "N/A");
+  }
+  const sign = signed && value > 0 ? "+" : "";
+  return `${sign}${formatNumber(locale, value, digits)}%`;
+}
+
+function formatPlainStat(locale: AppLocale, value: number | null, digits = 2) {
+  if (value === null || !Number.isFinite(value)) {
+    return t(locale, "계산 불가", "N/A");
+  }
+  return formatNumber(locale, value, digits);
+}
+
+function formatOverlapWindow(locale: AppLocale, overlapCount: number) {
+  if (overlapCount <= 0) {
+    return t(locale, "겹침 없음", "No overlap");
+  }
+  return locale === "ko" ? `${overlapCount}일` : `${overlapCount} days`;
 }
 
 function localizeQuantIndicator(locale: AppLocale, indicator: (typeof quantIndicators)[number]) {
@@ -1802,7 +2132,7 @@ export default function App() {
     () => localizeConnectedCard(appLocale, selectedCard),
     [appLocale, selectedCard]
   );
-  const selectedDesk = useMemo(() => getOperatorDesk(appLocale, marketId), [appLocale, marketId]);
+  const selectedDesk = useMemo(() => getInstitutionDesk(appLocale, marketId), [appLocale, marketId]);
   const selectedPrimaryQuote = useMemo(
     () => liveQuotesById[selectedDesk.primaryQuoteId],
     [liveQuotesById, selectedDesk.primaryQuoteId]
@@ -1845,6 +2175,10 @@ export default function App() {
   const selectedTapeComparePoints = useMemo(
     () => buildNormalizedTapeCompare(localizedSelectedCard?.series, selectedInteractiveQuote?.series),
     [localizedSelectedCard?.series, selectedInteractiveQuote]
+  );
+  const selectedTapeCompareStats = useMemo(
+    () => buildTapeCompareStats(localizedSelectedCard?.series, selectedInteractiveQuote?.series),
+    [localizedSelectedCard?.series, selectedInteractiveQuote?.series]
   );
   const selectedTapeCompareSeries = useMemo<MultiLineSeries[]>(
     () => [
@@ -2559,6 +2893,7 @@ export default function App() {
                     quote={selectedInteractiveQuote}
                     quotePoints={selectedInteractiveQuotePoints}
                     comparePoints={selectedTapeComparePoints}
+                    compareStats={selectedTapeCompareStats}
                     compareSeries={selectedTapeCompareSeries}
                     onOpenSource={handleOpenExternal}
                   />
@@ -2573,7 +2908,7 @@ export default function App() {
                       "This is the practical checklist for the hedge anchor, comparison tape, and next checks."
                     )}
                   />
-                  <OperatorDeskPanel
+                  <InstitutionChecklistPanel
                     locale={appLocale}
                     marketId={marketId}
                     officialCard={localizedSelectedCard}
@@ -2581,6 +2916,9 @@ export default function App() {
                     supportQuotes={selectedSupportQuotes}
                     focus={selectedDesk.focus}
                     check={selectedDesk.check}
+                    executionNote={selectedDesk.executionNote}
+                    priorityItems={selectedDesk.priorityItems}
+                    invalidationChecks={selectedDesk.invalidationChecks}
                   />
                 </div>
               </section>
@@ -3590,6 +3928,7 @@ function LiveTapeWorkbench({
   quote,
   quotePoints,
   comparePoints,
+  compareStats,
   compareSeries,
   onOpenSource
 }: {
@@ -3598,6 +3937,7 @@ function LiveTapeWorkbench({
   quote: MarketLiveQuote | undefined;
   quotePoints: ChartPoint[];
   comparePoints: MultiLinePoint[];
+  compareStats: TapeCompareStats;
   compareSeries: MultiLineSeries[];
   onOpenSource: (url: string) => void | Promise<void>;
 }) {
@@ -3631,8 +3971,35 @@ function LiveTapeWorkbench({
           value={getLiveQuoteStatusLabel(locale, quote)}
         />
         <MetricPill
-          label={t(locale, "기준", "Role")}
-          value={quote.category}
+          label={t(locale, "이 테이프 용도", "How to use")}
+          value={localizeLiveQuoteCategory(locale, quote.category)}
+        />
+      </div>
+
+      <div className="tape-metric-strip tape-metric-strip-secondary">
+        <MetricPill
+          label={t(locale, "겹치는 구간", "Overlap window")}
+          value={formatOverlapWindow(locale, compareStats.overlapCount)}
+        />
+        <MetricPill
+          label={t(locale, "공식 대비 괴리", "Normalized gap")}
+          value={formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)}
+        />
+        <MetricPill
+          label={t(locale, "공식 5일 변화", "Official 5D")}
+          value={formatPercentStat(locale, compareStats.officialFiveDayReturnPct, 1, true)}
+        />
+        <MetricPill
+          label={t(locale, "연결 테이프 5일 변화", "Linked 5D")}
+          value={formatPercentStat(locale, compareStats.quoteFiveDayReturnPct, 1, true)}
+        />
+        <MetricPill
+          label={t(locale, "방향 일치", "Direction match")}
+          value={formatPercentStat(locale, compareStats.directionMatchPct, 0)}
+        />
+        <MetricPill
+          label={t(locale, "5일 상관", "5D correlation")}
+          value={formatPlainStat(locale, compareStats.recentCorrelation, 2)}
         />
       </div>
 
@@ -3693,6 +4060,30 @@ function LiveTapeWorkbench({
             <span>{quote.delayNote}</span>
           </div>
           <div className="operator-row">
+            <strong>{t(locale, "확인 강도", "Confirmation strength")}</strong>
+            <span>
+              {compareStats.overlapCount < 2
+                ? t(
+                    locale,
+                    "공식 시세와 겹치는 날짜가 아직 적어서, 이 테이프는 보조 참고용으로만 보는 편이 안전합니다.",
+                    "There is not enough overlapping history yet, so this tape should be treated as context only."
+                  )
+                : t(
+                    locale,
+                    `최근 겹치는 구간에서 방향 일치는 ${formatPercentStat(
+                      locale,
+                      compareStats.directionMatchPct,
+                      0
+                    )}, 상관은 ${formatPlainStat(locale, compareStats.recentCorrelation, 2)}입니다. 괴리가 크게 벌어지면 공식 시세 쪽을 더 우선합니다.`,
+                    `Across the recent overlap window, direction match is ${formatPercentStat(
+                      locale,
+                      compareStats.directionMatchPct,
+                      0
+                    )} and correlation is ${formatPlainStat(locale, compareStats.recentCorrelation, 2)}. If the gap widens, give more weight to the official tape.`
+                  )}
+            </span>
+          </div>
+          <div className="operator-row">
             <strong>{t(locale, "공식 기준과의 관계", "Relation to the official tape")}</strong>
             <span>
               {officialCard
@@ -3721,7 +4112,10 @@ function OperatorDeskPanel({
   primaryQuote,
   supportQuotes,
   focus,
-  check
+  check,
+  executionNote,
+  priorityItems,
+  invalidationChecks
 }: {
   locale: AppLocale;
   marketId: MarketProfile["id"];
@@ -3730,6 +4124,9 @@ function OperatorDeskPanel({
   supportQuotes: MarketLiveQuote[];
   focus: string;
   check: string;
+  executionNote: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
 }) {
   const hasPublicFutures = marketId === "eu-ets";
 
@@ -3781,6 +4178,102 @@ function OperatorDeskPanel({
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function InstitutionChecklistPanel({
+  locale,
+  marketId,
+  officialCard,
+  primaryQuote,
+  supportQuotes,
+  focus,
+  check,
+  executionNote,
+  priorityItems,
+  invalidationChecks
+}: {
+  locale: AppLocale;
+  marketId: MarketProfile["id"];
+  officialCard: ConnectedSourceCard | undefined;
+  primaryQuote: MarketLiveQuote | undefined;
+  supportQuotes: MarketLiveQuote[];
+  focus: string;
+  check: string;
+  executionNote: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
+}) {
+  return (
+    <div className="operator-desk">
+      <div className="operator-row">
+        <strong>{t(locale, "공식 기준", "Official anchor")}</strong>
+        <span>{officialCard?.sourceName ?? t(locale, "공식 소스 없음", "No official source")}</span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "비교 테이프", "Comparison tape")}</strong>
+        <span>
+          {primaryQuote
+            ? `${primaryQuote.title} · ${formatLiveQuotePrice(locale, primaryQuote)}`
+            : t(locale, "연결된 테이프 없음", "No linked tape")}
+        </span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "이 시장 읽는 법", "How to read this market")}</strong>
+        <span>{focus}</span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "다음 확인", "Next check")}</strong>
+        <span>{check}</span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "실무 메모", "Desk note")}</strong>
+        <span>{executionNote}</span>
+      </div>
+      <div className="operator-group">
+        <strong>{t(locale, "우선 확인할 것", "Priority checks")}</strong>
+        <ul className="operator-list">
+          {priorityItems.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+      <div className="operator-group">
+        <strong>{t(locale, "판단을 낮춰야 하는 경우", "When to lower conviction")}</strong>
+        <ul className="operator-list">
+          {invalidationChecks.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+      {supportQuotes.length > 0 ? (
+        <div className="operator-support">
+          {supportQuotes.map((quote) => (
+            <div key={quote.id} className="operator-support-chip">
+              <strong>{quote.title}</strong>
+              <span>{`${formatLiveQuotePrice(locale, quote)} · ${localizeLiveQuoteCategory(
+                locale,
+                quote.category
+              )}`}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="operator-footnote">
+          {marketId === "eu-ets"
+            ? t(
+                locale,
+                "보조 테이프가 추가로 없더라도 공식 시세와 대표 선물의 방향 일치 여부를 먼저 확인합니다.",
+                "Even without extra support tapes, first check whether the official tape and the benchmark future still agree."
+              )
+            : t(
+                locale,
+                "현지 무료 선물 테이프가 없으면 공식 시세와 글로벌 탄소 프록시의 간격을 더 보수적으로 해석합니다.",
+                "When a verified free local futures tape is not available, interpret the gap between the official tape and the global proxy more conservatively."
+              )}
+        </div>
+      )}
     </div>
   );
 }

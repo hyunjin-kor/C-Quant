@@ -15,10 +15,12 @@ It does not place trades.
 - Shows official market prices first when available
 - Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
 - Compares EU ETS, K-ETS, and China ETS on one screen
+- Shows overlap stats between the official tape and linked tapes, including gap, recent move, correlation, and direction match
+- Adds an institution-style checklist for what to confirm before leaning buy, reduce, or hold
 - Explains what is moving carbon prices
 - Summarizes the current market tone with a rule-based decision layer
 - Lets you run local backtests and walk-forward model checks
-- Opens external watch pages such as ETF and Yahoo pages for quick reference
+- Keeps the main workflow inside the desktop app and leaves external pages as secondary source references only
 
 ## Free-Source-First
 

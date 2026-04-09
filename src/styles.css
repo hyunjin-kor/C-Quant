@@ -564,8 +564,12 @@ textarea {
 
 .tape-metric-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.65rem;
+}
+
+.tape-metric-strip-secondary {
+  padding-top: 0.1rem;
 }
 
 .tape-workbench-grid {
@@ -603,6 +607,28 @@ textarea {
   line-height: 1.58;
 }
 
+.operator-group {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem 0 0.1rem;
+  border-bottom: 1px solid rgba(130, 146, 182, 0.12);
+}
+
+.operator-group strong {
+  color: var(--text-strong);
+  font-size: 0.84rem;
+}
+
+.operator-list {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.42rem;
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  line-height: 1.56;
+}
+
 .operator-support {
   display: flex;
   flex-wrap: wrap;
@@ -627,6 +653,13 @@ textarea {
 .operator-support-chip span {
   color: var(--text-soft);
   font-size: 0.76rem;
+}
+
+.operator-footnote {
+  margin-top: 0.15rem;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.58;
 }
 
 .snapshot-grid {
