@@ -363,3 +363,34 @@ export function DonutMeter({
     </div>
   );
 }
+
+export function PressureBar({
+  value,
+  negativeLabel,
+  neutralLabel,
+  positiveLabel
+}: {
+  value: number;
+  negativeLabel: string;
+  neutralLabel: string;
+  positiveLabel: string;
+}) {
+  const safe = clamp(value, -1, 1);
+  const position = ((safe + 1) / 2) * 100;
+
+  return (
+    <div className="pressure-bar">
+      <div className="pressure-track">
+        <span className="pressure-zone negative" />
+        <span className="pressure-zone neutral" />
+        <span className="pressure-zone positive" />
+        <span className="pressure-marker" style={{ left: `${position}%` }} />
+      </div>
+      <div className="pressure-scale">
+        <span>{negativeLabel}</span>
+        <span>{neutralLabel}</span>
+        <span>{positiveLabel}</span>
+      </div>
+    </div>
+  );
+}

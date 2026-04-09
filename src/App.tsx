@@ -11,6 +11,7 @@ import {
   Heatmap,
   LineChart,
   MultiLineChart,
+  PressureBar,
   Sparkline,
   WaterfallChart,
   type ChartPoint,
@@ -142,6 +143,13 @@ type SnapshotCard = {
   sparkline: ChartPoint[];
   score: number;
   confidence: number;
+};
+
+type MarketBoardRow = SnapshotCard & {
+  stance: DecisionAssistantResponse["stance"];
+  updatedLabel: string;
+  sourceName: string;
+  topDriver: string;
 };
 
 const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
@@ -436,6 +444,10 @@ function stanceLabel(locale: AppLocale, stance: DecisionAssistantResponse["stanc
     return "매도 우위";
   }
   return "관망";
+}
+
+function stanceBadgeClass(stance: DecisionAssistantResponse["stance"]) {
+  return stance === "Buy Bias" ? "bullish" : stance === "Reduce Bias" ? "bearish" : "neutral";
 }
 
 function useLocalizedCatalysts(locale: AppLocale, marketId: MarketProfile["id"]) {
@@ -1219,27 +1231,50 @@ export default function App() {
     [appLocale, selectedCard]
   );
   const selectedForecast = forecasts[marketId];
-  const selectedDecision = useMemo(
+  const decisionsByMarket = useMemo(
     () =>
-      buildRuleDecision(
-        appLocale,
-        selectedMarket,
-        localizedSelectedCard,
-        selectedForecast,
-        selectedAlerts,
-        localizedCatalysts,
-        currentState
-      ),
+      Object.fromEntries(
+        marketProfiles.map((profile) => {
+          const profileCard = localizeConnectedCard(appLocale, cardsByMarket[profile.id]);
+          const profileAlerts = alertInbox.filter(
+            (item) => item.marketId === profile.id || item.marketId === "shared"
+          );
+          const profileState =
+            profile.id === marketId
+              ? currentState
+              : {
+                  ...derivedStates[profile.id],
+                  ...(scenarioOverrides[profile.id] ?? {})
+                };
+
+          return [
+            profile.id,
+            buildRuleDecision(
+              appLocale,
+              profile,
+              profileCard,
+              forecasts[profile.id],
+              profileAlerts,
+              localizedCatalysts,
+              profileState
+            )
+          ];
+        })
+      ) as Record<MarketProfile["id"], DecisionAssistantResponse>,
     [
+      alertInbox,
       appLocale,
+      cardsByMarket,
       currentState,
+      derivedStates,
+      forecasts,
       localizedCatalysts,
-      selectedAlerts,
-      localizedSelectedCard,
-      selectedForecast,
-      selectedMarket
+      marketId,
+      scenarioOverrides
     ]
   );
+
+  const selectedDecision = decisionsByMarket[marketId];
 
   const decisionView = assistantResponse ?? selectedDecision;
   const snapshotCards = useMemo(
@@ -1254,6 +1289,34 @@ export default function App() {
         )
       ),
     [appLocale, cardsByMarket, forecasts]
+  );
+
+  const marketBoardRows = useMemo<MarketBoardRow[]>(
+    () =>
+      marketProfiles.map((profile) => {
+        const snapshot =
+          snapshotCards.find((item) => item.marketId === profile.id) ??
+          getSnapshotCard(
+            appLocale,
+            profile,
+            cardsByMarket[profile.id],
+            forecasts[profile.id].score,
+            forecasts[profile.id].confidence
+          );
+        const localizedCard = localizeConnectedCard(appLocale, cardsByMarket[profile.id]);
+        const decision = decisionsByMarket[profile.id];
+
+        return {
+          ...snapshot,
+          stance: decision.stance,
+          updatedLabel: formatDate(appLocale, localizedCard?.asOf),
+          sourceName: localizedCard?.sourceName ?? t(appLocale, "공식 소스 미연결", "No official source"),
+          topDriver:
+            forecasts[profile.id].contributions[0]?.variable ??
+            t(appLocale, "주요 인자 없음", "No primary driver")
+        };
+      }),
+    [appLocale, cardsByMarket, decisionsByMarket, forecasts, snapshotCards]
   );
 
   const heatmapRows = useMemo<HeatmapRow[]>(
@@ -1327,6 +1390,16 @@ export default function App() {
         value: item.contribution
       })),
     [selectedForecast]
+  );
+
+  const selectedDriverHighlights = useMemo(
+    () => selectedForecast.contributions.slice(0, 4),
+    [selectedForecast]
+  );
+
+  const selectedScoreCap = useMemo(
+    () => Math.max(selectedMarket.drivers.reduce((sum, driver) => sum + driver.weight, 0) * 0.8, 1),
+    [selectedMarket]
   );
 
   const datasetSchema = useMemo(
@@ -1740,38 +1813,21 @@ export default function App() {
             </div>
           </section>
 
-          <section className="snapshot-grid">
-            {snapshotCards.map((card) => (
-              <button
-                key={card.marketId}
-                className={`snapshot-card ${card.marketId === marketId ? "active" : ""}`}
-                onClick={() => setMarketId(card.marketId)}
-                style={{ "--market-accent": marketColor(card.marketId) } as CSSProperties}
-              >
-                <div className="snapshot-head">
-                  <span>{card.name}</span>
-                  <small>{card.status}</small>
-                </div>
-                <strong>{card.priceLabel}</strong>
-                <div className="snapshot-meta">
-                  <span>{card.changeLabel}</span>
-                  <span>{card.volumeLabel}</span>
-                </div>
-                <div className="snapshot-chart">
-                  {card.sparkline.length > 1 ? (
-                    <Sparkline points={card.sparkline} color={marketColor(card.marketId)} fill />
-                  ) : (
-                    <div className="snapshot-fallback">{card.asOf}</div>
-                  )}
-                </div>
-                <div className="snapshot-footer">
-                  <span>
-                    {t(appLocale, "판단 점수", "Decision score")} {formatNumber(appLocale, card.score, 2)}
-                  </span>
-                  <span>{formatNumber(appLocale, card.confidence * 100, 0)}%</span>
-                </div>
-              </button>
-            ))}
+          <section className="panel panel-emphasis market-board-panel">
+            <SectionHeader
+              title={t(appLocale, "글로벌 탄소 시장 보드", "Global carbon market board")}
+              subtitle={t(
+                appLocale,
+                "각 시장의 공식 가격, 변동률, 거래량, 판단 바이어스와 추세를 한 줄로 비교합니다.",
+                "Compare official price, move, volume, posture, and trend for each market on one board."
+              )}
+            />
+            <MarketBoard
+              locale={appLocale}
+              rows={marketBoardRows}
+              selectedMarketId={marketId}
+              onSelectMarket={setMarketId}
+            />
           </section>
 
           {surface === "overview" ? (
@@ -1813,22 +1869,21 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "의사결정 패널", "Decision panel")}
+                    title={t(appLocale, "시장 펄스", "Market pulse")}
                     subtitle={t(
                       appLocale,
-                      "로컬 연구 엔진 + 선택형 LLM 브리프",
-                      "Local research engine + optional LLM brief"
+                      "현재 판단 구간, 신뢰도, 상위 인자를 압축해서 보여줍니다.",
+                      "Compress the current posture, confidence, and top drivers into one visual."
                     )}
                   />
-                  <DecisionPanel
+                  <MarketPulsePanel
                     locale={appLocale}
+                    forecast={selectedForecast}
                     decision={decisionView}
-                    assistantLoading={assistantLoading}
-                    assistantError={assistantError}
-                    hasApiKey={settings.hasOpenAIApiKey}
-                    question={assistantQuestion}
-                    onQuestionChange={setAssistantQuestion}
-                    onRunAssistant={handleRunAssistant}
+                    updatedAt={localizedSelectedCard?.asOf}
+                    sourceStatus={localizedSelectedCard?.status ?? "limited"}
+                    scoreCap={selectedScoreCap}
+                    drivers={selectedDriverHighlights}
                   />
                 </div>
               </section>
@@ -2013,6 +2068,28 @@ export default function App() {
                 </div>
                 <div className="panel">
                   <SectionHeader
+                    title={t(appLocale, "시그널 콕핏", "Signal cockpit")}
+                    subtitle={t(
+                      appLocale,
+                      "지금 구간이 어디에 놓여 있는지, 어떤 인자가 밀고 있는지 먼저 확인합니다.",
+                      "Read the current posture band and driver pressure before changing assumptions."
+                    )}
+                  />
+                  <MarketPulsePanel
+                    locale={appLocale}
+                    forecast={selectedForecast}
+                    decision={decisionView}
+                    updatedAt={localizedSelectedCard?.asOf}
+                    sourceStatus={localizedSelectedCard?.status ?? "limited"}
+                    scoreCap={selectedScoreCap}
+                    drivers={selectedDriverHighlights}
+                  />
+                </div>
+              </section>
+
+              <section className="overview-grid">
+                <div className="panel">
+                  <SectionHeader
                     title={t(appLocale, "시나리오 슬라이더", "Scenario sliders")}
                     subtitle={t(
                       appLocale,
@@ -2047,9 +2124,7 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-              </section>
 
-              <section className="overview-grid secondary">
                 <div className="panel">
                   <SectionHeader
                     title={t(appLocale, "의사결정 설명", "Decision brief")}
@@ -2070,7 +2145,9 @@ export default function App() {
                     onRunAssistant={handleRunAssistant}
                   />
                 </div>
+              </section>
 
+              <section className="overview-grid tertiary">
                 <div className="panel">
                   <SectionHeader
                     title={t(appLocale, "LLM 설정", "LLM settings")}
@@ -2111,9 +2188,6 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-              </section>
-
-              <section className="overview-grid tertiary">
                 <div className="panel">
                   <SectionHeader
                     title={t(appLocale, "퀀트 지표", "Quant indicators")}
@@ -2491,6 +2565,156 @@ function MetricPill({ label, value }: { label: string; value: string }) {
   );
 }
 
+function MarketBoard({
+  locale,
+  rows,
+  selectedMarketId,
+  onSelectMarket
+}: {
+  locale: AppLocale;
+  rows: MarketBoardRow[];
+  selectedMarketId: MarketProfile["id"];
+  onSelectMarket: (marketId: MarketProfile["id"]) => void;
+}) {
+  return (
+    <div className="market-board">
+      <div className="market-board-head">
+        <span>{t(locale, "시장", "Market")}</span>
+        <span>{t(locale, "공식 가격", "Official price")}</span>
+        <span>{t(locale, "변동", "Move")}</span>
+        <span>{t(locale, "거래량", "Volume")}</span>
+        <span>{t(locale, "바이어스", "Bias")}</span>
+        <span>{t(locale, "신뢰도", "Confidence")}</span>
+        <span>{t(locale, "추세", "Trend")}</span>
+        <span>{t(locale, "업데이트", "Updated")}</span>
+      </div>
+      {rows.map((row) => (
+        <button
+          key={row.marketId}
+          className={`market-board-row ${row.marketId === selectedMarketId ? "active" : ""}`}
+          onClick={() => onSelectMarket(row.marketId)}
+          style={{ "--market-accent": marketColor(row.marketId) } as CSSProperties}
+        >
+          <div className="market-main-cell">
+            <strong>{row.name}</strong>
+            <span>{row.sourceName}</span>
+            <small>{row.status}</small>
+          </div>
+          <div className="market-cell">
+            <strong>{row.priceLabel}</strong>
+            <span>{t(locale, "상위 인자", "Top driver")} {row.topDriver}</span>
+          </div>
+          <div className="market-cell">
+            <strong>{row.changeLabel}</strong>
+            <span>
+              {t(locale, "판단 점수", "Decision score")} {formatNumber(locale, row.score, 2)}
+            </span>
+          </div>
+          <div className="market-cell">
+            <strong>{row.volumeLabel}</strong>
+            <span>{row.status}</span>
+          </div>
+          <div className="market-cell">
+            <span className={`stance-badge ${stanceBadgeClass(row.stance)}`}>
+              {stanceLabel(locale, row.stance)}
+            </span>
+          </div>
+          <div className="market-cell">
+            <strong>{formatNumber(locale, row.confidence * 100, 0)}%</strong>
+            <span>{t(locale, "모델 신뢰도", "Model confidence")}</span>
+          </div>
+          <div className="market-spark">
+            {row.sparkline.length > 1 ? (
+              <Sparkline points={row.sparkline} color={marketColor(row.marketId)} fill />
+            ) : (
+              <div className="snapshot-fallback">{row.updatedLabel}</div>
+            )}
+          </div>
+          <div className="market-cell market-time">
+            <strong>{row.updatedLabel}</strong>
+            <span>{t(locale, "공식 시각", "Official timestamp")}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MarketPulsePanel({
+  locale,
+  forecast,
+  decision,
+  updatedAt,
+  sourceStatus,
+  scoreCap,
+  drivers
+}: {
+  locale: AppLocale;
+  forecast: ReturnType<typeof buildForecast>;
+  decision: DecisionAssistantResponse;
+  updatedAt?: string;
+  sourceStatus: ConnectedSourceCard["status"];
+  scoreCap: number;
+  drivers: Array<{ variable: string; contribution: number }>;
+}) {
+  const normalizedScore = clamp(forecast.score / scoreCap, -1, 1);
+
+  return (
+    <div className="market-pulse">
+      <div className="market-pulse-head">
+        <div className="market-pulse-copy">
+          <span className={`stance-badge ${stanceBadgeClass(decision.stance)}`}>
+            {stanceLabel(locale, decision.stance)}
+          </span>
+          <p>{decision.summary}</p>
+        </div>
+        <div className="market-pulse-score">
+          <span>{t(locale, "현재 점수", "Current score")}</span>
+          <strong>{formatNumber(locale, forecast.score, 2)}</strong>
+        </div>
+      </div>
+
+      <PressureBar
+        value={normalizedScore}
+        negativeLabel={t(locale, "매도 우세", "Reduce")}
+        neutralLabel={t(locale, "중립", "Neutral")}
+        positiveLabel={t(locale, "매수 우세", "Buy")}
+      />
+
+      <div className="pulse-metric-strip">
+        <MetricPill
+          label={t(locale, "신뢰도", "Confidence")}
+          value={`${formatNumber(locale, decision.confidence * 100, 0)}%`}
+        />
+        <MetricPill
+          label={t(locale, "활성 인자", "Active drivers")}
+          value={String(forecast.contributions.filter((item) => Math.abs(item.contribution) > 0.05).length)}
+        />
+        <MetricPill
+          label={t(locale, "소스 상태", "Source health")}
+          value={getStatusLabel(locale, sourceStatus)}
+        />
+        <MetricPill
+          label={t(locale, "업데이트", "Updated")}
+          value={formatDate(locale, updatedAt)}
+        />
+      </div>
+
+      <div className="driver-chip-row">
+        {drivers.map((item) => (
+          <span
+            key={item.variable}
+            className={`driver-chip ${item.contribution >= 0 ? "positive" : "negative"}`}
+          >
+            {item.variable} {item.contribution >= 0 ? "+" : ""}
+            {formatNumber(locale, item.contribution, 2)}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DecisionPanel({
   locale,
   decision,
@@ -2510,13 +2734,6 @@ function DecisionPanel({
   onQuestionChange: (value: string) => void;
   onRunAssistant: () => void;
 }) {
-  const badgeClass =
-    decision.stance === "Buy Bias"
-      ? "bullish"
-      : decision.stance === "Reduce Bias"
-        ? "bearish"
-        : "neutral";
-
   return (
     <div className="decision-stack">
       <div className="decision-topline">
@@ -2527,7 +2744,9 @@ function DecisionPanel({
           color={decision.stance === "Reduce Bias" ? NEGATIVE : decision.stance === "Buy Bias" ? POSITIVE : "#2f7bf6"}
         />
         <div className="decision-copy">
-          <span className={`stance-badge ${badgeClass}`}>{stanceLabel(locale, decision.stance)}</span>
+          <span className={`stance-badge ${stanceBadgeClass(decision.stance)}`}>
+            {stanceLabel(locale, decision.stance)}
+          </span>
           <p>{decision.summary}</p>
           <small>{decision.disclaimer}</small>
         </div>
