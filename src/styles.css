@@ -908,6 +908,38 @@ textarea {
   align-items: center;
 }
 
+.source-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.access-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.access-pill.free {
+  background: rgba(34, 199, 122, 0.12);
+  color: #108350;
+}
+
+.access-pill.signup {
+  background: rgba(47, 123, 246, 0.12);
+  color: #205fbe;
+}
+
+.access-pill.paid {
+  background: rgba(255, 111, 97, 0.12);
+  color: #b44337;
+}
+
 .bullet-grid {
   display: grid;
   gap: 0.7rem;

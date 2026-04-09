@@ -450,6 +450,30 @@ function stanceBadgeClass(stance: DecisionAssistantResponse["stance"]) {
   return stance === "Buy Bias" ? "bullish" : stance === "Reduce Bias" ? "bearish" : "neutral";
 }
 
+function getAccessTier(
+  locale: AppLocale,
+  method: "Official Web" | "Official File" | "Public API" | "Commercial API"
+) {
+  if (method === "Commercial API") {
+    return {
+      tone: "paid",
+      label: t(locale, "유료 가능", "Paid option")
+    };
+  }
+
+  if (method === "Public API") {
+    return {
+      tone: "signup",
+      label: t(locale, "무료 가입 필요", "Free with signup")
+    };
+  }
+
+  return {
+    tone: "free",
+    label: t(locale, "무료로 바로 보기", "Free to access")
+  };
+}
+
 function useLocalizedCatalysts(locale: AppLocale, marketId: MarketProfile["id"]) {
   return useMemo(
     () =>
@@ -2441,7 +2465,7 @@ export default function App() {
                     subtitle={t(
                       appLocale,
                       "공식 웹, 파일, API, 상업 API를 분리합니다.",
-                      "Separate official web, files, public APIs, and commercial APIs."
+                      "Free sources come first, and paid options are flagged separately."
                     )}
                   />
                   <div className="source-list">
@@ -2449,7 +2473,12 @@ export default function App() {
                       <button key={item.id} className="source-item" onClick={() => void handleOpenExternal(item.url)}>
                         <div className="source-head">
                           <strong>{item.title}</strong>
-                          <span>{localizeLabel(appLocale, item.method, METHOD_LABELS_KO)}</span>
+                          <div className="source-tags">
+                            <span className={`access-pill ${getAccessTier(appLocale, item.method).tone}`}>
+                              {getAccessTier(appLocale, item.method).label}
+                            </span>
+                            <span>{localizeLabel(appLocale, item.method, METHOD_LABELS_KO)}</span>
+                          </div>
                         </div>
                         <p>{item.appUse}</p>
                         <small>{item.whyItMatters}</small>
