@@ -153,9 +153,9 @@ type MarketBoardRow = SnapshotCard & {
 };
 
 const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
-  { id: "overview", ko: "시장 보드", en: "Board" },
-  { id: "signals", ko: "의사결정", en: "Decision" },
-  { id: "lab", ko: "연구실", en: "Lab" },
+  { id: "overview", ko: "한눈에 보기", en: "Overview" },
+  { id: "signals", ko: "지금 판단", en: "Decision" },
+  { id: "lab", ko: "모델 실험", en: "Lab" },
   { id: "sources", ko: "출처", en: "Sources" }
 ];
 
@@ -1687,7 +1687,7 @@ export default function App() {
           <img src={appIconUrl} alt="C-Quant" className="brand-mark" />
           <div>
             <strong>C-Quant</strong>
-            <span>{t(appLocale, "탄소배출권 의사결정 터미널", "Carbon allowance decision terminal")}</span>
+            <span>{t(appLocale, "탄소배출권 판단 도우미", "Carbon market guide")}</span>
           </div>
         </div>
         <div className="titlebar-tools">
@@ -1791,35 +1791,35 @@ export default function App() {
         <main className="scroll-body">
           <section className="hero-strip">
             <div>
-              <div className="eyebrow">{t(appLocale, "오늘의 운영면", "Operating surface")}</div>
+              <div className="eyebrow">{t(appLocale, "오늘 한눈에", "Today")}</div>
               <h1>{activeWorkspace.objective}</h1>
               <p>
                 {t(
                   appLocale,
-                  "공식 가격, 영향 인자, 알림, 모델 판단을 같은 화면에서 보고 거래 밖의 의사결정을 빠르게 내리도록 설계했습니다.",
-                  "Built to read official prices, drivers, alerts, and model posture on one surface before acting elsewhere."
+                  "공식 가격, 주의 알림, 오늘 분위기를 한 화면에서 바로 볼 수 있게 만들었습니다.",
+                  "Read official prices, key alerts, and today's market tone on one screen."
                 )}
               </p>
             </div>
             <div className="hero-actions">
               <button className="primary-button" onClick={() => void refreshSources()}>
                 {refreshingSources
-                  ? t(appLocale, "새로고침 중...", "Refreshing...")
-                  : t(appLocale, "공식 소스 새로고침", "Refresh official sources")}
+                  ? t(appLocale, "불러오는 중...", "Refreshing...")
+                  : t(appLocale, "데이터 새로고침", "Refresh data")}
               </button>
               <button className="secondary-button" onClick={() => void handleSaveBrief()}>
-                {t(appLocale, "브리프 저장", "Save brief")}
+                {t(appLocale, "요약 저장", "Save summary")}
               </button>
             </div>
           </section>
 
           <section className="panel panel-emphasis market-board-panel">
             <SectionHeader
-              title={t(appLocale, "글로벌 탄소 시장 보드", "Global carbon market board")}
+              title={t(appLocale, "시장 한눈에 보기", "Market overview")}
               subtitle={t(
                 appLocale,
                 "각 시장의 공식 가격, 변동률, 거래량, 판단 바이어스와 추세를 한 줄로 비교합니다.",
-                "Compare official price, move, volume, posture, and trend for each market on one board."
+                "Compare price, move, volume, and market tone at a glance."
               )}
             />
             <MarketBoard
@@ -1835,13 +1835,13 @@ export default function App() {
               <section className="overview-grid">
                 <div className="panel panel-emphasis">
                   <SectionHeader
-                    title={t(appLocale, "공식 가격 테이프", "Official market tape")}
+                    title={t(appLocale, "공식 가격 차트", "Official price chart")}
                     subtitle={
                       localizedSelectedCard?.seriesLabel ??
                       t(
                         appLocale,
                         "시계열 미공개 시장은 이벤트 중심으로 해석합니다.",
-                        "When no official time series is available, read the event layer instead."
+                        "If there is no continuous price series, use notices and events instead."
                       )
                     }
                   />
@@ -1869,11 +1869,11 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "시장 펄스", "Market pulse")}
+                    title={t(appLocale, "지금 분위기", "Current tone")}
                     subtitle={t(
                       appLocale,
                       "현재 판단 구간, 신뢰도, 상위 인자를 압축해서 보여줍니다.",
-                      "Compress the current posture, confidence, and top drivers into one visual."
+                      "See whether the market feels strong or weak, and why."
                     )}
                   />
                   <MarketPulsePanel
@@ -1891,11 +1891,11 @@ export default function App() {
               <section className="overview-grid secondary">
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "크로스마켓 비교", "Cross-market compare")}
+                    title={t(appLocale, "시장 비교", "Market compare")}
                     subtitle={t(
                       appLocale,
                       "공식 시계열이 있는 시장만 100 기준으로 비교합니다.",
-                      "Only markets with official history are normalized to 100."
+                      "Put markets on the same starting line and compare strength."
                     )}
                   />
                   {crossMarketPoints.length > 1 && crossMarketSeries.length > 0 ? (
@@ -1920,11 +1920,11 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "가격 영향 히트맵", "Driver heatmap")}
+                    title={t(appLocale, "가격에 영향을 주는 것들", "What moves price")}
                     subtitle={t(
                       appLocale,
                       "연구 기반 인자군을 국가별로 한 번에 봅니다.",
-                      "See the research-based factor families across jurisdictions."
+                      "See which forces are moving prices across markets."
                     )}
                   />
                   <Heatmap
@@ -1941,7 +1941,7 @@ export default function App() {
                     subtitle={t(
                       appLocale,
                       "공식 거래량/경매 수량이 있는 시장만 표시합니다.",
-                      "Shown only when official volume data is available."
+                      "See how active the market is."
                     )}
                   />
                   {selectedVolumeSeries.length > 0 ? (
@@ -1957,11 +1957,11 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "패밀리 강도", "Family intensity")}
+                    title={t(appLocale, "무슨 힘이 큰지", "Biggest forces")}
                     subtitle={t(
                       appLocale,
                       "선택 시장의 인자군 강도를 압축해서 봅니다.",
-                      "Condensed view of factor-family intensity for the selected market."
+                      "Summarize the forces moving the market right now."
                     )}
                   />
                   <ColumnChart
@@ -1973,11 +1973,11 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "알림 분포", "Alert mix")}
+                    title={t(appLocale, "주의 알림", "Alerts")}
                     subtitle={t(
                       appLocale,
                       "현재 시장에 걸린 경보의 강도 분포입니다.",
-                      "Severity mix of active alerts on the current market."
+                      "See how many warnings need attention now."
                     )}
                   />
                   <div className="alert-meter-stack">
@@ -1999,11 +1999,11 @@ export default function App() {
               <section className="overview-grid feed-row">
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "시장 피드", "Market feed")}
+                    title={t(appLocale, "시장 소식", "Market feed")}
                     subtitle={t(
                       appLocale,
                       "글은 길지 않게, 판단에 필요한 문장만 남겼습니다.",
-                      "Short feed items only; no report-style blocks."
+                      "Read only the short items that matter for a decision."
                     )}
                   />
                   <div className="feed-list">
@@ -2023,11 +2023,11 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "다음 촉매", "Next catalysts")}
+                    title={t(appLocale, "앞으로 볼 일정", "Upcoming events")}
                     subtitle={t(
                       appLocale,
                       "정책, 경매, 공시를 일정처럼 관리합니다.",
-                      "Run policy, auction, and disclosure checkpoints like an operating calendar."
+                      "Track policy, auction, and disclosure dates in one place."
                     )}
                   />
                   <div className="timeline-list">
@@ -2053,7 +2053,7 @@ export default function App() {
               <section className="overview-grid">
                 <div className="panel panel-emphasis">
                   <SectionHeader
-                    title={t(appLocale, "드라이버 워터폴", "Driver waterfall")}
+                    title={t(appLocale, "무엇이 가격을 밀고 있나", "What is moving price")}
                     subtitle={t(
                       appLocale,
                       "매수·매도 판단에 가장 크게 기여한 인자입니다.",
@@ -2068,7 +2068,7 @@ export default function App() {
                 </div>
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "시그널 콕핏", "Signal cockpit")}
+                    title={t(appLocale, "지금 판단 위치", "Decision position")}
                     subtitle={t(
                       appLocale,
                       "지금 구간이 어디에 놓여 있는지, 어떤 인자가 밀고 있는지 먼저 확인합니다.",
@@ -2090,7 +2090,7 @@ export default function App() {
               <section className="overview-grid">
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "시나리오 슬라이더", "Scenario sliders")}
+                    title={t(appLocale, "가정 바꾸기", "Change assumptions")}
                     subtitle={t(
                       appLocale,
                       "핵심 드라이버를 직접 조정해 판단을 재계산합니다.",
@@ -2127,7 +2127,7 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "의사결정 설명", "Decision brief")}
+                    title={t(appLocale, "짧은 판단 설명", "Quick decision brief")}
                     subtitle={t(
                       appLocale,
                       "규칙 기반 판단과 LLM 브리프를 같은 패널에 둡니다.",
@@ -2150,7 +2150,7 @@ export default function App() {
               <section className="overview-grid tertiary">
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "LLM 설정", "LLM settings")}
+                    title={t(appLocale, "AI 설정", "AI settings")}
                     subtitle={t(
                       appLocale,
                       "키는 데스크톱 앱 로컬 저장소에만 저장됩니다.",
@@ -2178,7 +2178,7 @@ export default function App() {
                     </label>
                     <div className="settings-actions">
                       <button className="primary-button" onClick={() => void handleSaveLlmSettings()}>
-                        {t(appLocale, "LLM 설정 저장", "Save LLM settings")}
+                        {t(appLocale, "AI 설정 저장", "Save AI settings")}
                       </button>
                       <small>
                         {settings.hasOpenAIApiKey
@@ -2190,7 +2190,7 @@ export default function App() {
                 </div>
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "퀀트 지표", "Quant indicators")}
+                    title={t(appLocale, "판단 체크리스트", "Decision checklist")}
                     subtitle={t(
                       appLocale,
                       "매수·매도 타이밍 확인에 쓰는 핵심 체크리스트입니다.",
@@ -2210,7 +2210,7 @@ export default function App() {
 
                 <div className="panel">
                   <SectionHeader
-                    title={t(appLocale, "알림 허브", "Alert hub")}
+                    title={t(appLocale, "주의 알림 모음", "Alert hub")}
                     subtitle={t(
                       appLocale,
                       "활성 경보를 우선순위대로 정리합니다.",
@@ -2583,9 +2583,9 @@ function MarketBoard({
         <span>{t(locale, "공식 가격", "Official price")}</span>
         <span>{t(locale, "변동", "Move")}</span>
         <span>{t(locale, "거래량", "Volume")}</span>
-        <span>{t(locale, "바이어스", "Bias")}</span>
+        <span>{t(locale, "판단", "Bias")}</span>
         <span>{t(locale, "신뢰도", "Confidence")}</span>
-        <span>{t(locale, "추세", "Trend")}</span>
+        <span>{t(locale, "흐름", "Trend")}</span>
         <span>{t(locale, "업데이트", "Updated")}</span>
       </div>
       {rows.map((row) => (
@@ -2602,12 +2602,12 @@ function MarketBoard({
           </div>
           <div className="market-cell">
             <strong>{row.priceLabel}</strong>
-            <span>{t(locale, "상위 인자", "Top driver")} {row.topDriver}</span>
+            <span>{t(locale, "가장 큰 이유", "Top driver")} {row.topDriver}</span>
           </div>
           <div className="market-cell">
             <strong>{row.changeLabel}</strong>
             <span>
-              {t(locale, "판단 점수", "Decision score")} {formatNumber(locale, row.score, 2)}
+              {t(locale, "점수", "Decision score")} {formatNumber(locale, row.score, 2)}
             </span>
           </div>
           <div className="market-cell">
@@ -2621,7 +2621,7 @@ function MarketBoard({
           </div>
           <div className="market-cell">
             <strong>{formatNumber(locale, row.confidence * 100, 0)}%</strong>
-            <span>{t(locale, "모델 신뢰도", "Model confidence")}</span>
+            <span>{t(locale, "신뢰도", "Model confidence")}</span>
           </div>
           <div className="market-spark">
             {row.sparkline.length > 1 ? (
@@ -2632,7 +2632,7 @@ function MarketBoard({
           </div>
           <div className="market-cell market-time">
             <strong>{row.updatedLabel}</strong>
-            <span>{t(locale, "공식 시각", "Official timestamp")}</span>
+            <span>{t(locale, "갱신 시각", "Official timestamp")}</span>
           </div>
         </button>
       ))}
@@ -2676,9 +2676,9 @@ function MarketPulsePanel({
 
       <PressureBar
         value={normalizedScore}
-        negativeLabel={t(locale, "매도 우세", "Reduce")}
+        negativeLabel={t(locale, "매도 쪽", "Reduce")}
         neutralLabel={t(locale, "중립", "Neutral")}
-        positiveLabel={t(locale, "매수 우세", "Buy")}
+        positiveLabel={t(locale, "매수 쪽", "Buy")}
       />
 
       <div className="pulse-metric-strip">
@@ -2687,15 +2687,15 @@ function MarketPulsePanel({
           value={`${formatNumber(locale, decision.confidence * 100, 0)}%`}
         />
         <MetricPill
-          label={t(locale, "활성 인자", "Active drivers")}
+          label={t(locale, "움직이는 요인", "Active drivers")}
           value={String(forecast.contributions.filter((item) => Math.abs(item.contribution) > 0.05).length)}
         />
         <MetricPill
-          label={t(locale, "소스 상태", "Source health")}
+          label={t(locale, "데이터 상태", "Source health")}
           value={getStatusLabel(locale, sourceStatus)}
         />
         <MetricPill
-          label={t(locale, "업데이트", "Updated")}
+          label={t(locale, "갱신 시각", "Updated")}
           value={formatDate(locale, updatedAt)}
         />
       </div>

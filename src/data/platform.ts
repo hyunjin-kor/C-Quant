@@ -255,32 +255,32 @@ export const marketWatchItems: MarketWatchItem[] = [
     id: "yahoo-krbn",
     title: "Yahoo KRBN",
     category: "External market watch",
-    role: "빠른 ETF 차트·뉴스 확인",
+    role: "빠른 차트 참고",
     url: "https://de.finance.yahoo.com/quote/KRBN/",
-    note: "외부 참고용 시세 페이지로만 사용하며, 내부 핵심 데이터 소스로 쓰지 않습니다."
+    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
   },
   {
     id: "yahoo-keua",
     title: "Yahoo KEUA",
     category: "External market watch",
-    role: "EUA 중심 ETF 확인",
+    role: "빠른 차트 참고",
     url: "https://de.finance.yahoo.com/quote/KEUA/",
-    note: "EUA 노출 상품의 공개 차트를 빠르게 볼 때 유용합니다."
+    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
   },
   {
     id: "yahoo-co2",
     title: "Yahoo CO2.L",
     category: "External market watch",
-    role: "SparkChange EUA ETC 확인",
+    role: "빠른 차트 참고",
     url: "https://uk.finance.yahoo.com/quote/CO2.L/",
-    note: "EU 배출권 노출과 연결된 상장 ETC 참고 페이지입니다."
+    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
   },
   {
     id: "yahoo-iceeua",
     title: "Yahoo ^ICEEUA",
     category: "External market watch",
-    role: "ICE EUA 선물 초과수익 지수 확인",
+    role: "빠른 차트 참고",
     url: "https://uk.finance.yahoo.com/quote/%5EICEEUA/",
-    note: "ICE EUA 탄소 연동 지수를 공개 기준으로 빠르게 확인할 때 유용합니다."
+    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
   }
 ];
