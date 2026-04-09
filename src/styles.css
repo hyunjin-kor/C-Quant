@@ -497,6 +497,13 @@ textarea {
   border-bottom: 1px solid rgba(130, 146, 182, 0.12);
 }
 
+.linked-tape-row.active {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.96));
+  border-radius: 20px;
+  padding: 0.9rem 0.85rem;
+  box-shadow: inset 2px 0 0 #2f7bf6;
+}
+
 .linked-tape-main,
 .linked-tape-metric,
 .linked-tape-meta {
@@ -526,6 +533,51 @@ textarea {
   border-radius: 14px;
   overflow: hidden;
   background: rgba(240, 244, 250, 0.84);
+}
+
+.tape-workbench {
+  display: grid;
+  gap: 0.9rem;
+  padding-top: 0.35rem;
+}
+
+.tape-workbench-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tape-workbench-head div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.tape-workbench-head strong {
+  color: var(--text-strong);
+}
+
+.tape-workbench-head span {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.tape-metric-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.tape-workbench-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+}
+
+.tape-chart-stack,
+.tape-context {
+  display: grid;
+  gap: 0.9rem;
 }
 
 .operator-desk {
@@ -1618,7 +1670,9 @@ textarea {
   }
 
   .market-board-row.operational,
-  .linked-tape-row {
+  .linked-tape-row,
+  .tape-metric-strip,
+  .tape-workbench-grid {
     grid-template-columns: 1fr;
   }
 

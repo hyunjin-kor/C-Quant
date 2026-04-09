@@ -656,6 +656,32 @@ function formatLiveQuoteMove(locale: AppLocale, quote: MarketLiveQuote | undefin
   )}%)`;
 }
 
+function buildNormalizedTapeCompare(
+  officialSeries?: ConnectedSourceSeriesPoint[],
+  quoteSeries?: ConnectedSourceSeriesPoint[]
+): MultiLinePoint[] {
+  const officialPoints = getSeriesPoints(officialSeries);
+  const quotePoints = getSeriesPoints(quoteSeries);
+
+  if (officialPoints.length < 2 || quotePoints.length < 2) {
+    return [];
+  }
+
+  const officialBase = officialPoints[0]?.value || 1;
+  const quoteBase = quotePoints[0]?.value || 1;
+  const quoteByLabel = new Map(quotePoints.map((point) => [point.label, point.value]));
+
+  return officialPoints
+    .filter((point) => quoteByLabel.has(point.label))
+    .map((point) => ({
+      label: point.label,
+      values: {
+        official: officialBase === 0 ? 100 : (point.value / officialBase) * 100,
+        quote: quoteBase === 0 ? 100 : ((quoteByLabel.get(point.label) ?? 0) / quoteBase) * 100
+      }
+    }));
+}
+
 function getLiveQuoteStatusLabel(locale: AppLocale, quote: MarketLiveQuote | undefined) {
   if (!quote) {
     return t(locale, "미연결", "Unavailable");
@@ -1579,6 +1605,7 @@ export default function App() {
   const [appLocale, setAppLocale] = useState<AppLocale>(locale);
   const [surface, setSurface] = useState<Surface>("overview");
   const [marketId, setMarketId] = useState<MarketProfile["id"]>("eu-ets");
+  const [selectedLiveQuoteId, setSelectedLiveQuoteId] = useState<string>("");
   const [workspaceId, setWorkspaceId] = useState<string>("morning-scan");
   const [watchlistId, setWatchlistId] = useState<string>("core-carbon");
   const [watchViewId, setWatchViewId] = useState<string>("scan-view");
@@ -1662,6 +1689,13 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem("cquant:free-only-sources", String(freeOnlySources));
   }, [freeOnlySources]);
+
+  useEffect(() => {
+    if (selectedRelevantQuotes.some((quote) => quote.id === selectedLiveQuoteId)) {
+      return;
+    }
+    setSelectedLiveQuoteId(selectedDeskQuotes[0]?.id ?? selectedRelevantQuotes[0]?.id ?? "");
+  }, [marketId, selectedDeskQuotes, selectedLiveQuoteId, selectedRelevantQuotes]);
 
   useEffect(() => {
     const nextQuestion =
@@ -1796,6 +1830,36 @@ export default function App() {
         (quote) => quote.markets.includes(marketId) || quote.markets.includes("shared")
       ),
     [connectedSources.liveQuotes, marketId]
+  );
+  const selectedInteractiveQuote = useMemo(
+    () =>
+      selectedRelevantQuotes.find((quote) => quote.id === selectedLiveQuoteId) ??
+      selectedDeskQuotes[0] ??
+      selectedRelevantQuotes[0],
+    [selectedDeskQuotes, selectedLiveQuoteId, selectedRelevantQuotes]
+  );
+  const selectedInteractiveQuotePoints = useMemo(
+    () => getSeriesPoints(selectedInteractiveQuote?.series),
+    [selectedInteractiveQuote]
+  );
+  const selectedTapeComparePoints = useMemo(
+    () => buildNormalizedTapeCompare(localizedSelectedCard?.series, selectedInteractiveQuote?.series),
+    [localizedSelectedCard?.series, selectedInteractiveQuote]
+  );
+  const selectedTapeCompareSeries = useMemo<MultiLineSeries[]>(
+    () => [
+      {
+        id: "official",
+        label: t(appLocale, "공식 시세", "Official tape"),
+        color: marketColor(marketId)
+      },
+      {
+        id: "quote",
+        label: selectedInteractiveQuote?.title ?? t(appLocale, "연결된 테이프", "Linked tape"),
+        color: "#2f7bf6"
+      }
+    ],
+    [appLocale, marketId, selectedInteractiveQuote?.title]
   );
   const selectedForecast = forecasts[marketId];
   const decisionsByMarket = useMemo(
@@ -2485,8 +2549,18 @@ export default function App() {
                   />
                   <LinkedTapePanel
                     locale={appLocale}
-                    quotes={selectedDeskQuotes}
-                    onOpenLink={handleOpenExternal}
+                    quotes={selectedRelevantQuotes}
+                    selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
+                    onSelectQuote={setSelectedLiveQuoteId}
+                  />
+                  <LiveTapeWorkbench
+                    locale={appLocale}
+                    officialCard={localizedSelectedCard}
+                    quote={selectedInteractiveQuote}
+                    quotePoints={selectedInteractiveQuotePoints}
+                    comparePoints={selectedTapeComparePoints}
+                    compareSeries={selectedTapeCompareSeries}
+                    onOpenSource={handleOpenExternal}
                   />
                 </div>
 
@@ -3452,11 +3526,13 @@ function OperationalMarketBoard({
 function LinkedTapePanel({
   locale,
   quotes,
-  onOpenLink
+  selectedQuoteId,
+  onSelectQuote
 }: {
   locale: AppLocale;
   quotes: MarketLiveQuote[];
-  onOpenLink: (url: string) => void | Promise<void>;
+  selectedQuoteId: string;
+  onSelectQuote: (quoteId: string) => void;
 }) {
   if (quotes.length === 0) {
     return (
@@ -3474,12 +3550,12 @@ function LinkedTapePanel({
   }
 
   return (
-    <div className="linked-tape-list">
+      <div className="linked-tape-list">
       {quotes.map((quote) => (
         <button
           key={quote.id}
-          className="linked-tape-row"
-          onClick={() => void onOpenLink(quote.sourceUrl)}
+          className={`linked-tape-row ${quote.id === selectedQuoteId ? "active" : ""}`}
+          onClick={() => onSelectQuote(quote.id)}
         >
           <div className="linked-tape-main">
             <strong>{quote.title}</strong>
@@ -3504,6 +3580,136 @@ function LinkedTapePanel({
           </div>
         </button>
       ))}
+    </div>
+  );
+}
+
+function LiveTapeWorkbench({
+  locale,
+  officialCard,
+  quote,
+  quotePoints,
+  comparePoints,
+  compareSeries,
+  onOpenSource
+}: {
+  locale: AppLocale;
+  officialCard: ConnectedSourceCard | undefined;
+  quote: MarketLiveQuote | undefined;
+  quotePoints: ChartPoint[];
+  comparePoints: MultiLinePoint[];
+  compareSeries: MultiLineSeries[];
+  onOpenSource: (url: string) => void | Promise<void>;
+}) {
+  if (!quote) {
+    return null;
+  }
+
+  return (
+    <div className="tape-workbench">
+      <div className="tape-workbench-head">
+        <div>
+          <strong>{quote.title}</strong>
+          <span>{quote.role}</span>
+        </div>
+        <button className="subtle-button" onClick={() => void onOpenSource(quote.sourceUrl)}>
+          {t(locale, "출처 보기", "Open source")}
+        </button>
+      </div>
+
+      <div className="tape-metric-strip">
+        <MetricPill
+          label={t(locale, "현재 값", "Current price")}
+          value={formatLiveQuotePrice(locale, quote)}
+        />
+        <MetricPill
+          label={t(locale, "변동", "Move")}
+          value={formatLiveQuoteMove(locale, quote)}
+        />
+        <MetricPill
+          label={t(locale, "지연/상태", "Delay / status")}
+          value={getLiveQuoteStatusLabel(locale, quote)}
+        />
+        <MetricPill
+          label={t(locale, "기준", "Role")}
+          value={quote.category}
+        />
+      </div>
+
+      <div className="tape-workbench-grid">
+        <div className="tape-chart-stack">
+          {quotePoints.length > 1 ? (
+            <LineChart
+              points={quotePoints}
+              color="#2f7bf6"
+              valueFormatter={(value) => formatNumber(locale, value, value >= 10 ? 2 : 3)}
+              title={t(locale, "선택한 테이프 차트", "Selected tape chart")}
+              subtitle={quote.delayNote}
+            />
+          ) : (
+            <div className="empty-plot">
+              <strong>{t(locale, "차트 데이터 부족", "Not enough chart data")}</strong>
+              <p>{quote.note}</p>
+            </div>
+          )}
+
+          {comparePoints.length > 1 ? (
+            <MultiLineChart
+              points={comparePoints}
+              series={compareSeries}
+              valueFormatter={(value) => formatNumber(locale, value, 0)}
+            />
+          ) : (
+            <div className="empty-plot">
+              <strong>{t(locale, "공식 시세와 비교 준비 중", "Official comparison not available yet")}</strong>
+              <p>
+                {officialCard?.series?.length
+                  ? t(
+                      locale,
+                      "연결된 테이프와 공식 시세의 날짜가 충분히 겹치지 않아 정규화 비교를 만들지 못했습니다.",
+                      "The linked tape and official series do not overlap enough yet for a normalized comparison."
+                    )
+                  : t(
+                      locale,
+                      "공식 시계열이 없는 시장은 이벤트와 공시를 우선 해석해야 합니다.",
+                      "When there is no official time series, decisions should lean more on bulletins and events."
+                    )}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="tape-context">
+          <div className="operator-row">
+            <strong>{t(locale, "이 테이프를 보는 이유", "Why this tape matters")}</strong>
+            <span>{quote.note}</span>
+          </div>
+          <div className="operator-row">
+            <strong>{t(locale, "실무 해석", "Desk interpretation")}</strong>
+            <span>{quote.role}</span>
+          </div>
+          <div className="operator-row">
+            <strong>{t(locale, "주의", "Caution")}</strong>
+            <span>{quote.delayNote}</span>
+          </div>
+          <div className="operator-row">
+            <strong>{t(locale, "공식 기준과의 관계", "Relation to the official tape")}</strong>
+            <span>
+              {officialCard
+                ? t(
+                    locale,
+                    "이 값은 공식 시세를 대체하지 않습니다. 공식 카드와 함께 보면서 괴리와 방향 일치 여부를 확인해야 합니다.",
+                    "This tape does not replace the official market tape. It should be used alongside the official card to check divergence and direction."
+                  )
+                : t(
+                    locale,
+                    "공식 시세가 약한 시장에서는 이 테이프를 참고하되, 정책 공시와 운영 데이터도 함께 봐야 합니다.",
+                    "When the official market tape is weak, use this tape as context and confirm with policy and operations releases."
+                  )}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
