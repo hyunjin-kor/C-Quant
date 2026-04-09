@@ -68,6 +68,8 @@ import type {
   WalkForwardResult
 } from "./types";
 
+const appIconUrl = new URL("../assets/app-icon.png", import.meta.url).href;
+
 declare global {
   interface Window {
     desktopBridge?: {
@@ -215,6 +217,33 @@ const workspaceRouting: Record<
   "policy-supply": { surface: "sources", marketId: "eu-ets", watchlistId: "official-only" },
   "futures-etf": { surface: "overview", marketId: "eu-ets", watchlistId: "listed-proxies" },
   "model-review": { surface: "lab" }
+};
+
+const CATEGORY_LABELS_KO: Record<string, string> = {
+  "Consumer scan UX": "소비자 스캔 UX",
+  "Trading workspace": "트레이딩 워크스페이스",
+  "Research dashboard": "리서치 대시보드",
+  "Carbon news and dossiers": "탄소 뉴스·도시에",
+  "Decision layer": "의사결정 레이어",
+  "Position optimization": "포지션 최적화",
+  "Primary price source": "핵심 가격 소스",
+  "Premium market data": "프리미엄 시장 데이터",
+  "Power fundamentals": "전력 기초 데이터",
+  "Gas fundamentals": "가스 기초 데이터",
+  "Macro statistics": "거시 통계",
+  "Weather and climate": "날씨·기후",
+  "Policy and infrastructure": "정책·인프라",
+  "Official futures venue": "공식 선물 거래소",
+  "Official exchange page": "공식 거래소 페이지",
+  "Official issuer page": "공식 운용사 페이지",
+  "External market watch": "외부 시세 확인"
+};
+
+const METHOD_LABELS_KO: Record<string, string> = {
+  "Official Web": "공식 웹",
+  "Official File": "공식 문서",
+  "Public API": "공개 API",
+  "Commercial API": "상업 API"
 };
 
 function t(locale: AppLocale, ko: string, en: string) {
@@ -431,6 +460,248 @@ function downloadText(filename: string, content: string) {
 
 function marketColor(marketId: MarketProfile["id"]) {
   return MARKET_ACCENTS[marketId];
+}
+
+function localizeLabel(locale: AppLocale, value: string, dictionary: Record<string, string>) {
+  if (locale === "en") {
+    return value;
+  }
+  return dictionary[value] ?? value;
+}
+
+function localizeMetricLabel(locale: AppLocale, label: string) {
+  if (locale === "en") {
+    return label;
+  }
+
+  const normalized = label.toLowerCase();
+  if (normalized.includes("auction price")) return "경매가";
+  if (normalized.includes("auction volume")) return "경매 수량";
+  if (normalized.includes("cover ratio")) return "커버율";
+  if (normalized.includes("auction revenue")) return "경매 대금";
+  if (normalized.includes("price change")) return "직전 경매 대비";
+  if (normalized === "close") return "종가";
+  if (normalized.includes("day change")) return "전일 대비";
+  if (normalized === "return") return "등락률";
+  if (normalized === "volume") return "거래량";
+  if (normalized.includes("20d avg volume")) return "20일 평균 거래량";
+  if (normalized.includes("year-end close")) return "연말 종가";
+  if (normalized.includes("average price")) return "평균 가격";
+  if (normalized.includes("annual volume")) return "연간 거래량";
+  if (normalized.includes("annual turnover")) return "연간 거래대금";
+  return label;
+}
+
+function localizeConnectedCard(locale: AppLocale, card: ConnectedSourceCard | undefined) {
+  if (!card) {
+    return undefined;
+  }
+
+  if (locale === "en") {
+    return card;
+  }
+
+  const sourceNames: Partial<Record<ConnectedSourceCard["id"], string>> = {
+    "eu-ets-official": "EEX 공식 경매 리포트",
+    "k-ets-official": "KRX ETS 공식 시세",
+    "cn-ets-official": "중국 MEE 공식 공시 피드"
+  };
+
+  const coverageLabels: Partial<Record<ConnectedSourceCard["id"], string>> = {
+    "eu-ets-official": "EU 1차 경매 공식 테이프",
+    "k-ets-official": "KRX 공식 가격·거래량",
+    "cn-ets-official": "MEE 정책·운영 공시"
+  };
+
+  const headline =
+    card.headline === "Connection unavailable"
+      ? "연결 불가"
+      : card.id === "k-ets-official" && /official close/i.test(card.headline)
+      ? "KRX 공식 종가"
+      : card.headline;
+
+  const summary =
+    card.headline === "Connection unavailable"
+      ? "현재 환경에서 공식 소스를 불러오지 못했습니다."
+      : card.id === "eu-ets-official"
+      ? card.summary
+          .replace("Latest official primary auction cleared at EUR ", "가장 최근 공식 1차 경매 낙찰가: EUR ")
+          .replace("/tCO2.", "/tCO2")
+      : card.id === "k-ets-official"
+        ? "KRX 공식 화면 기준 종가와 거래량입니다."
+        : card.id === "cn-ets-official"
+          ? "환경부 공시 피드 기준 최신 탄소시장 공지입니다."
+          : card.summary;
+
+  const notes = card.notes.map((note) => {
+    if (/primary auctions/i.test(note)) {
+      return "이 소스는 EU 1차 경매를 보여주며, ICE 2차 시장 선물 가격을 대체하지 않습니다.";
+    }
+    if (/zero-volume rows/i.test(note)) {
+      return "휴장성 구간에서도 KRX는 거래량 0 행을 반환할 수 있으며, 앱은 해당 값을 그대로 표시합니다.";
+    }
+    if (/policy and operations releases/i.test(note)) {
+      return "이 소스는 안정적인 일별 거래 테이프가 아니라 MEE의 정책·운영 공시 피드입니다.";
+    }
+    if (/Numeric operating metrics/i.test(note)) {
+      return "수치형 운영 통계는 가장 최근의 통계 포함 공시에서 가져옵니다.";
+    }
+    if (/could not fetch/i.test(note)) {
+      return "현재 환경에서 공식 소스를 불러오지 못했습니다.";
+    }
+    return note;
+  });
+
+  return {
+    ...card,
+    sourceName: sourceNames[card.id] ?? card.sourceName,
+    coverage: coverageLabels[card.id] ?? card.coverage,
+    seriesLabel:
+      card.seriesLabel === "Auction price"
+        ? "경매가"
+        : card.seriesLabel === "Official close"
+          ? "공식 종가"
+          : card.seriesLabel,
+    headline,
+    summary,
+    metrics: card.metrics.map((metric) => ({
+      ...metric,
+      label: localizeMetricLabel(locale, metric.label)
+    })),
+    notes
+  };
+}
+
+function localizeQuantIndicator(locale: AppLocale, indicator: (typeof quantIndicators)[number]) {
+  if (locale === "en") {
+    return indicator;
+  }
+
+  const overrides: Record<string, { name: string; family: string; whyItMatters: string }> = {
+    "clean-spreads": {
+      name: "클린 다크·스파크 스프레드",
+      family: "연료 전환",
+      whyItMatters: "석탄과 가스 중 어떤 발전원이 한계 발전원이 되는지 보여줘 배출권 수요를 직접 읽게 해줍니다."
+    },
+    "auction-signal": {
+      name: "경매 커버율·공급 캘린더",
+      family: "시장 미시구조",
+      whyItMatters: "경매 리듬은 단기 공급 충격과 체결 슬리피지를 해석하는 핵심 단서입니다."
+    },
+    "compliance-seasonality": {
+      name: "이행 시즌성",
+      family: "캘린더",
+      whyItMatters: "제출 시즌은 반복되는 유동성·수요 패턴을 만들어 약한 장세보다 더 강하게 작동할 수 있습니다."
+    },
+    "relative-value": {
+      name: "리드-래그 상대가치",
+      family: "상대가치",
+      whyItMatters: "에너지나 산업지표가 먼저 움직이고 탄소가 뒤따를 때 잔차 기반 타이밍을 잡는 데 유용합니다."
+    },
+    "trend-regime": {
+      name: "추세·변동성 레짐 필터",
+      family: "리스크 관리",
+      whyItMatters: "정책 헤드라인에 급변하는 구간에서 취약한 신호를 걸러 포지션 과민 반응을 줄입니다."
+    },
+    "open-interest-liquidity": {
+      name: "미결제약정·거래량·참여 폭",
+      family: "체결",
+      whyItMatters: "방향은 맞아도 시장이 얇으면 실행이 무너지므로, 유동성 자체를 별도 신호로 봐야 합니다."
+    }
+  };
+
+  const mapped = overrides[indicator.id];
+  return mapped ? { ...indicator, ...mapped } : indicator;
+}
+
+function localizeDatasetSchema(
+  locale: AppLocale,
+  schema: (typeof marketDatasetSchemas)[number]
+) {
+  if (locale === "en") {
+    return schema;
+  }
+
+  const schemaNames: Record<string, { name: string; description: string }> = {
+    "eu-ets-daily": {
+      name: "EU ETS 일간 피처 스토어",
+      description: "EUA 가격, 연료 전환, 경매 공급, 거시 스트레스를 위한 표준 학습 테이블입니다."
+    },
+    "k-ets-daily": {
+      name: "K-ETS 일간 피처 스토어",
+      description: "KAU 가격, 상쇄시장, 이행 시즌성, 유동성 레짐을 위한 표준 학습 테이블입니다."
+    },
+    "cn-ets-daily": {
+      name: "중국 ETS 일간 피처 스토어",
+      description: "전국 탄소시장 가격, 석탄·전력 연동, 정책 확장 이벤트를 위한 표준 학습 테이블입니다."
+    }
+  };
+
+  const columnDescriptions: Record<string, string> = {
+    date: "거래일",
+    close: "종가",
+    volume: "일 거래량",
+    auction_cover: "경매 커버율",
+    ttf_gas: "TTF 가스 근월물 또는 대체 프록시",
+    power_price: "전력 현물 또는 근월물",
+    coal_price: "석탄 벤치마크",
+    brent: "브렌트유",
+    industrial_output: "산업활동 지표",
+    weather_index: "기온 또는 잔여수요 프록시",
+    open_interest: "선물 미결제약정",
+    policy_flag: "중요 정책 이벤트일이면 1",
+    kcu_close: "KCU 종가",
+    koc_close: "KOC 종가",
+    wti: "WTI 유가",
+    usdkrw: "원달러 환율",
+    call_rate: "한국 콜금리",
+    kospi: "국내 주가 프록시",
+    compliance_flag: "이행 보고 구간이면 1",
+    lng_price: "LNG 또는 가스 프록시",
+    aqi: "대기질 지수 프록시",
+    industrial_index: "산업활동 프록시",
+    allocation_intensity: "할당 강도 또는 제도 프록시",
+    sector_expansion_flag: "업종 확장 이벤트면 1"
+  };
+
+  const columnSourceHints: Record<string, string> = {
+    "Exchange calendar": "거래소 캘린더",
+    "ICE / EEX": "ICE / EEX",
+    "ICE / broker feed": "ICE / 브로커 피드",
+    "EEX auctions": "EEX 경매",
+    "Gas data vendor": "가스 데이터 벤더",
+    "EPEX / power vendor": "전력 데이터 벤더",
+    "Coal vendor": "석탄 데이터 벤더",
+    "Commodity vendor": "상품 데이터 벤더",
+    "Eurostat / macro vendor": "Eurostat / 거시 데이터 벤더",
+    "Weather provider": "날씨 데이터 벤더",
+    ICE: "ICE",
+    "Manual event calendar": "수동 이벤트 캘린더",
+    "KRX calendar": "KRX 캘린더",
+    "KRX ETS": "KRX ETS",
+    "MOE / KRX auction release": "환경부 / KRX 경매 공시",
+    "FX vendor": "환율 데이터 벤더",
+    BoK: "한국은행",
+    KRX: "KRX",
+    "National market calendar": "전국 시장 캘린더",
+    "National market data feed": "전국 시장 데이터 피드",
+    "Power market feed": "전력시장 데이터 피드",
+    "Environmental data provider": "환경 데이터 벤더",
+    "Exchange / macro vendor": "거래소 / 거시 데이터 벤더",
+    "Policy normalization layer": "정책 정규화 레이어",
+    "MEE event calendar": "MEE 이벤트 캘린더"
+  };
+
+  return {
+    ...schema,
+    ...(schemaNames[schema.id] ?? {}),
+    cadence: "일간",
+    columns: schema.columns.map((column) => ({
+      ...column,
+      description: columnDescriptions[column.name] ?? column.description,
+      sourceHint: columnSourceHints[column.sourceHint] ?? column.sourceHint
+    }))
+  };
 }
 
 function getSnapshotCard(
@@ -840,6 +1111,10 @@ export default function App() {
     [appLocale]
   );
   const localizedCatalysts = useLocalizedCatalysts(appLocale, marketId);
+  const localizedQuantIndicators = useMemo(
+    () => quantIndicators.map((item) => localizeQuantIndicator(appLocale, item)),
+    [appLocale]
+  );
 
   useEffect(() => {
     window.localStorage.setItem("cquant:locale", appLocale);
@@ -939,13 +1214,17 @@ export default function App() {
   );
 
   const selectedCard = cardsByMarket[marketId];
+  const localizedSelectedCard = useMemo(
+    () => localizeConnectedCard(appLocale, selectedCard),
+    [appLocale, selectedCard]
+  );
   const selectedForecast = forecasts[marketId];
   const selectedDecision = useMemo(
     () =>
       buildRuleDecision(
         appLocale,
         selectedMarket,
-        selectedCard,
+        localizedSelectedCard,
         selectedForecast,
         selectedAlerts,
         localizedCatalysts,
@@ -956,7 +1235,7 @@ export default function App() {
       currentState,
       localizedCatalysts,
       selectedAlerts,
-      selectedCard,
+      localizedSelectedCard,
       selectedForecast,
       selectedMarket
     ]
@@ -1051,8 +1330,12 @@ export default function App() {
   );
 
   const datasetSchema = useMemo(
-    () => marketDatasetSchemas.find((item) => item.marketId === marketId) ?? marketDatasetSchemas[0],
-    [marketId]
+    () =>
+      localizeDatasetSchema(
+        appLocale,
+        marketDatasetSchemas.find((item) => item.marketId === marketId) ?? marketDatasetSchemas[0]
+      ),
+    [appLocale, marketId]
   );
 
   const activeWorkspace = useMemo(
@@ -1087,9 +1370,12 @@ export default function App() {
       for (const item of selectedSources) {
         counts.set(item.method, (counts.get(item.method) ?? 0) + 1);
       }
-      return Array.from(counts.entries()).map(([label, value]) => ({ label, value }));
+      return Array.from(counts.entries()).map(([label, value]) => ({
+        label: localizeLabel(appLocale, label, METHOD_LABELS_KO),
+        value
+      }));
     },
-    [selectedSources]
+    [appLocale, selectedSources]
   );
 
   const alertCountPoints = useMemo<ChartPoint[]>(
@@ -1104,8 +1390,8 @@ export default function App() {
   );
 
   const feedItems = useMemo(
-    () => makeFeedItems(appLocale, selectedCard, decisionView, selectedAlerts, localizedCatalysts),
-    [appLocale, decisionView, localizedCatalysts, selectedAlerts, selectedCard]
+    () => makeFeedItems(appLocale, localizedSelectedCard, decisionView, selectedAlerts, localizedCatalysts),
+    [appLocale, decisionView, localizedCatalysts, localizedSelectedCard, selectedAlerts]
   );
 
   const backtestChartPoints = useMemo<ChartPoint[]>(
@@ -1282,7 +1568,7 @@ export default function App() {
         payload: buildDecisionPayload({
           locale: appLocale,
           market: selectedMarket,
-          card: selectedCard,
+          card: localizedSelectedCard,
           forecast: selectedForecast,
           familyScores: familyScoresByMarket[marketId],
           alerts: selectedAlerts,
@@ -1325,7 +1611,7 @@ export default function App() {
     <div className="terminal-shell">
       <header className="titlebar">
         <div className="titlebar-brand" style={{ WebkitAppRegion: "drag" } as CSSProperties}>
-          <img src="./assets/app-icon.png" alt="C-Quant" className="brand-mark" />
+          <img src={appIconUrl} alt="C-Quant" className="brand-mark" />
           <div>
             <strong>C-Quant</strong>
             <span>{t(appLocale, "탄소배출권 의사결정 터미널", "Carbon allowance decision terminal")}</span>
@@ -1495,7 +1781,7 @@ export default function App() {
                   <SectionHeader
                     title={t(appLocale, "공식 가격 테이프", "Official market tape")}
                     subtitle={
-                      selectedCard?.seriesLabel ??
+                      localizedSelectedCard?.seriesLabel ??
                       t(
                         appLocale,
                         "시계열 미공개 시장은 이벤트 중심으로 해석합니다.",
@@ -1507,14 +1793,14 @@ export default function App() {
                     <LineChart
                       points={selectedSeries}
                       color={marketColor(marketId)}
-                      title={selectedCard?.sourceName}
-                      subtitle={`${t(appLocale, "업데이트", "Updated")} ${formatDate(appLocale, selectedCard?.asOf)}`}
+                      title={localizedSelectedCard?.sourceName}
+                      subtitle={`${t(appLocale, "업데이트", "Updated")} ${formatDate(appLocale, localizedSelectedCard?.asOf)}`}
                     />
                   ) : (
                     <div className="empty-plot">
                       <strong>{t(appLocale, "연속 시계열 없음", "No continuous official time series")}</strong>
                       <p>
-                        {selectedCard?.summary ??
+                        {localizedSelectedCard?.summary ??
                           t(
                             appLocale,
                             "최신 공식 공지를 중심으로 해석합니다.",
@@ -1838,7 +2124,7 @@ export default function App() {
                     )}
                   />
                   <div className="indicator-list">
-                    {quantIndicators.map((indicator) => (
+                    {localizedQuantIndicators.map((indicator) => (
                       <div key={indicator.id} className="indicator-item">
                         <strong>{indicator.name}</strong>
                         <span>{indicator.family}</span>
@@ -2062,7 +2348,7 @@ export default function App() {
                       <button key={item.id} className="watch-row" onClick={() => void handleOpenExternal(item.url)}>
                         <div>
                           <strong>{item.title}</strong>
-                          <span>{item.category}</span>
+                          <span>{localizeLabel(appLocale, item.category, CATEGORY_LABELS_KO)}</span>
                         </div>
                         <div>
                           <strong>{item.role}</strong>
@@ -2089,7 +2375,7 @@ export default function App() {
                       <button key={item.id} className="source-item" onClick={() => void handleOpenExternal(item.url)}>
                         <div className="source-head">
                           <strong>{item.title}</strong>
-                          <span>{item.method}</span>
+                          <span>{localizeLabel(appLocale, item.method, METHOD_LABELS_KO)}</span>
                         </div>
                         <p>{item.appUse}</p>
                         <small>{item.whyItMatters}</small>
@@ -2111,7 +2397,7 @@ export default function App() {
                     {localizedBenchmarks.map((item) => (
                       <button key={item.id} className="benchmark-item" onClick={() => void handleOpenExternal(item.source.url)}>
                         <strong>{item.name}</strong>
-                        <span>{item.category}</span>
+                        <span>{localizeLabel(appLocale, item.category, CATEGORY_LABELS_KO)}</span>
                         <p>{item.strength}</p>
                       </button>
                     ))}

@@ -49,9 +49,9 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       accessed
     },
     featuresToBorrow: [
-      "Up to 16 charts per screen과 synchronized symbols/timeframes",
-      "synced layouts, watchlists, settings",
-      "global real-time news와 다층 분석 도구"
+      "화면당 최대 16개 차트와 종목·타임프레임 동기화",
+      "동기화된 레이아웃, 워치리스트, 설정",
+      "글로벌 실시간 뉴스와 다층 분석 도구"
     ],
     implementedAs: [
       "워크스페이스 프리셋",
@@ -73,9 +73,9 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       accessed
     },
     featuresToBorrow: [
-      "customizable watchlists",
-      "dashboard-style monitoring",
-      "research-first layout presets"
+      "사용자 정의 워치리스트",
+      "대시보드형 모니터링",
+      "리서치 중심 레이아웃 프리셋"
     ],
     implementedAs: [
       "저장형 워치리스트 프리셋",
@@ -112,18 +112,18 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     name: "Sylvera",
     category: "Decision layer",
     strength:
-      "ratings, market intelligence, market gateway를 묶어 신뢰와 설명 가능성을 앞세웁니다.",
+      "평가, 시장 인텔리전스, 마켓 게이트웨이를 묶어 신뢰와 설명 가능성을 앞세웁니다.",
     differentiator:
-      "decision layer라는 포지셔닝과 trusted data framing이 강합니다.",
+      "의사결정 레이어라는 포지셔닝과 신뢰 데이터 중심 프레이밍이 강합니다.",
     source: {
       label: "Sylvera",
       url: "https://www.sylvera.com/",
       accessed
     },
     featuresToBorrow: [
-      "trusted ratings and data framing",
-      "market intelligence layer",
-      "buyers, investors 관점의 설명 구조"
+      "신뢰 중심의 평가와 데이터 프레이밍",
+      "시장 인텔리전스 레이어",
+      "구매자·투자자 관점의 설명 구조"
     ],
     implementedAs: [
       "신뢰 센터",
@@ -138,16 +138,16 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     strength:
       "시나리오 예측, 관할권 집계, 시장 인텔리전스를 통합해 컴플라이언스 포지션을 관리합니다.",
     differentiator:
-      "jurisdiction-level consolidated view와 scenario forecasting을 하나의 운영 도구로 묶습니다.",
+      "관할권 통합 뷰와 시나리오 예측을 하나의 운영 도구로 묶습니다.",
     source: {
       label: "ClearBlue Vantage Position Optimization",
       url: "https://www.clearbluemarkets.com/news/introducing-vantage-position-optimization-enhancing-carbon-market-management",
       accessed
     },
     featuresToBorrow: [
-      "scenario forecasting",
-      "jurisdictional aggregation",
-      "unified dashboard for risk and reporting"
+      "시나리오 예측",
+      "관할권 집계",
+      "리스크·리포팅 통합 대시보드"
     ],
     implementedAs: [
       "크로스마켓 비교 보드",
