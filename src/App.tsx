@@ -64,6 +64,7 @@ import type {
   ConnectedSourceSeriesPoint,
   DecisionAssistantResponse,
   DecisionReasonItem,
+  MarketLiveQuote,
   MarketDriver,
   MarketProfile,
   ParsedSeriesPoint,
@@ -151,6 +152,15 @@ type MarketBoardRow = SnapshotCard & {
   updatedLabel: string;
   sourceName: string;
   topDriver: string;
+  benchmarkTitle: string;
+  benchmarkValue: string;
+  benchmarkMove: string;
+  benchmarkNote: string;
+  benchmarkDelay: string;
+  benchmarkStatus: string;
+  benchmarkSparkline: ChartPoint[];
+  operationsFocus: string;
+  operationsCheck: string;
 };
 
 const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
@@ -210,6 +220,7 @@ const NEGATIVE = "#ff6f61";
 const emptySources: ConnectedSourcePayload = {
   fetchedAt: "",
   cards: [],
+  liveQuotes: [],
   warnings: []
 };
 const defaultSettings: AppSettings = {
@@ -620,6 +631,81 @@ function localizeConnectedCard(locale: AppLocale, card: ConnectedSourceCard | un
       label: localizeMetricLabel(locale, metric.label)
     })),
     notes
+  };
+}
+
+function formatLiveQuotePrice(locale: AppLocale, quote: MarketLiveQuote | undefined) {
+  if (!quote || quote.price === null) {
+    return t(locale, "데이터 없음", "No tape");
+  }
+
+  const digits = Math.abs(quote.price) >= 100 ? 0 : Math.abs(quote.price) >= 10 ? 2 : 3;
+  return `${quote.currency} ${formatNumber(locale, quote.price, digits)}`;
+}
+
+function formatLiveQuoteMove(locale: AppLocale, quote: MarketLiveQuote | undefined) {
+  if (!quote || quote.change === null || quote.changePct === null) {
+    return t(locale, "변동 데이터 없음", "No move data");
+  }
+
+  const sign = quote.change > 0 ? "+" : "";
+  return `${sign}${formatNumber(locale, quote.change, 2)} (${sign}${formatNumber(
+    locale,
+    quote.changePct,
+    2
+  )}%)`;
+}
+
+function getLiveQuoteStatusLabel(locale: AppLocale, quote: MarketLiveQuote | undefined) {
+  if (!quote) {
+    return t(locale, "미연결", "Unavailable");
+  }
+
+  if (quote.status === "connected") {
+    return t(locale, "연결됨", "Connected");
+  }
+  if (quote.status === "limited") {
+    return t(locale, "제한됨", "Limited");
+  }
+  return t(locale, "오류", "Error");
+}
+
+function getOperatorDesk(locale: AppLocale, marketId: MarketProfile["id"]) {
+  if (marketId === "eu-ets") {
+    return {
+      primaryQuoteId: "eua-dec-benchmark",
+      supportQuoteIds: ["ttf-gas-future", "keua-proxy"],
+      focus: t(locale, "ICE EUA 선물과 공식 경매 가격의 괴리 확인", "Check ICE EUA futures versus the official auction tape"),
+      check: t(
+        locale,
+        "TTF 가스 선물과 다음 경매 일정이 같은 방향을 가리키는지 확인",
+        "Confirm that TTF gas and the next auction calendar still point in the same direction"
+      )
+    };
+  }
+
+  if (marketId === "k-ets") {
+    return {
+      primaryQuoteId: "krbn-proxy",
+      supportQuoteIds: ["eua-dec-benchmark"],
+      focus: t(locale, "KRX 공식 시세와 글로벌 탄소 프록시의 방향 차이 확인", "Check KRX official tape versus the global listed carbon proxy"),
+      check: t(
+        locale,
+        "국내 이행 시즌과 글로벌 탄소 약세·강세가 같이 가는지 확인",
+        "Check whether the domestic compliance season is moving in line with the global carbon proxy"
+      )
+    };
+  }
+
+  return {
+    primaryQuoteId: "krbn-proxy",
+    supportQuoteIds: ["eua-dec-benchmark"],
+    focus: t(locale, "중국 공식 공시와 글로벌 탄소 프록시의 괴리 확인", "Check the China official bulletin versus the global listed carbon proxy"),
+    check: t(
+      locale,
+      "섹터 확대 공시와 글로벌 탄소 방향이 충돌하는지 확인",
+      "Check whether expansion notices conflict with the direction of the global carbon proxy"
+    )
   };
 }
 
@@ -1415,13 +1501,14 @@ function buildDecisionPayload(args: {
   locale: AppLocale;
   market: MarketProfile;
   card: ConnectedSourceCard | undefined;
+  liveQuotes: MarketLiveQuote[];
   forecast: ReturnType<typeof buildForecast>;
   familyScores: Record<string, number>;
   alerts: AlertItem[];
   catalysts: ReturnType<typeof useLocalizedCatalysts>;
   question: string;
 }) {
-  const { locale, market, card, forecast, familyScores, alerts, catalysts, question } = args;
+  const { locale, market, card, liveQuotes, forecast, familyScores, alerts, catalysts, question } = args;
 
   return {
     question,
@@ -1459,6 +1546,20 @@ function buildDecisionPayload(args: {
       name: item.name,
       family: item.family,
       whyItMatters: item.whyItMatters
+    })),
+    liveQuotes: liveQuotes.slice(0, 6).map((quote) => ({
+      title: quote.title,
+      symbol: quote.symbol,
+      category: quote.category,
+      role: quote.role,
+      note: quote.note,
+      delayNote: quote.delayNote,
+      status: quote.status,
+      price: quote.price,
+      change: quote.change,
+      changePct: quote.changePct,
+      currency: quote.currency,
+      asOf: quote.asOf
     })),
     officialSeries: (card?.series ?? []).slice(-18),
     notes: card?.notes ?? []
@@ -1586,6 +1687,13 @@ export default function App() {
       ) as Partial<Record<MarketProfile["id"], ConnectedSourceCard>>,
     [connectedSources.cards]
   );
+  const liveQuotesById = useMemo(
+    () =>
+      Object.fromEntries(
+        connectedSources.liveQuotes.map((quote) => [quote.id, quote])
+      ) as Record<string, MarketLiveQuote>,
+    [connectedSources.liveQuotes]
+  );
 
   const derivedStates = useMemo(
     () =>
@@ -1659,6 +1767,35 @@ export default function App() {
   const localizedSelectedCard = useMemo(
     () => localizeConnectedCard(appLocale, selectedCard),
     [appLocale, selectedCard]
+  );
+  const selectedDesk = useMemo(() => getOperatorDesk(appLocale, marketId), [appLocale, marketId]);
+  const selectedPrimaryQuote = useMemo(
+    () => liveQuotesById[selectedDesk.primaryQuoteId],
+    [liveQuotesById, selectedDesk.primaryQuoteId]
+  );
+  const selectedSupportQuotes = useMemo(
+    () =>
+      selectedDesk.supportQuoteIds
+        .map((quoteId) => liveQuotesById[quoteId])
+        .filter((quote): quote is MarketLiveQuote => Boolean(quote)),
+    [liveQuotesById, selectedDesk.supportQuoteIds]
+  );
+  const selectedDeskQuotes = useMemo(() => {
+    const seen = new Set<string>();
+    return [selectedPrimaryQuote, ...selectedSupportQuotes].filter((quote): quote is MarketLiveQuote => {
+      if (!quote || seen.has(quote.id)) {
+        return false;
+      }
+      seen.add(quote.id);
+      return true;
+    });
+  }, [selectedPrimaryQuote, selectedSupportQuotes]);
+  const selectedRelevantQuotes = useMemo(
+    () =>
+      connectedSources.liveQuotes.filter(
+        (quote) => quote.markets.includes(marketId) || quote.markets.includes("shared")
+      ),
+    [connectedSources.liveQuotes, marketId]
   );
   const selectedForecast = forecasts[marketId];
   const decisionsByMarket = useMemo(
@@ -1771,6 +1908,8 @@ export default function App() {
           );
         const localizedCard = localizeConnectedCard(appLocale, cardsByMarket[profile.id]);
         const decision = decisionsByMarket[profile.id];
+        const desk = getOperatorDesk(appLocale, profile.id);
+        const primaryQuote = liveQuotesById[desk.primaryQuoteId];
 
         return {
           ...snapshot,
@@ -1779,10 +1918,27 @@ export default function App() {
           sourceName: localizedCard?.sourceName ?? t(appLocale, "공식 소스 미연결", "No official source"),
           topDriver:
             forecasts[profile.id].contributions[0]?.variable ??
-            t(appLocale, "주요 인자 없음", "No primary driver")
+            t(appLocale, "주요 인자 없음", "No primary driver"),
+          benchmarkTitle:
+            primaryQuote?.title ??
+            t(appLocale, "연결된 선물/프록시 없음", "No linked futures or proxy"),
+          benchmarkValue: formatLiveQuotePrice(appLocale, primaryQuote),
+          benchmarkMove: formatLiveQuoteMove(appLocale, primaryQuote),
+          benchmarkNote:
+            primaryQuote?.note ??
+            t(
+              appLocale,
+              "검증된 무료 선물/프록시 테이프를 아직 연결하지 못했습니다.",
+              "No verified free futures or proxy tape is currently linked."
+            ),
+          benchmarkDelay: primaryQuote?.delayNote ?? getLiveQuoteStatusLabel(appLocale, primaryQuote),
+          benchmarkStatus: getLiveQuoteStatusLabel(appLocale, primaryQuote),
+          benchmarkSparkline: getSeriesPoints(primaryQuote?.series),
+          operationsFocus: desk.focus,
+          operationsCheck: desk.check
         };
       }),
-    [appLocale, cardsByMarket, decisionsByMarket, forecasts, snapshotCards]
+    [appLocale, cardsByMarket, decisionsByMarket, forecasts, liveQuotesById, snapshotCards]
   );
 
   const heatmapRows = useMemo<HeatmapRow[]>(
@@ -2126,6 +2282,7 @@ export default function App() {
           locale: appLocale,
           market: selectedMarket,
           card: localizedSelectedCard,
+          liveQuotes: selectedRelevantQuotes,
           forecast: selectedForecast,
           familyScores: familyScoresByMarket[marketId],
           alerts: selectedAlerts,
@@ -2306,7 +2463,7 @@ export default function App() {
                 "Compare price, move, volume, and market tone at a glance."
               )}
             />
-            <MarketBoard
+            <OperationalMarketBoard
               locale={appLocale}
               rows={marketBoardRows}
               selectedMarketId={marketId}
@@ -2316,6 +2473,44 @@ export default function App() {
 
           {surface === "overview" ? (
             <>
+              <section className="overview-grid">
+                <div className="panel panel-emphasis">
+                  <SectionHeader
+                    title={t(appLocale, "실제 연결된 테이프", "Linked market tapes")}
+                    subtitle={t(
+                      appLocale,
+                      "공식 시세와 함께 실제로 참고하는 선물·프록시·드라이버 가격을 숫자로 확인합니다.",
+                      "Review the actual linked futures, proxy, and driver tapes alongside the official market."
+                    )}
+                  />
+                  <LinkedTapePanel
+                    locale={appLocale}
+                    quotes={selectedDeskQuotes}
+                    onOpenLink={handleOpenExternal}
+                  />
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "기관·기업 체크포인트", "Institution checklist")}
+                    subtitle={t(
+                      appLocale,
+                      "이 시장에서 실제로 확인해야 할 헤지 기준, 비교 기준, 다음 점검 항목을 정리했습니다.",
+                      "This is the practical checklist for the hedge anchor, comparison tape, and next checks."
+                    )}
+                  />
+                  <OperatorDeskPanel
+                    locale={appLocale}
+                    marketId={marketId}
+                    officialCard={localizedSelectedCard}
+                    primaryQuote={selectedPrimaryQuote}
+                    supportQuotes={selectedSupportQuotes}
+                    focus={selectedDesk.focus}
+                    check={selectedDesk.check}
+                  />
+                </div>
+              </section>
+
               <section className="overview-grid">
                 <div className="panel panel-emphasis">
                   <SectionHeader
@@ -3157,6 +3352,229 @@ function MarketBoard({
           </div>
         </button>
       ))}
+    </div>
+  );
+}
+
+function OperationalMarketBoard({
+  locale,
+  rows,
+  selectedMarketId,
+  onSelectMarket
+}: {
+  locale: AppLocale;
+  rows: MarketBoardRow[];
+  selectedMarketId: MarketProfile["id"];
+  onSelectMarket: (marketId: MarketProfile["id"]) => void;
+}) {
+  return (
+    <div className="market-board">
+      <div className="market-board-head operational">
+        <span>{t(locale, "시장", "Market")}</span>
+        <span>{t(locale, "공식 테이프", "Official tape")}</span>
+        <span>{t(locale, "연결된 선물·프록시", "Linked futures / proxy")}</span>
+        <span>{t(locale, "지금 확인할 것", "What to check now")}</span>
+        <span>{t(locale, "판단", "Bias")}</span>
+        <span>{t(locale, "신뢰도", "Confidence")}</span>
+        <span>{t(locale, "업데이트", "Updated")}</span>
+      </div>
+      {rows.map((row) => (
+        <button
+          key={row.marketId}
+          className={`market-board-row operational ${row.marketId === selectedMarketId ? "active" : ""}`}
+          onClick={() => onSelectMarket(row.marketId)}
+          style={{ "--market-accent": marketColor(row.marketId) } as CSSProperties}
+        >
+          <div className="market-main-cell">
+            <strong>{row.name}</strong>
+            <span>{row.sourceName}</span>
+            <small>{row.status}</small>
+          </div>
+
+          <div className="market-cell">
+            <strong>{row.priceLabel}</strong>
+            <span>
+              {t(locale, "변동", "Move")} {row.changeLabel}
+            </span>
+            <small>
+              {t(locale, "거래량", "Volume")} {row.volumeLabel}
+            </small>
+          </div>
+
+          <div className="market-quote-cell">
+            <div className="market-cell">
+              <strong>{row.benchmarkValue}</strong>
+              <span>{row.benchmarkTitle}</span>
+              <small>{row.benchmarkMove}</small>
+              <small>{row.benchmarkDelay}</small>
+            </div>
+            <div className="market-spark compact">
+              {row.benchmarkSparkline.length > 1 ? (
+                <Sparkline points={row.benchmarkSparkline} color={marketColor(row.marketId)} fill />
+              ) : (
+                <div className="snapshot-fallback">{row.benchmarkStatus}</div>
+              )}
+            </div>
+          </div>
+
+          <div className="market-cell">
+            <strong>{row.operationsFocus}</strong>
+            <span>{row.operationsCheck}</span>
+            <small>
+              {t(locale, "가장 큰 이유", "Top driver")} {row.topDriver}
+            </small>
+          </div>
+
+          <div className="market-cell market-bias-cell">
+            <span className={`stance-badge ${stanceBadgeClass(row.stance)}`}>
+              {stanceLabel(locale, row.stance)}
+            </span>
+            <small>
+              {t(locale, "점수", "Decision score")} {formatNumber(locale, row.score, 2)}
+            </small>
+          </div>
+
+          <div className="market-cell">
+            <strong>{formatNumber(locale, row.confidence * 100, 0)}%</strong>
+            <span>{t(locale, "모델 신뢰도", "Model confidence")}</span>
+          </div>
+
+          <div className="market-cell market-time">
+            <strong>{row.updatedLabel}</strong>
+            <span>{t(locale, "공식 시각", "Official timestamp")}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function LinkedTapePanel({
+  locale,
+  quotes,
+  onOpenLink
+}: {
+  locale: AppLocale;
+  quotes: MarketLiveQuote[];
+  onOpenLink: (url: string) => void | Promise<void>;
+}) {
+  if (quotes.length === 0) {
+    return (
+      <div className="empty-plot">
+        <strong>{t(locale, "연결된 테이프 없음", "No linked tape")}</strong>
+        <p>
+          {t(
+            locale,
+            "무료로 확인 가능한 선물·프록시 테이프가 아직 연결되지 않았습니다.",
+            "No free futures or proxy tape is currently connected."
+          )}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="linked-tape-list">
+      {quotes.map((quote) => (
+        <button
+          key={quote.id}
+          className="linked-tape-row"
+          onClick={() => void onOpenLink(quote.sourceUrl)}
+        >
+          <div className="linked-tape-main">
+            <strong>{quote.title}</strong>
+            <span>{quote.role}</span>
+            <small>{quote.note}</small>
+          </div>
+          <div className="linked-tape-metric">
+            <strong>{formatLiveQuotePrice(locale, quote)}</strong>
+            <span>{formatLiveQuoteMove(locale, quote)}</span>
+          </div>
+          <div className="linked-tape-spark">
+            {getSeriesPoints(quote.series).length > 1 ? (
+              <Sparkline points={getSeriesPoints(quote.series)} color="#2f7bf6" fill />
+            ) : (
+              <div className="snapshot-fallback">{getLiveQuoteStatusLabel(locale, quote)}</div>
+            )}
+          </div>
+          <div className="linked-tape-meta">
+            <strong>{quote.symbol}</strong>
+            <span>{quote.exchange || quote.provider}</span>
+            <small>{quote.delayNote}</small>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function OperatorDeskPanel({
+  locale,
+  marketId,
+  officialCard,
+  primaryQuote,
+  supportQuotes,
+  focus,
+  check
+}: {
+  locale: AppLocale;
+  marketId: MarketProfile["id"];
+  officialCard: ConnectedSourceCard | undefined;
+  primaryQuote: MarketLiveQuote | undefined;
+  supportQuotes: MarketLiveQuote[];
+  focus: string;
+  check: string;
+}) {
+  const hasPublicFutures = marketId === "eu-ets";
+
+  return (
+    <div className="operator-desk">
+      <div className="operator-row">
+        <strong>{t(locale, "공식 기준", "Official anchor")}</strong>
+        <span>{officialCard?.sourceName ?? t(locale, "공식 소스 미연결", "No official source")}</span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "헤지·비교 기준", "Hedge / comparison tape")}</strong>
+        <span>
+          {primaryQuote
+            ? `${primaryQuote.title} · ${formatLiveQuotePrice(locale, primaryQuote)}`
+            : t(locale, "연결된 테이프 없음", "No linked tape")}
+        </span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "이 시장의 해석", "How to read this market")}</strong>
+        <span>{focus}</span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "다음 확인", "Next check")}</strong>
+        <span>{check}</span>
+      </div>
+      <div className="operator-row">
+        <strong>{t(locale, "실무 메모", "Desk note")}</strong>
+        <span>
+          {hasPublicFutures
+            ? t(
+                locale,
+                "EU ETS는 ICE EUA 선물을 직접 비교할 수 있습니다. 최종 판단은 여전히 공식 경매·공식 가격 공시와 같이 봐야 합니다.",
+                "EU ETS can be compared directly with ICE EUA futures, but the final read should still be anchored to official auction and official market data."
+              )
+            : t(
+                locale,
+                "이 시장은 무료로 검증된 현지 선물 테이프를 아직 붙이지 않았습니다. 그래서 공식 현물 시세에 글로벌 탄소 프록시를 겹쳐서 봅니다.",
+                "This market does not yet have a verified free local futures tape here, so the official spot tape is read together with a listed global carbon proxy."
+              )}
+        </span>
+      </div>
+      {supportQuotes.length > 0 ? (
+        <div className="operator-support">
+          {supportQuotes.map((quote) => (
+            <div key={quote.id} className="operator-support-chip">
+              <strong>{quote.title}</strong>
+              <span>{formatLiveQuotePrice(locale, quote)}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

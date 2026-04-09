@@ -13,6 +13,7 @@ It does not place trades.
 ## What The App Does
 
 - Shows official market prices first when available
+- Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
 - Compares EU ETS, K-ETS, and China ETS on one screen
 - Explains what is moving carbon prices
 - Summarizes the current market tone with a rule-based decision layer
@@ -32,6 +33,8 @@ The app is built to work even if you do not want to pay for data.
 
 - `Overview`
   - market overview board
+  - linked futures / proxy tape panel
+  - institution checklist
   - official price chart
   - market compare chart
   - what moves price heatmap
@@ -56,6 +59,7 @@ The app is built to work even if you do not want to pay for data.
 
 - This is a research and monitoring tool, not a broker.
 - Yahoo Finance data can be delayed depending on the exchange, so it is shown as a reference source only.
+- Local ETS futures are not added unless a verified free feed is available; where needed, the app labels listed proxies explicitly as proxies.
 - The AI brief is optional and runs only when an OpenAI API key is saved in the desktop app.
 - The walk-forward model uses local Python and requires `pandas`, `numpy`, and `scikit-learn`.
 

@@ -7,6 +7,7 @@ const KRX_MARKET_PAGE_URL =
 const KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
 const KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
 const MEE_LIST_URL = "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/";
+const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
 
 const DEFAULT_HEADERS = {
   "user-agent":
@@ -50,6 +51,81 @@ function normalizeWhitespace(value) {
 
 function stripHtml(value) {
   return normalizeWhitespace(String(value ?? "").replace(/<[^>]+>/g, " "));
+}
+
+function getLiveQuoteConfigs() {
+  const currentYear = new Date().getFullYear();
+  const currentSuffix = String(currentYear).slice(-2);
+  const nextSuffix = String(currentYear + 1).slice(-2);
+  const previousSuffix = String(currentYear - 1).slice(-2);
+
+  return [
+    {
+      id: "eua-dec-benchmark",
+      title: "ICE EUA December benchmark future",
+      symbolCandidates: [`ECFZ${currentSuffix}.NYM`, `ECFZ${nextSuffix}.NYM`, `ECFZ${previousSuffix}.NYM`],
+      category: "Benchmark futures",
+      markets: ["eu-ets", "shared"],
+      provider: "Yahoo Finance chart API",
+      sourceUrl: "https://www.ice.com/products/197",
+      role: "Primary listed hedge tape for EU carbon risk",
+      note: "December benchmark contract used as the main listed EUA reference.",
+      delayNote:
+        "Reference tape via Yahoo Finance. Yahoo states NYMEX/NYM quotes may be delayed by 30 minutes."
+    },
+    {
+      id: "ttf-gas-future",
+      title: "Dutch TTF gas future",
+      symbolCandidates: ["TTF=F"],
+      category: "Driver future",
+      markets: ["eu-ets", "shared"],
+      provider: "Yahoo Finance chart API",
+      sourceUrl: "https://finance.yahoo.com/quote/TTF=F",
+      role: "Fuel-switching driver for EU carbon",
+      note: "Gas remains one of the key inputs behind short-term carbon repricing.",
+      delayNote:
+        "Reference tape via Yahoo Finance. Exchange-specific delay may apply."
+    },
+    {
+      id: "brent-future",
+      title: "Brent crude future",
+      symbolCandidates: ["BZ=F"],
+      category: "Driver future",
+      markets: ["shared"],
+      provider: "Yahoo Finance chart API",
+      sourceUrl: "https://finance.yahoo.com/quote/BZ=F",
+      role: "Macro energy proxy",
+      note: "Useful for broad energy risk context when carbon trades with the wider commodity complex.",
+      delayNote:
+        "Reference tape via Yahoo Finance. Exchange-specific delay may apply."
+    },
+    {
+      id: "krbn-proxy",
+      title: "KRBN global carbon ETF",
+      symbolCandidates: ["KRBN"],
+      category: "Listed proxy",
+      markets: ["k-ets", "cn-ets", "shared"],
+      provider: "Yahoo Finance chart API",
+      sourceUrl: "https://finance.yahoo.com/quote/KRBN",
+      role: "Listed carbon proxy when local ETS futures are not available",
+      note: "Proxy only. Do not treat this as an official local ETS settlement.",
+      delayNote:
+        "Reference tape via Yahoo Finance. Use as a listed proxy, not as the official carbon price."
+    },
+    {
+      id: "keua-proxy",
+      title: "KEUA Europe carbon ETF",
+      symbolCandidates: ["KEUA"],
+      category: "Listed proxy",
+      markets: ["eu-ets", "shared"],
+      provider: "Yahoo Finance chart API",
+      sourceUrl: "https://kraneshares.com/etf/keua/",
+      role: "Listed proxy for EU carbon exposure",
+      note: "Proxy only. The official listed hedge anchor remains the ICE EUA future.",
+      delayNote:
+        "Reference tape via Yahoo Finance. Use as a listed proxy, not as the official carbon price."
+    }
+  ];
 }
 
 function makeAbsoluteUrl(baseUrl, href) {
@@ -167,6 +243,172 @@ async function fetchText(url, init = {}, timeoutMs) {
 async function fetchBuffer(url, init = {}, timeoutMs) {
   const response = await fetchWithTimeout(url, init, timeoutMs);
   return Buffer.from(await response.arrayBuffer());
+}
+
+async function fetchJson(url, init = {}, timeoutMs) {
+  const response = await fetchWithTimeout(url, init, timeoutMs);
+  return response.json();
+}
+
+function lastFiniteValue(values) {
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    const candidate = Number(values[index]);
+    if (Number.isFinite(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function toDateLabelFromUnix(timestamp) {
+  const numeric = Number(timestamp);
+  if (!Number.isFinite(numeric)) {
+    return "";
+  }
+  return toIsoDate(new Date(numeric * 1000));
+}
+
+function buildSeriesFromYahoo(timestamps, closes) {
+  const points = [];
+
+  for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
+    const value = Number(closes[index]);
+    if (!Number.isFinite(value)) {
+      continue;
+    }
+
+    const date = toDateLabelFromUnix(timestamps[index]);
+    if (!date) {
+      continue;
+    }
+
+    points.push({
+      date,
+      value
+    });
+  }
+
+  return points.slice(-22);
+}
+
+async function fetchYahooChartResult(symbol) {
+  const url =
+    `${YAHOO_CHART_BASE_URL}/${encodeURIComponent(symbol)}` +
+    "?interval=1d&range=1mo&includePrePost=false&events=div%2Csplits";
+  const payload = await fetchJson(
+    url,
+    {
+      headers: {
+        ...DEFAULT_HEADERS,
+        accept: "application/json,text/plain,*/*"
+      }
+    },
+    15000
+  );
+  const error = payload?.chart?.error;
+  if (error) {
+    throw new Error(`${error.code ?? "ChartError"}: ${error.description ?? "Unknown error"}`);
+  }
+
+  const result = payload?.chart?.result?.[0];
+  if (!result) {
+    throw new Error(`No chart result returned for ${symbol}.`);
+  }
+
+  return result;
+}
+
+async function fetchLiveQuote(config) {
+  let selectedSymbol = "";
+  let result = null;
+
+  for (const candidate of config.symbolCandidates) {
+    try {
+      result = await fetchYahooChartResult(candidate);
+      selectedSymbol = candidate;
+      break;
+    } catch {
+      // Try the next configured symbol candidate.
+    }
+  }
+
+  if (!result || !selectedSymbol) {
+    throw new Error(`No live quote could be resolved for ${config.title}.`);
+  }
+
+  const meta = result.meta ?? {};
+  const timestamps = Array.isArray(result.timestamp) ? result.timestamp : [];
+  const closes = Array.isArray(result?.indicators?.quote?.[0]?.close)
+    ? result.indicators.quote[0].close
+    : [];
+  const series = buildSeriesFromYahoo(timestamps, closes);
+  const priceCandidate = Number(meta.regularMarketPrice);
+  const lastClose = lastFiniteValue(closes);
+  const price = Number.isFinite(priceCandidate) ? priceCandidate : lastClose;
+  const previousCloseCandidate = Number(meta.chartPreviousClose ?? meta.previousClose);
+  const previousClose = Number.isFinite(previousCloseCandidate) ? previousCloseCandidate : null;
+  const change =
+    Number.isFinite(price) && Number.isFinite(previousClose) ? price - previousClose : null;
+  const changePct =
+    Number.isFinite(change) && Number.isFinite(previousClose) && previousClose !== 0
+      ? (change / previousClose) * 100
+      : null;
+  const asOf = timestamps.length > 0 ? toDateLabelFromUnix(timestamps[timestamps.length - 1]) : "";
+
+  return {
+    id: config.id,
+    title: config.title,
+    symbol: selectedSymbol,
+    category: config.category,
+    markets: config.markets,
+    status: Number.isFinite(price) ? "connected" : "limited",
+    provider: config.provider,
+    sourceUrl: config.sourceUrl,
+    role: config.role,
+    note: config.note,
+    delayNote: config.delayNote,
+    asOf: asOf || toIsoDate(new Date()),
+    price: Number.isFinite(price) ? price : null,
+    previousClose,
+    change,
+    changePct,
+    currency: String(meta.currency ?? ""),
+    exchange: String(meta.fullExchangeName ?? meta.exchangeName ?? ""),
+    series
+  };
+}
+
+function makeErrorQuote(config, error) {
+  return {
+    id: config.id,
+    title: config.title,
+    symbol: config.symbolCandidates[0],
+    category: config.category,
+    markets: config.markets,
+    status: "error",
+    provider: config.provider,
+    sourceUrl: config.sourceUrl,
+    role: config.role,
+    note: `Live quote unavailable: ${error}`,
+    delayNote: config.delayNote,
+    asOf: toIsoDate(new Date()),
+    price: null,
+    previousClose: null,
+    change: null,
+    changePct: null,
+    currency: "",
+    exchange: "",
+    series: []
+  };
+}
+
+async function runQuoteTask(config) {
+  try {
+    return await fetchLiveQuote(config);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return makeErrorQuote(config, message);
+  }
 }
 
 async function getKrxOtp(name, bld) {
@@ -566,13 +808,20 @@ async function getConnectedSources() {
       coverage: "Official policy and operations feed"
     })
   ]);
+  const liveQuotes = await Promise.all(getLiveQuoteConfigs().map((config) => runQuoteTask(config)));
 
   return {
     fetchedAt: new Date().toISOString(),
     cards,
+    liveQuotes,
     warnings: cards
       .filter((card) => card.status === "error")
       .map((card) => `${card.sourceName}: ${card.summary}`)
+      .concat(
+        liveQuotes
+          .filter((quote) => quote.status === "error")
+          .map((quote) => `${quote.title}: ${quote.note}`)
+      )
   };
 }
 

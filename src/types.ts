@@ -103,7 +103,32 @@ export type ConnectedSourceCard = {
 export type ConnectedSourcePayload = {
   fetchedAt: string;
   cards: ConnectedSourceCard[];
+  liveQuotes: MarketLiveQuote[];
   warnings: string[];
+};
+
+export type MarketLiveQuoteKind = "Benchmark futures" | "Driver future" | "Listed proxy";
+
+export type MarketLiveQuote = {
+  id: string;
+  title: string;
+  symbol: string;
+  category: MarketLiveQuoteKind;
+  markets: Array<MarketProfile["id"] | "shared">;
+  status: ConnectedSourceStatus;
+  provider: string;
+  sourceUrl: string;
+  role: string;
+  note: string;
+  delayNote: string;
+  asOf: string;
+  price: number | null;
+  previousClose: number | null;
+  change: number | null;
+  changePct: number | null;
+  currency: string;
+  exchange: string;
+  series: ConnectedSourceSeriesPoint[];
 };
 
 export type SourceRegistryMarket = MarketProfile["id"] | "shared";
