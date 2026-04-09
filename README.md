@@ -1,48 +1,63 @@
 # C-Quant
 
-C-Quant is a desktop carbon intelligence terminal for EU ETS, K-ETS, and China ETS.
+C-Quant is a desktop carbon market monitoring tool for:
 
-It is built for research, monitoring, and alerting. It does not execute carbon allowance trades.
+- EU ETS
+- K-ETS
+- China ETS
 
-## What Changed
+It is made for checking prices, market drivers, alerts, and research signals in one place.
 
-The desktop app now follows a graph-first intelligence workflow:
+It does not place trades.
 
-- `시장 보드 / Board`
-  - official market snapshots
-  - official tape charts
-  - cross-market normalized chart
-  - driver heatmap
-  - catalyst timeline
-  - feed-style briefing
-- `의사결정 / Decision`
-  - driver waterfall
+## What The App Does
+
+- Shows official market prices first when available
+- Compares EU ETS, K-ETS, and China ETS on one screen
+- Explains what is moving carbon prices
+- Summarizes the current market tone with a rule-based decision layer
+- Lets you run local backtests and walk-forward model checks
+- Opens external watch pages such as ETF and Yahoo pages for quick reference
+
+## Free-Source-First
+
+The app is built to work even if you do not want to pay for data.
+
+- `Sources` now includes a `Free sources only` toggle
+- Official web pages, official files, and public APIs are treated as the main path
+- Commercial APIs are labeled clearly as paid options
+- Yahoo pages are reference-only watch links, not core decision data
+
+## Main Screens
+
+- `Overview`
+  - market overview board
+  - official price chart
+  - market compare chart
+  - what moves price heatmap
+  - volume and alert panels
+- `Decision`
+  - price driver waterfall
+  - current decision position
   - scenario sliders
-  - rule-based posture engine
-  - optional LLM brief with OpenAI API key
-  - alert hub
-- `연구실 / Lab`
-  - local CSV backtest
+  - quick decision brief
+  - optional AI brief
+- `Lab`
+  - CSV backtest
   - walk-forward model runner
-  - feature-importance chart
-  - dataset template export
-- `출처 / Sources`
-  - source-method coverage chart
+  - dataset templates
+- `Sources`
+  - source coverage
+  - free-only filtering
   - source registry
-  - watchlists and proxy links
-  - benchmark feature map
-  - trust principles and subscription value
+  - watchlists
 
-## Benchmarks Used
+## Important Notes
 
-- Toss Securities
-- TradingView
-- Koyfin
-- Carbon Pulse
-- Sylvera
-- ClearBlue Vantage
-
-Official links and feature mapping are documented in `docs/product-strategy.md`.
+- This is a research and monitoring tool, not a broker.
+- Yahoo Finance data can be delayed depending on the exchange, so it is shown as a reference source only.
+- The AI brief is optional and runs only when an OpenAI API key is saved in the desktop app.
+- The walk-forward model uses local Python and requires `pandas`, `numpy`, and `scikit-learn`.
 
 ## Run
 
@@ -67,22 +82,12 @@ npm.cmd run package:portable
 ## Core Files
 
 - `src/App.tsx`
+- `src/components/charts.tsx`
 - `src/styles.css`
-- `src/data/experience.ts`
 - `src/data/platform.ts`
 - `src/data/research.ts`
-- `src/data/dataHub.ts`
 - `src/lib/forecast.ts`
 - `src/lib/backtest.ts`
 - `electron/liveSources.js`
 - `main.js`
 - `preload.js`
-
-## Product Notes
-
-- Official-source-first cards remain the core decision surface.
-- ETF, ETC, and Yahoo-style pages are watch links only.
-- The scenario engine and the LLM brief are research overlays, not execution signals.
-- LLM analysis runs only when an OpenAI API key is saved in the desktop app settings panel.
-- The walk-forward model requires local Python with `pandas`, `numpy`, and `scikit-learn`.
-- The backtest module uses local CSV files and simple research strategies.

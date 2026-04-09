@@ -246,10 +246,12 @@ export function ColumnChart({
             <div className="column-value">
               {valueFormatter ? valueFormatter(point.value) : point.value.toFixed(2)}
             </div>
-            <div
-              className="column-fill"
-              style={{ height: `${point.scaled}px`, backgroundColor: color }}
-            />
+            <div className="column-track">
+              <div
+                className="column-fill"
+                style={{ height: `${point.scaled}px`, backgroundColor: color }}
+              />
+            </div>
             <div className="column-label">{point.label}</div>
           </div>
         ))}

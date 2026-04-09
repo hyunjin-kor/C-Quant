@@ -244,6 +244,47 @@ textarea {
   color: rgba(222, 228, 246, 0.76);
 }
 
+.sources-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.toolbar-copy {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.toolbar-copy strong {
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+
+.toolbar-copy span {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 144px;
+  padding: 0.78rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-soft);
+  border: 1px solid rgba(130, 146, 182, 0.14);
+  font-weight: 700;
+}
+
+.toggle-pill.active {
+  background: linear-gradient(180deg, #2f7bf6, #246ae0);
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(47, 123, 246, 0.2);
+}
+
 .workspace-modules {
   margin-top: 0.8rem;
   display: flex;
@@ -482,6 +523,7 @@ textarea {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.95fr);
   gap: 0.95rem;
+  align-items: start;
 }
 
 .overview-grid.secondary,
@@ -532,6 +574,10 @@ textarea {
   border-radius: 22px;
   background: rgba(240, 244, 250, 0.8);
   color: var(--text-soft);
+}
+
+.empty-plot.compact {
+  min-height: 120px;
 }
 
 .feed-list,
@@ -1113,6 +1159,7 @@ textarea {
 .column-chart {
   display: flex;
   align-items: end;
+  overflow: hidden;
 }
 
 .column-chart-bars {
@@ -1121,12 +1168,16 @@ textarea {
   grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
   gap: 0.55rem;
   align-items: end;
+  height: 100%;
 }
 
 .column-bar {
   display: grid;
-  gap: 0.32rem;
+  grid-template-rows: 16px minmax(0, 1fr) 34px;
+  gap: 0.26rem;
   justify-items: center;
+  height: 100%;
+  min-height: 0;
 }
 
 .column-value,
@@ -1134,12 +1185,33 @@ textarea {
   font-size: 0.72rem;
   color: var(--text-soft);
   text-align: center;
+  line-height: 1.2;
+}
+
+.column-value {
+  align-self: end;
+}
+
+.column-track {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: end;
 }
 
 .column-fill {
   width: 100%;
   border-radius: 14px 14px 10px 10px;
   min-height: 6px;
+}
+
+.column-label {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: keep-all;
 }
 
 .heatmap {
@@ -1285,6 +1357,11 @@ textarea {
   }
 
   .hero-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sources-toolbar {
     flex-direction: column;
     align-items: flex-start;
   }

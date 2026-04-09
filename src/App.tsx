@@ -277,6 +277,20 @@ function readStoredChoice<T extends string>(
   return fallback;
 }
 
+function readStoredBoolean(key: string, fallback: boolean) {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+  const value = window.localStorage.getItem(key);
+  if (value === "true") {
+    return true;
+  }
+  if (value === "false") {
+    return false;
+  }
+  return fallback;
+}
+
 function formatDate(locale: AppLocale, value?: string) {
   if (!value) {
     return t(locale, "미연결", "Unavailable");
@@ -1082,6 +1096,9 @@ export default function App() {
   const [workspaceId, setWorkspaceId] = useState<string>("morning-scan");
   const [watchlistId, setWatchlistId] = useState<string>("core-carbon");
   const [watchViewId, setWatchViewId] = useState<string>("scan-view");
+  const [freeOnlySources, setFreeOnlySources] = useState<boolean>(() =>
+    readStoredBoolean("cquant:free-only-sources", true)
+  );
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(emptySources);
   const [refreshingSources, setRefreshingSources] = useState(false);
   const [windowMaximized, setWindowMaximized] = useState(false);
@@ -1155,6 +1172,10 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem("cquant:locale", appLocale);
   }, [appLocale]);
+
+  useEffect(() => {
+    window.localStorage.setItem("cquant:free-only-sources", String(freeOnlySources));
+  }, [freeOnlySources]);
 
   useEffect(() => {
     const nextQuestion =
@@ -1461,10 +1482,16 @@ export default function App() {
     [localizedSources, marketId]
   );
 
+  const visibleSources = useMemo(
+    () =>
+      selectedSources.filter((item) => !freeOnlySources || item.method !== "Commercial API"),
+    [freeOnlySources, selectedSources]
+  );
+
   const sourceMethodPoints = useMemo<ChartPoint[]>(
     () => {
       const counts = new Map<string, number>();
-      for (const item of selectedSources) {
+      for (const item of visibleSources) {
         counts.set(item.method, (counts.get(item.method) ?? 0) + 1);
       }
       return Array.from(counts.entries()).map(([label, value]) => ({
@@ -1472,7 +1499,7 @@ export default function App() {
         value
       }));
     },
-    [appLocale, selectedSources]
+    [appLocale, visibleSources]
   );
 
   const alertCountPoints = useMemo<ChartPoint[]>(
@@ -2403,6 +2430,27 @@ export default function App() {
 
           {surface === "sources" ? (
             <>
+              <section className="panel sources-toolbar">
+                <div className="toolbar-copy">
+                  <strong>{t(appLocale, "출처 보기 방식", "Source view")}</strong>
+                  <span>
+                    {t(
+                      appLocale,
+                      "무료로 볼 수 있는 출처만 먼저 보고 싶다면 이 옵션을 켜두세요.",
+                      "Turn this on to hide sources that may require payment."
+                    )}
+                  </span>
+                </div>
+                <button
+                  className={`toggle-pill ${freeOnlySources ? "active" : ""}`}
+                  onClick={() => setFreeOnlySources((value) => !value)}
+                >
+                  {freeOnlySources
+                    ? t(appLocale, "무료 소스만 보기", "Free sources only")
+                    : t(appLocale, "전체 보기", "Show all")}
+                </button>
+              </section>
+
               <section className="overview-grid">
                 <div className="panel">
                   <SectionHeader
@@ -2469,7 +2517,8 @@ export default function App() {
                     )}
                   />
                   <div className="source-list">
-                    {selectedSources.map((item) => (
+                    {visibleSources.length > 0 ? (
+                      visibleSources.map((item) => (
                       <button key={item.id} className="source-item" onClick={() => void handleOpenExternal(item.url)}>
                         <div className="source-head">
                           <strong>{item.title}</strong>
@@ -2483,7 +2532,16 @@ export default function App() {
                         <p>{item.appUse}</p>
                         <small>{item.whyItMatters}</small>
                       </button>
-                    ))}
+                      ))
+                    ) : (
+                      <div className="empty-plot compact">
+                        {t(
+                          appLocale,
+                          "무료 조건에 맞는 출처가 없습니다.",
+                          "No sources match the current free-only filter."
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
