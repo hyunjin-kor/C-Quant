@@ -35,38 +35,72 @@ These are the current official product pages or product-owned pages used as benc
 ## Benchmark To Product Map
 
 - Toss Securities
-  - Borrowed: scan-fast home surface, short utility copy, large numbers, simple navigation.
-  - Implemented as: `개요` market board, `오늘의 브리프`, simplified Korean UI copy.
+  - Borrowed: scan-fast surface, short utility copy, large numbers, low-friction navigation.
+  - Implemented as: `Board` top snapshots, short feed, clean Korean/English UI copy.
 - TradingView
-  - Borrowed: watchlists, layouts, alerts, workspace continuity.
-  - Implemented as: workspace presets, watch-view presets, alert hub.
+  - Borrowed: chart-first workspace, watchlists, alerts, layout continuity.
+  - Implemented as: cross-market chart surface, driver heatmap, watchlists, alert hub.
 - Koyfin
-  - Borrowed: research-first watchlists and dashboard structure.
-  - Implemented as: saved workspaces, watchlist presets, comparison-oriented tables.
+  - Borrowed: research-first dashboard organization and custom watchlists.
+  - Implemented as: workspace presets, watchlist modes, source-method coverage view.
 - Carbon Pulse
   - Borrowed: ticker/feed thinking, dossiers, policy/news orientation.
-  - Implemented as: feed-style briefing and catalyst windows.
+  - Implemented as: short market feed and catalyst timeline.
 - Sylvera
   - Borrowed: trust framing, decision support, integrity-first data story.
-  - Implemented as: trust center, source registry, explainability copy.
+  - Implemented as: trust center, source registry, explainable signal panel.
 - ClearBlue
   - Borrowed: jurisdiction-level aggregation and scenario framing.
-  - Implemented as: cross-market board and research lab structure.
+  - Implemented as: cross-market board, scenario sliders, and research lab structure.
+
+## Current Interface Architecture
+
+The app now centers charts before text.
+
+1. `Board`
+   - Top snapshot cards for EU ETS, K-ETS, and China ETS
+   - Official tape chart for the selected market
+   - Cross-market normalized chart where official series exist
+   - Driver heatmap, volume chart, feed, and catalyst timeline
+2. `Decision`
+   - Driver waterfall
+   - Scenario sliders for the most important drivers
+   - Rule-based posture engine
+   - Optional LLM brief
+   - Alert hub and quant-indicator list
+3. `Lab`
+   - CSV upload
+   - Backtest chart and metrics
+   - Walk-forward runner and feature-importance chart
+   - Dataset schema and template export
+4. `Sources`
+   - Source-method coverage chart
+   - Source registry
+   - Watchlists and proxy links
+   - Trust principles and subscription value
+
+## LLM Layer
+
+- The LLM is optional and lives above the deterministic research engine.
+- The app always computes a local rule-based posture first.
+- The LLM receives only the selected market's official card, factor-family scores, alerts, catalysts, and quant-indicator context.
+- The prompt explicitly forbids inventing prices or regulations and frames the output as decision support, not trade intermediation.
+- The API key is stored in the Electron user-data directory, not in the renderer bundle.
 
 ## Autonomous Build Plan
 
 1. 0:00-0:40
    - Benchmark successful products and redefine the app as a carbon intelligence terminal.
 2. 0:40-2:00
-   - Replace the old information architecture with `개요 / 워크스페이스 / 알림 / 연구실 / 출처`.
+   - Replace the old information architecture with a chart-first graph surface.
 3. 2:00-3:20
-   - Build the global carbon board for EU ETS, K-ETS, and China ETS.
+   - Build the official market board for EU ETS, K-ETS, and China ETS.
 4. 3:20-4:20
-   - Build the driver matrix and catalyst calendar.
+   - Build the driver heatmap, waterfall, and catalyst timeline.
 5. 4:20-5:10
    - Build the source registry and trust center.
 6. 5:10-6:10
-   - Build the alert hub and saveable daily brief.
+   - Build the alert hub, watchlists, and saveable daily brief.
 7. 6:10-7:10
    - Reorganize the lab around scenario, walk-forward, backtest, and dataset templates.
 8. 7:10-8:00

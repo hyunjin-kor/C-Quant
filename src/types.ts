@@ -75,6 +75,13 @@ export type ConnectedSourceMetric = {
   value: string;
 };
 
+export type ConnectedSourceSeriesPoint = {
+  date: string;
+  value: number;
+  volume?: number;
+  label?: string;
+};
+
 export type ConnectedSourceCard = {
   id: string;
   marketId: MarketProfile["id"];
@@ -88,6 +95,9 @@ export type ConnectedSourceCard = {
   metrics: ConnectedSourceMetric[];
   notes: string[];
   links: SourceLink[];
+  series?: ConnectedSourceSeriesPoint[];
+  seriesLabel?: string;
+  volumeSeries?: ConnectedSourceSeriesPoint[];
 };
 
 export type ConnectedSourcePayload = {
@@ -257,4 +267,27 @@ export type BacktestRun = {
   equityCurve: number[];
   signals: number[];
   warnings: string[];
+};
+
+export type DecisionAssistantStance =
+  | "Buy Bias"
+  | "Hold / Wait"
+  | "Reduce Bias";
+
+export type DecisionAssistantResponse = {
+  provider: "rule" | "openai";
+  model?: string;
+  stance: DecisionAssistantStance;
+  confidence: number;
+  summary: string;
+  thesis: string[];
+  risks: string[];
+  actions: string[];
+  disclaimer: string;
+  generatedAt: string;
+};
+
+export type AppSettings = {
+  hasOpenAIApiKey: boolean;
+  llmModel: string;
 };

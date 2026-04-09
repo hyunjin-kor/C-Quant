@@ -3,18 +3,48 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode
+  type CSSProperties
 } from "react";
+import {
+  ColumnChart,
+  DonutMeter,
+  Heatmap,
+  LineChart,
+  MultiLineChart,
+  Sparkline,
+  WaterfallChart,
+  type ChartPoint,
+  type HeatmapRow,
+  type MultiLinePoint,
+  type MultiLineSeries
+} from "./components/charts";
 import { datasetTemplates, marketDatasetSchemas } from "./data/dataHub";
 import {
   alertTemplates,
-  autonomousPlan,
   benchmarkPlatforms,
   catalystWindows,
   watchViewPresets,
   watchlistPresets,
   workspacePresets
 } from "./data/experience";
+import {
+  localeOptions,
+  type AppLocale,
+  getImportanceLabel,
+  getMarketDisplayName,
+  getSeverityLabel,
+  getStatusLabel,
+  localizeAlertTemplate,
+  localizeBenchmark,
+  localizeCatalystWindow,
+  localizeMarketWatchItem,
+  localizeSourceRegistryItem,
+  localizeSubscriptionFeature,
+  localizeTrustPrinciple,
+  localizeWatchViewPreset,
+  localizeWatchlistPreset,
+  localizeWorkspacePreset
+} from "./data/locales";
 import {
   marketWatchItems,
   sourceRegistry,
@@ -25,19 +55,17 @@ import { marketProfiles, quantIndicators } from "./data/research";
 import { parseCsv, runBacktest } from "./lib/backtest";
 import { buildForecast } from "./lib/forecast";
 import type {
+  AppSettings,
   BacktestRun,
   BacktestStrategy,
-  BenchmarkPlatform,
   ConnectedSourceCard,
   ConnectedSourcePayload,
+  ConnectedSourceSeriesPoint,
+  DecisionAssistantResponse,
   MarketDriver,
   MarketProfile,
-  MarketWatchItem,
   ParsedSeriesPoint,
-  WalkForwardResult,
-  WatchViewPreset,
-  WatchlistPreset,
-  WorkspacePreset
+  WalkForwardResult
 } from "./types";
 
 declare global {
@@ -62,151 +90,140 @@ declare global {
         trainWindow: number;
         horizon: number;
       }) => Promise<WalkForwardResult>;
+      getAppSettings: () => Promise<AppSettings>;
+      saveAppSettings: (options: {
+        openAIApiKey?: string;
+        llmModel?: string;
+      }) => Promise<AppSettings>;
+      runDecisionAssistant: (payload: {
+        locale: AppLocale;
+        payload: Record<string, unknown>;
+      }) => Promise<DecisionAssistantResponse>;
     };
   }
 }
 
-type Surface = "overview" | "workspace" | "alerts" | "lab" | "sources";
-type LabMode = "scenario" | "model" | "backtest";
+type Surface = "overview" | "signals" | "lab" | "sources";
 
-type SurfaceDefinition = {
-  id: Surface;
-  label: string;
+type AlertItem = {
+  id: string;
+  marketId: MarketProfile["id"] | "shared";
+  severity: "High" | "Medium" | "Low";
   title: string;
-  summary: string;
+  body: string;
 };
 
 type FeedItem = {
   id: string;
-  tone: "live" | "warning" | "model" | "context";
   kicker: string;
   title: string;
   body: string;
+  tone: "positive" | "neutral" | "negative";
   link?: string;
-};
-
-type AlertInboxItem = {
-  id: string;
-  severity: "High" | "Medium" | "Low";
-  title: string;
-  body: string;
-  hint: string;
 };
 
 type DriverFamily = {
   id: string;
-  label: string;
-  summary: string;
-  matcher: (category: string) => boolean;
+  ko: string;
+  en: string;
+  matcher: (driver: MarketDriver) => boolean;
 };
 
-type DriverMatrixRow = {
-  family: DriverFamily;
-  byMarket: Record<MarketProfile["id"], MarketDriver | undefined>;
+type SnapshotCard = {
+  marketId: MarketProfile["id"];
+  name: string;
+  status: string;
+  priceLabel: string;
+  changeLabel: string;
+  volumeLabel: string;
+  asOf: string;
+  sparkline: ChartPoint[];
+  score: number;
+  confidence: number;
 };
 
-const surfaceTabs: SurfaceDefinition[] = [
-  {
-    id: "overview",
-    label: "개요",
-    title: "탄소 인텔리전스 보드",
-    summary: "세 시장의 공식 상태와 오늘 확인해야 할 촉매를 먼저 봅니다."
-  },
-  {
-    id: "workspace",
-    label: "워크스페이스",
-    title: "운영형 작업면",
-    summary: "워치리스트, 프리셋, 벤치마크 기능을 저장형 작업 흐름으로 정리합니다."
-  },
-  {
-    id: "alerts",
-    label: "알림",
-    title: "알림 허브",
-    summary: "공식 출처 이상, 정책 이벤트, 프록시 괴리, 일일 브리프를 관리합니다."
-  },
-  {
-    id: "lab",
-    label: "연구실",
-    title: "시나리오와 모델 검증",
-    summary: "시나리오, 워크포워드, 백테스트를 같은 흐름에서 검토합니다."
-  },
-  {
-    id: "sources",
-    label: "출처",
-    title: "신뢰 센터",
-    summary: "모든 숫자의 출처, 가격 영향 변수, 벤치마크 기준을 투명하게 공개합니다."
-  }
+const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
+  { id: "overview", ko: "시장 보드", en: "Board" },
+  { id: "signals", ko: "의사결정", en: "Decision" },
+  { id: "lab", ko: "연구실", en: "Lab" },
+  { id: "sources", ko: "출처", en: "Sources" }
 ];
 
-const driverFamilies: DriverFamily[] = [
+const DRIVER_FAMILIES: DriverFamily[] = [
   {
     id: "policy",
-    label: "정책·공급",
-    summary: "캡 경로, 할당, 경매, 업종 확대, 제도 개편",
-    matcher: (category) => /policy|supply|calendar/i.test(category)
+    ko: "정책·공급",
+    en: "Policy & Supply",
+    matcher: (driver) => /policy|supply|calendar|implementation/i.test(driver.category)
   },
   {
     id: "power",
-    label: "전력·산업",
-    summary: "전력 가격, 발전 믹스, 산업 생산, 커버드 수요",
-    matcher: (category) => /power|industry/i.test(category)
+    ko: "전력·산업",
+    en: "Power & Industry",
+    matcher: (driver) => /power|industry/i.test(driver.category)
   },
   {
     id: "fuel",
-    label: "연료 전환",
-    summary: "가스, 석탄, 석유, 청정 스프레드",
-    matcher: (category) => /fuel/i.test(category)
+    ko: "연료 전환",
+    en: "Fuel Switching",
+    matcher: (driver) => /fuel/i.test(driver.category)
   },
   {
     id: "macro",
-    label: "거시·금융",
-    summary: "증시, 신용, 금리, 환율, 경기 민감도",
-    matcher: (category) => /macro|financial/i.test(category)
-  },
-  {
-    id: "weather",
-    label: "날씨·계절",
-    summary: "기온, 냉난방, 풍력·수력 여건, 이행 시즌",
-    matcher: (category) => /weather|seasonality/i.test(category)
+    ko: "거시·금융",
+    en: "Macro & Financial",
+    matcher: (driver) => /macro|financial/i.test(driver.category)
   },
   {
     id: "execution",
-    label: "유동성·실행",
-    summary: "거래량, 오픈이자, 참여자 폭, 미시구조",
-    matcher: (category) =>
-      /microstructure|execution|liquidity|market/i.test(category)
+    ko: "유동성·체결",
+    en: "Liquidity & Execution",
+    matcher: (driver) => /microstructure|internal market/i.test(driver.category)
+  },
+  {
+    id: "environment",
+    ko: "환경·계절성",
+    en: "Environment",
+    matcher: (driver) => /weather|environmental/i.test(driver.category)
   }
 ];
 
-const surfaceChoices = surfaceTabs.map((item) => item.id);
-const workspaceChoices = workspacePresets.map((item) => item.id);
-const watchlistChoices = watchlistPresets.map((item) => item.id);
-const watchViewChoices = watchViewPresets.map((item) => item.id);
+const MARKET_ACCENTS: Record<MarketProfile["id"], string> = {
+  "eu-ets": "#2f7bf6",
+  "k-ets": "#19b394",
+  "cn-ets": "#f58b4a"
+};
 
+const POSITIVE = "#22c77a";
+const NEGATIVE = "#ff6f61";
 const emptySources: ConnectedSourcePayload = {
   fetchedAt: "",
   cards: [],
   warnings: []
 };
-
-const marketNameMap: Record<MarketProfile["id"], string> = {
-  "eu-ets": "EU ETS",
-  "k-ets": "K-ETS",
-  "cn-ets": "China ETS"
+const defaultSettings: AppSettings = {
+  hasOpenAIApiKey: false,
+  llmModel: "gpt-4.1-mini"
 };
 
-const strategyLabels: Record<BacktestStrategy, string> = {
-  trend: "추세 추종",
-  meanReversion: "평균 회귀",
-  spreadRegime: "스프레드 레짐",
-  policyMomentum: "정책 모멘텀"
+const workspaceRouting: Record<
+  string,
+  { surface: Surface; watchlistId?: string; marketId?: MarketProfile["id"] }
+> = {
+  "morning-scan": { surface: "overview", watchlistId: "core-carbon" },
+  "cross-market": { surface: "signals", watchlistId: "official-only" },
+  "policy-supply": { surface: "sources", marketId: "eu-ets", watchlistId: "official-only" },
+  "futures-etf": { surface: "overview", marketId: "eu-ets", watchlistId: "listed-proxies" },
+  "model-review": { surface: "lab" }
 };
 
-const labModeLabels: Record<LabMode, string> = {
-  scenario: "시나리오",
-  model: "워크포워드",
-  backtest: "백테스트"
-};
+function t(locale: AppLocale, ko: string, en: string) {
+  return locale === "ko" ? ko : en;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
 
 function readStoredChoice<T extends string>(
   key: string,
@@ -223,2010 +240,2055 @@ function readStoredChoice<T extends string>(
   return fallback;
 }
 
-function readStoredList(key: string, fallback: string[]): string[] {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
-  const raw = window.localStorage.getItem(key);
-  if (!raw) {
-    return fallback;
-  }
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === "string") : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function formatDateLabel(value?: string): string {
+function formatDate(locale: AppLocale, value?: string) {
   if (!value) {
-    return "미연결";
+    return t(locale, "미연결", "Unavailable");
   }
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toLocaleString("ko-KR", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
   }
-  return value;
+  return new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-US", {
+    month: "short",
+    day: "numeric"
+  }).format(date);
 }
 
-function formatDayLabel(value?: string): string {
+function formatNumber(locale: AppLocale, value: number, digits = 2) {
+  return new Intl.NumberFormat(locale === "ko" ? "ko-KR" : "en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  }).format(value);
+}
+
+function formatCompact(locale: AppLocale, value: number) {
+  return new Intl.NumberFormat(locale === "ko" ? "ko-KR" : "en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1
+  }).format(value);
+}
+
+function parseNumber(value?: string) {
   if (!value) {
-    return "미연결";
+    return undefined;
   }
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toLocaleDateString("ko-KR", {
-      month: "short",
-      day: "numeric"
-    });
-  }
-  return value;
+  const matches = String(value).replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+  return matches ? Number(matches[0]) : undefined;
 }
 
-function parseMetricNumber(value?: string): number | null {
-  if (!value) {
-    return null;
-  }
-  const match = value.replace(/,/g, "").match(/-?\d+(\.\d+)?/);
-  if (!match) {
-    return null;
-  }
-  const numeric = Number(match[0]);
-  return Number.isFinite(numeric) ? numeric : null;
-}
-
-function getMetricValue(card: ConnectedSourceCard | undefined, label: string): string {
-  const entry = card?.metrics.find((metric) =>
-    metric.label.toLowerCase().includes(label.toLowerCase())
+function findMetric(card: ConnectedSourceCard | undefined, keywords: string[]) {
+  return card?.metrics.find((metric) =>
+    keywords.some((keyword) => metric.label.toLowerCase().includes(keyword.toLowerCase()))
   );
-  return entry?.value ?? "";
 }
 
-function getStatusLabel(status: ConnectedSourceCard["status"]): string {
-  if (status === "connected") {
-    return "정상";
+function getSeriesPoints(series?: ConnectedSourceSeriesPoint[]): ChartPoint[] {
+  return (series ?? [])
+    .filter((point) => Number.isFinite(point.value))
+    .map((point) => ({
+      label: point.date,
+      value: point.value
+    }));
+}
+
+function getPriceMomentum(card?: ConnectedSourceCard) {
+  const returnMetric = findMetric(card, ["return"]);
+  if (returnMetric) {
+    const returnValue = parseNumber(returnMetric.value);
+    return returnValue !== undefined ? clamp(returnValue / 5, -1, 1) : 0;
   }
-  if (status === "limited") {
-    return "부분";
-  }
-  return "오류";
-}
 
-function buildInitialFactorState(marketId: MarketProfile["id"]): Record<string, number> {
-  const profile = marketProfiles.find((market) => market.id === marketId);
-  if (!profile) {
-    return {};
-  }
-  return Object.fromEntries(profile.drivers.map((driver) => [driver.id, 0]));
-}
+  const priceDelta = parseNumber(findMetric(card, ["price change", "day change"])?.value);
+  const priceLevel = parseNumber(
+    findMetric(card, ["auction price", "close", "year-end close"])?.value
+  );
 
-function buildDriverMatrix(): DriverMatrixRow[] {
-  return driverFamilies.map((family) => ({
-    family,
-    byMarket: {
-      "eu-ets": marketProfiles
-        .find((market) => market.id === "eu-ets")
-        ?.drivers.filter((driver) => family.matcher(driver.category))
-        .sort((left, right) => right.weight - left.weight)[0],
-      "k-ets": marketProfiles
-        .find((market) => market.id === "k-ets")
-        ?.drivers.filter((driver) => family.matcher(driver.category))
-        .sort((left, right) => right.weight - left.weight)[0],
-      "cn-ets": marketProfiles
-        .find((market) => market.id === "cn-ets")
-        ?.drivers.filter((driver) => family.matcher(driver.category))
-        .sort((left, right) => right.weight - left.weight)[0]
-    }
-  }));
-}
-
-function severityRank(severity: AlertInboxItem["severity"]): number {
-  if (severity === "High") {
+  if (priceDelta === undefined || priceLevel === undefined || priceLevel === 0) {
     return 0;
   }
-  if (severity === "Medium") {
-    return 1;
-  }
-  return 2;
+
+  return clamp(((priceDelta / priceLevel) * 100) / 4, -1, 1);
 }
 
-function buildFeedItems(
-  payload: ConnectedSourcePayload,
-  focusMarket: MarketProfile["id"],
-  forecast: ReturnType<typeof buildForecast>
-): FeedItem[] {
-  const cards = [...payload.cards].sort((left, right) => {
-    if (left.marketId === focusMarket && right.marketId !== focusMarket) {
-      return -1;
-    }
-    if (left.marketId !== focusMarket && right.marketId === focusMarket) {
-      return 1;
-    }
-    return left.status.localeCompare(right.status);
+function getVolumeSignal(card?: ConnectedSourceCard) {
+  const volume = parseNumber(findMetric(card, ["volume"])?.value);
+  const avgVolume = parseNumber(findMetric(card, ["20d avg volume"])?.value);
+  if (volume === undefined) {
+    return 0;
+  }
+  if (avgVolume && avgVolume > 0) {
+    return clamp((volume / avgVolume - 1) * 0.9, -1, 1);
+  }
+  return clamp(volume / 300000, -1, 1);
+}
+
+function getCoverSignal(card?: ConnectedSourceCard) {
+  const cover = parseNumber(findMetric(card, ["cover ratio"])?.value);
+  if (cover === undefined) {
+    return 0;
+  }
+  return clamp((cover - 1.1) / 1.5, -1, 1);
+}
+
+function getCalendarSignal(marketId: MarketProfile["id"]) {
+  const month = new Date().getMonth() + 1;
+  if (marketId === "k-ets") {
+    return month >= 2 && month <= 4 ? 0.32 : 0.08;
+  }
+  if (marketId === "eu-ets") {
+    return month >= 3 && month <= 5 ? 0.25 : 0.04;
+  }
+  return month >= 6 && month <= 9 ? 0.12 : 0.02;
+}
+
+function buildDriverState(profile: MarketProfile, card?: ConnectedSourceCard) {
+  const momentum = getPriceMomentum(card);
+  const volumeSignal = getVolumeSignal(card);
+  const coverSignal = getCoverSignal(card);
+  const calendarSignal = getCalendarSignal(profile.id);
+  const statusSignal =
+    !card ? -0.1 : card.status === "connected" ? 0.18 : card.status === "limited" ? -0.04 : -0.22;
+
+  return Object.fromEntries(
+    profile.drivers.map((driver) => {
+      let value = statusSignal * 0.2;
+
+      if (/policy|supply|implementation/i.test(driver.category)) {
+        value += coverSignal * 0.65;
+      }
+      if (/calendar/i.test(driver.category)) {
+        value += calendarSignal;
+      }
+      if (/microstructure|internal market/i.test(driver.category)) {
+        value += volumeSignal * 0.72;
+      }
+      if (/power|fuel|macro|financial|industry|environmental|weather/i.test(driver.category)) {
+        value += momentum * 0.54;
+      }
+      if (/offset/i.test(driver.variable)) {
+        value += volumeSignal * 0.25;
+      }
+
+      return [driver.id, clamp(value, -1, 1)];
+    })
+  ) as Record<string, number>;
+}
+
+function getDriverFamily(driver: MarketDriver) {
+  return DRIVER_FAMILIES.find((family) => family.matcher(driver)) ?? DRIVER_FAMILIES[0];
+}
+
+function familyScore(
+  profile: MarketProfile,
+  state: Record<string, number>,
+  familyId: string
+) {
+  const drivers = profile.drivers.filter((driver) => getDriverFamily(driver).id === familyId);
+  if (drivers.length === 0) {
+    return 0;
+  }
+
+  const weighted = drivers.map((driver) => {
+    const direction = driver.direction === "lower" ? -1 : 1;
+    return (state[driver.id] ?? 0) * driver.weight * direction;
   });
-
-  const items: FeedItem[] = cards.map((card) => ({
-    id: `source-${card.id}`,
-    tone: card.status === "error" ? "warning" : "live",
-    kicker: `${marketNameMap[card.marketId]} · ${card.sourceName}`,
-    title: card.headline,
-    body: `${card.summary} 마지막 갱신 ${formatDayLabel(card.asOf)}.`,
-    link: card.links[0]?.url
-  }));
-
-  items.push(
-    ...payload.warnings.map((warning, index) => ({
-      id: `warning-${index}`,
-      tone: "warning" as const,
-      kicker: "운영 경고",
-      title: "공식 소스 확인 필요",
-      body: warning
-    }))
-  );
-
-  if (forecast.direction !== "Neutral" && forecast.confidence >= 0.55) {
-    items.push({
-      id: "model-overlay",
-      tone: "model",
-      kicker: "모델 오버레이",
-      title: `${marketNameMap[focusMarket]} ${forecast.direction}`,
-      body: `시나리오 점수 ${forecast.score.toFixed(2)}, 신뢰도 ${Math.round(
-        forecast.confidence * 100
-      )}% 입니다. 이는 참고용 모델 오버레이입니다.`
-    });
-  }
-
-  items.push(
-    ...catalystWindows
-      .filter((windowItem) => windowItem.marketId === "shared" || windowItem.marketId === focusMarket)
-      .slice(0, 2)
-      .map((windowItem) => ({
-        id: `catalyst-${windowItem.id}`,
-        tone: "context" as const,
-        kicker: `${windowItem.windowLabel} · 촉매`,
-        title: windowItem.title,
-        body: windowItem.trigger,
-        link: windowItem.source.url
-      }))
-  );
-
-  return items.slice(0, 8);
+  const totalWeight = drivers.reduce((sum, driver) => sum + driver.weight, 0) || 1;
+  return clamp(weighted.reduce((sum, value) => sum + value, 0) / totalWeight, -1, 1);
 }
 
-function buildAlertInbox(
-  payload: ConnectedSourcePayload,
-  activeTemplateIds: string[],
+function stanceLabel(locale: AppLocale, stance: DecisionAssistantResponse["stance"]) {
+  if (locale === "en") {
+    return stance;
+  }
+  if (stance === "Buy Bias") {
+    return "매수 우위";
+  }
+  if (stance === "Reduce Bias") {
+    return "매도 우위";
+  }
+  return "관망";
+}
+
+function useLocalizedCatalysts(locale: AppLocale, marketId: MarketProfile["id"]) {
+  return useMemo(
+    () =>
+      catalystWindows
+        .map((item) => localizeCatalystWindow(item, locale))
+        .filter((item) => item.marketId === marketId || item.marketId === "shared"),
+    [locale, marketId]
+  );
+}
+
+function downloadText(filename: string, content: string) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function marketColor(marketId: MarketProfile["id"]) {
+  return MARKET_ACCENTS[marketId];
+}
+
+function getSnapshotCard(
+  locale: AppLocale,
+  profile: MarketProfile,
+  card: ConnectedSourceCard | undefined,
+  score: number,
+  confidence: number
+): SnapshotCard {
+  const priceMetric =
+    findMetric(card, ["auction price"]) ??
+    findMetric(card, ["close"]) ??
+    findMetric(card, ["year-end close"]) ??
+    findMetric(card, ["average price"]);
+
+  const changeMetric =
+    findMetric(card, ["price change"]) ??
+    findMetric(card, ["day change"]) ??
+    findMetric(card, ["return"]);
+
+  const volumeMetric = findMetric(card, ["volume"]);
+
+  return {
+    marketId: profile.id,
+    name: getMarketDisplayName(locale, profile.id),
+    status: card ? getStatusLabel(locale, card.status) : t(locale, "미연결", "Unavailable"),
+    priceLabel: priceMetric?.value ?? t(locale, "공식 가격 대기", "Waiting for official price"),
+    changeLabel: changeMetric?.value ?? t(locale, "변화 미공개", "No change metric"),
+    volumeLabel: volumeMetric?.value ?? t(locale, "거래량 미공개", "No volume metric"),
+    asOf: formatDate(locale, card?.asOf),
+    sparkline: getSeriesPoints(card?.series),
+    score,
+    confidence
+  };
+}
+
+function buildRuleDecision(
+  locale: AppLocale,
+  market: MarketProfile,
+  card: ConnectedSourceCard | undefined,
   forecast: ReturnType<typeof buildForecast>,
-  watchlistPreset: WatchlistPreset
-): AlertInboxItem[] {
-  const items: AlertInboxItem[] = [];
+  alerts: AlertItem[],
+  nextCatalysts: ReturnType<typeof useLocalizedCatalysts>,
+  state: Record<string, number>
+): DecisionAssistantResponse {
+  let stance: DecisionAssistantResponse["stance"] =
+    forecast.direction === "Bullish"
+      ? "Buy Bias"
+      : forecast.direction === "Bearish"
+        ? "Reduce Bias"
+        : "Hold / Wait";
 
-  if (activeTemplateIds.includes("official-refresh")) {
-    payload.cards
-      .filter((card) => card.status !== "connected")
-      .forEach((card) => {
-        items.push({
-          id: `refresh-${card.id}`,
-          severity: card.status === "error" ? "High" : "Medium",
-          title: `${marketNameMap[card.marketId]} 공식 소스 상태 점검`,
-          body: `${card.sourceName}가 ${getStatusLabel(card.status)} 상태입니다.`,
-          hint: card.summary
-        });
-      });
+  const highAlerts = alerts.filter((item) => item.severity === "High").length;
+  const mediumAlerts = alerts.filter((item) => item.severity === "Medium").length;
+  let confidence = forecast.confidence;
+
+  if (card?.status === "limited") {
+    confidence -= 0.1;
   }
-
-  if (activeTemplateIds.includes("auction-anomaly")) {
-    payload.cards.forEach((card) => {
-      const coverRatio = parseMetricNumber(getMetricValue(card, "Cover ratio"));
-      const priceChange =
-        parseMetricNumber(getMetricValue(card, "Price change")) ??
-        parseMetricNumber(getMetricValue(card, "Return"));
-      if (coverRatio !== null && (coverRatio < 1.2 || coverRatio > 2.5)) {
-        items.push({
-          id: `auction-${card.id}`,
-          severity: "High",
-          title: `${marketNameMap[card.marketId]} 경매 커버율 확인`,
-          body: `${card.sourceName}의 커버율이 ${coverRatio.toFixed(2)}x 입니다.`,
-          hint: "경매 리듬과 단기 공급 압력 해석이 필요합니다."
-        });
-      } else if (priceChange !== null && Math.abs(priceChange) >= 2) {
-        items.push({
-          id: `price-${card.id}`,
-          severity: "Medium",
-          title: `${marketNameMap[card.marketId]} 가격 변동 확대`,
-          body: `${card.sourceName} 카드에서 단기 가격 변화가 크게 나타났습니다.`,
-          hint: "경매, 유동성, 정책 이벤트를 함께 확인하세요."
-        });
-      }
-    });
+  if (card?.status === "error") {
+    confidence -= 0.22;
+    stance = "Hold / Wait";
   }
+  if (highAlerts > 0 && stance === "Buy Bias") {
+    stance = "Hold / Wait";
+  }
+  confidence = clamp(confidence - highAlerts * 0.07 - mediumAlerts * 0.03, 0.18, 0.92);
 
-  if (activeTemplateIds.includes("policy-bulletin")) {
-    const policyCard = payload.cards.find((card) => card.marketId === "cn-ets");
-    if (policyCard) {
-      items.push({
-        id: "policy-cn",
-        severity: "Medium",
-        title: "중국 정책 피드 추적",
-        body: `${policyCard.sourceName} 최신 항목은 ${formatDayLabel(policyCard.asOf)} 기준입니다.`,
-        hint: policyCard.headline
-      });
+  const thesis = forecast.contributions.slice(0, 3).map((driver) => {
+    const value = state[driver.driverId] ?? 0;
+    if (locale === "ko") {
+      return `${driver.variable}: 현재 압력 ${value >= 0 ? "상방" : "하방"} ${formatNumber(
+        locale,
+        Math.abs(driver.contribution),
+        2
+      )}`;
     }
-  }
-
-  if (activeTemplateIds.includes("proxy-divergence") && watchlistPreset.id !== "official-only") {
-    items.push({
-      id: "proxy-watch",
-      severity: "Low",
-      title: "상장 프록시와 공식 시장 구분",
-      body: "ETF와 ETC는 접근성은 좋지만 공식 가격 소스와 동일하지 않습니다.",
-      hint: "프록시 화면은 확인용, 공식 시장 카드와 함께 보세요."
-    });
-  }
-
-  if (activeTemplateIds.includes("liquidity-thin")) {
-    const ketsCard = payload.cards.find((card) => card.marketId === "k-ets");
-    const volume = parseMetricNumber(getMetricValue(ketsCard, "Volume"));
-    if ((volume !== null && volume === 0) || ketsCard?.status === "limited") {
-      items.push({
-        id: "liquidity-kets",
-        severity: "Medium",
-        title: "K-ETS 유동성 확인",
-        body: "현재 카드 기준으로 거래량 또는 커버리지 확인이 필요합니다.",
-        hint: "얇은 시장에서는 방향보다 실행 가능성이 더 중요합니다."
-      });
-    }
-  }
-
-  if (
-    activeTemplateIds.includes("model-watch") &&
-    forecast.direction !== "Neutral" &&
-    forecast.confidence >= 0.7
-  ) {
-    items.push({
-      id: "model-forecast",
-      severity: "Low",
-      title: "모델 방향성 참고",
-      body: `시나리오 모델이 ${forecast.direction} 쪽으로 기울어 있습니다.`,
-      hint: "실거래 신호가 아니라 해석 보조용입니다."
-    });
-  }
-
-  return items.sort(
-    (left, right) => severityRank(left.severity) - severityRank(right.severity)
-  );
-}
-
-function buildDailyBrief(args: {
-  focusMarket: MarketProfile["id"];
-  payload: ConnectedSourcePayload;
-  forecast: ReturnType<typeof buildForecast>;
-  alertItems: AlertInboxItem[];
-}): string {
-  const lines: string[] = [];
-  const focusCard = args.payload.cards.find((card) => card.marketId === args.focusMarket);
-  const generatedAt = new Date().toLocaleString("ko-KR");
-
-  lines.push("C-Quant Daily Brief");
-  lines.push(`Generated: ${generatedAt}`);
-  lines.push(`Focus market: ${marketNameMap[args.focusMarket]}`);
-  lines.push("");
-  lines.push("[Official market board]");
-
-  marketProfiles.forEach((profile) => {
-    const card = args.payload.cards.find((entry) => entry.marketId === profile.id);
-    lines.push(
-      `- ${profile.name}: ${card?.summary ?? "공식 카드 미연결"} (as of ${card?.asOf ?? "n/a"})`
-    );
-    card?.metrics.slice(0, 3).forEach((metric) => {
-      lines.push(`  · ${metric.label}: ${metric.value}`);
-    });
+    return `${driver.variable}: current pressure ${value >= 0 ? "upside" : "downside"} ${formatNumber(
+      locale,
+      Math.abs(driver.contribution),
+      2
+    )}`;
   });
 
-  lines.push("");
-  lines.push("[Focus drivers]");
-  args.forecast.contributions.slice(0, 4).forEach((entry) => {
-    lines.push(`- ${entry.variable}: ${entry.contribution.toFixed(2)}`);
+  const risks = [
+    ...(card?.notes.slice(0, 2) ?? []),
+    ...alerts.slice(0, 2).map((alert) => alert.title)
+  ].slice(0, 4);
+
+  const actions = [
+    nextCatalysts[0]?.title ?? t(locale, "다음 촉매 일정 확인", "Check the next catalyst"),
+    t(
+      locale,
+      "공식 카드의 갱신 시각과 거래량을 다시 확인",
+      "Re-check the official timestamp and volume before acting"
+    ),
+    t(
+      locale,
+      "워치리스트에서 선물·ETF 프록시와 괴리가 있는지 비교",
+      "Compare futures and ETF proxies against the official tape"
+    )
+  ];
+
+  return {
+    provider: "rule",
+    stance,
+    confidence,
+    summary:
+      locale === "ko"
+        ? `${getMarketDisplayName(locale, market.id)} 기준 현재 평가는 ${stanceLabel(
+            locale,
+            stance
+          )}입니다. 상위 드라이버와 공식 소스 상태를 함께 보면 ${
+            highAlerts > 0 ? "보수적으로 해석" : "조건부로 해석"
+          }하는 편이 좋습니다.`
+        : `The current posture for ${getMarketDisplayName(
+            locale,
+            market.id
+          )} is ${stance}. Top drivers and source health suggest a ${
+            highAlerts > 0 ? "more defensive" : "conditional"
+          } read.`,
+    thesis,
+    risks,
+    actions,
+    disclaimer: t(
+      locale,
+      "참고용 리서치 오버레이입니다. 이 플랫폼은 주문을 중개하지 않으며 개인 맞춤 자문을 제공하지 않습니다.",
+      "Research overlay only. The platform does not route trades or provide individualized advice."
+    ),
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function makeAlertInbox(
+  locale: AppLocale,
+  cards: ConnectedSourceCard[],
+  forecasts: Record<MarketProfile["id"], ReturnType<typeof buildForecast>>
+) {
+  const items: AlertItem[] = [];
+
+  for (const card of cards) {
+    const marketName = getMarketDisplayName(locale, card.marketId);
+
+    if (card.status === "error") {
+      items.push({
+        id: `${card.id}-error`,
+        marketId: card.marketId,
+        severity: "High",
+        title: t(locale, `${marketName} 공식 소스 오류`, `${marketName} official source error`),
+        body: card.summary
+      });
+    }
+
+    if (card.status === "limited") {
+      items.push({
+        id: `${card.id}-limited`,
+        marketId: card.marketId,
+        severity: "Medium",
+        title: t(locale, `${marketName} 공식 데이터 제한`, `${marketName} official coverage limited`),
+        body: card.summary
+      });
+    }
+
+    const volume = parseNumber(findMetric(card, ["volume"])?.value);
+    const averageVolume = parseNumber(findMetric(card, ["20d avg volume"])?.value);
+    if (
+      volume !== undefined &&
+      averageVolume !== undefined &&
+      averageVolume > 0 &&
+      volume < averageVolume * 0.4
+    ) {
+      items.push({
+        id: `${card.id}-liquidity`,
+        marketId: card.marketId,
+        severity: "Medium",
+        title: t(locale, `${marketName} 유동성 약화`, `${marketName} liquidity warning`),
+        body: t(
+          locale,
+          `거래량이 20일 평균의 ${formatNumber(locale, (volume / averageVolume) * 100, 0)}% 수준입니다.`,
+          `Volume is at ${formatNumber(locale, (volume / averageVolume) * 100, 0)}% of the 20-day average.`
+        )
+      });
+    }
+  }
+
+  for (const profile of marketProfiles) {
+    const forecast = forecasts[profile.id];
+    if (Math.abs(forecast.score) > 1.6 && forecast.confidence > 0.55) {
+      items.push({
+        id: `${profile.id}-signal`,
+        marketId: profile.id,
+        severity: "Low",
+        title: t(
+          locale,
+          `${getMarketDisplayName(locale, profile.id)} 신호 강도 확대`,
+          `${getMarketDisplayName(locale, profile.id)} signal intensity rising`
+        ),
+        body: t(
+          locale,
+          `연구 엔진 점수 ${formatNumber(locale, forecast.score, 2)}, 신뢰도 ${formatNumber(
+            locale,
+            forecast.confidence * 100,
+            0
+          )}%`,
+          `Research score ${formatNumber(locale, forecast.score, 2)} with ${formatNumber(
+            locale,
+            forecast.confidence * 100,
+            0
+          )}% confidence.`
+        )
+      });
+    }
+  }
+
+  return items.slice(0, 9);
+}
+
+function makeFeedItems(
+  locale: AppLocale,
+  card: ConnectedSourceCard | undefined,
+  decision: DecisionAssistantResponse,
+  alerts: AlertItem[],
+  catalysts: ReturnType<typeof useLocalizedCatalysts>
+): FeedItem[] {
+  const feed: FeedItem[] = [];
+
+  if (card) {
+    feed.push({
+      id: `${card.id}-headline`,
+      kicker: t(locale, "공식 헤드라인", "Official headline"),
+      title: card.headline,
+      body: card.summary,
+      tone: card.status === "error" ? "negative" : "neutral",
+      link: card.links[0]?.url
+    });
+  }
+
+  feed.push({
+    id: "decision",
+    kicker: t(locale, "의사결정 엔진", "Decision engine"),
+    title: stanceLabel(locale, decision.stance),
+    body: decision.summary,
+    tone:
+      decision.stance === "Buy Bias"
+        ? "positive"
+        : decision.stance === "Reduce Bias"
+          ? "negative"
+          : "neutral"
   });
 
-  lines.push("");
-  lines.push("[Active alerts]");
-  if (args.alertItems.length === 0) {
-    lines.push("- 현재 활성 알림 없음");
-  } else {
-    args.alertItems.slice(0, 6).forEach((item) => {
-      lines.push(`- [${item.severity}] ${item.title}: ${item.body}`);
+  for (const alert of alerts.slice(0, 2)) {
+    feed.push({
+      id: alert.id,
+      kicker: t(locale, "알림", "Alert"),
+      title: alert.title,
+      body: alert.body,
+      tone: alert.severity === "High" ? "negative" : "neutral"
     });
   }
 
-  if (focusCard) {
-    lines.push("");
-    lines.push("[Focus source]");
-    lines.push(`- ${focusCard.sourceName}`);
-    focusCard.links.forEach((link) => {
-      lines.push(`  · ${link.label}: ${link.url}`);
+  for (const catalyst of catalysts.slice(0, 2)) {
+    feed.push({
+      id: catalyst.id,
+      kicker: t(locale, "다음 촉매", "Next catalyst"),
+      title: catalyst.title,
+      body: catalyst.whyItMatters,
+      tone: "positive",
+      link: catalyst.source.url
     });
   }
 
-  return lines.join("\n");
+  return feed.slice(0, 6);
 }
 
-function openExternal(url: string) {
-  if (window.desktopBridge?.openExternal) {
-    void window.desktopBridge.openExternal(url);
-    return;
-  }
-  window.open(url, "_blank", "noopener,noreferrer");
-}
-
-function WindowChrome() {
-  const [isMaximized, setIsMaximized] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function syncState() {
-      if (!window.desktopBridge?.isWindowMaximized) {
-        return;
-      }
-      const value = await window.desktopBridge.isWindowMaximized();
-      if (mounted) {
-        setIsMaximized(value);
-      }
-    }
-
-    void syncState();
-    const handle = () => void syncState();
-    window.addEventListener("resize", handle);
-
-    return () => {
-      mounted = false;
-      window.removeEventListener("resize", handle);
-    };
-  }, []);
-
-  async function toggleWindowState() {
-    const nextValue = await window.desktopBridge?.toggleMaximizeWindow?.();
-    if (typeof nextValue === "boolean") {
-      setIsMaximized(nextValue);
-    }
-  }
-
-  return (
-    <div className="window-chrome">
-      <div className="window-drag-area">
-        <div className="window-mark">C</div>
-        <div>
-          <div className="window-title">C-Quant</div>
-          <div className="window-subtitle">Carbon intelligence terminal</div>
-        </div>
-      </div>
-      <div className="window-controls">
-        <button
-          type="button"
-          className="window-control"
-          onClick={() => void window.desktopBridge?.minimizeWindow?.()}
-          aria-label="창 최소화"
-        >
-          –
-        </button>
-        <button
-          type="button"
-          className="window-control"
-          onClick={() => void toggleWindowState()}
-          aria-label={isMaximized ? "창 복원" : "창 최대화"}
-        >
-          {isMaximized ? "❐" : "□"}
-        </button>
-        <button
-          type="button"
-          className="window-control close"
-          onClick={() => void window.desktopBridge?.closeWindow?.()}
-          aria-label="창 닫기"
-        >
-          ×
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SectionHeader(props: {
-  eyebrow: string;
-  title: string;
-  summary: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="section-header">
-      <div>
-        <div className="section-eyebrow">{props.eyebrow}</div>
-        <h2>{props.title}</h2>
-        <p>{props.summary}</p>
-      </div>
-      {props.action ? <div className="section-action">{props.action}</div> : null}
-    </div>
-  );
-}
-
-function LinkButton(props: { label: string; url: string; subtle?: boolean }) {
-  return (
-    <button
-      type="button"
-      className={props.subtle ? "link-button subtle" : "link-button"}
-      onClick={() => openExternal(props.url)}
-    >
-      {props.label}
-    </button>
-  );
-}
-
-function SourceStatusBadge(props: { status: ConnectedSourceCard["status"] }) {
-  return <span className={`status-pill ${props.status}`}>{getStatusLabel(props.status)}</span>;
-}
-
-function LeftRail(props: {
-  surface: Surface;
-  onSurfaceChange: (surface: Surface) => void;
-  focusMarket: MarketProfile["id"];
-  onMarketChange: (marketId: MarketProfile["id"]) => void;
-  activeWorkspace: WorkspacePreset;
-  workspaceId: string;
-  onWorkspaceChange: (id: string) => void;
-  watchlistId: string;
-  onWatchlistChange: (id: string) => void;
-}) {
-  return (
-    <aside className="side-rail">
-      <div className="rail-brand">
-        <div className="brand-seal">C</div>
-        <div>
-          <div className="brand-name">C-Quant</div>
-          <div className="brand-note">거래는 밖에서, 판단은 여기서.</div>
-        </div>
-      </div>
-
-      <div className="rail-block">
-        <div className="rail-label">화면</div>
-        <div className="nav-stack">
-          {surfaceTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={tab.id === props.surface ? "nav-button active" : "nav-button"}
-              onClick={() => props.onSurfaceChange(tab.id)}
-            >
-              <span>{tab.label}</span>
-              <small>{tab.summary}</small>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rail-block">
-        <div className="rail-label">시장</div>
-        <div className="choice-stack">
-          {marketProfiles.map((market) => (
-            <button
-              key={market.id}
-              type="button"
-              className={
-                market.id === props.focusMarket ? "choice-pill active" : "choice-pill"
-              }
-              onClick={() => props.onMarketChange(market.id)}
-            >
-              {market.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rail-block">
-        <div className="rail-label">저장된 워크스페이스</div>
-        <div className="workspace-list">
-          {workspacePresets.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              className={
-                preset.id === props.workspaceId ? "workspace-button active" : "workspace-button"
-              }
-              onClick={() => props.onWorkspaceChange(preset.id)}
-            >
-              <strong>{preset.title}</strong>
-              <span>{preset.objective}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rail-block">
-        <div className="rail-label">워치리스트</div>
-        <div className="workspace-list compact">
-          {watchlistPresets.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              className={
-                preset.id === props.watchlistId ? "workspace-button active" : "workspace-button"
-              }
-              onClick={() => props.onWatchlistChange(preset.id)}
-            >
-              <strong>{preset.title}</strong>
-              <span>{preset.summary}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rail-card">
-        <div className="rail-card-title">{props.activeWorkspace.title}</div>
-        <p>{props.activeWorkspace.summary}</p>
-        <div className="inline-tags">
-          {props.activeWorkspace.moduleLabels.map((label) => (
-            <span key={label} className="soft-tag">
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function InspectorRail(props: {
-  focusProfile: MarketProfile;
-  focusCard?: ConnectedSourceCard;
-  alertCount: number;
-  activeWorkspace: WorkspacePreset;
-  activeBenchmarks: BenchmarkPlatform[];
-  sourcesError: string | null;
-}) {
-  return (
-    <aside className="inspector-rail">
-      <section className="inspector-panel">
-        <div className="inspector-label">선택 시장</div>
-        <h3>{props.focusProfile.name}</h3>
-        <p>{props.focusProfile.stageNote}</p>
-        {props.focusCard ? (
-          <>
-            <div className="inspector-row">
-              <SourceStatusBadge status={props.focusCard.status} />
-              <span>{formatDayLabel(props.focusCard.asOf)}</span>
-            </div>
-            <div className="inspector-metrics">
-              {props.focusCard.metrics.slice(0, 3).map((metric) => (
-                <div key={metric.label}>
-                  <span>{metric.label}</span>
-                  <strong>{metric.value}</strong>
-                </div>
-              ))}
-            </div>
-            <div className="inline-links">
-              {props.focusCard.links.slice(0, 2).map((link) => (
-                <LinkButton key={link.url} label={link.label} url={link.url} subtle />
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className="muted">공식 카드가 아직 연결되지 않았습니다.</p>
-        )}
-      </section>
-
-      <section className="inspector-panel">
-        <div className="inspector-label">오늘의 상태</div>
-        <div className="inspector-stat">{props.alertCount}</div>
-        <p>활성 알림 기준으로 지금 확인할 항목 수입니다.</p>
-        {props.sourcesError ? <p className="warning-copy">{props.sourcesError}</p> : null}
-      </section>
-
-      <section className="inspector-panel">
-        <div className="inspector-label">워크스페이스 원형</div>
-        <h3>{props.activeWorkspace.title}</h3>
-        <p>{props.activeWorkspace.summary}</p>
-        <div className="inspector-list">
-          {props.activeBenchmarks.map((platform) => (
-            <div key={platform.id}>
-              <strong>{platform.name}</strong>
-              <span>{platform.category}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="inspector-panel">
-        <div className="inspector-label">신뢰 원칙</div>
-        <div className="inspector-list">
-          {trustPrinciples.map((principle) => (
-            <div key={principle.id}>
-              <strong>{principle.title}</strong>
-              <span>{principle.description}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-    </aside>
-  );
-}
-
-function MarketBoardCard(props: {
-  profile: MarketProfile;
-  card?: ConnectedSourceCard;
-  active: boolean;
-  onSelect: () => void;
-}) {
-  const headlineMetric = props.card?.metrics[0];
-
-  return (
-    <button
-      type="button"
-      className={props.active ? "market-board-card active" : "market-board-card"}
-      onClick={props.onSelect}
-    >
-      <div className="market-card-top">
-        <div>
-          <span className="market-region">{props.profile.region}</span>
-          <h3>{props.profile.name}</h3>
-        </div>
-        {props.card ? <SourceStatusBadge status={props.card.status} /> : null}
-      </div>
-      <div className="market-card-main">
-        <div className="metric-name">{headlineMetric?.label ?? "Official status"}</div>
-        <div className="metric-value">{headlineMetric?.value ?? "미연결"}</div>
-        <p>{props.card?.summary ?? props.profile.scopeNote}</p>
-      </div>
-      <div className="market-card-footer">
-        <span>{formatDayLabel(props.card?.asOf)}</span>
-        <span>{props.card?.sourceName ?? "공식 소스 대기"}</span>
-      </div>
-    </button>
-  );
-}
-
-function OverviewSurface(props: {
-  focusMarket: MarketProfile["id"];
-  focusProfile: MarketProfile;
-  sourcePayload: ConnectedSourcePayload;
-  driverMatrix: DriverMatrixRow[];
-  feedItems: FeedItem[];
-  watchlistPreset: WatchlistPreset;
-  watchItems: MarketWatchItem[];
-  onMarketChange: (marketId: MarketProfile["id"]) => void;
-}) {
-  const focusCard = props.sourcePayload.cards.find((card) => card.marketId === props.focusMarket);
-
-  return (
-    <div className="surface-stack">
-      <section className="hero-panel">
-        <SectionHeader
-          eyebrow="Today"
-          title={`${props.focusProfile.name}를 기준으로 오늘의 탄소시장 흐름을 봅니다.`}
-          summary={props.focusProfile.scopeNote}
-          action={
-            focusCard?.links[0] ? (
-              <LinkButton label="공식 출처 열기" url={focusCard.links[0].url} />
-            ) : null
-          }
-        />
-        <div className="hero-summary">
-          <div className="hero-number">
-            <span>{focusCard?.metrics[0]?.label ?? "연결 상태"}</span>
-            <strong>{focusCard?.metrics[0]?.value ?? "미연결"}</strong>
-          </div>
-          <div className="hero-copy">
-            <h3>{focusCard?.headline ?? props.focusProfile.name}</h3>
-            <p>{focusCard?.summary ?? props.focusProfile.stageNote}</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel">
-        <SectionHeader
-          eyebrow="Global Carbon Board"
-          title="세 시장을 같은 해상도로 비교"
-          summary="공식 카드만 먼저 배치해서 가격, 상태, 갱신 시점을 한 번에 읽게 했습니다."
-        />
-        <div className="market-board-grid">
-          {marketProfiles.map((profile) => (
-            <MarketBoardCard
-              key={profile.id}
-              profile={profile}
-              card={props.sourcePayload.cards.find((card) => card.marketId === profile.id)}
-              active={profile.id === props.focusMarket}
-              onSelect={() => props.onMarketChange(profile.id)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <div className="surface-grid two-up">
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Driver Matrix"
-            title="가격 영향 인자를 국가별로 압축"
-            summary="전체 변수군은 출처 화면에 모두 남기고, 개요에서는 가장 중요한 축만 요약합니다."
-          />
-          <div className="matrix-table">
-            <div className="matrix-head">
-              <span>영향 축</span>
-              <span>EU ETS</span>
-              <span>K-ETS</span>
-              <span>China ETS</span>
-            </div>
-            {props.driverMatrix.map((row) => (
-              <div key={row.family.id} className="matrix-row">
-                <div className="matrix-family">
-                  <strong>{row.family.label}</strong>
-                  <span>{row.family.summary}</span>
-                </div>
-                {(["eu-ets", "k-ets", "cn-ets"] as const).map((marketId) => {
-                  const driver = row.byMarket[marketId];
-                  return (
-                    <div key={marketId} className="matrix-cell">
-                      <strong>{driver?.variable ?? "해당 없음"}</strong>
-                      <span>{driver?.importance ?? "—"}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Catalyst Windows"
-            title="가격을 움직이는 운영 캘린더"
-            summary="정확한 날짜보다 실제로 언제 무엇을 체크해야 하는지에 집중했습니다."
-          />
-          <div className="timeline-list">
-            {catalystWindows
-              .filter(
-                (item) => item.marketId === "shared" || item.marketId === props.focusMarket
-              )
-              .map((item) => (
-                <div key={item.id} className="timeline-item">
-                  <div className="timeline-label">{item.windowLabel}</div>
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.trigger}</p>
-                    <span>{item.whyItMatters}</span>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </section>
-      </div>
-
-      <div className="surface-grid two-up">
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Briefing Feed"
-            title="오늘의 브리프"
-            summary="Carbon Pulse식 피드와 토스식 짧은 문장을 섞어 빠르게 읽히게 만들었습니다."
-          />
-          <div className="feed-list">
-            {props.feedItems.map((item) => (
-              <article key={item.id} className={`feed-item ${item.tone}`}>
-                <div className="feed-kicker">{item.kicker}</div>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-                {item.link ? <LinkButton label="출처 열기" url={item.link} subtle /> : null}
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Market Watch"
-            title={props.watchlistPreset.title}
-            summary={props.watchlistPreset.summary}
-          />
-          <div className="watch-list">
-            {props.watchItems.map((item) => (
-              <div key={item.id} className="watch-row">
-                <div>
-                  <strong>{item.title}</strong>
-                  <p>{item.role}</p>
-                </div>
-                <div className="watch-row-meta">
-                  <span>{item.category}</span>
-                  <LinkButton label="열기" url={item.url} subtle />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function WorkspaceSurface(props: {
-  activeWorkspace: WorkspacePreset;
-  watchlistPreset: WatchlistPreset;
-  watchView: WatchViewPreset;
-  watchItems: MarketWatchItem[];
-  benchmarks: BenchmarkPlatform[];
-  onWatchViewChange: (id: string) => void;
-}) {
-  return (
-    <div className="surface-stack">
-      <section className="hero-panel compact">
-        <SectionHeader
-          eyebrow="Workspace"
-          title={props.activeWorkspace.title}
-          summary={props.activeWorkspace.summary}
-        />
-        <div className="module-ribbon">
-          {props.activeWorkspace.moduleLabels.map((label) => (
-            <span key={label} className="module-chip">
-              {label}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <SectionHeader
-          eyebrow="Watch View"
-          title={`${props.watchlistPreset.title} · ${props.watchView.title}`}
-          summary={props.watchView.summary}
-          action={
-            <div className="inline-tabs">
-              {watchViewPresets.map((view) => (
-                <button
-                  key={view.id}
-                  type="button"
-                  className={view.id === props.watchView.id ? "mini-tab active" : "mini-tab"}
-                  onClick={() => props.onWatchViewChange(view.id)}
-                >
-                  {view.title}
-                </button>
-              ))}
-            </div>
-          }
-        />
-        <div className="watch-table">
-          <div className="watch-table-head">
-            {props.watchView.columns.map((column) => (
-              <span key={column}>{column}</span>
-            ))}
-          </div>
-          {props.watchItems.map((item) => (
-            <div key={item.id} className="watch-table-row">
-              {props.watchView.columns.map((column) => {
-                if (column === "상품") {
-                  return <strong key={column}>{item.title}</strong>;
-                }
-                if (column === "역할") {
-                  return <span key={column}>{item.role}</span>;
-                }
-                if (column === "카테고리") {
-                  return <span key={column}>{item.category}</span>;
-                }
-                if (column === "메모") {
-                  return <span key={column}>{item.note}</span>;
-                }
-                if (column === "링크") {
-                  return (
-                    <span key={column}>
-                      <LinkButton label="열기" url={item.url} subtle />
-                    </span>
-                  );
-                }
-                return <span key={column}>—</span>;
-              })}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="surface-grid two-up">
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Borrowed From"
-            title="성공한 플랫폼에서 차용한 기능"
-            summary="단순한 레퍼런스 나열이 아니라 현재 화면에서 무엇으로 구현됐는지까지 연결했습니다."
-          />
-          <div className="benchmark-list">
-            {props.benchmarks.map((platform) => (
-              <article key={platform.id} className="benchmark-item">
-                <div className="benchmark-top">
-                  <div>
-                    <strong>{platform.name}</strong>
-                    <span>{platform.category}</span>
-                  </div>
-                  <LinkButton label="공식 페이지" url={platform.source.url} subtle />
-                </div>
-                <p>{platform.differentiator}</p>
-                <div className="inline-tags">
-                  {(platform.implementedAs ?? platform.featuresToBorrow).map((feature) => (
-                    <span key={feature} className="soft-tag">
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Subscription Layer"
-            title="거래를 빼고 남기는 구독 가치"
-            summary="이 제품의 수익화는 주문이 아니라 정보 신뢰, 저장형 작업면, 리포트, 알림에 둡니다."
-          />
-          <div className="subscription-list">
-            {subscriptionFeatures.map((feature) => (
-              <div key={feature.id} className="subscription-item">
-                <strong>{feature.title}</strong>
-                <p>{feature.description}</p>
-                <span>{feature.audience}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function AlertsSurface(props: {
-  activeTemplateIds: string[];
-  inboxItems: AlertInboxItem[];
-  dailyBrief: string;
-  onToggleTemplate: (id: string) => void;
-  onSaveBrief: () => void;
-  canSaveBrief: boolean;
-}) {
-  return (
-    <div className="surface-stack">
-      <section className="hero-panel compact">
-        <SectionHeader
-          eyebrow="Alerts Hub"
-          title="알림은 많게가 아니라 설명 가능하게"
-          summary="경고를 뿌리는 대신, 공식 소스 이상과 가격 해석에 진짜 필요한 항목만 인박스로 모읍니다."
-          action={
-            <button
-              type="button"
-              className="primary-button"
-              onClick={props.onSaveBrief}
-              disabled={!props.canSaveBrief}
-            >
-              오늘의 브리프 저장
-            </button>
-          }
-        />
-        <div className="stats-strip">
-          <div>
-            <span>활성 템플릿</span>
-            <strong>{props.activeTemplateIds.length}</strong>
-          </div>
-          <div>
-            <span>현재 인박스</span>
-            <strong>{props.inboxItems.length}</strong>
-          </div>
-          <div>
-            <span>브리프 포맷</span>
-            <strong>TXT</strong>
-          </div>
-        </div>
-      </section>
-
-      <div className="surface-grid two-up">
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Templates"
-            title="알림 템플릿"
-            summary="TradingView식 알림 개념을 탄소시장용으로 다시 정의했습니다."
-          />
-          <div className="template-list">
-            {alertTemplates.map((template) => (
-              <div key={template.id} className="template-item">
-                <div className="template-copy">
-                  <div className="template-top">
-                    <strong>{template.title}</strong>
-                    <span className={`severity-pill ${template.severity.toLowerCase()}`}>
-                      {template.severity}
-                    </span>
-                  </div>
-                  <p>{template.trigger}</p>
-                  <span>
-                    {template.scope} · {template.delivery}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className={
-                    props.activeTemplateIds.includes(template.id)
-                      ? "toggle-button active"
-                      : "toggle-button"
-                  }
-                  onClick={() => props.onToggleTemplate(template.id)}
-                >
-                  {props.activeTemplateIds.includes(template.id) ? "켜짐" : "꺼짐"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Inbox"
-            title="지금 확인할 것"
-            summary="정확성보다 과장을 우선하는 푸시 알림을 피하고, 운영적으로 유의미한 항목만 남겼습니다."
-          />
-          <div className="alert-list">
-            {props.inboxItems.length === 0 ? (
-              <div className="empty-state">현재 조건에서 띄울 알림이 없습니다.</div>
-            ) : (
-              props.inboxItems.map((item) => (
-                <article key={item.id} className={`alert-item ${item.severity.toLowerCase()}`}>
-                  <div className="alert-top">
-                    <strong>{item.title}</strong>
-                    <span>{item.severity}</span>
-                  </div>
-                  <p>{item.body}</p>
-                  <small>{item.hint}</small>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
-      </div>
-
-      <section className="panel">
-        <SectionHeader
-          eyebrow="Daily Brief"
-          title="바로 저장 가능한 구독형 브리프"
-          summary="패키지된 앱에서는 텍스트 브리프를 바로 저장할 수 있습니다."
-        />
-        <pre className="brief-preview">{props.dailyBrief}</pre>
-      </section>
-    </div>
-  );
-}
-
-function ScenarioPanel(props: {
-  focusProfile: MarketProfile;
-  factorState: Record<string, number>;
+function buildDecisionPayload(args: {
+  locale: AppLocale;
+  market: MarketProfile;
+  card: ConnectedSourceCard | undefined;
   forecast: ReturnType<typeof buildForecast>;
-  onFactorChange: (driverId: string, value: number) => void;
-  onReset: () => void;
+  familyScores: Record<string, number>;
+  alerts: AlertItem[];
+  catalysts: ReturnType<typeof useLocalizedCatalysts>;
+  question: string;
 }) {
-  return (
-    <section className="panel">
-      <SectionHeader
-        eyebrow="Scenario Lab"
-        title={`${props.focusProfile.name} 시나리오 오버레이`}
-        summary="각 가격 결정 변수를 -2에서 +2까지 조정해 참고용 방향성을 확인합니다."
-        action={
-          <button type="button" className="secondary-button" onClick={props.onReset}>
-            초기화
-          </button>
-        }
-      />
-      <div className="scenario-hero">
-        <div>
-          <span>방향</span>
-          <strong>{props.forecast.direction}</strong>
-        </div>
-        <div>
-          <span>점수</span>
-          <strong>{props.forecast.score.toFixed(2)}</strong>
-        </div>
-        <div>
-          <span>신뢰도</span>
-          <strong>{Math.round(props.forecast.confidence * 100)}%</strong>
-        </div>
-      </div>
+  const { locale, market, card, forecast, familyScores, alerts, catalysts, question } = args;
 
-      <div className="driver-groups">
-        {driverFamilies.map((family) => {
-          const drivers = props.focusProfile.drivers.filter((driver) =>
-            family.matcher(driver.category)
-          );
-
-          if (drivers.length === 0) {
-            return null;
-          }
-
-          return (
-            <div key={family.id} className="driver-group">
-              <h3>{family.label}</h3>
-              <p>{family.summary}</p>
-              <div className="driver-list">
-                {drivers.map((driver) => (
-                  <label key={driver.id} className="driver-item">
-                    <div className="driver-copy">
-                      <strong>{driver.variable}</strong>
-                      <span>{driver.note}</span>
-                    </div>
-                    <div className="driver-control">
-                      <input
-                        type="range"
-                        min={-2}
-                        max={2}
-                        step={0.25}
-                        value={props.factorState[driver.id] ?? 0}
-                        onChange={(event) =>
-                          props.onFactorChange(driver.id, Number(event.target.value))
-                        }
-                      />
-                      <span>{(props.factorState[driver.id] ?? 0).toFixed(2)}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="contribution-list">
-        {props.forecast.contributions.slice(0, 5).map((item) => (
-          <div key={item.driverId} className="contribution-item">
-            <strong>{item.variable}</strong>
-            <span>{item.contribution.toFixed(2)}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ModelPanel(props: {
-  focusMarket: MarketProfile["id"];
-  inputPath: string;
-  trainWindow: number;
-  horizon: number;
-  result: WalkForwardResult | null;
-  error: string | null;
-  running: boolean;
-  onPickFile: () => void;
-  onTrainWindowChange: (value: number) => void;
-  onHorizonChange: (value: number) => void;
-  onRun: () => void;
-}) {
-  return (
-    <section className="panel">
-      <SectionHeader
-        eyebrow="Walk-forward"
-        title="워크포워드 예측 모델"
-        summary="패키지된 앱에서 CSV를 선택하면 Python 워크포워드 모델을 실행합니다."
-      />
-      <div className="tool-row">
-        <button type="button" className="secondary-button" onClick={props.onPickFile}>
-          CSV 선택
-        </button>
-        <div className="path-chip">{props.inputPath || "선택된 파일 없음"}</div>
-      </div>
-      <div className="form-grid">
-        <label>
-          <span>시장</span>
-          <input type="text" value={marketNameMap[props.focusMarket]} readOnly />
-        </label>
-        <label>
-          <span>학습 윈도우</span>
-          <input
-            type="number"
-            min={30}
-            step={10}
-            value={props.trainWindow}
-            onChange={(event) => props.onTrainWindowChange(Number(event.target.value))}
-          />
-        </label>
-        <label>
-          <span>예측 구간</span>
-          <input
-            type="number"
-            min={1}
-            max={30}
-            value={props.horizon}
-            onChange={(event) => props.onHorizonChange(Number(event.target.value))}
-          />
-        </label>
-      </div>
-      <div className="tool-row">
-        <button type="button" className="primary-button" onClick={props.onRun} disabled={props.running}>
-          {props.running ? "실행 중..." : "워크포워드 실행"}
-        </button>
-      </div>
-      {props.error ? <p className="warning-copy">{props.error}</p> : null}
-      {props.result ? (
-        <div className="result-stack">
-          <div className="stats-strip">
-            <div>
-              <span>MAE</span>
-              <strong>{props.result.summary.mae.toFixed(3)}</strong>
-            </div>
-            <div>
-              <span>RMSE</span>
-              <strong>{props.result.summary.rmse.toFixed(3)}</strong>
-            </div>
-            <div>
-              <span>방향 정확도</span>
-              <strong>{props.result.summary.directionalAccuracyPct.toFixed(1)}%</strong>
-            </div>
-            <div>
-              <span>다음 예측</span>
-              <strong>{props.result.summary.nextPrediction.toFixed(2)}</strong>
-            </div>
-          </div>
-          <div className="feature-list">
-            {props.result.topFeatures.slice(0, 8).map((feature) => (
-              <div key={feature.feature} className="feature-item">
-                <strong>{feature.feature}</strong>
-                <span>{feature.importance.toFixed(3)}</span>
-              </div>
-            ))}
-          </div>
-          {props.result.warnings.length > 0 ? (
-            <div className="warning-list">
-              {props.result.warnings.map((warning) => (
-                <p key={warning}>{warning}</p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function BacktestPanel(props: {
-  csvPath: string;
-  strategy: BacktestStrategy;
-  feeBps: number;
-  result: BacktestRun | null;
-  error: string | null;
-  onPickFile: () => void;
-  onStrategyChange: (value: BacktestStrategy) => void;
-  onFeeChange: (value: number) => void;
-  onRun: () => void;
-}) {
-  return (
-    <section className="panel">
-      <SectionHeader
-        eyebrow="Backtest"
-        title="로컬 CSV 백테스트"
-        summary="트렌드, 평균회귀, 스프레드, 정책 모멘텀 전략을 간단히 검증합니다."
-      />
-      <div className="tool-row">
-        <button type="button" className="secondary-button" onClick={props.onPickFile}>
-          CSV 불러오기
-        </button>
-        <div className="path-chip">{props.csvPath || "선택된 파일 없음"}</div>
-      </div>
-      <div className="form-grid">
-        <label>
-          <span>전략</span>
-          <select
-            value={props.strategy}
-            onChange={(event) =>
-              props.onStrategyChange(event.target.value as BacktestStrategy)
-            }
-          >
-            {Object.entries(strategyLabels).map(([id, label]) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>비용(bps)</span>
-          <input
-            type="number"
-            min={0}
-            value={props.feeBps}
-            onChange={(event) => props.onFeeChange(Number(event.target.value))}
-          />
-        </label>
-      </div>
-      <div className="tool-row">
-        <button type="button" className="primary-button" onClick={props.onRun}>
-          백테스트 실행
-        </button>
-      </div>
-      {props.error ? <p className="warning-copy">{props.error}</p> : null}
-      {props.result ? (
-        <div className="stats-grid">
-          <div>
-            <span>총수익률</span>
-            <strong>{props.result.metrics.totalReturnPct.toFixed(2)}%</strong>
-          </div>
-          <div>
-            <span>연환산 수익률</span>
-            <strong>{props.result.metrics.annualizedReturnPct.toFixed(2)}%</strong>
-          </div>
-          <div>
-            <span>연환산 변동성</span>
-            <strong>{props.result.metrics.annualizedVolPct.toFixed(2)}%</strong>
-          </div>
-          <div>
-            <span>Sharpe</span>
-            <strong>{props.result.metrics.sharpe.toFixed(2)}</strong>
-          </div>
-          <div>
-            <span>MDD</span>
-            <strong>{props.result.metrics.maxDrawdownPct.toFixed(2)}%</strong>
-          </div>
-          <div>
-            <span>승률</span>
-            <strong>{props.result.metrics.winRatePct.toFixed(2)}%</strong>
-          </div>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function LabSurface(props: {
-  focusProfile: MarketProfile;
-  labMode: LabMode;
-  onLabModeChange: (mode: LabMode) => void;
-  factorState: Record<string, number>;
-  forecast: ReturnType<typeof buildForecast>;
-  onFactorChange: (driverId: string, value: number) => void;
-  onResetScenario: () => void;
-  modelInputPath: string;
-  trainWindow: number;
-  horizon: number;
-  modelResult: WalkForwardResult | null;
-  modelError: string | null;
-  isRunningModel: boolean;
-  onPickModelFile: () => void;
-  onTrainWindowChange: (value: number) => void;
-  onHorizonChange: (value: number) => void;
-  onRunModel: () => void;
-  csvPath: string;
-  strategy: BacktestStrategy;
-  feeBps: number;
-  backtestResult: BacktestRun | null;
-  backtestError: string | null;
-  onPickBacktestFile: () => void;
-  onStrategyChange: (value: BacktestStrategy) => void;
-  onFeeChange: (value: number) => void;
-  onRunBacktest: () => void;
-  onSaveTemplate: () => void;
-  canSaveTemplate: boolean;
-}) {
-  const datasetSchema = marketDatasetSchemas.find(
-    (schema) => schema.marketId === props.focusProfile.id
-  )!;
-
-  return (
-    <div className="surface-stack">
-      <section className="hero-panel compact">
-        <SectionHeader
-          eyebrow="Research Lab"
-          title={`${props.focusProfile.name} 연구실`}
-          summary="모델은 참고용이며, 실거래용 가격 목표를 보장하지 않습니다."
-          action={
-            <div className="inline-tabs">
-              {(["scenario", "model", "backtest"] as LabMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={mode === props.labMode ? "mini-tab active" : "mini-tab"}
-                  onClick={() => props.onLabModeChange(mode)}
-                >
-                  {labModeLabels[mode]}
-                </button>
-              ))}
-            </div>
-          }
-        />
-      </section>
-
-      {props.labMode === "scenario" ? (
-        <ScenarioPanel
-          focusProfile={props.focusProfile}
-          factorState={props.factorState}
-          forecast={props.forecast}
-          onFactorChange={props.onFactorChange}
-          onReset={props.onResetScenario}
-        />
-      ) : null}
-
-      {props.labMode === "model" ? (
-        <ModelPanel
-          focusMarket={props.focusProfile.id}
-          inputPath={props.modelInputPath}
-          trainWindow={props.trainWindow}
-          horizon={props.horizon}
-          result={props.modelResult}
-          error={props.modelError}
-          running={props.isRunningModel}
-          onPickFile={props.onPickModelFile}
-          onTrainWindowChange={props.onTrainWindowChange}
-          onHorizonChange={props.onHorizonChange}
-          onRun={props.onRunModel}
-        />
-      ) : null}
-
-      {props.labMode === "backtest" ? (
-        <BacktestPanel
-          csvPath={props.csvPath}
-          strategy={props.strategy}
-          feeBps={props.feeBps}
-          result={props.backtestResult}
-          error={props.backtestError}
-          onPickFile={props.onPickBacktestFile}
-          onStrategyChange={props.onStrategyChange}
-          onFeeChange={props.onFeeChange}
-          onRun={props.onRunBacktest}
-        />
-      ) : null}
-
-      <div className="surface-grid two-up">
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Data Readiness"
-            title={datasetSchema.name}
-            summary={datasetSchema.description}
-            action={
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={props.onSaveTemplate}
-                disabled={!props.canSaveTemplate}
-              >
-                템플릿 저장
-              </button>
-            }
-          />
-          <div className="schema-list">
-            {datasetSchema.columns.map((column) => (
-              <div key={column.name} className="schema-item">
-                <strong>{column.name}</strong>
-                <span>{column.required ? "Required" : "Optional"}</span>
-                <p>{column.description}</p>
-                <small>{column.sourceHint}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Quant Playbook"
-            title="참고할 퀀트 지표"
-            summary="가격 예측보다 실행 타이밍과 리스크 관리에 더 가까운 지표를 우선 배치했습니다."
-          />
-          <div className="indicator-list">
-            {quantIndicators.map((indicator) => (
-              <article key={indicator.id} className="indicator-item">
-                <strong>{indicator.name}</strong>
-                <span>{indicator.family}</span>
-                <p>{indicator.whyItMatters}</p>
-                <small>필요 컬럼: {indicator.requiredColumns.join(", ")}</small>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function SourcesSurface(props: { focusMarket: MarketProfile["id"] }) {
-  const focusSources = sourceRegistry.filter(
-    (item) => item.markets.includes("shared") || item.markets.includes(props.focusMarket)
-  );
-
-  return (
-    <div className="surface-stack">
-      <section className="panel">
-        <SectionHeader
-          eyebrow="Trust Center"
-          title="공식 출처와 제품 경계를 먼저 공개"
-          summary="정확한 사실만 기반으로 보여주기 위해, 공식 웹·문서·API·상업 API를 구분합니다."
-        />
-        <div className="trust-grid">
-          {trustPrinciples.map((principle) => (
-            <article key={principle.id} className="trust-item">
-              <strong>{principle.title}</strong>
-              <p>{principle.description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <SectionHeader
-          eyebrow="Source Registry"
-          title={`${marketNameMap[props.focusMarket]} 중심 출처 레지스트리`}
-          summary="앱 안에서 보는 숫자가 어디에서 왔는지, 어떤 방식으로 연결되는지 보여줍니다."
-        />
-        <div className="registry-list">
-          {focusSources.map((item) => (
-            <article key={item.id} className="registry-item">
-              <div className="registry-top">
-                <div>
-                  <strong>{item.title}</strong>
-                  <span>
-                    {item.category} · {item.method}
-                  </span>
-                </div>
-                <LinkButton label="열기" url={item.url} subtle />
-              </div>
-              <p>{item.appUse}</p>
-              <small>{item.whyItMatters}</small>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <div className="surface-grid two-up">
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Driver Atlas"
-            title="가격 결정 변수 전체"
-            summary="국가별로 확인된 변수군을 중요도와 설명과 함께 정리했습니다."
-          />
-          <div className="atlas-grid">
-            {marketProfiles.map((profile) => (
-              <div key={profile.id} className="atlas-column">
-                <h3>{profile.name}</h3>
-                <p>{profile.sourceNote}</p>
-                {profile.drivers.map((driver) => (
-                  <article key={driver.id} className="atlas-item">
-                    <div className="atlas-top">
-                      <strong>{driver.variable}</strong>
-                      <span>{driver.importance}</span>
-                    </div>
-                    <p>{driver.note}</p>
-                    <small>{driver.category}</small>
-                  </article>
-                ))}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <SectionHeader
-            eyebrow="Benchmark Stack"
-            title="이번 개편의 벤치마크 기준"
-            summary="성공한 제품에서 무엇을 가져왔는지와 현재 구현 위치를 같이 보여줍니다."
-          />
-          <div className="benchmark-list">
-            {benchmarkPlatforms.map((platform) => (
-              <article key={platform.id} className="benchmark-item">
-                <div className="benchmark-top">
-                  <div>
-                    <strong>{platform.name}</strong>
-                    <span>{platform.category}</span>
-                  </div>
-                  <LinkButton label="공식 페이지" url={platform.source.url} subtle />
-                </div>
-                <p>{platform.strength}</p>
-                <div className="inline-tags">
-                  {(platform.implementedAs ?? platform.featuresToBorrow).map((feature) => (
-                    <span key={feature} className="soft-tag">
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <section className="panel">
-        <SectionHeader
-          eyebrow="Autonomous Plan"
-          title="8시간 자율 개발 플랜"
-          summary="하네스 엔지니어링, 기능 개편, 패키징, GitHub 반영까지 포함한 실행 계획입니다."
-        />
-        <div className="plan-list">
-          {autonomousPlan.map((step) => (
-            <article key={step.id} className="plan-item">
-              <div className="plan-time">{step.timeBlock}</div>
-              <div>
-                <strong>{step.title}</strong>
-                <p>{step.goal}</p>
-                <div className="inline-tags">
-                  {step.outputs.map((output) => (
-                    <span key={output} className="soft-tag">
-                      {output}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
+  return {
+    question,
+    locale,
+    market: {
+      id: market.id,
+      name: getMarketDisplayName(locale, market.id),
+      region: market.region,
+      stageNote: market.stageNote,
+      sourceStatus: card?.status ?? "unavailable",
+      asOf: card?.asOf ?? null,
+      headline: card?.headline ?? null,
+      summary: card?.summary ?? null,
+      metrics: card?.metrics ?? []
+    },
+    forecast: {
+      score: forecast.score,
+      direction: forecast.direction,
+      confidence: forecast.confidence,
+      topDrivers: forecast.contributions.slice(0, 6)
+    },
+    familyScores,
+    alerts: alerts.map((item) => ({
+      severity: item.severity,
+      title: item.title,
+      body: item.body
+    })),
+    catalysts: catalysts.map((item) => ({
+      title: item.title,
+      trigger: item.trigger,
+      whyItMatters: item.whyItMatters,
+      source: item.source.url
+    })),
+    quantIndicators: quantIndicators.slice(0, 5).map((item) => ({
+      name: item.name,
+      family: item.family,
+      whyItMatters: item.whyItMatters
+    })),
+    officialSeries: (card?.series ?? []).slice(-18),
+    notes: card?.notes ?? []
+  };
 }
 
 export default function App() {
-  const [surface, setSurface] = useState<Surface>(() =>
-    readStoredChoice("cquant:surface", surfaceChoices, "overview")
-  );
-  const [focusMarket, setFocusMarket] = useState<MarketProfile["id"]>(() =>
-    readStoredChoice("cquant:market", ["eu-ets", "k-ets", "cn-ets"], "eu-ets")
-  );
-  const [workspaceId, setWorkspaceId] = useState(() =>
-    readStoredChoice("cquant:workspace", workspaceChoices, workspacePresets[0].id)
-  );
-  const [watchlistId, setWatchlistId] = useState(() =>
-    readStoredChoice("cquant:watchlist", watchlistChoices, watchlistPresets[0].id)
-  );
-  const [watchViewId, setWatchViewId] = useState(() =>
-    readStoredChoice("cquant:watchview", watchViewChoices, watchViewPresets[0].id)
-  );
-  const [enabledAlertIds, setEnabledAlertIds] = useState<string[]>(() =>
-    readStoredList(
-      "cquant:alerts",
-      alertTemplates.filter((template) => template.enabledByDefault).map((template) => template.id)
-    )
-  );
-  const [sourcePayload, setSourcePayload] = useState<ConnectedSourcePayload>(emptySources);
-  const [sourcesError, setSourcesError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [factorState, setFactorState] = useState<Record<string, number>>(() =>
-    buildInitialFactorState(focusMarket)
-  );
-  const [labMode, setLabMode] = useState<LabMode>("scenario");
-  const [modelInputPath, setModelInputPath] = useState("");
-  const [trainWindow, setTrainWindow] = useState(180);
-  const [horizon, setHorizon] = useState(5);
-  const [modelResult, setModelResult] = useState<WalkForwardResult | null>(null);
-  const [modelError, setModelError] = useState<string | null>(null);
-  const [isRunningModel, setIsRunningModel] = useState(false);
-  const [csvPath, setCsvPath] = useState("");
-  const [series, setSeries] = useState<ParsedSeriesPoint[]>([]);
-  const [strategy, setStrategy] = useState<BacktestStrategy>("trend");
-  const [feeBps, setFeeBps] = useState(3);
-  const [backtestResult, setBacktestResult] = useState<BacktestRun | null>(null);
-  const [backtestError, setBacktestError] = useState<string | null>(null);
-
-  const activeWorkspace =
-    workspacePresets.find((workspace) => workspace.id === workspaceId) ?? workspacePresets[0];
-  const watchlistPreset =
-    watchlistPresets.find((watchlist) => watchlist.id === watchlistId) ?? watchlistPresets[0];
-  const watchView =
-    watchViewPresets.find((view) => view.id === watchViewId) ?? watchViewPresets[0];
-  const focusProfile =
-    marketProfiles.find((market) => market.id === focusMarket) ?? marketProfiles[0];
-
-  const benchmarkMap = useMemo(
-    () => Object.fromEntries(benchmarkPlatforms.map((item) => [item.id, item])),
+  const locale = useMemo(
+    () =>
+      readStoredChoice(
+        "cquant:locale",
+        localeOptions.map((item) => item.id),
+        "ko"
+      ),
     []
   );
-  const driverMatrix = useMemo(() => buildDriverMatrix(), []);
-  const activeWorkspaceBenchmarks = activeWorkspace.benchmarkIds
-    .map((id) => benchmarkMap[id])
-    .filter(Boolean);
-  const forecast = buildForecast(focusMarket, factorState);
-  const feedItems = buildFeedItems(sourcePayload, focusMarket, forecast);
-  const watchItems = watchlistPreset.itemIds
-    .map((id) => marketWatchItems.find((item) => item.id === id))
-    .filter((item): item is MarketWatchItem => Boolean(item));
-  const inboxItems = buildAlertInbox(sourcePayload, enabledAlertIds, forecast, watchlistPreset);
-  const dailyBrief = buildDailyBrief({
-    focusMarket,
-    payload: sourcePayload,
-    forecast,
-    alertItems: inboxItems
-  });
+  const [appLocale, setAppLocale] = useState<AppLocale>(locale);
+  const [surface, setSurface] = useState<Surface>("overview");
+  const [marketId, setMarketId] = useState<MarketProfile["id"]>("eu-ets");
+  const [workspaceId, setWorkspaceId] = useState<string>("morning-scan");
+  const [watchlistId, setWatchlistId] = useState<string>("core-carbon");
+  const [watchViewId, setWatchViewId] = useState<string>("scan-view");
+  const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(emptySources);
+  const [refreshingSources, setRefreshingSources] = useState(false);
+  const [windowMaximized, setWindowMaximized] = useState(false);
+  const [csvPath, setCsvPath] = useState<string | null>(null);
+  const [csvSeries, setCsvSeries] = useState<ParsedSeriesPoint[]>([]);
+  const [walkForwardResult, setWalkForwardResult] = useState<WalkForwardResult | null>(null);
+  const [runningWalkForward, setRunningWalkForward] = useState(false);
+  const [backtestStrategy, setBacktestStrategy] = useState<BacktestStrategy>("trend");
+  const [backtestFeeBps, setBacktestFeeBps] = useState(8);
+  const [backtestRun, setBacktestRun] = useState<BacktestRun | null>(null);
+  const [scenarioOverrides, setScenarioOverrides] = useState<
+    Partial<Record<MarketProfile["id"], Record<string, number>>>
+  >({});
+  const [assistantQuestion, setAssistantQuestion] = useState(
+    "현재 이 시장은 매수 우위인지 매도 우위인지 판단해줘."
+  );
+  const [assistantResponse, setAssistantResponse] = useState<DecisionAssistantResponse | null>(null);
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [apiKeyDraft, setApiKeyDraft] = useState("");
+  const [modelDraft, setModelDraft] = useState(defaultSettings.llmModel);
+
+  const selectedMarket = useMemo(
+    () => marketProfiles.find((item) => item.id === marketId) ?? marketProfiles[0],
+    [marketId]
+  );
+
+  const localizedWorkspaces = useMemo(
+    () => workspacePresets.map((item) => localizeWorkspacePreset(item, appLocale)),
+    [appLocale]
+  );
+  const localizedWatchlists = useMemo(
+    () => watchlistPresets.map((item) => localizeWatchlistPreset(item, appLocale)),
+    [appLocale]
+  );
+  const localizedWatchViews = useMemo(
+    () => watchViewPresets.map((item) => localizeWatchViewPreset(item, appLocale)),
+    [appLocale]
+  );
+  const localizedSources = useMemo(
+    () => sourceRegistry.map((item) => localizeSourceRegistryItem(item, appLocale)),
+    [appLocale]
+  );
+  const localizedBenchmarks = useMemo(
+    () => benchmarkPlatforms.map((item) => localizeBenchmark(item, appLocale)),
+    [appLocale]
+  );
+  const localizedSubscription = useMemo(
+    () => subscriptionFeatures.map((item) => localizeSubscriptionFeature(item, appLocale)),
+    [appLocale]
+  );
+  const localizedTrust = useMemo(
+    () => trustPrinciples.map((item) => localizeTrustPrinciple(item, appLocale)),
+    [appLocale]
+  );
+  const localizedWatchItems = useMemo(
+    () => marketWatchItems.map((item) => localizeMarketWatchItem(item, appLocale)),
+    [appLocale]
+  );
+  const localizedAlerts = useMemo(
+    () => alertTemplates.map((item) => localizeAlertTemplate(item, appLocale)),
+    [appLocale]
+  );
+  const localizedCatalysts = useLocalizedCatalysts(appLocale, marketId);
 
   useEffect(() => {
-    window.localStorage.setItem("cquant:surface", surface);
-  }, [surface]);
+    window.localStorage.setItem("cquant:locale", appLocale);
+  }, [appLocale]);
 
   useEffect(() => {
-    window.localStorage.setItem("cquant:market", focusMarket);
-  }, [focusMarket]);
+    const nextQuestion =
+      appLocale === "ko"
+        ? "현재 이 시장은 매수 우위인지 매도 우위인지 판단해줘."
+        : "Should the current market posture be increased, reduced, or held?";
+    setAssistantQuestion((current) => (current.trim() ? current : nextQuestion));
+  }, [appLocale]);
 
   useEffect(() => {
-    window.localStorage.setItem("cquant:workspace", workspaceId);
-  }, [workspaceId]);
+    void refreshSources();
+    void window.desktopBridge?.isWindowMaximized().then((value) => setWindowMaximized(value));
+    void window.desktopBridge?.getAppSettings().then((next) => {
+      setSettings(next);
+      setModelDraft(next.llmModel);
+    });
+  }, []);
 
-  useEffect(() => {
-    window.localStorage.setItem("cquant:watchlist", watchlistId);
-  }, [watchlistId]);
+  const cardsByMarket = useMemo(
+    () =>
+      Object.fromEntries(
+        connectedSources.cards.map((card) => [card.marketId, card])
+      ) as Partial<Record<MarketProfile["id"], ConnectedSourceCard>>,
+    [connectedSources.cards]
+  );
 
-  useEffect(() => {
-    window.localStorage.setItem("cquant:watchview", watchViewId);
-  }, [watchViewId]);
+  const derivedStates = useMemo(
+    () =>
+      Object.fromEntries(
+        marketProfiles.map((profile) => [profile.id, buildDriverState(profile, cardsByMarket[profile.id])])
+      ) as Record<MarketProfile["id"], Record<string, number>>,
+    [cardsByMarket]
+  );
 
-  useEffect(() => {
-    window.localStorage.setItem("cquant:alerts", JSON.stringify(enabledAlertIds));
-  }, [enabledAlertIds]);
+  const currentState = useMemo(
+    () => ({
+      ...derivedStates[marketId],
+      ...(scenarioOverrides[marketId] ?? {})
+    }),
+    [derivedStates, marketId, scenarioOverrides]
+  );
 
-  useEffect(() => {
-    setFactorState(buildInitialFactorState(focusMarket));
-    setModelResult(null);
-    setBacktestResult(null);
-  }, [focusMarket]);
+  const forecasts = useMemo(
+    () =>
+      Object.fromEntries(
+        marketProfiles.map((profile) => {
+          const state =
+            profile.id === marketId
+              ? {
+                  ...derivedStates[profile.id],
+                  ...(scenarioOverrides[profile.id] ?? {})
+                }
+              : derivedStates[profile.id];
+          return [profile.id, buildForecast(profile.id, state)];
+        })
+      ) as Record<MarketProfile["id"], ReturnType<typeof buildForecast>>,
+    [derivedStates, marketId, scenarioOverrides]
+  );
 
-  async function refreshConnectedSources() {
-    if (!window.desktopBridge?.refreshConnectedSources) {
-      setSourcesError("공식 소스 새로고침은 패키지된 데스크톱 앱에서만 사용할 수 있습니다.");
+  const alertInbox = useMemo(
+    () => makeAlertInbox(appLocale, connectedSources.cards, forecasts),
+    [appLocale, connectedSources.cards, forecasts]
+  );
+
+  const selectedAlerts = useMemo(
+    () => alertInbox.filter((item) => item.marketId === marketId || item.marketId === "shared"),
+    [alertInbox, marketId]
+  );
+
+  const familyScoresByMarket = useMemo(
+    () =>
+      Object.fromEntries(
+        marketProfiles.map((profile) => {
+          const state =
+            profile.id === marketId
+              ? {
+                  ...derivedStates[profile.id],
+                  ...(scenarioOverrides[profile.id] ?? {})
+                }
+              : derivedStates[profile.id];
+          return [
+            profile.id,
+            Object.fromEntries(
+              DRIVER_FAMILIES.map((family) => [
+                family.id,
+                familyScore(profile, state, family.id)
+              ])
+            )
+          ];
+        })
+      ) as Record<MarketProfile["id"], Record<string, number>>,
+    [derivedStates, marketId, scenarioOverrides]
+  );
+
+  const selectedCard = cardsByMarket[marketId];
+  const selectedForecast = forecasts[marketId];
+  const selectedDecision = useMemo(
+    () =>
+      buildRuleDecision(
+        appLocale,
+        selectedMarket,
+        selectedCard,
+        selectedForecast,
+        selectedAlerts,
+        localizedCatalysts,
+        currentState
+      ),
+    [
+      appLocale,
+      currentState,
+      localizedCatalysts,
+      selectedAlerts,
+      selectedCard,
+      selectedForecast,
+      selectedMarket
+    ]
+  );
+
+  const decisionView = assistantResponse ?? selectedDecision;
+  const snapshotCards = useMemo(
+    () =>
+      marketProfiles.map((profile) =>
+        getSnapshotCard(
+          appLocale,
+          profile,
+          cardsByMarket[profile.id],
+          forecasts[profile.id].score,
+          forecasts[profile.id].confidence
+        )
+      ),
+    [appLocale, cardsByMarket, forecasts]
+  );
+
+  const heatmapRows = useMemo<HeatmapRow[]>(
+    () =>
+      DRIVER_FAMILIES.map((family) => ({
+        id: family.id,
+        label: appLocale === "ko" ? family.ko : family.en,
+        values: marketProfiles.map((profile) => familyScoresByMarket[profile.id][family.id] ?? 0)
+      })),
+    [appLocale, familyScoresByMarket]
+  );
+
+  const selectedSeries = useMemo(() => getSeriesPoints(selectedCard?.series), [selectedCard]);
+  const selectedVolumeSeries = useMemo(
+    () => getSeriesPoints(selectedCard?.volumeSeries),
+    [selectedCard]
+  );
+
+  const crossMarketPoints = useMemo<MultiLinePoint[]>(() => {
+    const maxLength = Math.max(
+      ...marketProfiles.map((profile) => cardsByMarket[profile.id]?.series?.length ?? 0),
+      0
+    );
+    if (maxLength === 0) {
+      return [];
+    }
+
+    return Array.from({ length: maxLength }, (_, index) => {
+      const values: Record<string, number | null> = {};
+      let label = `${index + 1}`;
+      for (const profile of marketProfiles) {
+        const series = cardsByMarket[profile.id]?.series ?? [];
+        const point = series[series.length - maxLength + index];
+        if (point) {
+          label = point.date;
+          const first = series[series.length - maxLength]?.value ?? point.value;
+          values[profile.id] = first === 0 ? 100 : (point.value / first) * 100;
+        } else {
+          values[profile.id] = null;
+        }
+      }
+      return { label, values };
+    });
+  }, [cardsByMarket]);
+
+  const crossMarketSeries = useMemo<MultiLineSeries[]>(
+    () =>
+      marketProfiles
+        .filter((profile) => (cardsByMarket[profile.id]?.series?.length ?? 0) > 1)
+        .map((profile) => ({
+          id: profile.id,
+          label: getMarketDisplayName(appLocale, profile.id),
+          color: marketColor(profile.id)
+        })),
+    [appLocale, cardsByMarket]
+  );
+
+  const familyBarPoints = useMemo<ChartPoint[]>(
+    () =>
+      DRIVER_FAMILIES.map((family) => ({
+        label: appLocale === "ko" ? family.ko : family.en,
+        value: Math.abs(familyScoresByMarket[marketId][family.id] ?? 0) * 100
+      })),
+    [appLocale, familyScoresByMarket, marketId]
+  );
+
+  const contributionItems = useMemo(
+    () =>
+      selectedForecast.contributions.slice(0, 6).map((item) => ({
+        label: item.variable,
+        value: item.contribution
+      })),
+    [selectedForecast]
+  );
+
+  const datasetSchema = useMemo(
+    () => marketDatasetSchemas.find((item) => item.marketId === marketId) ?? marketDatasetSchemas[0],
+    [marketId]
+  );
+
+  const activeWorkspace = useMemo(
+    () => localizedWorkspaces.find((item) => item.id === workspaceId) ?? localizedWorkspaces[0],
+    [localizedWorkspaces, workspaceId]
+  );
+  const activeWatchlist = useMemo(
+    () => localizedWatchlists.find((item) => item.id === watchlistId) ?? localizedWatchlists[0],
+    [localizedWatchlists, watchlistId]
+  );
+  const activeWatchView = useMemo(
+    () => localizedWatchViews.find((item) => item.id === watchViewId) ?? localizedWatchViews[0],
+    [localizedWatchViews, watchViewId]
+  );
+
+  const watchlistItems = useMemo(() => {
+    const ids = new Set(activeWatchlist.itemIds);
+    return localizedWatchItems.filter((item) => ids.has(item.id));
+  }, [activeWatchlist.itemIds, localizedWatchItems]);
+
+  const selectedSources = useMemo(
+    () =>
+      localizedSources.filter(
+        (item) => item.markets.includes(marketId) || item.markets.includes("shared")
+      ),
+    [localizedSources, marketId]
+  );
+
+  const sourceMethodPoints = useMemo<ChartPoint[]>(
+    () => {
+      const counts = new Map<string, number>();
+      for (const item of selectedSources) {
+        counts.set(item.method, (counts.get(item.method) ?? 0) + 1);
+      }
+      return Array.from(counts.entries()).map(([label, value]) => ({ label, value }));
+    },
+    [selectedSources]
+  );
+
+  const alertCountPoints = useMemo<ChartPoint[]>(
+    () => {
+      const counts = { High: 0, Medium: 0, Low: 0 };
+      for (const alert of selectedAlerts) {
+        counts[alert.severity] += 1;
+      }
+      return Object.entries(counts).map(([label, value]) => ({ label, value }));
+    },
+    [selectedAlerts]
+  );
+
+  const feedItems = useMemo(
+    () => makeFeedItems(appLocale, selectedCard, decisionView, selectedAlerts, localizedCatalysts),
+    [appLocale, decisionView, localizedCatalysts, selectedAlerts, selectedCard]
+  );
+
+  const backtestChartPoints = useMemo<ChartPoint[]>(
+    () =>
+      backtestRun
+        ? backtestRun.equityCurve.map((value, index) => ({
+            label: csvSeries[index]?.date ?? String(index + 1),
+            value
+          }))
+        : [],
+    [backtestRun, csvSeries]
+  );
+
+  const walkForwardFeaturePoints = useMemo<ChartPoint[]>(
+    () =>
+      walkForwardResult
+        ? walkForwardResult.topFeatures.slice(0, 6).map((item) => ({
+            label: item.feature,
+            value: item.importance
+          }))
+        : [],
+    [walkForwardResult]
+  );
+
+  async function refreshSources() {
+    if (!window.desktopBridge) {
       return;
     }
 
-    setRefreshing(true);
-    setSourcesError(null);
-
+    setRefreshingSources(true);
     try {
-      const payload = await window.desktopBridge.refreshConnectedSources();
-      setSourcePayload(payload);
-    } catch (error) {
-      setSourcesError(error instanceof Error ? error.message : String(error));
+      const next = await window.desktopBridge.refreshConnectedSources();
+      startTransition(() => {
+        setConnectedSources(next);
+        setAssistantResponse(null);
+        setAssistantError(null);
+      });
     } finally {
-      setRefreshing(false);
+      setRefreshingSources(false);
     }
   }
 
-  useEffect(() => {
-    void refreshConnectedSources();
-  }, []);
-
-  function handleSurfaceChange(nextSurface: Surface) {
-    startTransition(() => setSurface(nextSurface));
-  }
-
-  function handleMarketChange(nextMarket: MarketProfile["id"]) {
-    startTransition(() => setFocusMarket(nextMarket));
-  }
-
-  function handleWorkspaceChange(nextId: string) {
-    const nextWorkspace =
-      workspacePresets.find((workspace) => workspace.id === nextId) ?? workspacePresets[0];
-    startTransition(() => {
-      setWorkspaceId(nextWorkspace.id);
-      if (nextWorkspace.recommendedMarket !== "shared") {
-        setFocusMarket(nextWorkspace.recommendedMarket);
+  function updateScenario(driverId: string, value: number) {
+    setScenarioOverrides((current) => ({
+      ...current,
+      [marketId]: {
+        ...(current[marketId] ?? {}),
+        [driverId]: value
       }
-    });
-  }
-
-  function toggleAlertTemplate(id: string) {
-    setEnabledAlertIds((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id]
-    );
-  }
-
-  function updateFactor(driverId: string, value: number) {
-    setFactorState((current) => ({ ...current, [driverId]: value }));
+    }));
+    setAssistantResponse(null);
   }
 
   function resetScenario() {
-    setFactorState(buildInitialFactorState(focusMarket));
+    setScenarioOverrides((current) => ({
+      ...current,
+      [marketId]: {}
+    }));
+    setAssistantResponse(null);
   }
 
-  async function pickModelFile() {
-    const path = await window.desktopBridge?.pickCsvFile?.();
-    if (path) {
-      setModelInputPath(path);
-      setModelError(null);
-    }
-  }
-
-  async function runModel() {
-    if (!window.desktopBridge?.runWalkForwardModel) {
-      setModelError("워크포워드 실행은 패키지된 데스크톱 앱에서만 사용할 수 있습니다.");
-      return;
-    }
-    if (!modelInputPath) {
-      setModelError("먼저 CSV 파일을 선택해 주세요.");
+  async function handlePickCsv() {
+    if (!window.desktopBridge) {
       return;
     }
 
-    setIsRunningModel(true);
-    setModelError(null);
+    const picked = await window.desktopBridge.pickCsvFile();
+    if (!picked) {
+      return;
+    }
 
+    const text = await window.desktopBridge.readTextFile(picked);
+    const parsed = parseCsv(text);
+    startTransition(() => {
+      setCsvPath(picked);
+      setCsvSeries(parsed);
+      setBacktestRun(null);
+      setWalkForwardResult(null);
+    });
+  }
+
+  function handleRunBacktest() {
+    if (csvSeries.length === 0) {
+      return;
+    }
+    setBacktestRun(runBacktest(csvSeries, backtestStrategy, backtestFeeBps));
+  }
+
+  async function handleRunWalkForward() {
+    if (!window.desktopBridge || !csvPath) {
+      return;
+    }
+
+    setRunningWalkForward(true);
     try {
-      const result = await window.desktopBridge.runWalkForwardModel({
-        inputPath: modelInputPath,
-        marketId: focusMarket,
-        trainWindow,
-        horizon
+      const next = await window.desktopBridge.runWalkForwardModel({
+        inputPath: csvPath,
+        marketId,
+        trainWindow: 180,
+        horizon: 10
       });
-      setModelResult(result);
-    } catch (error) {
-      setModelError(error instanceof Error ? error.message : String(error));
+      setWalkForwardResult(next);
     } finally {
-      setIsRunningModel(false);
+      setRunningWalkForward(false);
     }
   }
 
-  async function pickBacktestFile() {
-    if (!window.desktopBridge?.pickCsvFile || !window.desktopBridge.readTextFile) {
-      setBacktestError("CSV 불러오기는 패키지된 데스크톱 앱에서만 사용할 수 있습니다.");
+  async function handleSaveBrief() {
+    const content = [
+      `${t(appLocale, "C-Quant 일일 브리프", "C-Quant Daily Brief")}`,
+      `${t(appLocale, "시장", "Market")}: ${getMarketDisplayName(appLocale, marketId)}`,
+      `${t(appLocale, "판단", "Stance")}: ${stanceLabel(appLocale, decisionView.stance)}`,
+      `${t(appLocale, "신뢰도", "Confidence")}: ${formatNumber(appLocale, decisionView.confidence * 100, 0)}%`,
+      "",
+      decisionView.summary,
+      "",
+      `${t(appLocale, "핵심 포인트", "Key points")}`,
+      ...decisionView.thesis.map((item) => `- ${item}`),
+      "",
+      `${t(appLocale, "리스크", "Risks")}`,
+      ...decisionView.risks.map((item) => `- ${item}`),
+      "",
+      `${t(appLocale, "체크리스트", "Checklist")}`,
+      ...decisionView.actions.map((item) => `- ${item}`),
+      "",
+      `${t(appLocale, "면책", "Disclaimer")}: ${decisionView.disclaimer}`
+    ].join("\n");
+
+    if (window.desktopBridge) {
+      await window.desktopBridge.saveTextFile({
+        defaultPath: `c-quant-${marketId}-brief.txt`,
+        content
+      });
       return;
     }
 
-    const path = await window.desktopBridge.pickCsvFile();
-    if (!path) {
-      return;
-    }
-
-    try {
-      const text = await window.desktopBridge.readTextFile(path);
-      const parsed = parseCsv(text);
-      setCsvPath(path);
-      setSeries(parsed);
-      setBacktestError(null);
-      setBacktestResult(null);
-    } catch (error) {
-      setBacktestError(error instanceof Error ? error.message : String(error));
-    }
+    downloadText(`c-quant-${marketId}-brief.txt`, content);
   }
 
-  function runBacktestLocally() {
-    try {
-      const result = runBacktest(series, strategy, feeBps);
-      setBacktestResult(result);
-      setBacktestError(null);
-    } catch (error) {
-      setBacktestError(error instanceof Error ? error.message : String(error));
-    }
-  }
-
-  async function saveDailyBrief() {
-    if (!window.desktopBridge?.saveTextFile) {
+  async function handleSaveTemplate() {
+    const content = datasetTemplates[datasetSchema.id];
+    if (window.desktopBridge) {
+      await window.desktopBridge.saveTextFile({
+        defaultPath: datasetSchema.filename,
+        content
+      });
       return;
     }
-    await window.desktopBridge.saveTextFile({
-      defaultPath: `c-quant-brief-${focusMarket}-${new Date().toISOString().slice(0, 10)}.txt`,
-      content: dailyBrief
+    downloadText(datasetSchema.filename, content);
+  }
+
+  async function handleSaveLlmSettings() {
+    if (!window.desktopBridge) {
+      return;
+    }
+    const next = await window.desktopBridge.saveAppSettings({
+      openAIApiKey: apiKeyDraft,
+      llmModel: modelDraft
     });
+    setSettings(next);
+    setApiKeyDraft("");
   }
 
-  async function saveTemplate() {
-    if (!window.desktopBridge?.saveTextFile) {
+  async function handleRunAssistant() {
+    if (!window.desktopBridge) {
       return;
     }
-    const schema = marketDatasetSchemas.find((item) => item.marketId === focusMarket);
-    if (!schema) {
+
+    setAssistantLoading(true);
+    setAssistantError(null);
+    try {
+      const response = await window.desktopBridge.runDecisionAssistant({
+        locale: appLocale,
+        payload: buildDecisionPayload({
+          locale: appLocale,
+          market: selectedMarket,
+          card: selectedCard,
+          forecast: selectedForecast,
+          familyScores: familyScoresByMarket[marketId],
+          alerts: selectedAlerts,
+          catalysts: localizedCatalysts,
+          question: assistantQuestion
+        })
+      });
+      setAssistantResponse(response);
+    } catch (error) {
+      setAssistantError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setAssistantLoading(false);
+    }
+  }
+
+  async function handleOpenExternal(url: string) {
+    if (window.desktopBridge) {
+      await window.desktopBridge.openExternal(url);
       return;
     }
-    await window.desktopBridge.saveTextFile({
-      defaultPath: schema.filename,
-      content: datasetTemplates[schema.id]
-    });
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function applyWorkspace(id: string) {
+    setWorkspaceId(id);
+    const route = workspaceRouting[id];
+    if (!route) {
+      return;
+    }
+    setSurface(route.surface);
+    if (route.watchlistId) {
+      setWatchlistId(route.watchlistId);
+    }
+    if (route.marketId) {
+      setMarketId(route.marketId);
+    }
   }
 
   return (
     <div className="terminal-shell">
-      <WindowChrome />
-      <div className="terminal-frame">
-        <LeftRail
-          surface={surface}
-          onSurfaceChange={handleSurfaceChange}
-          focusMarket={focusMarket}
-          onMarketChange={handleMarketChange}
-          activeWorkspace={activeWorkspace}
-          workspaceId={workspaceId}
-          onWorkspaceChange={handleWorkspaceChange}
-          watchlistId={watchlistId}
-          onWatchlistChange={setWatchlistId}
-        />
-
-        <main className="workspace-frame">
-          <header className="surface-header">
-            <div>
-              <div className="section-eyebrow">C-Quant</div>
-              <h1>{surfaceTabs.find((item) => item.id === surface)?.title}</h1>
-              <p>{surfaceTabs.find((item) => item.id === surface)?.summary}</p>
-            </div>
-            <div className="header-actions">
-              <div className="header-chip">
-                마지막 공식 갱신 {formatDateLabel(sourcePayload.fetchedAt)}
-              </div>
+      <header className="titlebar">
+        <div className="titlebar-brand" style={{ WebkitAppRegion: "drag" } as CSSProperties}>
+          <img src="./assets/app-icon.png" alt="C-Quant" className="brand-mark" />
+          <div>
+            <strong>C-Quant</strong>
+            <span>{t(appLocale, "탄소배출권 의사결정 터미널", "Carbon allowance decision terminal")}</span>
+          </div>
+        </div>
+        <div className="titlebar-tools">
+          <div className="locale-switch">
+            {localeOptions.map((option) => (
               <button
-                type="button"
-                className="primary-button"
-                onClick={() => void refreshConnectedSources()}
-                disabled={refreshing}
+                key={option.id}
+                className={option.id === appLocale ? "active" : ""}
+                onClick={() => setAppLocale(option.id)}
               >
-                {refreshing ? "새로고침 중..." : "공식 소스 새로고침"}
+                {option.id.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button className="window-button" onClick={() => void window.desktopBridge?.minimizeWindow()}>
+            _
+          </button>
+          <button
+            className="window-button"
+            onClick={async () => {
+              const maximized = await window.desktopBridge?.toggleMaximizeWindow();
+              setWindowMaximized(Boolean(maximized));
+            }}
+          >
+            {windowMaximized ? "❐" : "□"}
+          </button>
+          <button className="window-button close" onClick={() => void window.desktopBridge?.closeWindow()}>
+            ×
+          </button>
+        </div>
+      </header>
+
+      <div className="app-frame">
+        <aside className="sidebar">
+          <div className="sidebar-section">
+            <div className="sidebar-label">{t(appLocale, "화면", "Screens")}</div>
+            <nav className="surface-nav">
+              {SURFACES.map((item) => (
+                <button
+                  key={item.id}
+                  className={surface === item.id ? "active" : ""}
+                  onClick={() => setSurface(item.id)}
+                >
+                  {appLocale === "ko" ? item.ko : item.en}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="sidebar-section">
+            <div className="sidebar-label">{t(appLocale, "시장", "Markets")}</div>
+            <div className="market-switch">
+              {marketProfiles.map((profile) => (
+                <button
+                  key={profile.id}
+                  className={marketId === profile.id ? "active" : ""}
+                  onClick={() => {
+                    setMarketId(profile.id);
+                    setAssistantResponse(null);
+                  }}
+                  style={
+                    marketId === profile.id
+                      ? ({ "--market-accent": marketColor(profile.id) } as CSSProperties)
+                      : undefined
+                  }
+                >
+                  {getMarketDisplayName(appLocale, profile.id)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <div className="sidebar-label">{t(appLocale, "워크스페이스", "Workspaces")}</div>
+            <div className="workspace-list">
+              {localizedWorkspaces.map((workspace) => (
+                <button
+                  key={workspace.id}
+                  className={workspaceId === workspace.id ? "active" : ""}
+                  onClick={() => applyWorkspace(workspace.id)}
+                >
+                  <strong>{workspace.title}</strong>
+                  <span>{workspace.summary}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section sidebar-summary">
+            <div className="sidebar-label">{t(appLocale, "현재 포커스", "Current focus")}</div>
+            <strong>{activeWorkspace.title}</strong>
+            <p>{activeWorkspace.summary}</p>
+            <div className="workspace-modules">
+              {activeWorkspace.moduleLabels.map((label) => (
+                <span key={label}>{label}</span>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <main className="scroll-body">
+          <section className="hero-strip">
+            <div>
+              <div className="eyebrow">{t(appLocale, "오늘의 운영면", "Operating surface")}</div>
+              <h1>{activeWorkspace.objective}</h1>
+              <p>
+                {t(
+                  appLocale,
+                  "공식 가격, 영향 인자, 알림, 모델 판단을 같은 화면에서 보고 거래 밖의 의사결정을 빠르게 내리도록 설계했습니다.",
+                  "Built to read official prices, drivers, alerts, and model posture on one surface before acting elsewhere."
+                )}
+              </p>
+            </div>
+            <div className="hero-actions">
+              <button className="primary-button" onClick={() => void refreshSources()}>
+                {refreshingSources
+                  ? t(appLocale, "새로고침 중...", "Refreshing...")
+                  : t(appLocale, "공식 소스 새로고침", "Refresh official sources")}
+              </button>
+              <button className="secondary-button" onClick={() => void handleSaveBrief()}>
+                {t(appLocale, "브리프 저장", "Save brief")}
               </button>
             </div>
-          </header>
+          </section>
 
-          <div className="scroll-body">
-            {surface === "overview" ? (
-              <OverviewSurface
-                focusMarket={focusMarket}
-                focusProfile={focusProfile}
-                sourcePayload={sourcePayload}
-                driverMatrix={driverMatrix}
-                feedItems={feedItems}
-                watchlistPreset={watchlistPreset}
-                watchItems={watchItems}
-                onMarketChange={handleMarketChange}
-              />
-            ) : null}
+          <section className="snapshot-grid">
+            {snapshotCards.map((card) => (
+              <button
+                key={card.marketId}
+                className={`snapshot-card ${card.marketId === marketId ? "active" : ""}`}
+                onClick={() => setMarketId(card.marketId)}
+                style={{ "--market-accent": marketColor(card.marketId) } as CSSProperties}
+              >
+                <div className="snapshot-head">
+                  <span>{card.name}</span>
+                  <small>{card.status}</small>
+                </div>
+                <strong>{card.priceLabel}</strong>
+                <div className="snapshot-meta">
+                  <span>{card.changeLabel}</span>
+                  <span>{card.volumeLabel}</span>
+                </div>
+                <div className="snapshot-chart">
+                  {card.sparkline.length > 1 ? (
+                    <Sparkline points={card.sparkline} color={marketColor(card.marketId)} fill />
+                  ) : (
+                    <div className="snapshot-fallback">{card.asOf}</div>
+                  )}
+                </div>
+                <div className="snapshot-footer">
+                  <span>
+                    {t(appLocale, "판단 점수", "Decision score")} {formatNumber(appLocale, card.score, 2)}
+                  </span>
+                  <span>{formatNumber(appLocale, card.confidence * 100, 0)}%</span>
+                </div>
+              </button>
+            ))}
+          </section>
 
-            {surface === "workspace" ? (
-              <WorkspaceSurface
-                activeWorkspace={activeWorkspace}
-                watchlistPreset={watchlistPreset}
-                watchView={watchView}
-                watchItems={watchItems}
-                benchmarks={activeWorkspaceBenchmarks}
-                onWatchViewChange={setWatchViewId}
-              />
-            ) : null}
+          {surface === "overview" ? (
+            <>
+              <section className="overview-grid">
+                <div className="panel panel-emphasis">
+                  <SectionHeader
+                    title={t(appLocale, "공식 가격 테이프", "Official market tape")}
+                    subtitle={
+                      selectedCard?.seriesLabel ??
+                      t(
+                        appLocale,
+                        "시계열 미공개 시장은 이벤트 중심으로 해석합니다.",
+                        "When no official time series is available, read the event layer instead."
+                      )
+                    }
+                  />
+                  {selectedSeries.length > 1 ? (
+                    <LineChart
+                      points={selectedSeries}
+                      color={marketColor(marketId)}
+                      title={selectedCard?.sourceName}
+                      subtitle={`${t(appLocale, "업데이트", "Updated")} ${formatDate(appLocale, selectedCard?.asOf)}`}
+                    />
+                  ) : (
+                    <div className="empty-plot">
+                      <strong>{t(appLocale, "연속 시계열 없음", "No continuous official time series")}</strong>
+                      <p>
+                        {selectedCard?.summary ??
+                          t(
+                            appLocale,
+                            "최신 공식 공지를 중심으로 해석합니다.",
+                            "Read the latest official bulletin instead."
+                          )}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-            {surface === "alerts" ? (
-              <AlertsSurface
-                activeTemplateIds={enabledAlertIds}
-                inboxItems={inboxItems}
-                dailyBrief={dailyBrief}
-                onToggleTemplate={toggleAlertTemplate}
-                onSaveBrief={() => void saveDailyBrief()}
-                canSaveBrief={Boolean(window.desktopBridge?.saveTextFile)}
-              />
-            ) : null}
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "의사결정 패널", "Decision panel")}
+                    subtitle={t(
+                      appLocale,
+                      "로컬 연구 엔진 + 선택형 LLM 브리프",
+                      "Local research engine + optional LLM brief"
+                    )}
+                  />
+                  <DecisionPanel
+                    locale={appLocale}
+                    decision={decisionView}
+                    assistantLoading={assistantLoading}
+                    assistantError={assistantError}
+                    hasApiKey={settings.hasOpenAIApiKey}
+                    question={assistantQuestion}
+                    onQuestionChange={setAssistantQuestion}
+                    onRunAssistant={handleRunAssistant}
+                  />
+                </div>
+              </section>
 
-            {surface === "lab" ? (
-              <LabSurface
-                focusProfile={focusProfile}
-                labMode={labMode}
-                onLabModeChange={setLabMode}
-                factorState={factorState}
-                forecast={forecast}
-                onFactorChange={updateFactor}
-                onResetScenario={resetScenario}
-                modelInputPath={modelInputPath}
-                trainWindow={trainWindow}
-                horizon={horizon}
-                modelResult={modelResult}
-                modelError={modelError}
-                isRunningModel={isRunningModel}
-                onPickModelFile={() => void pickModelFile()}
-                onTrainWindowChange={setTrainWindow}
-                onHorizonChange={setHorizon}
-                onRunModel={() => void runModel()}
-                csvPath={csvPath}
-                strategy={strategy}
-                feeBps={feeBps}
-                backtestResult={backtestResult}
-                backtestError={backtestError}
-                onPickBacktestFile={() => void pickBacktestFile()}
-                onStrategyChange={setStrategy}
-                onFeeChange={setFeeBps}
-                onRunBacktest={runBacktestLocally}
-                onSaveTemplate={() => void saveTemplate()}
-                canSaveTemplate={Boolean(window.desktopBridge?.saveTextFile)}
-              />
-            ) : null}
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "크로스마켓 비교", "Cross-market compare")}
+                    subtitle={t(
+                      appLocale,
+                      "공식 시계열이 있는 시장만 100 기준으로 비교합니다.",
+                      "Only markets with official history are normalized to 100."
+                    )}
+                  />
+                  {crossMarketPoints.length > 1 && crossMarketSeries.length > 0 ? (
+                    <MultiLineChart
+                      points={crossMarketPoints}
+                      series={crossMarketSeries}
+                      valueFormatter={(value) => formatNumber(appLocale, value, 0)}
+                    />
+                  ) : (
+                    <div className="empty-plot">
+                      <strong>{t(appLocale, "비교용 시계열 준비 중", "Waiting for comparable official history")}</strong>
+                      <p>
+                        {t(
+                          appLocale,
+                          "EU 경매와 KRX 일별 시세는 그래프화하고, 중국은 이벤트 레이어로 분리합니다.",
+                          "EU auctions and KRX closes are charted; China stays in the event layer until daily official series is reliable."
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-            {surface === "sources" ? <SourcesSurface focusMarket={focusMarket} /> : null}
-          </div>
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "가격 영향 히트맵", "Driver heatmap")}
+                    subtitle={t(
+                      appLocale,
+                      "연구 기반 인자군을 국가별로 한 번에 봅니다.",
+                      "See the research-based factor families across jurisdictions."
+                    )}
+                  />
+                  <Heatmap
+                    columns={marketProfiles.map((profile) => getMarketDisplayName(appLocale, profile.id))}
+                    rows={heatmapRows}
+                  />
+                </div>
+              </section>
+
+              <section className="overview-grid tertiary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "거래량 흐름", "Volume flow")}
+                    subtitle={t(
+                      appLocale,
+                      "공식 거래량/경매 수량이 있는 시장만 표시합니다.",
+                      "Shown only when official volume data is available."
+                    )}
+                  />
+                  {selectedVolumeSeries.length > 0 ? (
+                    <ColumnChart
+                      points={selectedVolumeSeries.slice(-10)}
+                      color={marketColor(marketId)}
+                      valueFormatter={(value) => formatCompact(appLocale, value)}
+                    />
+                  ) : (
+                    <div className="empty-plot">{t(appLocale, "거래량 시계열 없음", "No volume series available")}</div>
+                  )}
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "패밀리 강도", "Family intensity")}
+                    subtitle={t(
+                      appLocale,
+                      "선택 시장의 인자군 강도를 압축해서 봅니다.",
+                      "Condensed view of factor-family intensity for the selected market."
+                    )}
+                  />
+                  <ColumnChart
+                    points={familyBarPoints}
+                    color={marketColor(marketId)}
+                    valueFormatter={(value) => `${formatNumber(appLocale, value, 0)}%`}
+                  />
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "알림 분포", "Alert mix")}
+                    subtitle={t(
+                      appLocale,
+                      "현재 시장에 걸린 경보의 강도 분포입니다.",
+                      "Severity mix of active alerts on the current market."
+                    )}
+                  />
+                  <div className="alert-meter-stack">
+                    <DonutMeter
+                      value={decisionView.confidence}
+                      label={t(appLocale, "신뢰도", "Confidence")}
+                      subLabel={stanceLabel(appLocale, decisionView.stance)}
+                      color={marketColor(marketId)}
+                    />
+                    <ColumnChart
+                      points={alertCountPoints}
+                      color={NEGATIVE}
+                      valueFormatter={(value) => formatNumber(appLocale, value, 0)}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section className="overview-grid feed-row">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "시장 피드", "Market feed")}
+                    subtitle={t(
+                      appLocale,
+                      "글은 길지 않게, 판단에 필요한 문장만 남겼습니다.",
+                      "Short feed items only; no report-style blocks."
+                    )}
+                  />
+                  <div className="feed-list">
+                    {feedItems.map((item) => (
+                      <button
+                        key={item.id}
+                        className={`feed-item ${item.tone}`}
+                        onClick={() => (item.link ? void handleOpenExternal(item.link) : undefined)}
+                      >
+                        <span>{item.kicker}</span>
+                        <strong>{item.title}</strong>
+                        <p>{item.body}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "다음 촉매", "Next catalysts")}
+                    subtitle={t(
+                      appLocale,
+                      "정책, 경매, 공시를 일정처럼 관리합니다.",
+                      "Run policy, auction, and disclosure checkpoints like an operating calendar."
+                    )}
+                  />
+                  <div className="timeline-list">
+                    {localizedCatalysts.map((item) => (
+                      <button
+                        key={item.id}
+                        className="timeline-item"
+                        onClick={() => void handleOpenExternal(item.source.url)}
+                      >
+                        <small>{item.windowLabel}</small>
+                        <strong>{item.title}</strong>
+                        <p>{item.trigger}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : null}
+
+          {surface === "signals" ? (
+            <>
+              <section className="overview-grid">
+                <div className="panel panel-emphasis">
+                  <SectionHeader
+                    title={t(appLocale, "드라이버 워터폴", "Driver waterfall")}
+                    subtitle={t(
+                      appLocale,
+                      "매수·매도 판단에 가장 크게 기여한 인자입니다.",
+                      "Largest contributors to the current buy/sell posture."
+                    )}
+                  />
+                  <WaterfallChart
+                    items={contributionItems}
+                    positiveColor={POSITIVE}
+                    negativeColor={NEGATIVE}
+                  />
+                </div>
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "시나리오 슬라이더", "Scenario sliders")}
+                    subtitle={t(
+                      appLocale,
+                      "핵심 드라이버를 직접 조정해 판단을 재계산합니다.",
+                      "Adjust core drivers directly and recalculate the posture."
+                    )}
+                  />
+                  <div className="slider-stack">
+                    {selectedMarket.drivers.slice(0, 6).map((driver) => (
+                      <label key={driver.id} className="driver-slider">
+                        <div>
+                          <strong>{driver.variable}</strong>
+                          <span>
+                            {getImportanceLabel(appLocale, driver.importance)} ·{" "}
+                            {formatNumber(appLocale, currentState[driver.id] ?? 0, 2)}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-1}
+                          max={1}
+                          step={0.05}
+                          value={currentState[driver.id] ?? 0}
+                          onChange={(event) => updateScenario(driver.id, Number(event.target.value))}
+                        />
+                      </label>
+                    ))}
+                    <div className="slider-actions">
+                      <button className="secondary-button" onClick={resetScenario}>
+                        {t(appLocale, "시나리오 초기화", "Reset scenario")}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "의사결정 설명", "Decision brief")}
+                    subtitle={t(
+                      appLocale,
+                      "규칙 기반 판단과 LLM 브리프를 같은 패널에 둡니다.",
+                      "Rule-based posture and LLM brief live on the same panel."
+                    )}
+                  />
+                  <DecisionPanel
+                    locale={appLocale}
+                    decision={decisionView}
+                    assistantLoading={assistantLoading}
+                    assistantError={assistantError}
+                    hasApiKey={settings.hasOpenAIApiKey}
+                    question={assistantQuestion}
+                    onQuestionChange={setAssistantQuestion}
+                    onRunAssistant={handleRunAssistant}
+                  />
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "LLM 설정", "LLM settings")}
+                    subtitle={t(
+                      appLocale,
+                      "키는 데스크톱 앱 로컬 저장소에만 저장됩니다.",
+                      "Keys stay in the desktop app's local user-data folder."
+                    )}
+                  />
+                  <div className="settings-stack">
+                    <label>
+                      <span>OpenAI API key</span>
+                      <input
+                        type="password"
+                        value={apiKeyDraft}
+                        onChange={(event) => setApiKeyDraft(event.target.value)}
+                        placeholder={settings.hasOpenAIApiKey ? "Saved locally" : "sk-..."}
+                      />
+                    </label>
+                    <label>
+                      <span>{t(appLocale, "모델", "Model")}</span>
+                      <input
+                        type="text"
+                        value={modelDraft}
+                        onChange={(event) => setModelDraft(event.target.value)}
+                        placeholder="gpt-4.1-mini"
+                      />
+                    </label>
+                    <div className="settings-actions">
+                      <button className="primary-button" onClick={() => void handleSaveLlmSettings()}>
+                        {t(appLocale, "LLM 설정 저장", "Save LLM settings")}
+                      </button>
+                      <small>
+                        {settings.hasOpenAIApiKey
+                          ? t(appLocale, "현재 키가 저장되어 있습니다.", "An API key is currently stored.")
+                          : t(appLocale, "아직 저장된 키가 없습니다.", "No API key is stored yet.")}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="overview-grid tertiary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "퀀트 지표", "Quant indicators")}
+                    subtitle={t(
+                      appLocale,
+                      "매수·매도 타이밍 확인에 쓰는 핵심 체크리스트입니다.",
+                      "Core checks for timing buy/sell posture."
+                    )}
+                  />
+                  <div className="indicator-list">
+                    {quantIndicators.map((indicator) => (
+                      <div key={indicator.id} className="indicator-item">
+                        <strong>{indicator.name}</strong>
+                        <span>{indicator.family}</span>
+                        <p>{indicator.whyItMatters}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "알림 허브", "Alert hub")}
+                    subtitle={t(
+                      appLocale,
+                      "활성 경보를 우선순위대로 정리합니다.",
+                      "Active warnings sorted by urgency."
+                    )}
+                  />
+                  <div className="alert-list">
+                    {selectedAlerts.length > 0 ? (
+                      selectedAlerts.map((alert) => (
+                        <div key={alert.id} className={`alert-item ${alert.severity.toLowerCase()}`}>
+                          <strong>{alert.title}</strong>
+                          <span>{getSeverityLabel(appLocale, alert.severity)}</span>
+                          <p>{alert.body}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-plot">{t(appLocale, "현재 활성 알림 없음", "No active alerts right now")}</div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : null}
+
+          {surface === "lab" ? (
+            <>
+              <section className="overview-grid">
+                <div className="panel panel-emphasis">
+                  <SectionHeader
+                    title={t(appLocale, "백테스트", "Backtest")}
+                    subtitle={t(
+                      appLocale,
+                      "CSV를 올리고 전략별 성과를 바로 확인합니다.",
+                      "Upload CSV and check strategy performance immediately."
+                    )}
+                  />
+                  <div className="lab-controls">
+                    <button className="primary-button" onClick={() => void handlePickCsv()}>
+                      {t(appLocale, "CSV 불러오기", "Load CSV")}
+                    </button>
+                    <span>{csvPath ?? t(appLocale, "선택된 파일 없음", "No file selected")}</span>
+                  </div>
+                  <div className="lab-grid">
+                    <label>
+                      <span>{t(appLocale, "전략", "Strategy")}</span>
+                      <select
+                        value={backtestStrategy}
+                        onChange={(event) => setBacktestStrategy(event.target.value as BacktestStrategy)}
+                      >
+                        <option value="trend">{t(appLocale, "추세 추종", "Trend")}</option>
+                        <option value="meanReversion">{t(appLocale, "평균 회귀", "Mean reversion")}</option>
+                        <option value="spreadRegime">{t(appLocale, "스프레드 레짐", "Spread regime")}</option>
+                        <option value="policyMomentum">{t(appLocale, "정책 모멘텀", "Policy momentum")}</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>{t(appLocale, "비용(bps)", "Fee (bps)")}</span>
+                      <input
+                        type="number"
+                        value={backtestFeeBps}
+                        onChange={(event) => setBacktestFeeBps(Number(event.target.value))}
+                      />
+                    </label>
+                    <button className="secondary-button" onClick={handleRunBacktest}>
+                      {t(appLocale, "백테스트 실행", "Run backtest")}
+                    </button>
+                  </div>
+
+                  {backtestChartPoints.length > 1 ? (
+                    <LineChart
+                      points={backtestChartPoints}
+                      color={marketColor(marketId)}
+                      title={t(appLocale, "누적 자본곡선", "Equity curve")}
+                      subtitle={t(appLocale, "CSV 입력 기준", "From uploaded CSV")}
+                    />
+                  ) : (
+                    <div className="empty-plot">
+                      {t(appLocale, "먼저 CSV를 불러오고 백테스트를 실행하세요.", "Load a CSV and run a backtest first.")}
+                    </div>
+                  )}
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "워크포워드 모델", "Walk-forward model")}
+                    subtitle={t(
+                      appLocale,
+                      "Python 모델을 같은 앱 안에서 실행합니다.",
+                      "Run the Python model inside the same desktop app."
+                    )}
+                  />
+                  <div className="lab-controls">
+                    <button className="primary-button" onClick={() => void handleRunWalkForward()}>
+                      {runningWalkForward ? t(appLocale, "실행 중...", "Running...") : t(appLocale, "워크포워드 실행", "Run walk-forward")}
+                    </button>
+                    <button className="secondary-button" onClick={() => void handleSaveTemplate()}>
+                      {t(appLocale, "템플릿 저장", "Save template")}
+                    </button>
+                  </div>
+
+                  {walkForwardFeaturePoints.length > 0 ? (
+                    <>
+                      <div className="metric-cluster">
+                        <MetricPill label="MAE" value={formatNumber(appLocale, walkForwardResult?.summary.mae ?? 0, 2)} />
+                        <MetricPill label="RMSE" value={formatNumber(appLocale, walkForwardResult?.summary.rmse ?? 0, 2)} />
+                        <MetricPill
+                          label={t(appLocale, "방향 적중률", "Directional")}
+                          value={`${formatNumber(appLocale, walkForwardResult?.summary.directionalAccuracyPct ?? 0, 0)}%`}
+                        />
+                      </div>
+                      <ColumnChart
+                        points={walkForwardFeaturePoints}
+                        color={marketColor(marketId)}
+                        valueFormatter={(value) => formatNumber(appLocale, value, 2)}
+                      />
+                    </>
+                  ) : (
+                    <div className="empty-plot">{t(appLocale, "워크포워드 결과 없음", "No walk-forward result yet")}</div>
+                  )}
+                </div>
+              </section>
+
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "백테스트 메트릭", "Backtest metrics")}
+                    subtitle={t(
+                      appLocale,
+                      "샤프, MDD, 승률을 한 줄로 봅니다.",
+                      "Sharpe, drawdown, and hit rate at a glance."
+                    )}
+                  />
+                  <div className="metric-cluster">
+                    <MetricPill label="Return" value={`${formatNumber(appLocale, backtestRun?.metrics.totalReturnPct ?? 0, 1)}%`} />
+                    <MetricPill label="Sharpe" value={formatNumber(appLocale, backtestRun?.metrics.sharpe ?? 0, 2)} />
+                    <MetricPill label="MDD" value={`${formatNumber(appLocale, backtestRun?.metrics.maxDrawdownPct ?? 0, 1)}%`} />
+                    <MetricPill
+                      label={t(appLocale, "승률", "Win rate")}
+                      value={`${formatNumber(appLocale, backtestRun?.metrics.winRatePct ?? 0, 0)}%`}
+                    />
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "데이터 스키마", "Dataset schema")}
+                    subtitle={t(
+                      appLocale,
+                      "선택 시장 모델용 템플릿 구조입니다.",
+                      "Template structure for the selected market."
+                    )}
+                  />
+                  <div className="schema-list">
+                    {datasetSchema.columns.map((column) => (
+                      <div key={column.name} className="schema-row">
+                        <strong>{column.name}</strong>
+                        <span>{column.required ? t(appLocale, "필수", "Required") : t(appLocale, "선택", "Optional")}</span>
+                        <p>{column.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : null}
+
+          {surface === "sources" ? (
+            <>
+              <section className="overview-grid">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "소스 커버리지", "Source coverage")}
+                    subtitle={t(
+                      appLocale,
+                      "현재 시장에서 어떤 방식의 데이터를 쓰는지 한 번에 봅니다.",
+                      "View the source methods used for the current market."
+                    )}
+                  />
+                  <ColumnChart
+                    points={sourceMethodPoints}
+                    color={marketColor(marketId)}
+                    valueFormatter={(value) => formatNumber(appLocale, value, 0)}
+                  />
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "워치리스트", "Watchlist")}
+                    subtitle={activeWatchlist.summary}
+                  />
+                  <div className="watch-controls">
+                    <select value={watchlistId} onChange={(event) => setWatchlistId(event.target.value)}>
+                      {localizedWatchlists.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title}
+                        </option>
+                      ))}
+                    </select>
+                    <select value={watchViewId} onChange={(event) => setWatchViewId(event.target.value)}>
+                      {localizedWatchViews.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="watch-table">
+                    {watchlistItems.map((item) => (
+                      <button key={item.id} className="watch-row" onClick={() => void handleOpenExternal(item.url)}>
+                        <div>
+                          <strong>{item.title}</strong>
+                          <span>{item.category}</span>
+                        </div>
+                        <div>
+                          <strong>{item.role}</strong>
+                          {activeWatchView.id !== "scan-view" ? <span>{item.note}</span> : null}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "소스 레지스트리", "Source registry")}
+                    subtitle={t(
+                      appLocale,
+                      "공식 웹, 파일, API, 상업 API를 분리합니다.",
+                      "Separate official web, files, public APIs, and commercial APIs."
+                    )}
+                  />
+                  <div className="source-list">
+                    {selectedSources.map((item) => (
+                      <button key={item.id} className="source-item" onClick={() => void handleOpenExternal(item.url)}>
+                        <div className="source-head">
+                          <strong>{item.title}</strong>
+                          <span>{item.method}</span>
+                        </div>
+                        <p>{item.appUse}</p>
+                        <small>{item.whyItMatters}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "벤치마크에서 빌린 기능", "Benchmark features borrowed")}
+                    subtitle={t(
+                      appLocale,
+                      "성공한 툴에서 무엇을 가져왔는지 명확히 남깁니다.",
+                      "Keep a clear record of what was borrowed from successful tools."
+                    )}
+                  />
+                  <div className="benchmark-list">
+                    {localizedBenchmarks.map((item) => (
+                      <button key={item.id} className="benchmark-item" onClick={() => void handleOpenExternal(item.source.url)}>
+                        <strong>{item.name}</strong>
+                        <span>{item.category}</span>
+                        <p>{item.strength}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="overview-grid tertiary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "신뢰 원칙", "Trust principles")}
+                    subtitle={t(
+                      appLocale,
+                      "왜 이 플랫폼을 믿을 수 있는지 보여주는 최소 원칙입니다.",
+                      "Minimum principles that explain why the platform can be trusted."
+                    )}
+                  />
+                  <div className="bullet-grid">
+                    {localizedTrust.map((item) => (
+                      <div key={item.id} className="bullet-card">
+                        <strong>{item.title}</strong>
+                        <p>{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "구독형 가치", "Subscription value")}
+                    subtitle={t(
+                      appLocale,
+                      "거래 중개 없이도 유지되는 서비스 가치입니다.",
+                      "Product value that exists without trade intermediation."
+                    )}
+                  />
+                  <div className="bullet-grid">
+                    {localizedSubscription.map((item) => (
+                      <div key={item.id} className="bullet-card">
+                        <strong>{item.title}</strong>
+                        <span>{item.audience}</span>
+                        <p>{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "기본 알림 템플릿", "Default alert templates")}
+                    subtitle={t(
+                      appLocale,
+                      "초기 구독형 운영에 맞춘 기본 감시 세트입니다.",
+                      "Starter monitoring set for a subscription-style workflow."
+                    )}
+                  />
+                  <div className="alert-template-list">
+                    {localizedAlerts.map((item) => (
+                      <div key={item.id} className="alert-template">
+                        <strong>{item.title}</strong>
+                        <span>{getSeverityLabel(appLocale, item.severity)}</span>
+                        <p>{item.trigger}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : null}
         </main>
+      </div>
+    </div>
+  );
+}
 
-        <InspectorRail
-          focusProfile={focusProfile}
-          focusCard={sourcePayload.cards.find((card) => card.marketId === focusMarket)}
-          alertCount={inboxItems.length}
-          activeWorkspace={activeWorkspace}
-          activeBenchmarks={activeWorkspaceBenchmarks}
-          sourcesError={sourcesError}
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="section-header">
+      <strong>{title}</strong>
+      <span>{subtitle}</span>
+    </div>
+  );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="metric-pill">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function DecisionPanel({
+  locale,
+  decision,
+  assistantLoading,
+  assistantError,
+  hasApiKey,
+  question,
+  onQuestionChange,
+  onRunAssistant
+}: {
+  locale: AppLocale;
+  decision: DecisionAssistantResponse;
+  assistantLoading: boolean;
+  assistantError: string | null;
+  hasApiKey: boolean;
+  question: string;
+  onQuestionChange: (value: string) => void;
+  onRunAssistant: () => void;
+}) {
+  const badgeClass =
+    decision.stance === "Buy Bias"
+      ? "bullish"
+      : decision.stance === "Reduce Bias"
+        ? "bearish"
+        : "neutral";
+
+  return (
+    <div className="decision-stack">
+      <div className="decision-topline">
+        <DonutMeter
+          value={decision.confidence}
+          label={t(locale, "신뢰도", "Confidence")}
+          subLabel={stanceLabel(locale, decision.stance)}
+          color={decision.stance === "Reduce Bias" ? NEGATIVE : decision.stance === "Buy Bias" ? POSITIVE : "#2f7bf6"}
         />
+        <div className="decision-copy">
+          <span className={`stance-badge ${badgeClass}`}>{stanceLabel(locale, decision.stance)}</span>
+          <p>{decision.summary}</p>
+          <small>{decision.disclaimer}</small>
+        </div>
+      </div>
+
+      <div className="decision-block">
+        <strong>{t(locale, "핵심 포인트", "Thesis")}</strong>
+        <ul>
+          {decision.thesis.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="decision-block two-column">
+        <div>
+          <strong>{t(locale, "리스크", "Risks")}</strong>
+          <ul>
+            {decision.risks.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <strong>{t(locale, "체크리스트", "Checklist")}</strong>
+          <ul>
+            {decision.actions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="decision-ask">
+        <label>
+          <span>{t(locale, "LLM 질문", "LLM prompt")}</span>
+          <textarea value={question} onChange={(event) => onQuestionChange(event.target.value)} rows={3} />
+        </label>
+        <div className="decision-actions">
+          <button className="primary-button" onClick={onRunAssistant} disabled={assistantLoading || !hasApiKey}>
+            {assistantLoading ? t(locale, "생성 중...", "Generating...") : t(locale, "LLM 브리프 생성", "Generate LLM brief")}
+          </button>
+          {!hasApiKey ? (
+            <small>{t(locale, "LLM 분석을 쓰려면 API key를 먼저 저장하세요.", "Save an API key first to use the LLM brief.")}</small>
+          ) : null}
+          {assistantError ? <small className="error-text">{assistantError}</small> : null}
+        </div>
       </div>
     </div>
   );

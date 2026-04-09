@@ -274,6 +274,15 @@ async function fetchEuEtsCard() {
   const latest = dataRows[0];
   const previous = dataRows[1] ?? latest;
   const priceDelta = Number(latest.auctionPrice) - Number(previous.auctionPrice);
+  const recentSeries = dataRows
+    .slice()
+    .sort((left, right) => left.date - right.date)
+    .slice(-14)
+    .map((row) => ({
+      date: toIsoDate(row.date),
+      value: Number(row.auctionPrice),
+      volume: Number(row.volume)
+    }));
 
   return {
     id: "eu-ets-official",
@@ -300,6 +309,12 @@ async function fetchEuEtsCard() {
     notes: [
       "This official feed covers primary auctions. It does not replace ICE secondary-market futures data."
     ],
+    series: recentSeries,
+    seriesLabel: "Auction price",
+    volumeSeries: recentSeries.map((point) => ({
+      date: point.date,
+      value: point.volume ?? 0
+    })),
     links: makeLinks(
       { label: "EEX auction page", url: EEX_AUCTION_PAGE_URL },
       { label: "Direct auction workbook", url: directDataUrl }
@@ -357,6 +372,15 @@ async function fetchKrxCard() {
     recentVolumes.length > 0
       ? recentVolumes.reduce((sum, value) => sum + value, 0) / recentVolumes.length
       : 0;
+  const recentSeries = history
+    .map((row) => ({
+      date: normalizeWhitespace(row.trd_dd).replace(/\./g, "-"),
+      value: Number(String(row.tdd_clsprc ?? "0").replace(/,/g, "")),
+      volume: Number(String(row.acc_trdvol ?? "0").replace(/,/g, ""))
+    }))
+    .filter((row) => Number.isFinite(row.value))
+    .sort((left, right) => new Date(left.date) - new Date(right.date))
+    .slice(-24);
 
   return {
     id: "k-ets-official",
@@ -378,6 +402,12 @@ async function fetchKrxCard() {
     notes: [
       "KRX returns valid zero-volume rows on inactive trading days. The app surfaces the official value without backfilling."
     ],
+    series: recentSeries,
+    seriesLabel: "Official close",
+    volumeSeries: recentSeries.map((point) => ({
+      date: point.date,
+      value: point.volume ?? 0
+    })),
     links: makeLinks({ label: "KRX market page", url: KRX_MARKET_PAGE_URL })
   };
 }

@@ -3,8 +3,13 @@ const path = require("node:path");
 const fs = require("node:fs/promises");
 const { execFile } = require("node:child_process");
 const { getConnectedSources } = require("./electron/liveSources");
+const {
+  DEFAULT_MODEL,
+  runOpenAIDecisionAssistant
+} = require("./electron/decisionAssistant");
 
 const isDev = !app.isPackaged;
+const SETTINGS_FILENAME = "settings.json";
 
 function getWindowIconPath() {
   return path.join(__dirname, "assets", "app-icon.png");
@@ -25,7 +30,7 @@ function createWindow() {
     maximizable: true,
     resizable: true,
     show: false,
-    backgroundColor: "#ede7dc",
+    backgroundColor: "#eef2f8",
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -107,6 +112,57 @@ async function runWalkForwardModel({ inputPath, marketId, trainWindow, horizon }
   throw new Error(lastError);
 }
 
+async function getSettingsPath() {
+  return path.join(app.getPath("userData"), SETTINGS_FILENAME);
+}
+
+async function loadSettings() {
+  const settingsPath = await getSettingsPath();
+
+  try {
+    const raw = await fs.readFile(settingsPath, "utf8");
+    const parsed = JSON.parse(raw);
+    return {
+      openAIApiKey:
+        typeof parsed.openAIApiKey === "string" ? parsed.openAIApiKey : "",
+      llmModel:
+        typeof parsed.llmModel === "string" && parsed.llmModel.trim()
+          ? parsed.llmModel.trim()
+          : DEFAULT_MODEL
+    };
+  } catch {
+    return {
+      openAIApiKey: "",
+      llmModel: DEFAULT_MODEL
+    };
+  }
+}
+
+async function saveSettings(partial) {
+  const current = await loadSettings();
+  const next = {
+    ...current,
+    ...(Object.prototype.hasOwnProperty.call(partial, "openAIApiKey")
+      ? { openAIApiKey: String(partial.openAIApiKey ?? "").trim() }
+      : {}),
+    ...(Object.prototype.hasOwnProperty.call(partial, "llmModel")
+      ? { llmModel: String(partial.llmModel ?? "").trim() || DEFAULT_MODEL }
+      : {})
+  };
+
+  const settingsPath = await getSettingsPath();
+  await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+  await fs.writeFile(settingsPath, JSON.stringify(next, null, 2), "utf8");
+  return next;
+}
+
+function getPublicSettings(settings) {
+  return {
+    hasOpenAIApiKey: Boolean(settings.openAIApiKey || process.env.OPENAI_API_KEY),
+    llmModel: settings.llmModel || DEFAULT_MODEL
+  };
+}
+
 ipcMain.handle("pick-csv-file", async () => {
   const result = await dialog.showOpenDialog({
     title: "Choose a market CSV file",
@@ -173,6 +229,25 @@ ipcMain.handle("run-walk-forward-model", async (_event, payload) =>
   runWalkForwardModel(payload)
 );
 ipcMain.handle("refresh-connected-sources", async () => getConnectedSources());
+ipcMain.handle("get-app-settings", async () => getPublicSettings(await loadSettings()));
+ipcMain.handle("save-app-settings", async (_event, payload) =>
+  getPublicSettings(await saveSettings(payload ?? {}))
+);
+ipcMain.handle("run-decision-assistant", async (_event, payload) => {
+  const settings = await loadSettings();
+  const apiKey = settings.openAIApiKey || process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("No OpenAI API key is configured for the desktop app.");
+  }
+
+  return runOpenAIDecisionAssistant({
+    apiKey,
+    model: settings.llmModel || DEFAULT_MODEL,
+    locale: payload?.locale === "en" ? "en" : "ko",
+    payload: payload?.payload ?? payload
+  });
+});
 
 app.whenReady().then(() => {
   createWindow();

@@ -6,32 +6,32 @@ It is built for research, monitoring, and alerting. It does not execute carbon a
 
 ## What Changed
 
-The product now follows a benchmark-driven structure:
+The desktop app now follows a graph-first intelligence workflow:
 
-- `개요`
-  - official market board
-  - driver matrix
-  - catalyst windows
+- `시장 보드 / Board`
+  - official market snapshots
+  - official tape charts
+  - cross-market normalized chart
+  - driver heatmap
+  - catalyst timeline
   - feed-style briefing
-- `워크스페이스`
-  - saved workspace presets
-  - watchlist presets
-  - watch-view modes
-  - benchmark feature map
-- `알림`
-  - alert templates
-  - inbox
-  - saveable daily brief
-- `연구실`
-  - scenario overlay
-  - walk-forward model runner
+- `의사결정 / Decision`
+  - driver waterfall
+  - scenario sliders
+  - rule-based posture engine
+  - optional LLM brief with OpenAI API key
+  - alert hub
+- `연구실 / Lab`
   - local CSV backtest
+  - walk-forward model runner
+  - feature-importance chart
   - dataset template export
-- `출처`
-  - trust center
+- `출처 / Sources`
+  - source-method coverage chart
   - source registry
-  - full driver atlas
-  - autonomous development plan
+  - watchlists and proxy links
+  - benchmark feature map
+  - trust principles and subscription value
 
 ## Benchmarks Used
 
@@ -82,6 +82,7 @@ npm.cmd run package:portable
 
 - Official-source-first cards remain the core decision surface.
 - ETF, ETC, and Yahoo-style pages are watch links only.
-- The scenario engine is a research overlay, not an execution signal.
+- The scenario engine and the LLM brief are research overlays, not execution signals.
+- LLM analysis runs only when an OpenAI API key is saved in the desktop app settings panel.
 - The walk-forward model requires local Python with `pandas`, `numpy`, and `scikit-learn`.
 - The backtest module uses local CSV files and simple research strategies.
