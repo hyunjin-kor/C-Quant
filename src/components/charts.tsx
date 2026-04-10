@@ -106,6 +106,101 @@ export function Sparkline({
   );
 }
 
+function formatTrendDateLabel(locale: string, label: string) {
+  const parsed = new Date(label);
+  if (Number.isNaN(parsed.getTime())) {
+    return label;
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    month: "numeric",
+    day: "numeric"
+  }).format(parsed);
+}
+
+export function MiniTrendChart({
+  points,
+  color,
+  locale = "en-US",
+  valueFormatter,
+  lowLabel,
+  highLabel,
+  emptyTitle,
+  emptySubtitle
+}: {
+  points: ChartPoint[];
+  color: string;
+  locale?: string;
+  valueFormatter?: ValueFormatter;
+  lowLabel: string;
+  highLabel: string;
+  emptyTitle: string;
+  emptySubtitle: string;
+}) {
+  if (points.length === 0) {
+    return (
+      <div className="mini-trend-card empty">
+        <strong>{emptyTitle}</strong>
+        <span>{emptySubtitle}</span>
+      </div>
+    );
+  }
+
+  const first = points[0];
+  const last = points[points.length - 1];
+  const values = points.map((point) => point.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const changePct = first.value === 0 ? 0 : ((last.value - first.value) / Math.abs(first.value)) * 100;
+  const tone =
+    changePct > 0.05 ? "positive" : changePct < -0.05 ? "negative" : "neutral";
+  const formatValue = valueFormatter ?? ((value: number) => value.toFixed(2));
+
+  return (
+    <div className="mini-trend-card">
+      <div className="mini-trend-top">
+        <span>
+          {formatTrendDateLabel(locale, first.label)} - {formatTrendDateLabel(locale, last.label)}
+        </span>
+        <strong className={tone}>
+          {changePct > 0 ? "+" : ""}
+          {changePct.toFixed(1)}%
+        </strong>
+      </div>
+      <div className="mini-trend-chart">
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={24} y2={24} className="mini-trend-guide" />
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={50} y2={50} className="mini-trend-guide" />
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={76} y2={76} className="mini-trend-guide" />
+          <path d={buildAreaPath(points, WIDTH, HEIGHT)} fill={`${color}16`} />
+          <path
+            d={buildPointPath(points, WIDTH, HEIGHT)}
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle
+            cx={WIDTH - PADDING}
+            cy={
+              PADDING +
+              ((Math.max(...values) - last.value) / (Math.max(...values) - Math.min(...values) || 1)) *
+                (HEIGHT - PADDING * 2)
+            }
+            r="3.8"
+            fill={color}
+          />
+        </svg>
+      </div>
+      <div className="mini-trend-foot">
+        <span>{lowLabel} {formatValue(min)}</span>
+        <span>{highLabel} {formatValue(max)}</span>
+      </div>
+    </div>
+  );
+}
+
 export function LineChart({
   points,
   color,

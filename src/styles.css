@@ -386,7 +386,7 @@ textarea {
 .market-board-head,
 .market-board-row {
   display: grid;
-  grid-template-columns: minmax(170px, 1.15fr) minmax(130px, 0.92fr) minmax(110px, 0.78fr) minmax(110px, 0.78fr) minmax(100px, 0.74fr) minmax(100px, 0.7fr) minmax(140px, 0.96fr) minmax(96px, 0.66fr);
+  grid-template-columns: minmax(170px, 1.15fr) minmax(130px, 0.92fr) minmax(110px, 0.78fr) minmax(110px, 0.78fr) minmax(100px, 0.74fr) minmax(100px, 0.7fr) minmax(176px, 1.08fr) minmax(96px, 0.66fr);
   gap: 0.8rem;
   align-items: center;
 }
@@ -443,10 +443,7 @@ textarea {
 }
 
 .market-spark {
-  height: 54px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: rgba(240, 244, 250, 0.84);
+  min-width: 0;
 }
 
 .market-time {
@@ -474,7 +471,7 @@ textarea {
 }
 
 .market-spark.compact {
-  height: 62px;
+  min-width: 0;
 }
 
 .market-bias-cell {
@@ -533,6 +530,84 @@ textarea {
   border-radius: 14px;
   overflow: hidden;
   background: rgba(240, 244, 250, 0.84);
+}
+
+.mini-trend-card {
+  display: grid;
+  gap: 0.38rem;
+  padding: 0.65rem 0.72rem;
+  border-radius: 16px;
+  border: 1px solid rgba(130, 146, 182, 0.12);
+  background: rgba(240, 244, 250, 0.84);
+}
+
+.mini-trend-card.empty {
+  min-height: 96px;
+  align-content: center;
+}
+
+.mini-trend-card.empty strong,
+.mini-trend-card.empty span {
+  display: block;
+  text-align: center;
+}
+
+.mini-trend-card.empty strong {
+  color: var(--text-strong);
+  font-size: 0.78rem;
+}
+
+.mini-trend-card.empty span {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.mini-trend-top,
+.mini-trend-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.mini-trend-top span,
+.mini-trend-foot span {
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.mini-trend-top strong {
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.mini-trend-top strong.positive {
+  color: #108350;
+}
+
+.mini-trend-top strong.negative {
+  color: #b44337;
+}
+
+.mini-trend-top strong.neutral {
+  color: #205fbe;
+}
+
+.mini-trend-chart {
+  height: 68px;
+}
+
+.mini-trend-chart svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mini-trend-guide {
+  stroke: rgba(130, 146, 182, 0.18);
+  stroke-width: 1;
 }
 
 .tape-workbench {

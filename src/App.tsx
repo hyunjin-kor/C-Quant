@@ -10,6 +10,7 @@ import {
   DonutMeter,
   Heatmap,
   LineChart,
+  MiniTrendChart,
   MultiLineChart,
   PressureBar,
   Sparkline,
@@ -355,6 +356,21 @@ function formatCompact(locale: AppLocale, value: number) {
     notation: "compact",
     maximumFractionDigits: 1
   }).format(value);
+}
+
+function getSeriesDigits(points: ChartPoint[]) {
+  const maxAbs = Math.max(...points.map((point) => Math.abs(point.value)), 0);
+  if (maxAbs >= 1000) {
+    return 0;
+  }
+  if (maxAbs >= 100) {
+    return 1;
+  }
+  return 2;
+}
+
+function formatSeriesValue(locale: AppLocale, points: ChartPoint[], value: number) {
+  return formatNumber(locale, value, getSeriesDigits(points));
 }
 
 function parseNumber(value?: string) {
@@ -3833,11 +3849,16 @@ function MarketBoard({
             <span>{t(locale, "신뢰도", "Model confidence")}</span>
           </div>
           <div className="market-spark">
-            {row.sparkline.length > 1 ? (
-              <Sparkline points={row.sparkline} color={marketColor(row.marketId)} fill />
-            ) : (
-              <div className="snapshot-fallback">{row.updatedLabel}</div>
-            )}
+            <MiniTrendChart
+              points={row.sparkline}
+              color={marketColor(row.marketId)}
+              locale={locale === "ko" ? "ko-KR" : "en-US"}
+              valueFormatter={(value) => formatSeriesValue(locale, row.sparkline, value)}
+              lowLabel={t(locale, "저점", "Low")}
+              highLabel={t(locale, "고점", "High")}
+              emptyTitle={t(locale, "공식 시계열 없음", "No official trend yet")}
+              emptySubtitle={t(locale, "가격 흐름 대신 최신 공지 시각만 표시합니다.", "Showing the latest official update instead.")}
+            />
           </div>
           <div className="market-cell market-time">
             <strong>{row.updatedLabel}</strong>
@@ -3902,11 +3923,18 @@ function OperationalMarketBoard({
               <small>{row.benchmarkDelay}</small>
             </div>
             <div className="market-spark compact">
-              {row.benchmarkSparkline.length > 1 ? (
-                <Sparkline points={row.benchmarkSparkline} color={marketColor(row.marketId)} fill />
-              ) : (
-                <div className="snapshot-fallback">{row.benchmarkStatus}</div>
-              )}
+              <MiniTrendChart
+                points={row.benchmarkSparkline}
+                color={marketColor(row.marketId)}
+                locale={locale === "ko" ? "ko-KR" : "en-US"}
+                valueFormatter={(value) =>
+                  formatSeriesValue(locale, row.benchmarkSparkline, value)
+                }
+                lowLabel={t(locale, "저점", "Low")}
+                highLabel={t(locale, "고점", "High")}
+                emptyTitle={t(locale, "연결 시계열 없음", "No linked trend yet")}
+                emptySubtitle={row.benchmarkStatus}
+              />
             </div>
           </div>
 
