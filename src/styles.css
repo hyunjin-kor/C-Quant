@@ -409,13 +409,14 @@ textarea {
   text-align: left;
   border-radius: 22px;
   border-bottom: 1px solid rgba(130, 146, 182, 0.1);
-  transition: background 140ms ease, box-shadow 140ms ease;
+  transition: background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .market-board-row:hover,
 .market-board-row.active {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 250, 255, 0.94));
   box-shadow: inset 3px 0 0 var(--market-accent, #2f7bf6);
+  transform: translateY(-1px);
 }
 
 .market-main-cell,
@@ -839,6 +840,16 @@ textarea {
 }
 
 @media (max-width: 860px) {
+  .interaction-stage-main,
+  .interaction-bullet-grid {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .interaction-actions {
+    justify-content: stretch;
+  }
+
   .tape-score-header {
     display: none;
   }
@@ -1020,6 +1031,114 @@ textarea {
 
 .panel-emphasis {
   background: linear-gradient(180deg, var(--panel-strong), rgba(255, 255, 255, 0.88));
+}
+
+.surface-stage {
+  display: grid;
+  gap: 0.95rem;
+  animation: surface-stage-in 240ms ease;
+  transform-origin: top center;
+}
+
+.interaction-stage {
+  display: grid;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+  animation: stage-reveal 260ms ease;
+}
+
+.interaction-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 999px;
+  background: rgba(47, 123, 246, 0.4);
+}
+
+.interaction-stage.positive::before {
+  background: rgba(34, 199, 122, 0.72);
+}
+
+.interaction-stage.neutral::before {
+  background: rgba(47, 123, 246, 0.72);
+}
+
+.interaction-stage.negative::before {
+  background: rgba(255, 111, 97, 0.72);
+}
+
+.interaction-stage-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.interaction-copy {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 760px;
+}
+
+.interaction-copy h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+  line-height: 1.08;
+}
+
+.interaction-copy p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.interaction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.interaction-bullet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.interaction-bullet {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.82rem 0.92rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(130, 146, 182, 0.1);
+}
+
+.interaction-bullet span {
+  width: 10px;
+  height: 10px;
+  margin-top: 0.28rem;
+  border-radius: 999px;
+  background: rgba(47, 123, 246, 0.64);
+}
+
+.interaction-stage.positive .interaction-bullet span {
+  background: rgba(34, 199, 122, 0.88);
+}
+
+.interaction-stage.negative .interaction-bullet span {
+  background: rgba(255, 111, 97, 0.88);
+}
+
+.interaction-bullet strong {
+  color: var(--text-strong);
+  font-size: 0.84rem;
+  line-height: 1.55;
 }
 
 .section-header {
@@ -2159,6 +2278,12 @@ textarea {
 .decision-table-row {
   padding: 0.9rem 0.25rem;
   border-bottom: 1px solid rgba(130, 146, 182, 0.1);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.decision-table-row:hover {
+  background: rgba(247, 250, 255, 0.72);
+  transform: translateX(2px);
 }
 
 .decision-table-row strong,
@@ -2175,6 +2300,50 @@ textarea {
   color: var(--text-soft);
   font-size: 0.8rem;
   line-height: 1.55;
+}
+
+.table-inspect-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.table-inspect-button.compact {
+  align-content: start;
+}
+
+.table-inspect-button small {
+  color: #205fbe;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+@keyframes surface-stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes stage-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .driver-table {

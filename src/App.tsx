@@ -217,6 +217,22 @@ type SourceHealthRow = {
   note: string;
 };
 
+type SpotlightTone = "positive" | "neutral" | "negative";
+
+type InteractionSpotlight = {
+  id: string;
+  kind: "market" | "tape" | "driver" | "catalyst" | "source";
+  eyebrow: string;
+  title: string;
+  summary: string;
+  bullets: string[];
+  tone: SpotlightTone;
+  ctaLabel?: string;
+  ctaSurface?: Surface;
+  sourceLabel?: string;
+  sourceUrl?: string;
+};
+
 type DeskRole = "compliance" | "trading" | "risk";
 
 type DeskRoleConfig = {
@@ -632,6 +648,134 @@ function stanceLabel(locale: AppLocale, stance: DecisionAssistantResponse["stanc
 
 function stanceBadgeClass(stance: DecisionAssistantResponse["stance"]) {
   return stance === "Buy Bias" ? "bullish" : stance === "Reduce Bias" ? "bearish" : "neutral";
+}
+
+function toneFromStance(stance: DecisionAssistantResponse["stance"]): SpotlightTone {
+  return stance === "Buy Bias" ? "positive" : stance === "Reduce Bias" ? "negative" : "neutral";
+}
+
+function toneFromContribution(value: number): SpotlightTone {
+  return value > 0 ? "positive" : value < 0 ? "negative" : "neutral";
+}
+
+function buildMarketSpotlight(
+  locale: AppLocale,
+  row: MarketBoardRow,
+  decision: DecisionAssistantResponse
+): InteractionSpotlight {
+  return {
+    id: `market-${row.marketId}`,
+    kind: "market",
+    eyebrow: t(locale, "선택한 시장", "Selected market"),
+    title: row.name,
+    summary: decision.summary,
+    bullets: [
+      `${t(locale, "공식 기준값", "Official anchor")}: ${row.priceLabel}`,
+      `${t(locale, "연결된 비교 테이프", "Linked tape")}: ${row.benchmarkTitle} · ${row.benchmarkValue}`,
+      `${t(locale, "지금 먼저 볼 것", "Look at first")}: ${row.operationsFocus}`,
+      `${t(locale, "가장 큰 요인", "Top driver")}: ${row.topDriver}`
+    ],
+    tone: toneFromStance(row.stance),
+    ctaLabel: t(locale, "판단 화면 열기", "Open decision"),
+    ctaSurface: "signals"
+  };
+}
+
+function buildTapeSpotlight(
+  locale: AppLocale,
+  quote: MarketLiveQuote,
+  stats: TapeCompareStats
+): InteractionSpotlight {
+  return {
+    id: `tape-${quote.id}`,
+    kind: "tape",
+    eyebrow: t(locale, "선택한 비교 테이프", "Selected tape"),
+    title: quote.title,
+    summary: quote.note,
+    bullets: [
+      `${t(locale, "현재값", "Current")}: ${formatLiveQuotePrice(locale, quote)}`,
+      `${t(locale, "방향 일치", "Direction match")}: ${formatPercentStat(locale, stats.directionMatchPct, 0)}`,
+      `${t(locale, "상관", "Correlation")}: ${formatPlainStat(locale, stats.recentCorrelation, 2)}`,
+      `${t(locale, "주의", "Caution")}: ${quote.delayNote}`
+    ],
+    tone:
+      (stats.directionMatchPct ?? 0) >= 60 && (stats.recentCorrelation ?? 0) >= 0.4
+        ? "positive"
+        : (stats.directionMatchPct ?? 0) < 40
+          ? "negative"
+          : "neutral",
+    ctaLabel: t(locale, "출처 화면 열기", "Open sources"),
+    ctaSurface: "sources",
+    sourceLabel: t(locale, "원문 출처", "Source"),
+    sourceUrl: quote.sourceUrl
+  };
+}
+
+function buildDriverSpotlight(locale: AppLocale, row: DriverDecisionRow): InteractionSpotlight {
+  return {
+    id: `driver-${row.id}`,
+    kind: "driver",
+    eyebrow: t(locale, "선택한 드라이버", "Selected driver"),
+    title: row.variable,
+    summary: row.note,
+    bullets: [
+      `${t(locale, "현재 읽기", "Current read")}: ${row.read}`,
+      `${t(locale, "점수", "Score")}: ${row.contribution > 0 ? "+" : ""}${formatNumber(locale, row.contribution, 2)}`,
+      `${t(locale, "중요도", "Weight")}: ${row.importance}`,
+      `${t(locale, "출처", "Source")}: ${row.sourceLabel}`
+    ],
+    tone: toneFromContribution(row.contribution),
+    ctaLabel: t(locale, "판단 화면 열기", "Open decision"),
+    ctaSurface: "signals",
+    sourceLabel: row.sourceLabel,
+    sourceUrl: row.sourceUrl
+  };
+}
+
+function buildCatalystSpotlight(
+  locale: AppLocale,
+  row: ReturnType<typeof localizeCatalystWindow>
+): InteractionSpotlight {
+  return {
+    id: `catalyst-${row.id}`,
+    kind: "catalyst",
+    eyebrow: t(locale, "선택한 일정", "Selected event"),
+    title: row.title,
+    summary: row.whyItMatters,
+    bullets: [
+      `${t(locale, "시점", "Window")}: ${row.windowLabel}`,
+      `${t(locale, "트리거", "Trigger")}: ${row.trigger}`,
+      `${t(locale, "출처", "Source")}: ${row.source.label}`
+    ],
+    tone: "neutral",
+    ctaLabel: t(locale, "판단 화면 열기", "Open decision"),
+    ctaSurface: "signals",
+    sourceLabel: row.source.label,
+    sourceUrl: row.source.url
+  };
+}
+
+function buildSourceSpotlight(locale: AppLocale, row: SourceHealthRow): InteractionSpotlight {
+  return {
+    id: `source-${row.id}`,
+    kind: "source",
+    eyebrow: t(locale, "선택한 소스", "Selected source"),
+    title: row.name,
+    summary: row.note,
+    bullets: [
+      `${t(locale, "역할", "Role")}: ${row.role}`,
+      `${t(locale, "상태", "Status")}: ${row.status}`,
+      `${t(locale, "업데이트", "Updated")}: ${row.updated}`,
+      `${t(locale, "신선도", "Freshness")}: ${row.freshness}`
+    ],
+    tone: row.status.toLowerCase().includes("error")
+      ? "negative"
+      : row.status.toLowerCase().includes("limited")
+        ? "neutral"
+        : "positive",
+    ctaLabel: t(locale, "출처 화면 열기", "Open sources"),
+    ctaSurface: "sources"
+  };
 }
 
 function getAccessTier(
@@ -2113,6 +2257,7 @@ export default function App() {
   const [interactiveQuote, setInteractiveQuote] = useState<MarketLiveQuote | null>(null);
   const [interactiveQuoteLoading, setInteractiveQuoteLoading] = useState(false);
   const [interactiveQuoteError, setInteractiveQuoteError] = useState<string | null>(null);
+  const [spotlight, setSpotlight] = useState<InteractionSpotlight | null>(null);
   const [deskRole, setDeskRole] = useState<DeskRole>(() =>
     readStoredChoice(
       "cquant:desk-role",
@@ -2615,6 +2760,10 @@ export default function App() {
   );
 
   const selectedDecision = decisionsByMarket[marketId];
+  const selectedMarketBoardRow = useMemo(
+    () => marketBoardRows.find((row) => row.marketId === marketId) ?? null,
+    [marketBoardRows, marketId]
+  );
 
   const decisionView = useMemo(
     () =>
@@ -2642,6 +2791,12 @@ export default function App() {
         : selectedDecision,
     [assistantResponse, selectedDecision]
   );
+
+  useEffect(() => {
+    if (selectedMarketBoardRow) {
+      setSpotlight(buildMarketSpotlight(appLocale, selectedMarketBoardRow, selectedDecision));
+    }
+  }, [appLocale, selectedDecision, selectedMarketBoardRow, surface]);
   const decisionReasonHeader = useMemo(
     () => ({
       title: t(appLocale, "매수·매도 판단 근거", "Decision reasoning"),
@@ -3075,6 +3230,45 @@ export default function App() {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  function handleSurfaceChange(nextSurface: Surface) {
+    setSurface(nextSurface);
+  }
+
+  function handleMarketChange(nextMarketId: MarketProfile["id"]) {
+    setMarketId(nextMarketId);
+    setSurface("overview");
+    setAssistantResponse(null);
+  }
+
+  function handleSelectQuote(quoteId: string) {
+    setSelectedLiveQuoteId(quoteId);
+    const selectedRow = selectedLinkedScoreRows.find((row) => row.quote.id === quoteId);
+    if (selectedRow) {
+      setSpotlight(buildTapeSpotlight(appLocale, selectedRow.quote, selectedRow.stats));
+    }
+  }
+
+  function handleInspectDriver(rowId: string) {
+    const row = selectedRoleDriverRows.find((item) => item.id === rowId);
+    if (row) {
+      setSpotlight(buildDriverSpotlight(appLocale, row));
+    }
+  }
+
+  function handleInspectCatalyst(rowId: string) {
+    const row = selectedRoleCatalystRows.find((item) => item.id === rowId);
+    if (row) {
+      setSpotlight(buildCatalystSpotlight(appLocale, row));
+    }
+  }
+
+  function handleInspectSource(rowId: string) {
+    const row = selectedSourceHealthRows.find((item) => item.id === rowId);
+    if (row) {
+      setSpotlight(buildSourceSpotlight(appLocale, row));
+    }
+  }
+
   return (
     <div className="terminal-shell">
       <header className="titlebar">
@@ -3124,7 +3318,7 @@ export default function App() {
                 <button
                   key={item.id}
                   className={surface === item.id ? "active" : ""}
-                  onClick={() => setSurface(item.id)}
+                  onClick={() => handleSurfaceChange(item.id)}
                 >
                   {appLocale === "ko" ? item.ko : item.en}
                 </button>
@@ -3139,10 +3333,7 @@ export default function App() {
                 <button
                   key={profile.id}
                   className={marketId === profile.id ? "active" : ""}
-                  onClick={() => {
-                    setMarketId(profile.id);
-                    setAssistantResponse(null);
-                  }}
+                  onClick={() => handleMarketChange(profile.id)}
                   style={
                     marketId === profile.id
                       ? ({ "--market-accent": marketColor(profile.id) } as CSSProperties)
@@ -3225,11 +3416,19 @@ export default function App() {
               locale={appLocale}
               rows={marketBoardRows}
               selectedMarketId={marketId}
-              onSelectMarket={setMarketId}
+              onSelectMarket={handleMarketChange}
             />
           </section>
 
+          <InteractionStage
+            locale={appLocale}
+            spotlight={spotlight}
+            onOpenSource={handleOpenExternal}
+            onGoSurface={handleSurfaceChange}
+          />
+
           {surface === "overview" ? (
+            <div className="surface-stage" key={`overview-${marketId}-${spotlight?.id ?? "default"}`}>
             <InstitutionDeskSurface
               locale={appLocale}
               marketLabel={getMarketDisplayName(appLocale, marketId)}
@@ -3249,7 +3448,7 @@ export default function App() {
               alertCount={selectedAlerts.length}
               linkedRows={selectedLinkedScoreRows}
               selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
-              onSelectQuote={setSelectedLiveQuoteId}
+              onSelectQuote={handleSelectQuote}
               selectedQuoteRange={selectedQuoteRange}
               onSelectQuoteRange={setSelectedQuoteRange}
               interactiveQuoteLoading={interactiveQuoteLoading}
@@ -3263,7 +3462,11 @@ export default function App() {
               sourceRows={selectedSourceHealthRows}
               feedItems={feedItems.slice(0, 6)}
               onOpenSource={handleOpenExternal}
+              onInspectDriver={handleInspectDriver}
+              onInspectCatalyst={handleInspectCatalyst}
+              onInspectSource={handleInspectSource}
             />
+            </div>
           ) : null}
 
           {false && surface === "overview" ? (
@@ -3547,6 +3750,7 @@ export default function App() {
           ) : null}
 
           {surface === "signals" ? (
+            <div className="surface-stage" key={`signals-${marketId}-${spotlight?.id ?? "default"}`}>
             <InstitutionDecisionSurface
               locale={appLocale}
               decision={decisionView}
@@ -3564,7 +3768,11 @@ export default function App() {
               priorityItems={selectedDesk.priorityItems}
               invalidationChecks={selectedDesk.invalidationChecks}
               onOpenSource={handleOpenExternal}
+              onInspectDriver={handleInspectDriver}
+              onInspectCatalyst={handleInspectCatalyst}
+              onInspectSource={handleInspectSource}
             />
+            </div>
           ) : null}
 
           {false && surface === "signals" ? (
@@ -3756,6 +3964,7 @@ export default function App() {
           ) : null}
 
           {surface === "lab" ? (
+            <div className="surface-stage" key={`lab-${marketId}`}>
             <>
               <section className="overview-grid">
                 <div className="panel panel-emphasis">
@@ -3895,9 +4104,11 @@ export default function App() {
                 </div>
               </section>
             </>
+            </div>
           ) : null}
 
           {surface === "sources" ? (
+            <div className="surface-stage" key={`sources-${marketId}-${spotlight?.id ?? "default"}`}>
             <>
               <section className="panel sources-toolbar">
                 <div className="toolbar-copy">
@@ -4096,6 +4307,7 @@ export default function App() {
                 </div>
               </section>
             </>
+            </div>
           ) : null}
         </main>
       </div>
@@ -4109,6 +4321,57 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
       <strong>{title}</strong>
       <span>{subtitle}</span>
     </div>
+  );
+}
+
+function InteractionStage({
+  locale,
+  spotlight,
+  onOpenSource,
+  onGoSurface
+}: {
+  locale: AppLocale;
+  spotlight: InteractionSpotlight | null;
+  onOpenSource: (url: string) => void | Promise<void>;
+  onGoSurface: (surface: Surface) => void;
+}) {
+  if (!spotlight) {
+    return null;
+  }
+
+  return (
+    <section
+      key={spotlight.id}
+      className={`panel panel-emphasis interaction-stage ${spotlight.tone}`}
+    >
+      <div className="interaction-stage-main">
+        <div className="interaction-copy">
+          <span className="eyebrow">{spotlight.eyebrow}</span>
+          <h2>{spotlight.title}</h2>
+          <p>{spotlight.summary}</p>
+        </div>
+        <div className="interaction-actions">
+          {spotlight.ctaSurface ? (
+            <button className="primary-button" onClick={() => onGoSurface(spotlight.ctaSurface!)}>
+              {spotlight.ctaLabel}
+            </button>
+          ) : null}
+          {spotlight.sourceUrl ? (
+            <button className="secondary-button" onClick={() => void onOpenSource(spotlight.sourceUrl!)}>
+              {spotlight.sourceLabel ?? t(locale, "출처 보기", "Open source")}
+            </button>
+          ) : null}
+        </div>
+      </div>
+      <div className="interaction-bullet-grid">
+        {spotlight.bullets.map((item) => (
+          <div key={item} className="interaction-bullet">
+            <span />
+            <strong>{item}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -4494,11 +4757,13 @@ function RiskGatePanel({
 function DriverMonitorTable({
   locale,
   rows,
-  onOpenSource
+  onOpenSource,
+  onInspect
 }: {
   locale: AppLocale;
   rows: DriverDecisionRow[];
   onOpenSource: (url: string) => void;
+  onInspect: (rowId: string) => void;
 }) {
   return (
     <div className="decision-table">
@@ -4514,7 +4779,10 @@ function DriverMonitorTable({
       {rows.map((row) => (
         <div key={row.id} className="decision-table-row driver-table">
           <div className="table-main">
-            <strong>{row.variable}</strong>
+            <button className="table-inspect-button" onClick={() => onInspect(row.id)}>
+              <strong>{row.variable}</strong>
+              <small>{t(locale, "상세 보기", "Open detail")}</small>
+            </button>
           </div>
           <span>{row.family}</span>
           <span className={`signal-pill ${row.tone}`}>{row.read}</span>
@@ -4540,11 +4808,13 @@ function DriverMonitorTable({
 function CatalystWatchTable({
   locale,
   rows,
-  onOpenSource
+  onOpenSource,
+  onInspect
 }: {
   locale: AppLocale;
   rows: ReturnType<typeof localizeCatalystWindow>[];
   onOpenSource: (url: string) => void;
+  onInspect: (rowId: string) => void;
 }) {
   return (
     <div className="decision-table">
@@ -4556,7 +4826,10 @@ function CatalystWatchTable({
       </div>
       {rows.map((row) => (
         <div key={row.id} className="decision-table-row catalyst-table">
-          <strong>{row.windowLabel}</strong>
+          <button className="table-inspect-button compact" onClick={() => onInspect(row.id)}>
+            <strong>{row.windowLabel}</strong>
+            <small>{t(locale, "상세 보기", "Open detail")}</small>
+          </button>
           <div className="table-main">
             <strong>{row.title}</strong>
             <span>{row.trigger}</span>
@@ -4573,10 +4846,12 @@ function CatalystWatchTable({
 
 function SourceHealthTable({
   locale,
-  rows
+  rows,
+  onInspect
 }: {
   locale: AppLocale;
   rows: SourceHealthRow[];
+  onInspect: (rowId: string) => void;
 }) {
   return (
     <div className="decision-table">
@@ -4591,7 +4866,10 @@ function SourceHealthTable({
       {rows.map((row) => (
         <div key={row.id} className="decision-table-row source-health-table">
           <div className="table-main">
-            <strong>{row.name}</strong>
+            <button className="table-inspect-button" onClick={() => onInspect(row.id)}>
+              <strong>{row.name}</strong>
+              <small>{t(locale, "상세 보기", "Open detail")}</small>
+            </button>
             <span>{row.kind}</span>
           </div>
           <span>{row.role}</span>
@@ -4634,7 +4912,10 @@ function InstitutionDeskSurface({
   catalystRows,
   sourceRows,
   feedItems,
-  onOpenSource
+  onOpenSource,
+  onInspectDriver,
+  onInspectCatalyst,
+  onInspectSource
 }: {
   locale: AppLocale;
   marketLabel: string;
@@ -4665,6 +4946,9 @@ function InstitutionDeskSurface({
   sourceRows: SourceHealthRow[];
   feedItems: FeedItem[];
   onOpenSource: (url: string) => void;
+  onInspectDriver: (rowId: string) => void;
+  onInspectCatalyst: (rowId: string) => void;
+  onInspectSource: (rowId: string) => void;
 }) {
   return (
     <>
@@ -4803,7 +5087,12 @@ function InstitutionDeskSurface({
             "Read the active drivers, direction, score, and source evidence in one table."
           )}
         />
-        <DriverMonitorTable locale={locale} rows={driverRows} onOpenSource={onOpenSource} />
+        <DriverMonitorTable
+          locale={locale}
+          rows={driverRows}
+          onOpenSource={onOpenSource}
+          onInspect={onInspectDriver}
+        />
       </section>
 
       <section className="overview-grid secondary">
@@ -4816,7 +5105,12 @@ function InstitutionDeskSurface({
               "Keep only the policy, auction, and disclosure dates that affect the decision."
             )}
           />
-          <CatalystWatchTable locale={locale} rows={catalystRows} onOpenSource={onOpenSource} />
+          <CatalystWatchTable
+            locale={locale}
+            rows={catalystRows}
+            onOpenSource={onOpenSource}
+            onInspect={onInspectCatalyst}
+          />
         </div>
 
         <div className="panel">
@@ -4828,7 +5122,7 @@ function InstitutionDeskSurface({
               "Check how fresh the official anchor and linked tapes are."
             )}
           />
-          <SourceHealthTable locale={locale} rows={sourceRows} />
+          <SourceHealthTable locale={locale} rows={sourceRows} onInspect={onInspectSource} />
         </div>
       </section>
 
@@ -4875,7 +5169,10 @@ function InstitutionDecisionSurface({
   check,
   priorityItems,
   invalidationChecks,
-  onOpenSource
+  onOpenSource,
+  onInspectDriver,
+  onInspectCatalyst,
+  onInspectSource
 }: {
   locale: AppLocale;
   decision: DecisionAssistantResponse;
@@ -4893,6 +5190,9 @@ function InstitutionDecisionSurface({
   priorityItems: string[];
   invalidationChecks: string[];
   onOpenSource: (url: string) => void;
+  onInspectDriver: (rowId: string) => void;
+  onInspectCatalyst: (rowId: string) => void;
+  onInspectSource: (rowId: string) => void;
 }) {
   return (
     <>
@@ -4947,7 +5247,12 @@ function InstitutionDecisionSurface({
             "Read each active driver with a score and plain-language explanation."
           )}
         />
-        <DriverMonitorTable locale={locale} rows={driverRows} onOpenSource={onOpenSource} />
+          <DriverMonitorTable
+            locale={locale}
+            rows={driverRows}
+            onOpenSource={onOpenSource}
+            onInspect={onInspectDriver}
+          />
       </section>
 
       <section className="overview-grid secondary">
@@ -4960,7 +5265,12 @@ function InstitutionDecisionSurface({
               "Keep only the dates that could flip the read."
             )}
           />
-          <CatalystWatchTable locale={locale} rows={catalystRows} onOpenSource={onOpenSource} />
+          <CatalystWatchTable
+            locale={locale}
+            rows={catalystRows}
+            onOpenSource={onOpenSource}
+            onInspect={onInspectCatalyst}
+          />
         </div>
 
         <div className="panel">
@@ -4972,7 +5282,7 @@ function InstitutionDecisionSurface({
               "Check the freshness of the data used in the current call."
             )}
           />
-          <SourceHealthTable locale={locale} rows={sourceRows} />
+          <SourceHealthTable locale={locale} rows={sourceRows} onInspect={onInspectSource} />
         </div>
       </section>
     </>
