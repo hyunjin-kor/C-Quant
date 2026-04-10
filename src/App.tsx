@@ -4321,17 +4321,30 @@ export default function App() {
           ) : null}
         </main>
         <aside className="inspector-rail">
-          <InspectorPanel
+          <InspectorWorkbenchPanel
             locale={appLocale}
             spotlight={spotlight}
+            deskRole={deskRole}
+            marketLabel={getMarketDisplayName(appLocale, marketId)}
             officialCard={localizedSelectedCard}
             quote={selectedInteractiveQuote}
             officialPoints={selectedSeries}
             comparePoints={selectedTapeComparePoints}
             compareSeries={selectedTapeCompareSeries}
+            compareStats={selectedTapeCompareStats}
             driverRows={selectedRoleDriverRows}
             catalystRows={selectedRoleCatalystRows}
             sourceRows={selectedSourceHealthRows}
+            linkedRows={selectedLinkedScoreRows}
+            selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
+            selectedRange={selectedQuoteRange}
+            onSelectQuote={handleSelectQuote}
+            onSelectRange={setSelectedQuoteRange}
+            focus={selectedDesk.focus}
+            check={selectedDesk.check}
+            executionNote={selectedDesk.executionNote}
+            priorityItems={selectedDesk.priorityItems}
+            invalidationChecks={selectedDesk.invalidationChecks}
             decision={decisionView}
             onOpenSource={handleOpenExternal}
           />
@@ -4621,6 +4634,550 @@ function MetricPill({ label, value }: { label: string; value: string }) {
     <div className="metric-pill">
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function getDeskRoleLabel(locale: AppLocale, deskRole: DeskRole) {
+  if (deskRole === "compliance") {
+    return t(locale, "컴플라이언스 관점", "Compliance lens");
+  }
+  if (deskRole === "risk") {
+    return t(locale, "리스크 관점", "Risk lens");
+  }
+  return t(locale, "트레이딩 관점", "Trading lens");
+}
+
+function buildInspectorRoleLens({
+  locale,
+  deskRole,
+  marketLabel,
+  spotlight,
+  focus,
+  check,
+  executionNote,
+  priorityItems,
+  invalidationChecks,
+  selectedDriver,
+  selectedCatalyst,
+  selectedSource,
+  selectedQuote,
+  compareStats
+}: {
+  locale: AppLocale;
+  deskRole: DeskRole;
+  marketLabel: string;
+  spotlight: InteractionSpotlight;
+  focus: string;
+  check: string;
+  executionNote: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
+  selectedDriver: DriverDecisionRow | null;
+  selectedCatalyst: ReturnType<typeof localizeCatalystWindow> | null;
+  selectedSource: SourceHealthRow | null;
+  selectedQuote: MarketLiveQuote | undefined;
+  compareStats: TapeCompareStats;
+}) {
+  const generalFocus = [focus, check, ...priorityItems].slice(0, 4);
+  const generalCaution = [executionNote, ...invalidationChecks].slice(0, 4);
+
+  if (deskRole === "compliance") {
+    return {
+      summary: t(
+        locale,
+        "이 역할에서는 공식 가격, 이행 일정, 제도 공지가 프록시보다 우선입니다.",
+        "In this role, the official tape, compliance calendar, and rule notices outrank proxies."
+      ),
+      focusItems: [
+        spotlight.kind === "tape"
+          ? t(
+              locale,
+              "이 테이프는 분위기 참고용입니다. 최종 기준은 공식 가격과 공식 공지입니다.",
+              "Use this tape as context only. The final anchor is the official tape and formal notices."
+            )
+          : spotlight.kind === "driver" && selectedDriver
+            ? t(
+                locale,
+                `${selectedDriver.variable}가 움직여도 이행 일정과 공식 가격이 같이 확인될 때만 강하게 해석합니다.`,
+                `Even if ${selectedDriver.variable} moves, lean harder only when the compliance calendar and official tape confirm it.`
+              )
+            : spotlight.kind === "catalyst" && selectedCatalyst
+              ? t(
+                  locale,
+                  `${selectedCatalyst.title}가 제출·이행 부담을 바꾸는 일정인지 먼저 확인합니다.`,
+                  `Check first whether ${selectedCatalyst.title} changes reporting or surrender pressure.`
+                )
+              : spotlight.kind === "source" && selectedSource
+                ? t(
+                    locale,
+                    `${selectedSource.name}는 공식성, 갱신 시각, 결측 여부를 먼저 확인해야 합니다.`,
+                    `For ${selectedSource.name}, verify official status, update time, and any gaps before using it.`
+                  )
+                : t(
+                    locale,
+                    `${marketLabel}에서는 공식 가격, 이행 일정, 제도 공지가 우선입니다.`,
+                    `For ${marketLabel}, the official tape, compliance calendar, and rule notices come first.`
+                  ),
+        ...generalFocus.slice(0, 3)
+      ].slice(0, 4),
+      cautionItems: [
+        t(
+          locale,
+          "프록시만 강하게 움직이고 공식 가격이 조용하면 결론을 늦춥니다.",
+          "If only the proxy moves while the official tape stays quiet, slow down the call."
+        ),
+        ...generalCaution.slice(0, 3)
+      ].slice(0, 4)
+    };
+  }
+
+  if (deskRole === "risk") {
+    return {
+      summary: t(
+        locale,
+        "이 역할에서는 맞는 방향보다 틀릴 때 얼마나 빨리 감지하는지가 더 중요합니다.",
+        "In this role, spotting when the read is wrong matters more than chasing the perfect call."
+      ),
+      focusItems: [
+        spotlight.kind === "tape"
+          ? t(
+              locale,
+              `현재 괴리 ${formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)}와 방향 일치 ${formatPercentStat(locale, compareStats.directionMatchPct, 0)}를 같이 봅니다.`,
+              `Read the current gap ${formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)} together with the direction match ${formatPercentStat(locale, compareStats.directionMatchPct, 0)}.`
+            )
+          : spotlight.kind === "driver" && selectedDriver
+            ? t(
+                locale,
+                `${selectedDriver.variable} 하나만으로 결론내리지 말고 상위 드라이버와 데이터 신선도를 함께 봅니다.`,
+                `Do not rely on ${selectedDriver.variable} alone. Read it with the other top drivers and data freshness.`
+              )
+            : spotlight.kind === "catalyst" && selectedCatalyst
+              ? t(
+                  locale,
+                  `${selectedCatalyst.title} 전후는 이벤트 리스크 구간으로 보고 확신도를 낮춰 읽습니다.`,
+                  `Treat the window around ${selectedCatalyst.title} as an event-risk period and lower conviction.`
+                )
+              : spotlight.kind === "source" && selectedSource
+                ? t(
+                    locale,
+                    `${selectedSource.name}의 신선도와 상태가 약하면 판단 강도를 자동으로 낮춥니다.`,
+                    `If ${selectedSource.name} is stale or limited, automatically lower conviction.`
+                  )
+                : t(
+                    locale,
+                    `${marketLabel}에서는 데이터 신선도, 경보, 괴리 확대를 먼저 봅니다.`,
+                    `For ${marketLabel}, start with freshness, alerts, and widening gaps.`
+                  ),
+        ...generalFocus.slice(0, 3)
+      ].slice(0, 4),
+      cautionItems: [
+        t(
+          locale,
+          "상관이 무너지거나 갭이 벌어지면 기존 포지션 해석을 바로 낮춥니다.",
+          "If correlation breaks or the gap widens, reduce trust in the existing position read immediately."
+        ),
+        ...generalCaution.slice(0, 3)
+      ].slice(0, 4)
+    };
+  }
+
+  return {
+    summary: t(
+      locale,
+      "이 역할에서는 반응 속도, 방향 일치, 거래량 확인이 핵심입니다.",
+      "In this role, reaction speed, direction agreement, and volume confirmation matter most."
+    ),
+    focusItems: [
+      spotlight.kind === "tape"
+        ? selectedQuote
+          ? t(
+              locale,
+              `${selectedQuote.symbol}가 공식 가격보다 먼저 움직이는지, 아니면 뒤늦게 따라오는지부터 확인합니다.`,
+              `Start by checking whether ${selectedQuote.symbol} is leading the official tape or only following it.`
+            )
+          : t(
+              locale,
+              "선택한 테이프가 공식 가격보다 선행하는지 후행하는지 먼저 확인합니다.",
+              "Start by checking whether the selected tape leads or lags the official tape."
+            )
+        : spotlight.kind === "driver" && selectedDriver
+          ? t(
+              locale,
+              `${selectedDriver.variable}가 실제로 가격을 밀고 있는지, 아니면 설명만 되는지 거래량과 함께 봅니다.`,
+              `Check whether ${selectedDriver.variable} is actually moving price or only explaining it after the fact, using volume as well.`
+            )
+          : spotlight.kind === "catalyst" && selectedCatalyst
+            ? t(
+                locale,
+                `${selectedCatalyst.title} 전후에 공식 가격과 연결 테이프가 같은 방향으로 반응하는지 확인합니다.`,
+                `Check whether the official tape and linked tape react in the same direction around ${selectedCatalyst.title}.`
+              )
+            : spotlight.kind === "source" && selectedSource
+              ? t(
+                  locale,
+                  `${selectedSource.name}가 느리면 빠른 테이프로 선행 반응을 보고, 공식 업데이트로 확정합니다.`,
+                  `If ${selectedSource.name} is slow, use the faster tape for early reaction and confirm with the official update.`
+                )
+              : t(
+                  locale,
+                  `${marketLabel}에서는 공식 가격과 연결 테이프의 반응 속도 차이를 먼저 봅니다.`,
+                  `For ${marketLabel}, start with the speed difference between the official tape and the linked tape.`
+                ),
+      ...generalFocus.slice(0, 3)
+    ].slice(0, 4),
+    cautionItems: [
+      t(
+        locale,
+        "선행처럼 보이는 테이프도 공식 가격이 따라오지 않으면 신호 강도를 낮춥니다.",
+        "Even if a tape looks like a leader, lower signal strength if the official tape does not confirm it."
+      ),
+      ...generalCaution.slice(0, 3)
+    ].slice(0, 4)
+  };
+}
+
+function InspectorWorkbenchPanel({
+  locale,
+  spotlight,
+  deskRole,
+  marketLabel,
+  officialCard,
+  quote,
+  officialPoints,
+  comparePoints,
+  compareSeries,
+  compareStats,
+  driverRows,
+  catalystRows,
+  sourceRows,
+  linkedRows,
+  selectedQuoteId,
+  selectedRange,
+  onSelectQuote,
+  onSelectRange,
+  focus,
+  check,
+  executionNote,
+  priorityItems,
+  invalidationChecks,
+  decision,
+  onOpenSource
+}: {
+  locale: AppLocale;
+  spotlight: InteractionSpotlight | null;
+  deskRole: DeskRole;
+  marketLabel: string;
+  officialCard: ConnectedSourceCard | undefined;
+  quote: MarketLiveQuote | undefined;
+  officialPoints: ChartPoint[];
+  comparePoints: MultiLinePoint[];
+  compareSeries: MultiLineSeries[];
+  compareStats: TapeCompareStats;
+  driverRows: DriverDecisionRow[];
+  catalystRows: ReturnType<typeof localizeCatalystWindow>[];
+  sourceRows: SourceHealthRow[];
+  linkedRows: LinkedTapeScoreRow[];
+  selectedQuoteId: string;
+  selectedRange: QuoteRangePreset;
+  onSelectQuote: (quoteId: string) => void;
+  onSelectRange: (range: QuoteRangePreset) => void;
+  focus: string;
+  check: string;
+  executionNote: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
+  decision: DecisionAssistantResponse;
+  onOpenSource: (url: string) => void | Promise<void>;
+}) {
+  if (!spotlight) {
+    return null;
+  }
+
+  const entityId = getSpotlightEntityId(spotlight);
+  const selectedDriver = driverRows.find((row) => row.id === entityId) ?? null;
+  const selectedCatalyst = catalystRows.find((row) => row.id === entityId) ?? null;
+  const selectedSource = sourceRows.find((row) => row.id === entityId) ?? null;
+  const driverFocusPoints =
+    selectedDriver
+      ? [selectedDriver, ...driverRows.filter((row) => row.id !== selectedDriver.id)]
+          .slice(0, 6)
+          .map((row) => ({
+            label: row.variable,
+            value: Math.abs(row.contribution)
+          }))
+      : driverRows.slice(0, 6).map((row) => ({
+          label: row.variable,
+          value: Math.abs(row.contribution)
+        }));
+  const catalystPreview = selectedCatalyst
+    ? [selectedCatalyst, ...catalystRows.filter((row) => row.id !== selectedCatalyst.id)].slice(0, 4)
+    : catalystRows.slice(0, 4);
+  const sourcePreview = selectedSource
+    ? [selectedSource, ...sourceRows.filter((row) => row.id !== selectedSource.id)].slice(0, 4)
+    : sourceRows.slice(0, 4);
+  const roleLens = buildInspectorRoleLens({
+    locale,
+    deskRole,
+    marketLabel,
+    spotlight,
+    focus,
+    check,
+    executionNote,
+    priorityItems,
+    invalidationChecks,
+    selectedDriver,
+    selectedCatalyst,
+    selectedSource,
+    selectedQuote: quote,
+    compareStats
+  });
+
+  return (
+    <div className="inspector-panel">
+      <div className="inspector-head">
+        <div>
+          <span className="eyebrow">{spotlight.eyebrow}</span>
+          <strong>{spotlight.title}</strong>
+        </div>
+        {spotlight.sourceUrl ? (
+          <button className="subtle-button" onClick={() => void onOpenSource(spotlight.sourceUrl)}>
+            {spotlight.sourceLabel ?? t(locale, "출처 보기", "Open source")}
+          </button>
+        ) : null}
+      </div>
+
+      <div className="inspector-summary">
+        <p>{spotlight.summary}</p>
+      </div>
+
+      {(spotlight.kind === "market" || spotlight.kind === "tape") && (
+        <div className="inspector-card">
+          <strong>{t(locale, "빠른 조작", "Quick controls")}</strong>
+          <div className="inspector-control-block">
+            <span className="inspector-card-label">{t(locale, "비교 테이프", "Comparison tape")}</span>
+            <div className="range-chip-group">
+              {linkedRows.slice(0, 5).map((row) => (
+                <button
+                  key={row.quote.id}
+                  type="button"
+                  className={`range-chip ${row.quote.id === selectedQuoteId ? "active" : ""}`}
+                  onClick={() => onSelectQuote(row.quote.id)}
+                >
+                  {row.quote.symbol}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="inspector-control-block">
+            <span className="inspector-card-label">{t(locale, "기간", "Range")}</span>
+            <div className="range-chip-group">
+              {LIVE_QUOTE_RANGE_OPTIONS.map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  className={`range-chip ${range === selectedRange ? "active" : ""}`}
+                  onClick={() => onSelectRange(range)}
+                >
+                  {range.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {spotlight.kind === "market" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "공식 기준 차트", "Official anchor chart")}</strong>
+            {officialPoints.length > 1 ? (
+              <LineChart
+                points={officialPoints}
+                color={marketColor(officialCard?.marketId ?? "eu-ets")}
+                height={220}
+                title={officialCard?.sourceName}
+                subtitle={officialCard?.summary}
+              />
+            ) : (
+              <div className="empty-plot compact">
+                {t(locale, "공식 시계열이 아직 짧습니다.", "Official history is still short.")}
+              </div>
+            )}
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "현재 판단", "Current call")}</strong>
+            <div className="inspector-stat-grid">
+              <MetricPill label={t(locale, "스탠스", "Stance")} value={stanceLabel(locale, decision.stance)} />
+              <MetricPill
+                label={t(locale, "신뢰도", "Confidence")}
+                value={`${formatNumber(locale, decision.confidence * 100, 0)}%`}
+              />
+              <MetricPill
+                label={t(locale, "방향 일치", "Direction match")}
+                value={formatPercentStat(locale, compareStats.directionMatchPct, 0)}
+              />
+              <MetricPill
+                label={t(locale, "공식 대비 괴리", "Gap vs official")}
+                value={formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "tape" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "연결 테이프 비교", "Linked tape comparison")}</strong>
+            {comparePoints.length > 1 ? (
+              <MultiLineChart
+                points={comparePoints}
+                series={compareSeries}
+                height={220}
+                valueFormatter={(value) => formatNumber(locale, value, 0)}
+              />
+            ) : quote?.series?.length ? (
+              <LineChart
+                points={getSeriesPoints(quote.series)}
+                color="#2f7bf6"
+                height={220}
+                title={quote.title}
+                subtitle={quote.delayNote}
+              />
+            ) : (
+              <div className="empty-plot compact">
+                {t(locale, "비교용 차트 히스토리가 아직 부족합니다.", "There is not enough chart history yet.")}
+              </div>
+            )}
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "테이프 해석", "Tape interpretation")}</strong>
+            <div className="inspector-stat-grid">
+              <MetricPill
+                label={t(locale, "현재가", "Current")}
+                value={quote ? formatLiveQuotePrice(locale, quote) : t(locale, "데이터 없음", "No tape")}
+              />
+              <MetricPill
+                label={t(locale, "변동", "Move")}
+                value={quote ? formatLiveQuoteMove(locale, quote) : t(locale, "변동 데이터 없음", "No move data")}
+              />
+              <MetricPill
+                label={t(locale, "방향 일치", "Direction match")}
+                value={formatPercentStat(locale, compareStats.directionMatchPct, 0)}
+              />
+              <MetricPill
+                label={t(locale, "상관", "Correlation")}
+                value={formatPlainStat(locale, compareStats.recentCorrelation, 2)}
+              />
+            </div>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "driver" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "드라이버 영향도", "Driver contribution")}</strong>
+            <ColumnChart
+              points={driverFocusPoints}
+              color={selectedDriver?.tone === "negative" ? NEGATIVE : marketColor(officialCard?.marketId ?? "eu-ets")}
+              valueFormatter={(value) => formatNumber(locale, value, 2)}
+              height={220}
+            />
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "드릴다운 메모", "Drill-down notes")}</strong>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "catalyst" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "다음 일정 흐름", "Next catalyst flow")}</strong>
+            <div className="inspector-rail-list">
+              {catalystPreview.map((row) => (
+                <div key={row.id} className={`inspector-rail-item ${row.id === selectedCatalyst?.id ? "active" : ""}`}>
+                  <small>{row.windowLabel}</small>
+                  <strong>{row.title}</strong>
+                  <span>{row.trigger}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "이벤트 해석", "Event interpretation")}</strong>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "source" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "관련 소스 상태", "Related source health")}</strong>
+            <div className="inspector-rail-list">
+              {sourcePreview.map((row) => (
+                <div key={row.id} className={`inspector-rail-item ${row.id === selectedSource?.id ? "active" : ""}`}>
+                  <small>{row.role}</small>
+                  <strong>{row.name}</strong>
+                  <span>{`${row.status} · ${row.updated}`}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "소스 메모", "Source note")}</strong>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="inspector-card">
+        <strong>{getDeskRoleLabel(locale, deskRole)}</strong>
+        <p className="inspector-card-copy">{roleLens.summary}</p>
+        <div className="inspector-role-grid">
+          <div>
+            <span className="inspector-card-label">{t(locale, "먼저 볼 것", "Check first")}</span>
+            <ul className="inspector-list">
+              {roleLens.focusItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <span className="inspector-card-label">{t(locale, "판단 낮출 때", "Lower confidence when")}</span>
+            <ul className="inspector-list">
+              {roleLens.cautionItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="operator-row">
+          <strong>{t(locale, "운용 메모", "Desk note")}</strong>
+          <span>{executionNote}</span>
+        </div>
+      </div>
     </div>
   );
 }
