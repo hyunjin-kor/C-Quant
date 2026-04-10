@@ -16,6 +16,7 @@ It does not place trades.
 - Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
 - Reloads linked tapes inside the desktop app through API calls and lets you switch chart windows from `5D` to `1Y`
 - Adds a click-driven spotlight stage so markets, tapes, drivers, events, and source rows can open a focused detail panel and jump to the next screen
+- Adds a right-side inspector rail with drill-down charts and focused notes for the currently selected market, tape, driver, event, or source
 - Compares EU ETS, K-ETS, and China ETS on one screen
 - Shows overlap stats between the official tape and linked tapes, including gap, recent move, correlation, and direction match
 - Ranks linked tapes on a scoreboard so you can see which futures or proxies are tracking the official market best

@@ -778,6 +778,15 @@ function buildSourceSpotlight(locale: AppLocale, row: SourceHealthRow): Interact
   };
 }
 
+function getSpotlightEntityId(spotlight: InteractionSpotlight | null) {
+  if (!spotlight) {
+    return "";
+  }
+
+  const divider = spotlight.id.indexOf("-");
+  return divider >= 0 ? spotlight.id.slice(divider + 1) : spotlight.id;
+}
+
 function getAccessTier(
   locale: AppLocale,
   method: "Official Web" | "Official File" | "Public API" | "Commercial API"
@@ -3378,6 +3387,7 @@ export default function App() {
           </div>
         </aside>
 
+        <div className="content-stage">
         <main className="scroll-body">
           <section className="hero-strip">
             <div>
@@ -4310,6 +4320,23 @@ export default function App() {
             </div>
           ) : null}
         </main>
+        <aside className="inspector-rail">
+          <InspectorPanel
+            locale={appLocale}
+            spotlight={spotlight}
+            officialCard={localizedSelectedCard}
+            quote={selectedInteractiveQuote}
+            officialPoints={selectedSeries}
+            comparePoints={selectedTapeComparePoints}
+            compareSeries={selectedTapeCompareSeries}
+            driverRows={selectedRoleDriverRows}
+            catalystRows={selectedRoleCatalystRows}
+            sourceRows={selectedSourceHealthRows}
+            decision={decisionView}
+            onOpenSource={handleOpenExternal}
+          />
+        </aside>
+        </div>
       </div>
     </div>
   );
@@ -4372,6 +4399,220 @@ function InteractionStage({
         ))}
       </div>
     </section>
+  );
+}
+
+function InspectorPanel({
+  locale,
+  spotlight,
+  officialCard,
+  quote,
+  officialPoints,
+  comparePoints,
+  compareSeries,
+  driverRows,
+  catalystRows,
+  sourceRows,
+  decision,
+  onOpenSource
+}: {
+  locale: AppLocale;
+  spotlight: InteractionSpotlight | null;
+  officialCard: ConnectedSourceCard | undefined;
+  quote: MarketLiveQuote | undefined;
+  officialPoints: ChartPoint[];
+  comparePoints: MultiLinePoint[];
+  compareSeries: MultiLineSeries[];
+  driverRows: DriverDecisionRow[];
+  catalystRows: ReturnType<typeof localizeCatalystWindow>[];
+  sourceRows: SourceHealthRow[];
+  decision: DecisionAssistantResponse;
+  onOpenSource: (url: string) => void | Promise<void>;
+}) {
+  if (!spotlight) {
+    return null;
+  }
+
+  const entityId = getSpotlightEntityId(spotlight);
+  const selectedDriver = driverRows.find((row) => row.id === entityId) ?? null;
+  const selectedCatalyst = catalystRows.find((row) => row.id === entityId) ?? null;
+  const selectedSource = sourceRows.find((row) => row.id === entityId) ?? null;
+  const driverFocusPoints =
+    selectedDriver
+      ? [selectedDriver, ...driverRows.filter((row) => row.id !== selectedDriver.id)]
+          .slice(0, 6)
+          .map((row) => ({
+            label: row.variable,
+            value: Math.abs(row.contribution)
+          }))
+      : driverRows.slice(0, 6).map((row) => ({
+          label: row.variable,
+          value: Math.abs(row.contribution)
+        }));
+  const catalystPreview = selectedCatalyst
+    ? [selectedCatalyst, ...catalystRows.filter((row) => row.id !== selectedCatalyst.id)].slice(0, 4)
+    : catalystRows.slice(0, 4);
+  const sourcePreview = selectedSource
+    ? [selectedSource, ...sourceRows.filter((row) => row.id !== selectedSource.id)].slice(0, 4)
+    : sourceRows.slice(0, 4);
+
+  return (
+    <div className="inspector-panel">
+      <div className="inspector-head">
+        <div>
+          <span className="eyebrow">{spotlight.eyebrow}</span>
+          <strong>{spotlight.title}</strong>
+        </div>
+        {spotlight.sourceUrl ? (
+          <button className="subtle-button" onClick={() => void onOpenSource(spotlight.sourceUrl!)}>
+            {spotlight.sourceLabel ?? t(locale, "출처 보기", "Open source")}
+          </button>
+        ) : null}
+      </div>
+
+      <div className="inspector-summary">
+        <p>{spotlight.summary}</p>
+      </div>
+
+      {spotlight.kind === "market" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "공식 기준 차트", "Official anchor chart")}</strong>
+            {officialPoints.length > 1 ? (
+              <LineChart
+                points={officialPoints}
+                color={marketColor(officialCard?.marketId ?? "eu-ets")}
+                height={220}
+                title={officialCard?.sourceName}
+                subtitle={officialCard?.summary}
+              />
+            ) : (
+              <div className="empty-plot compact">
+                {t(locale, "공식 시계열이 아직 짧습니다.", "Official history is still short.")}
+              </div>
+            )}
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "현재 판단", "Current call")}</strong>
+            <div className="inspector-stat-grid">
+              <MetricPill label={t(locale, "스탠스", "Stance")} value={stanceLabel(locale, decision.stance)} />
+              <MetricPill
+                label={t(locale, "신뢰도", "Confidence")}
+                value={`${formatNumber(locale, decision.confidence * 100, 0)}%`}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "tape" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "연결 테이프 비교", "Linked tape comparison")}</strong>
+            {comparePoints.length > 1 ? (
+              <MultiLineChart
+                points={comparePoints}
+                series={compareSeries}
+                height={220}
+                valueFormatter={(value) => formatNumber(locale, value, 0)}
+              />
+            ) : quote?.series?.length ? (
+              <LineChart
+                points={getSeriesPoints(quote.series)}
+                color="#2f7bf6"
+                height={220}
+                title={quote.title}
+                subtitle={quote.delayNote}
+              />
+            ) : (
+              <div className="empty-plot compact">
+                {t(locale, "비교용 차트가 아직 부족합니다.", "There is not enough chart history yet.")}
+              </div>
+            )}
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "왜 이 테이프를 보나", "Why this tape matters")}</strong>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "driver" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "드라이버 영향도", "Driver contribution")}</strong>
+            <ColumnChart
+              points={driverFocusPoints}
+              color={selectedDriver?.tone === "negative" ? NEGATIVE : marketColor(officialCard?.marketId ?? "eu-ets")}
+              valueFormatter={(value) => formatNumber(locale, value, 2)}
+              height={220}
+            />
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "드릴다운 메모", "Drill-down notes")}</strong>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "catalyst" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "다음 일정 흐름", "Next catalyst flow")}</strong>
+            <div className="inspector-rail-list">
+              {catalystPreview.map((row) => (
+                <div key={row.id} className={`inspector-rail-item ${row.id === selectedCatalyst?.id ? "active" : ""}`}>
+                  <small>{row.windowLabel}</small>
+                  <strong>{row.title}</strong>
+                  <span>{row.trigger}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "일정 해석", "Event interpretation")}</strong>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "source" ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "관련 소스 상태", "Related source health")}</strong>
+            <div className="inspector-rail-list">
+              {sourcePreview.map((row) => (
+                <div key={row.id} className={`inspector-rail-item ${row.id === selectedSource?.id ? "active" : ""}`}>
+                  <small>{row.role}</small>
+                  <strong>{row.name}</strong>
+                  <span>{`${row.status} · ${row.updated}`}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "소스 메모", "Source note")}</strong>
+            <ul className="inspector-list">
+              {spotlight.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
