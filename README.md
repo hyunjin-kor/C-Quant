@@ -35,19 +35,18 @@ The app is built to work even if you do not want to pay for data.
 ## Main Screens
 
 - `Overview`
-  - market overview board
-  - linked futures / proxy tape panel
-  - institution checklist
-  - official price chart
-  - market compare chart
-  - what moves price heatmap
-  - volume and alert panels
+  - institution desk header for the selected market
+  - official tape versus hedge-anchor comparison
+  - linked tape scoreboard to pick the best tracking future or proxy
+  - driver monitor table with source-backed rationale
+  - catalyst calendar and source freshness tables
+  - short market notes for fast scanning
 - `Decision`
-  - price driver waterfall
-  - current decision position
-  - scenario sliders
-  - quick decision brief
-  - optional AI brief
+  - decision memo with support and counter-evidence
+  - pre-trade risk gates
+  - driver table behind the current call
+  - next catalysts and data-status checks
+  - optional AI follow-up explanation
 - `Lab`
   - CSV backtest
   - walk-forward model runner

@@ -190,6 +190,30 @@ type LinkedTapeScoreRow = {
   alignmentTone: "positive" | "neutral" | "negative";
 };
 
+type DriverDecisionRow = {
+  id: string;
+  family: string;
+  variable: string;
+  importance: string;
+  contribution: number;
+  read: string;
+  tone: "positive" | "neutral" | "negative";
+  note: string;
+  sourceLabel: string;
+  sourceUrl?: string;
+};
+
+type SourceHealthRow = {
+  id: string;
+  name: string;
+  role: string;
+  kind: string;
+  status: string;
+  updated: string;
+  freshness: string;
+  note: string;
+};
+
 const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
   { id: "overview", ko: "한눈에 보기", en: "Overview" },
   { id: "signals", ko: "지금 판단", en: "Decision" },
@@ -371,6 +395,59 @@ function getSeriesDigits(points: ChartPoint[]) {
 
 function formatSeriesValue(locale: AppLocale, points: ChartPoint[], value: number) {
   return formatNumber(locale, value, getSeriesDigits(points));
+}
+
+function parseLooseDate(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(String(value).trim().replace(/\./g, "-"));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatFreshness(locale: AppLocale, value?: string) {
+  const parsed = parseLooseDate(value);
+  if (!parsed) {
+    return t(locale, "갱신 시각 불명", "Update time unknown");
+  }
+
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfValue = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  const diffDays = Math.max(
+    0,
+    Math.round((startOfToday.getTime() - startOfValue.getTime()) / (24 * 60 * 60 * 1000))
+  );
+
+  if (diffDays === 0) {
+    return t(locale, "오늘 갱신", "Updated today");
+  }
+  if (diffDays === 1) {
+    return t(locale, "1일 경과", "1 day old");
+  }
+
+  return t(locale, `${diffDays}일 경과`, `${diffDays} days old`);
+}
+
+function getContributionTone(value: number) {
+  if (value > 0.08) {
+    return "positive" as const;
+  }
+  if (value < -0.08) {
+    return "negative" as const;
+  }
+  return "neutral" as const;
+}
+
+function getContributionRead(locale: AppLocale, value: number) {
+  if (value > 0.08) {
+    return t(locale, "가격 지지", "Supports price");
+  }
+  if (value < -0.08) {
+    return t(locale, "가격 부담", "Pressures price");
+  }
+  return t(locale, "중립", "Mixed");
 }
 
 function parseNumber(value?: string) {
@@ -2249,15 +2326,15 @@ export default function App() {
     () =>
       selectedRelevantQuotes
         .map((quote) => {
-        const stats = buildTapeCompareStats(localizedSelectedCard?.series, quote.series);
-        const alignment = getTapeAlignment(appLocale, stats);
-        return {
-          quote,
-          stats,
-          alignmentLabel: alignment.label,
-          alignmentTone: alignment.tone
-        };
-      })
+          const stats = buildTapeCompareStats(localizedSelectedCard?.series, quote.series);
+          const alignment = getTapeAlignment(appLocale, stats);
+          return {
+            quote,
+            stats,
+            alignmentLabel: alignment.label,
+            alignmentTone: alignment.tone
+          };
+        })
         .sort((left, right) => {
           const leftScore =
             (left.stats.directionMatchPct ?? 0) +
@@ -2270,6 +2347,70 @@ export default function App() {
           return rightScore - leftScore;
         }),
     [appLocale, localizedSelectedCard?.series, selectedRelevantQuotes]
+  );
+  const selectedForecast = forecasts[marketId];
+  const selectedDriverRows = useMemo<DriverDecisionRow[]>(
+    () =>
+      selectedMarket.drivers
+        .map((driver) => {
+          const contribution =
+            selectedForecast.contributions.find((item) => item.driverId === driver.id)?.contribution ?? 0;
+          return {
+            id: driver.id,
+            family: driver.category,
+            variable: driver.variable,
+            importance: getImportanceLabel(appLocale, driver.importance),
+            contribution,
+            read: getContributionRead(appLocale, contribution),
+            tone: getContributionTone(contribution),
+            note: driver.note,
+            sourceLabel: driver.sources[0]?.label ?? t(appLocale, "대표 출처 없음", "No primary source"),
+            sourceUrl: driver.sources[0]?.url
+          };
+        })
+        .sort((left, right) => Math.abs(right.contribution) - Math.abs(left.contribution)),
+    [appLocale, selectedForecast.contributions, selectedMarket.drivers]
+  );
+  const selectedSourceHealthRows = useMemo<SourceHealthRow[]>(() => {
+    const rows: SourceHealthRow[] = [];
+
+    if (localizedSelectedCard) {
+      rows.push({
+        id: localizedSelectedCard.id,
+        name: localizedSelectedCard.sourceName,
+        role: t(appLocale, "공식 기준값", "Official anchor"),
+        kind: t(appLocale, "공식 시세", "Official tape"),
+        status: getStatusLabel(appLocale, localizedSelectedCard.status),
+        updated: formatDate(appLocale, localizedSelectedCard.asOf),
+        freshness: formatFreshness(appLocale, localizedSelectedCard.asOf),
+        note: localizedSelectedCard.summary
+      });
+    }
+
+    selectedDeskQuotes.forEach((quote, index) => {
+      rows.push({
+        id: quote.id,
+        name: quote.title,
+        role:
+          index === 0
+            ? t(appLocale, "주요 헤지 앵커", "Primary hedge anchor")
+            : t(appLocale, "보조 비교 테이프", "Support tape"),
+        kind: localizeLiveQuoteCategory(appLocale, quote.category),
+        status: getLiveQuoteStatusLabel(appLocale, quote),
+        updated: formatDate(appLocale, quote.asOf),
+        freshness: formatFreshness(appLocale, quote.asOf),
+        note: quote.delayNote || quote.note
+      });
+    });
+
+    return rows;
+  }, [appLocale, localizedSelectedCard, selectedDeskQuotes]);
+  const selectedCatalystRows = useMemo(
+    () =>
+      localizedCatalysts.filter(
+        (item) => item.marketId === marketId || item.marketId === "shared"
+      ),
+    [localizedCatalysts, marketId]
   );
   const selectedTapeCompareSeries = useMemo<MultiLineSeries[]>(
     () => [
@@ -2286,7 +2427,6 @@ export default function App() {
     ],
     [appLocale, marketId, selectedInteractiveQuote?.title]
   );
-  const selectedForecast = forecasts[marketId];
   const decisionsByMarket = useMemo(
     () =>
       Object.fromEntries(
@@ -2908,10 +3048,10 @@ export default function App() {
 
           <div className="sidebar-section sidebar-summary">
             <div className="sidebar-label">{t(appLocale, "현재 포커스", "Current focus")}</div>
-            <strong>{activeWorkspace.title}</strong>
-            <p>{activeWorkspace.summary}</p>
+            <strong>{getMarketDisplayName(appLocale, marketId)}</strong>
+            <p>{decisionView.summary}</p>
             <div className="workspace-modules">
-              {activeWorkspace.moduleLabels.map((label) => (
+              {decisionView.thesis.slice(0, 3).map((label) => (
                 <span key={label}>{label}</span>
               ))}
             </div>
@@ -2922,7 +3062,7 @@ export default function App() {
           <section className="hero-strip">
             <div>
               <div className="eyebrow">{t(appLocale, "오늘 한눈에", "Today")}</div>
-              <h1>{activeWorkspace.objective}</h1>
+              <h1>{getMarketDisplayName(appLocale, marketId)}</h1>
               <p>
                 {t(
                   appLocale,
@@ -2961,6 +3101,39 @@ export default function App() {
           </section>
 
           {surface === "overview" ? (
+            <InstitutionDeskSurface
+              locale={appLocale}
+              marketLabel={getMarketDisplayName(appLocale, marketId)}
+              officialCard={localizedSelectedCard}
+              selectedSeries={selectedSeries}
+              selectedVolumeSeries={selectedVolumeSeries}
+              primaryQuote={selectedPrimaryQuote}
+              selectedInteractiveQuote={selectedInteractiveQuote}
+              comparePoints={selectedTapeComparePoints}
+              compareSeries={selectedTapeCompareSeries}
+              compareStats={selectedTapeCompareStats}
+              decision={decisionView}
+              topDriver={
+                selectedForecast.contributions[0]?.variable ??
+                t(appLocale, "주요 요인 없음", "No primary driver")
+              }
+              alertCount={selectedAlerts.length}
+              linkedRows={selectedLinkedScoreRows}
+              selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
+              onSelectQuote={setSelectedLiveQuoteId}
+              focus={selectedDesk.focus}
+              check={selectedDesk.check}
+              priorityItems={selectedDesk.priorityItems}
+              invalidationChecks={selectedDesk.invalidationChecks}
+              driverRows={selectedDriverRows}
+              catalystRows={selectedCatalystRows}
+              sourceRows={selectedSourceHealthRows}
+              feedItems={feedItems.slice(0, 6)}
+              onOpenSource={handleOpenExternal}
+            />
+          ) : null}
+
+          {false && surface === "overview" ? (
             <>
               <section className="overview-grid">
                 <div className="panel panel-emphasis">
@@ -3237,6 +3410,27 @@ export default function App() {
           ) : null}
 
           {surface === "signals" ? (
+            <InstitutionDecisionSurface
+              locale={appLocale}
+              decision={decisionView}
+              assistantLoading={assistantLoading}
+              assistantError={assistantError}
+              hasApiKey={settings.hasOpenAIApiKey}
+              question={assistantQuestion}
+              onQuestionChange={setAssistantQuestion}
+              onRunAssistant={handleRunAssistant}
+              driverRows={selectedDriverRows}
+              catalystRows={selectedCatalystRows}
+              sourceRows={selectedSourceHealthRows}
+              focus={selectedDesk.focus}
+              check={selectedDesk.check}
+              priorityItems={selectedDesk.priorityItems}
+              invalidationChecks={selectedDesk.invalidationChecks}
+              onOpenSource={handleOpenExternal}
+            />
+          ) : null}
+
+          {false && surface === "signals" ? (
             <>
               <section className="overview-grid">
                 <div className="panel panel-emphasis">
@@ -4027,6 +4221,698 @@ function LinkedTapePanel({
           </div>
         </button>
       ))}
+    </div>
+  );
+}
+
+function DeskCommandPanel({
+  locale,
+  marketLabel,
+  officialCard,
+  primaryQuote,
+  compareStats,
+  decision,
+  topDriver,
+  alertCount
+}: {
+  locale: AppLocale;
+  marketLabel: string;
+  officialCard: ConnectedSourceCard | undefined;
+  primaryQuote: MarketLiveQuote | undefined;
+  compareStats: TapeCompareStats;
+  decision: DecisionAssistantResponse;
+  topDriver: string;
+  alertCount: number;
+}) {
+  const priceLabel =
+    findMetric(officialCard, ["auction price"])?.value ??
+    findMetric(officialCard, ["close"])?.value ??
+    t(locale, "공식 가격 없음", "No official price");
+  const moveLabel =
+    findMetric(officialCard, ["price change"])?.value ??
+    findMetric(officialCard, ["day change"])?.value ??
+    t(locale, "변동 없음", "No move data");
+  const volumeLabel =
+    findMetric(officialCard, ["volume"])?.value ?? t(locale, "거래량 없음", "No volume data");
+
+  return (
+    <section className="desk-command">
+      <div className="desk-command-main">
+        <span className="desk-kicker">{t(locale, "현재 포지션 데스크", "Current position desk")}</span>
+        <h2>{marketLabel}</h2>
+        <p>{decision.summary}</p>
+        <div className="desk-price-row">
+          <strong>{priceLabel}</strong>
+          <span className={`stance-badge ${stanceBadgeClass(decision.stance)}`}>
+            {stanceLabel(locale, decision.stance)}
+          </span>
+        </div>
+        <div className="desk-meta-row">
+          <span>{t(locale, "공식 변동", "Official move")} {moveLabel}</span>
+          <span>{t(locale, "거래량", "Volume")} {volumeLabel}</span>
+          <span>{t(locale, "갱신", "Updated")} {formatDate(locale, officialCard?.asOf)}</span>
+        </div>
+      </div>
+
+      <div className="desk-command-grid">
+        <div className="desk-stat">
+          <span>{t(locale, "주요 헤지 앵커", "Primary hedge anchor")}</span>
+          <strong>{formatLiveQuotePrice(locale, primaryQuote)}</strong>
+          <small>{primaryQuote?.title ?? t(locale, "연결 없음", "Not linked")}</small>
+        </div>
+        <div className="desk-stat">
+          <span>{t(locale, "공식 대비 괴리", "Gap vs official")}</span>
+          <strong>{formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)}</strong>
+          <small>{t(locale, "최근 5영업일 기준", "Recent 5-session basis")}</small>
+        </div>
+        <div className="desk-stat">
+          <span>{t(locale, "방향 일치", "Direction match")}</span>
+          <strong>{formatPercentStat(locale, compareStats.directionMatchPct, 0)}</strong>
+          <small>{t(locale, "공식 시세와 같은 방향", "Moving with the official tape")}</small>
+        </div>
+        <div className="desk-stat">
+          <span>{t(locale, "상관", "Correlation")}</span>
+          <strong>{formatPlainStat(locale, compareStats.recentCorrelation, 2)}</strong>
+          <small>{t(locale, "최근 중첩 구간 기준", "On overlapping history")}</small>
+        </div>
+        <div className="desk-stat">
+          <span>{t(locale, "가장 큰 요인", "Top driver")}</span>
+          <strong>{topDriver}</strong>
+          <small>{t(locale, "지금 판단을 가장 크게 밀고 있음", "Largest current influence")}</small>
+        </div>
+        <div className="desk-stat">
+          <span>{t(locale, "주의 알림", "Open alerts")}</span>
+          <strong>{formatNumber(locale, alertCount, 0)}</strong>
+          <small>{t(locale, "확인 전 포지션 확대 금지", "Do not size up before checking")}</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RiskGatePanel({
+  locale,
+  decision,
+  focus,
+  check,
+  priorityItems,
+  invalidationChecks
+}: {
+  locale: AppLocale;
+  decision: DecisionAssistantResponse;
+  focus: string;
+  check: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
+}) {
+  return (
+    <section className="risk-gate-panel">
+      <div className="gate-block">
+        <strong>{t(locale, "지금 먼저 볼 것", "What to look at first")}</strong>
+        <p>{focus}</p>
+        <small>{check}</small>
+      </div>
+      <div className="gate-columns">
+        <div className="gate-list">
+          <strong>{t(locale, "포지션 전에 확인", "Before changing risk")}</strong>
+          <ul>
+            {[...priorityItems, ...decision.actions.slice(0, 2)].slice(0, 5).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="gate-list caution">
+          <strong>{t(locale, "이 판단이 깨지는 조건", "What breaks the read")}</strong>
+          <ul>
+            {[...invalidationChecks, ...decision.counterEvidence.map((item) => item.title)].slice(0, 5).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DriverMonitorTable({
+  locale,
+  rows,
+  onOpenSource
+}: {
+  locale: AppLocale;
+  rows: DriverDecisionRow[];
+  onOpenSource: (url: string) => void;
+}) {
+  return (
+    <div className="decision-table">
+      <div className="decision-table-head driver-table">
+        <span>{t(locale, "요인", "Driver")}</span>
+        <span>{t(locale, "구분", "Family")}</span>
+        <span>{t(locale, "현재 해석", "Read")}</span>
+        <span>{t(locale, "점수", "Score")}</span>
+        <span>{t(locale, "중요도", "Weight")}</span>
+        <span>{t(locale, "왜 중요한가", "Why it matters")}</span>
+        <span>{t(locale, "대표 출처", "Source")}</span>
+      </div>
+      {rows.map((row) => (
+        <div key={row.id} className="decision-table-row driver-table">
+          <div className="table-main">
+            <strong>{row.variable}</strong>
+          </div>
+          <span>{row.family}</span>
+          <span className={`signal-pill ${row.tone}`}>{row.read}</span>
+          <strong className={`signal-value ${row.tone}`}>
+            {row.contribution > 0 ? "+" : ""}
+            {formatNumber(locale, row.contribution, 2)}
+          </strong>
+          <span>{row.importance}</span>
+          <p>{row.note}</p>
+          <button
+            className="source-link-button"
+            onClick={() => (row.sourceUrl ? onOpenSource(row.sourceUrl) : undefined)}
+            disabled={!row.sourceUrl}
+          >
+            {row.sourceLabel}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CatalystWatchTable({
+  locale,
+  rows,
+  onOpenSource
+}: {
+  locale: AppLocale;
+  rows: ReturnType<typeof localizeCatalystWindow>[];
+  onOpenSource: (url: string) => void;
+}) {
+  return (
+    <div className="decision-table">
+      <div className="decision-table-head catalyst-table">
+        <span>{t(locale, "시점", "Window")}</span>
+        <span>{t(locale, "이벤트", "Event")}</span>
+        <span>{t(locale, "왜 중요한가", "Decision use")}</span>
+        <span>{t(locale, "출처", "Source")}</span>
+      </div>
+      {rows.map((row) => (
+        <div key={row.id} className="decision-table-row catalyst-table">
+          <strong>{row.windowLabel}</strong>
+          <div className="table-main">
+            <strong>{row.title}</strong>
+            <span>{row.trigger}</span>
+          </div>
+          <p>{row.whyItMatters}</p>
+          <button className="source-link-button" onClick={() => onOpenSource(row.source.url)}>
+            {row.source.label}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SourceHealthTable({
+  locale,
+  rows
+}: {
+  locale: AppLocale;
+  rows: SourceHealthRow[];
+}) {
+  return (
+    <div className="decision-table">
+      <div className="decision-table-head source-health-table">
+        <span>{t(locale, "소스", "Source")}</span>
+        <span>{t(locale, "역할", "Role")}</span>
+        <span>{t(locale, "상태", "Status")}</span>
+        <span>{t(locale, "갱신", "Updated")}</span>
+        <span>{t(locale, "신선도", "Freshness")}</span>
+        <span>{t(locale, "메모", "Note")}</span>
+      </div>
+      {rows.map((row) => (
+        <div key={row.id} className="decision-table-row source-health-table">
+          <div className="table-main">
+            <strong>{row.name}</strong>
+            <span>{row.kind}</span>
+          </div>
+          <span>{row.role}</span>
+          <span>{row.status}</span>
+          <span>{row.updated}</span>
+          <span>{row.freshness}</span>
+          <p>{row.note}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InstitutionDeskSurface({
+  locale,
+  marketLabel,
+  officialCard,
+  selectedSeries,
+  selectedVolumeSeries,
+  primaryQuote,
+  selectedInteractiveQuote,
+  comparePoints,
+  compareSeries,
+  compareStats,
+  decision,
+  topDriver,
+  alertCount,
+  linkedRows,
+  selectedQuoteId,
+  onSelectQuote,
+  focus,
+  check,
+  priorityItems,
+  invalidationChecks,
+  driverRows,
+  catalystRows,
+  sourceRows,
+  feedItems,
+  onOpenSource
+}: {
+  locale: AppLocale;
+  marketLabel: string;
+  officialCard: ConnectedSourceCard | undefined;
+  selectedSeries: ChartPoint[];
+  selectedVolumeSeries: ChartPoint[];
+  primaryQuote: MarketLiveQuote | undefined;
+  selectedInteractiveQuote: MarketLiveQuote | undefined;
+  comparePoints: MultiLinePoint[];
+  compareSeries: MultiLineSeries[];
+  compareStats: TapeCompareStats;
+  decision: DecisionAssistantResponse;
+  topDriver: string;
+  alertCount: number;
+  linkedRows: LinkedTapeScoreRow[];
+  selectedQuoteId: string;
+  onSelectQuote: (quoteId: string) => void;
+  focus: string;
+  check: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
+  driverRows: DriverDecisionRow[];
+  catalystRows: ReturnType<typeof localizeCatalystWindow>[];
+  sourceRows: SourceHealthRow[];
+  feedItems: FeedItem[];
+  onOpenSource: (url: string) => void;
+}) {
+  return (
+    <>
+      <section className="overview-grid desk-core-grid">
+        <div className="panel panel-emphasis">
+          <DeskCommandPanel
+            locale={locale}
+            marketLabel={marketLabel}
+            officialCard={officialCard}
+            primaryQuote={primaryQuote}
+            compareStats={compareStats}
+            decision={decision}
+            topDriver={topDriver}
+            alertCount={alertCount}
+          />
+        </div>
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "리스크 게이트", "Risk gates")}
+            subtitle={t(
+              locale,
+              "포지션을 더하기 전에 무엇을 확인해야 하는지와, 이 판단이 깨지는 조건을 분리해서 봅니다.",
+              "Separate what must be confirmed before sizing and what would invalidate the read."
+            )}
+          />
+          <RiskGatePanel
+            locale={locale}
+            decision={decision}
+            focus={focus}
+            check={check}
+            priorityItems={priorityItems}
+            invalidationChecks={invalidationChecks}
+          />
+        </div>
+      </section>
+
+      <section className="overview-grid desk-core-grid">
+        <div className="panel panel-emphasis">
+          <SectionHeader
+            title={t(locale, "공식 시세와 헤지 앵커", "Official tape vs hedge anchor")}
+            subtitle={t(
+              locale,
+              "실제 공식 시세와 현재 선택한 헤지 앵커를 같은 기준선에서 비교합니다.",
+              "Compare the official tape and the selected hedge anchor on the same baseline."
+            )}
+          />
+          {comparePoints.length > 1 ? (
+            <MultiLineChart
+              points={comparePoints}
+              series={compareSeries}
+              valueFormatter={(value) => formatNumber(locale, value, 0)}
+            />
+          ) : selectedSeries.length > 1 ? (
+            <LineChart
+              points={selectedSeries}
+              color={marketColor(officialCard?.marketId ?? "eu-ets")}
+              title={officialCard?.sourceName}
+              subtitle={t(locale, "공식 시계열만 사용 가능", "Only the official time series is available")}
+            />
+          ) : (
+            <div className="empty-plot">
+              <strong>{t(locale, "비교용 시계열이 아직 부족합니다.", "Not enough history to compare yet.")}</strong>
+              <p>{officialCard?.summary}</p>
+            </div>
+          )}
+          {selectedVolumeSeries.length > 0 ? (
+            <div className="mini-volume-block">
+              <strong>{t(locale, "최근 거래량", "Recent volume")}</strong>
+              <ColumnChart
+                points={selectedVolumeSeries.slice(-8)}
+                color={marketColor(officialCard?.marketId ?? "eu-ets")}
+                valueFormatter={(value) => formatCompact(locale, value)}
+                height={148}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "연결 테이프 비교", "Linked tape scoreboard")}
+            subtitle={t(
+              locale,
+              "어떤 선물 또는 프록시가 지금 공식 시세를 가장 잘 따라가는지 바로 고릅니다.",
+              "Choose the futures or proxy tape that is tracking the official tape best right now."
+            )}
+          />
+          <LinkedTapeScoreboard
+            locale={locale}
+            rows={linkedRows}
+            selectedQuoteId={selectedQuoteId}
+            onSelectQuote={onSelectQuote}
+          />
+          <div className="linked-tape-callout">
+            <strong>{t(locale, "현재 선택된 비교 테이프", "Selected comparison tape")}</strong>
+            <span>
+              {selectedInteractiveQuote
+                ? `${selectedInteractiveQuote.title} · ${formatLiveQuotePrice(locale, selectedInteractiveQuote)}`
+                : t(locale, "선택된 테이프 없음", "No tape selected")}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <SectionHeader
+          title={t(locale, "드라이버 모니터", "Driver monitor")}
+          subtitle={t(
+            locale,
+            "가격을 실제로 밀고 있는 요인, 방향, 점수, 근거 출처를 한 표에서 봅니다.",
+            "Read the active drivers, direction, score, and source evidence in one table."
+          )}
+        />
+        <DriverMonitorTable locale={locale} rows={driverRows} onOpenSource={onOpenSource} />
+      </section>
+
+      <section className="overview-grid secondary">
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "이벤트 캘린더", "Catalyst calendar")}
+            subtitle={t(
+              locale,
+              "정책, 경매, 공시 일정 중 실제 판단에 쓰이는 것만 남깁니다.",
+              "Keep only the policy, auction, and disclosure dates that affect the decision."
+            )}
+          />
+          <CatalystWatchTable locale={locale} rows={catalystRows} onOpenSource={onOpenSource} />
+        </div>
+
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "데이터 신선도", "Source freshness")}
+            subtitle={t(
+              locale,
+              "공식 기준값과 연결 테이프가 얼마나 최신인지 따로 확인합니다.",
+              "Check how fresh the official anchor and linked tapes are."
+            )}
+          />
+          <SourceHealthTable locale={locale} rows={sourceRows} />
+        </div>
+      </section>
+
+      <section className="panel">
+        <SectionHeader
+          title={t(locale, "짧은 시장 메모", "Short market notes")}
+          subtitle={t(
+            locale,
+            "길게 읽지 않고도 오늘 무엇이 중요한지 바로 훑는 용도입니다.",
+            "A short read on what matters today without digging through long commentary."
+          )}
+        />
+        <div className="feed-list compact">
+          {feedItems.map((item) => (
+            <button
+              key={item.id}
+              className={`feed-item ${item.tone}`}
+              onClick={() => (item.link ? void onOpenSource(item.link) : undefined)}
+            >
+              <span>{item.kicker}</span>
+              <strong>{item.title}</strong>
+              <p>{item.body}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function InstitutionDecisionSurface({
+  locale,
+  decision,
+  assistantLoading,
+  assistantError,
+  hasApiKey,
+  question,
+  onQuestionChange,
+  onRunAssistant,
+  driverRows,
+  catalystRows,
+  sourceRows,
+  focus,
+  check,
+  priorityItems,
+  invalidationChecks,
+  onOpenSource
+}: {
+  locale: AppLocale;
+  decision: DecisionAssistantResponse;
+  assistantLoading: boolean;
+  assistantError: string | null;
+  hasApiKey: boolean;
+  question: string;
+  onQuestionChange: (value: string) => void;
+  onRunAssistant: () => void;
+  driverRows: DriverDecisionRow[];
+  catalystRows: ReturnType<typeof localizeCatalystWindow>[];
+  sourceRows: SourceHealthRow[];
+  focus: string;
+  check: string;
+  priorityItems: string[];
+  invalidationChecks: string[];
+  onOpenSource: (url: string) => void;
+}) {
+  return (
+    <>
+      <section className="overview-grid desk-core-grid">
+        <div className="panel panel-emphasis">
+          <SectionHeader
+            title={t(locale, "판단 메모", "Decision memo")}
+            subtitle={t(
+              locale,
+              "매수, 관망, 축소 중 왜 이쪽으로 기울었는지 근거를 바로 읽습니다.",
+              "Read why the stance currently leans buy, hold, or reduce."
+            )}
+          />
+          <DecisionMemoPanel
+            locale={locale}
+            decision={decision}
+            assistantLoading={assistantLoading}
+            assistantError={assistantError}
+            hasApiKey={hasApiKey}
+            question={question}
+            onQuestionChange={onQuestionChange}
+            onRunAssistant={onRunAssistant}
+          />
+        </div>
+
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "실행 전 체크", "Pre-trade checks")}
+            subtitle={t(
+              locale,
+              "실행 전 반드시 다시 확인해야 하는 것과, 이 판단을 깨는 조건을 나눠 봅니다.",
+              "Separate what must be checked before acting from what breaks the call."
+            )}
+          />
+          <RiskGatePanel
+            locale={locale}
+            decision={decision}
+            focus={focus}
+            check={check}
+            priorityItems={priorityItems}
+            invalidationChecks={invalidationChecks}
+          />
+        </div>
+      </section>
+
+      <section className="panel">
+        <SectionHeader
+          title={t(locale, "판단에 들어간 드라이버", "Drivers behind the call")}
+          subtitle={t(
+            locale,
+            "각 요인이 지금 가격을 어느 방향으로 밀고 있는지 숫자와 설명으로 읽습니다.",
+            "Read each active driver with a score and plain-language explanation."
+          )}
+        />
+        <DriverMonitorTable locale={locale} rows={driverRows} onOpenSource={onOpenSource} />
+      </section>
+
+      <section className="overview-grid secondary">
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "다음 일정", "Next catalysts")}
+            subtitle={t(
+              locale,
+              "이 판단을 다시 뒤집을 수 있는 일정만 남깁니다.",
+              "Keep only the dates that could flip the read."
+            )}
+          />
+          <CatalystWatchTable locale={locale} rows={catalystRows} onOpenSource={onOpenSource} />
+        </div>
+
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "데이터 상태", "Data status")}
+            subtitle={t(
+              locale,
+              "지금 판단에 사용된 데이터가 최신인지 먼저 확인합니다.",
+              "Check the freshness of the data used in the current call."
+            )}
+          />
+          <SourceHealthTable locale={locale} rows={sourceRows} />
+        </div>
+      </section>
+    </>
+  );
+}
+
+function DecisionMemoPanel({
+  locale,
+  decision,
+  assistantLoading,
+  assistantError,
+  hasApiKey,
+  question,
+  onQuestionChange,
+  onRunAssistant
+}: {
+  locale: AppLocale;
+  decision: DecisionAssistantResponse;
+  assistantLoading: boolean;
+  assistantError: string | null;
+  hasApiKey: boolean;
+  question: string;
+  onQuestionChange: (value: string) => void;
+  onRunAssistant: () => void;
+}) {
+  return (
+    <div className="decision-memo">
+      <div className="memo-head">
+        <div>
+          <span className={`stance-badge ${stanceBadgeClass(decision.stance)}`}>
+            {stanceLabel(locale, decision.stance)}
+          </span>
+          <h3>{t(locale, "현재 판단 메모", "Decision memo")}</h3>
+          <p>{decision.summary}</p>
+        </div>
+        <div className="memo-confidence">
+          <span>{t(locale, "신뢰도", "Confidence")}</span>
+          <strong>{formatNumber(locale, decision.confidence * 100, 0)}%</strong>
+        </div>
+      </div>
+
+      <div className="memo-grid">
+        <section>
+          <strong>{t(locale, "매수 쪽 근거", "Support for the current read")}</strong>
+          <div className="decision-reason-list">
+            {decision.supportingEvidence.map((item) => (
+              <div key={`${item.title}-${item.detail}`} className="decision-reason-card support">
+                <span>{item.title}</span>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section>
+          <strong>{t(locale, "반대로 봐야 하는 이유", "What argues against it")}</strong>
+          <div className="decision-reason-list">
+            {decision.counterEvidence.map((item) => (
+              <div key={`${item.title}-${item.detail}`} className="decision-reason-card caution">
+                <span>{item.title}</span>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="memo-grid compact">
+        <section>
+          <strong>{t(locale, "지금 다시 확인할 것", "Check again before acting")}</strong>
+          <ul>
+            {decision.actions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <strong>{t(locale, "다음 체크포인트", "Next checkpoints")}</strong>
+          <ul>
+            {decision.checkpoints.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <div className="decision-ask decision-helper">
+        <label>
+          <span>{t(locale, "AI에게 추가 질문", "Ask AI a follow-up")}</span>
+          <textarea
+            value={question}
+            onChange={(event) => onQuestionChange(event.target.value)}
+            rows={3}
+          />
+        </label>
+        <div className="decision-actions">
+          <button
+            className="primary-button"
+            onClick={onRunAssistant}
+            disabled={assistantLoading || !hasApiKey}
+          >
+            {assistantLoading
+              ? t(locale, "생성 중..", "Generating...")
+              : t(locale, "근거를 더 자세히 묻기", "Ask for a deeper explanation")}
+          </button>
+          {!hasApiKey ? (
+            <small>{t(locale, "AI 설명을 쓰려면 API key를 먼저 저장해야 합니다.", "Save an API key first to use AI explanations.")}</small>
+          ) : null}
+          {assistantError ? <small className="error-text">{assistantError}</small> : null}
+        </div>
+      </div>
     </div>
   );
 }
