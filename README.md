@@ -122,3 +122,8 @@ npm.cmd run package:portable
 - `electron/liveSources.js`
 - `main.js`
 - `preload.js`
+
+## Scope Control Docs
+
+- `docs/pdf-reference-audit.md`
+- `docs/harness-engineering.md`

@@ -1784,6 +1784,124 @@ textarea {
   margin-bottom: 0.8rem;
 }
 
+.panel-note {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.62;
+}
+
+.factor-decomposition-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.quant-playbook-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.quant-playbook-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(130, 146, 182, 0.12);
+}
+
+.quant-playbook-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.quant-playbook-head strong {
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+
+.quant-playbook-head span {
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.quant-playbook-card p,
+.quant-playbook-card small {
+  margin: 0;
+  color: var(--text-base);
+  line-height: 1.58;
+}
+
+.forecast-band-card {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+  padding: 0.9rem;
+  border-radius: 20px;
+  background: rgba(247, 250, 255, 0.78);
+  border: 1px solid rgba(130, 146, 182, 0.12);
+}
+
+.forecast-band-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.forecast-band-head strong {
+  color: var(--text-strong);
+}
+
+.forecast-band-head span,
+.forecast-band-labels span {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.forecast-band-track {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(130, 146, 182, 0.12);
+  overflow: hidden;
+}
+
+.forecast-band-range {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 999px;
+  background: rgba(47, 123, 246, 0.18);
+}
+
+.forecast-band-marker {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.12);
+}
+
+.forecast-band-marker.latest {
+  background: #111827;
+}
+
+.forecast-band-marker.prediction {
+  background: var(--accent);
+}
+
+.forecast-band-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
 .metric-pill {
   min-width: 110px;
   padding: 0.7rem 0.8rem;

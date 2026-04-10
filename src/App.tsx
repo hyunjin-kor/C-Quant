@@ -1431,6 +1431,47 @@ function localizeQuantIndicator(locale: AppLocale, indicator: (typeof quantIndic
   return mapped ? { ...indicator, ...mapped } : indicator;
 }
 
+function pickQuantIndicatorsForMarket(
+  marketId: MarketProfile["id"],
+  indicators: ReturnType<typeof localizeQuantIndicator>[]
+) {
+  const indicatorIds =
+    marketId === "eu-ets"
+      ? ["clean-spreads", "auction-signal", "relative-value", "trend-regime", "open-interest-liquidity"]
+      : marketId === "k-ets"
+        ? ["compliance-seasonality", "relative-value", "trend-regime", "auction-signal", "open-interest-liquidity"]
+        : ["relative-value", "trend-regime", "open-interest-liquidity", "auction-signal"];
+
+  return indicatorIds
+    .map((id) => indicators.find((indicator) => indicator.id === id))
+    .filter((indicator): indicator is ReturnType<typeof localizeQuantIndicator> => Boolean(indicator));
+}
+
+function buildDriverFamilyMixPoints(locale: AppLocale, rows: DriverDecisionRow[]) {
+  const totals = new Map<string, number>();
+
+  rows.forEach((row) => {
+    totals.set(row.family, (totals.get(row.family) ?? 0) + Math.abs(row.contribution));
+  });
+
+  const total = Array.from(totals.values()).reduce((sum, value) => sum + value, 0) || 1;
+
+  return Array.from(totals.entries())
+    .map(([family, value]) => ({
+      label: family,
+      value: (value / total) * 100
+    }))
+    .sort((left, right) => right.value - left.value)
+    .slice(0, 6)
+    .map((point) => ({
+      ...point,
+      label:
+        point.label.length > 18
+          ? `${point.label.slice(0, 18)}...`
+          : point.label
+    }));
+}
+
 function localizeDatasetSchema(
   locale: AppLocale,
   schema: (typeof marketDatasetSchemas)[number]
@@ -2347,6 +2388,10 @@ export default function App() {
   const localizedQuantIndicators = useMemo(
     () => quantIndicators.map((item) => localizeQuantIndicator(appLocale, item)),
     [appLocale]
+  );
+  const selectedQuantPlaybook = useMemo(
+    () => pickQuantIndicatorsForMarket(marketId, localizedQuantIndicators),
+    [localizedQuantIndicators, marketId]
   );
 
   useEffect(() => {
@@ -3468,6 +3513,7 @@ export default function App() {
               priorityItems={selectedDesk.priorityItems}
               invalidationChecks={selectedDesk.invalidationChecks}
               driverRows={selectedRoleDriverRows}
+              quantIndicators={selectedQuantPlaybook}
               catalystRows={selectedRoleCatalystRows}
               sourceRows={selectedSourceHealthRows}
               feedItems={feedItems.slice(0, 6)}
@@ -4060,6 +4106,7 @@ export default function App() {
                           value={`${formatNumber(appLocale, walkForwardResult?.summary.directionalAccuracyPct ?? 0, 0)}%`}
                         />
                       </div>
+                      <ForecastConfidenceBand locale={appLocale} result={walkForwardResult} />
                       <ColumnChart
                         points={walkForwardFeaturePoints}
                         color={marketColor(marketId)}
@@ -5681,6 +5728,149 @@ function SourceHealthTable({
   );
 }
 
+function FactorDecompositionPanel({
+  locale,
+  rows
+}: {
+  locale: AppLocale;
+  rows: DriverDecisionRow[];
+}) {
+  const points = buildDriverFamilyMixPoints(locale, rows);
+
+  return (
+    <div className="factor-decomposition-panel">
+      <div className="metric-cluster">
+        {points.slice(0, 3).map((point) => (
+          <MetricPill
+            key={point.label}
+            label={point.label}
+            value={`${formatNumber(locale, point.value, 0)}%`}
+          />
+        ))}
+      </div>
+      {points.length > 0 ? (
+        <ColumnChart
+          points={points}
+          color="#2f7bf6"
+          valueFormatter={(value) => `${formatNumber(locale, value, 0)}%`}
+          height={188}
+        />
+      ) : (
+        <div className="empty-plot compact">
+          {t(locale, "변수 분해 데이터가 아직 부족합니다.", "Factor decomposition data is not ready yet.")}
+        </div>
+      )}
+      <p className="panel-note">
+        {t(
+          locale,
+          "현재 시장에서 큰 영향을 주는 변수군을 100 기준 비중으로 압축한 보드입니다. 실시간 가격 자체가 아니라, 현재 모델이 어떤 변수 묶음을 더 크게 읽는지 보여줍니다.",
+          "This compresses the current driver mix into a 100-based split. It is not a live price forecast; it shows which driver families the model is leaning on most."
+        )}
+      </p>
+    </div>
+  );
+}
+
+function QuantPlaybookPanel({
+  locale,
+  indicators
+}: {
+  locale: AppLocale;
+  indicators: ReturnType<typeof localizeQuantIndicator>[];
+}) {
+  return (
+    <div className="quant-playbook-grid">
+      {indicators.map((indicator) => (
+        <div key={indicator.id} className="quant-playbook-card">
+          <div className="quant-playbook-head">
+            <strong>{indicator.name}</strong>
+            <span>{indicator.family}</span>
+          </div>
+          <p>{indicator.whyItMatters}</p>
+          <small>
+            {t(locale, "필요 데이터", "Data needed")}: {indicator.requiredColumns.join(", ")}
+          </small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ForecastConfidenceBand({
+  locale,
+  result
+}: {
+  locale: AppLocale;
+  result: WalkForwardResult | null;
+}) {
+  if (!result) {
+    return (
+      <div className="empty-plot compact">
+        {t(locale, "워크포워드 결과가 아직 없습니다.", "No walk-forward result yet.")}
+      </div>
+    );
+  }
+
+  const { latestClose, nextPrediction, lowerBand, upperBand } = result.summary;
+  const minValue = Math.min(latestClose, lowerBand);
+  const maxValue = Math.max(latestClose, upperBand);
+  const span = maxValue - minValue || 1;
+  const latestPosition = ((latestClose - minValue) / span) * 100;
+  const lowerPosition = ((lowerBand - minValue) / span) * 100;
+  const upperPosition = ((upperBand - minValue) / span) * 100;
+  const predictionPosition = ((nextPrediction - minValue) / span) * 100;
+
+  return (
+    <div className="forecast-band-card">
+      <div className="forecast-band-head">
+        <strong>{t(locale, "다음 예측 범위", "Next forecast band")}</strong>
+        <span>{t(locale, "RMSE 기반 연구용 밴드", "RMSE-based research band")}</span>
+      </div>
+      <div className="metric-cluster">
+        <MetricPill
+          label={t(locale, "현재 종가", "Latest close")}
+          value={formatNumber(locale, latestClose, 2)}
+        />
+        <MetricPill
+          label={t(locale, "다음 예측", "Next prediction")}
+          value={formatNumber(locale, nextPrediction, 2)}
+        />
+        <MetricPill
+          label={t(locale, "하단 밴드", "Lower band")}
+          value={formatNumber(locale, lowerBand, 2)}
+        />
+        <MetricPill
+          label={t(locale, "상단 밴드", "Upper band")}
+          value={formatNumber(locale, upperBand, 2)}
+        />
+      </div>
+      <div className="forecast-band-track">
+        <div
+          className="forecast-band-range"
+          style={{
+            left: `${lowerPosition}%`,
+            width: `${Math.max(upperPosition - lowerPosition, 2)}%`
+          }}
+        />
+        <div className="forecast-band-marker latest" style={{ left: `${latestPosition}%` }} />
+        <div className="forecast-band-marker prediction" style={{ left: `${predictionPosition}%` }} />
+      </div>
+      <div className="forecast-band-labels">
+        <span>{t(locale, "현재", "Latest")}</span>
+        <span>{t(locale, "예측 밴드", "Forecast band")}</span>
+        <span>{t(locale, "예측", "Prediction")}</span>
+      </div>
+      <p className="panel-note">
+        {t(
+          locale,
+          "PDF 기획서의 신뢰구간 UX 원칙에 맞춰 점 추정 대신 범위로 보여주는 연구용 예측 보드입니다. 실거래 가격 목표가 아니라 오차 범위를 함께 읽게 만드는 용도입니다.",
+          "This follows the PDF's confidence-band UX principle. It shows a research range around the point estimate, not a tradable price target."
+        )}
+      </p>
+    </div>
+  );
+}
+
 function InstitutionDeskSurface({
   locale,
   marketLabel,
@@ -5707,6 +5897,7 @@ function InstitutionDeskSurface({
   priorityItems,
   invalidationChecks,
   driverRows,
+  quantIndicators,
   catalystRows,
   sourceRows,
   feedItems,
@@ -5740,6 +5931,7 @@ function InstitutionDeskSurface({
   priorityItems: string[];
   invalidationChecks: string[];
   driverRows: DriverDecisionRow[];
+  quantIndicators: ReturnType<typeof localizeQuantIndicator>[];
   catalystRows: ReturnType<typeof localizeCatalystWindow>[];
   sourceRows: SourceHealthRow[];
   feedItems: FeedItem[];
@@ -5891,6 +6083,32 @@ function InstitutionDeskSurface({
           onOpenSource={onOpenSource}
           onInspect={onInspectDriver}
         />
+      </section>
+
+      <section className="overview-grid secondary">
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "변수 분해 보드", "Factor decomposition")}
+            subtitle={t(
+              locale,
+              "기획 PDF의 가격 결정 변수 구조를 현재 시장 기준으로 한 번 더 압축해서 봅니다.",
+              "Review the pricing driver mix from the planning PDF as one compressed market read."
+            )}
+          />
+          <FactorDecompositionPanel locale={locale} rows={driverRows} />
+        </div>
+
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "퀀트 지표 플레이북", "Quant playbook")}
+            subtitle={t(
+              locale,
+              "실무자가 지금 어떤 지표를 먼저 봐야 하는지, 필요한 데이터와 함께 바로 정리합니다.",
+              "See which quant indicators matter first for this market and what data each one needs."
+            )}
+          />
+          <QuantPlaybookPanel locale={locale} indicators={quantIndicators} />
+        </div>
       </section>
 
       <section className="overview-grid secondary">
