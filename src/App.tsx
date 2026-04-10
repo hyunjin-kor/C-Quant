@@ -26,8 +26,7 @@ import {
   benchmarkPlatforms,
   catalystWindows,
   watchViewPresets,
-  watchlistPresets,
-  workspacePresets
+  watchlistPresets
 } from "./data/experience";
 import {
   localeOptions,
@@ -44,8 +43,7 @@ import {
   localizeSubscriptionFeature,
   localizeTrustPrinciple,
   localizeWatchViewPreset,
-  localizeWatchlistPreset,
-  localizeWorkspacePreset
+  localizeWatchlistPreset
 } from "./data/locales";
 import {
   marketWatchItems,
@@ -214,11 +212,57 @@ type SourceHealthRow = {
   note: string;
 };
 
+type DeskRole = "compliance" | "trading" | "risk";
+
+type DeskRoleConfig = {
+  id: DeskRole;
+  ko: string;
+  en: string;
+  summaryKo: string;
+  summaryEn: string;
+  focusKo: string;
+  focusEn: string;
+  driverFamilies: string[];
+};
+
 const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
   { id: "overview", ko: "한눈에 보기", en: "Overview" },
   { id: "signals", ko: "지금 판단", en: "Decision" },
   { id: "lab", ko: "모델 실험", en: "Lab" },
   { id: "sources", ko: "출처", en: "Sources" }
+];
+
+const DESK_ROLES: DeskRoleConfig[] = [
+  {
+    id: "compliance",
+    ko: "\uCEF4\uD50C\uB77C\uC774\uC5B8\uC2A4",
+    en: "Compliance",
+    summaryKo: "\uACF5\uC2DD \uAE30\uC900\uAC12\uACFC \uC774\uD589 \uC77C\uC815 \uC911\uC2EC",
+    summaryEn: "Prioritizes the official anchor, compliance calendar, and rule notices.",
+    focusKo: "\uACF5\uC2DD \uC2DC\uC138\uC640 \uC774\uD589 \uC77C\uC815 \uC6B0\uC120",
+    focusEn: "Official tape and compliance dates first",
+    driverFamilies: ["Policy Supply", "Calendar Effects", "Power Complex", "Weather and Seasonality"]
+  },
+  {
+    id: "trading",
+    ko: "\uD2B8\uB808\uC774\uB529",
+    en: "Trading",
+    summaryKo: "\uD5E4\uC9C0 \uC575\uCEE4\uC640 \uACF4\uB9AC\uC728 \uC911\uC2EC",
+    summaryEn: "Prioritizes hedge anchors, gap, correlation, volume, and short-horizon catalysts.",
+    focusKo: "\uD5E4\uC9C0 \uC575\uCEE4\uC640 \uAC70\uB798\uB7C9 \uC6B0\uC120",
+    focusEn: "Hedge anchor and volume first",
+    driverFamilies: ["Fuel Switching", "Power Complex", "Macro and Financial", "Market Microstructure", "Policy Supply"]
+  },
+  {
+    id: "risk",
+    ko: "\uB9AC\uC2A4\uD06C",
+    en: "Risk",
+    summaryKo: "\uC18C\uC2A4 \uC2E0\uC120\uB3C4\uC640 \uBB34\uD6A8\uD654 \uC870\uAC74 \uC911\uC2EC",
+    summaryEn: "Prioritizes source freshness, invalidation conditions, alerts, and policy risk.",
+    focusKo: "\uC2E0\uC120\uB3C4\uC640 \uBB34\uD6A8\uD654 \uC870\uAC74 \uC6B0\uC120",
+    focusEn: "Freshness and invalidation checks first",
+    driverFamilies: ["Policy Supply", "Macro and Financial", "Market Microstructure", "Calendar Effects", "Power Complex"]
+  }
 ];
 
 const DRIVER_FAMILIES: DriverFamily[] = [
@@ -277,17 +321,6 @@ const emptySources: ConnectedSourcePayload = {
 const defaultSettings: AppSettings = {
   hasOpenAIApiKey: false,
   llmModel: "gpt-4.1-mini"
-};
-
-const workspaceRouting: Record<
-  string,
-  { surface: Surface; watchlistId?: string; marketId?: MarketProfile["id"] }
-> = {
-  "morning-scan": { surface: "overview", watchlistId: "core-carbon" },
-  "cross-market": { surface: "signals", watchlistId: "official-only" },
-  "policy-supply": { surface: "sources", marketId: "eu-ets", watchlistId: "official-only" },
-  "futures-etf": { surface: "overview", marketId: "eu-ets", watchlistId: "listed-proxies" },
-  "model-review": { surface: "lab" }
 };
 
 const CATEGORY_LABELS_KO: Record<string, string> = {
@@ -2068,7 +2101,13 @@ export default function App() {
   const [surface, setSurface] = useState<Surface>("overview");
   const [marketId, setMarketId] = useState<MarketProfile["id"]>("eu-ets");
   const [selectedLiveQuoteId, setSelectedLiveQuoteId] = useState<string>("");
-  const [workspaceId, setWorkspaceId] = useState<string>("morning-scan");
+  const [deskRole, setDeskRole] = useState<DeskRole>(() =>
+    readStoredChoice(
+      "cquant:desk-role",
+      DESK_ROLES.map((item) => item.id),
+      "trading"
+    )
+  );
   const [watchlistId, setWatchlistId] = useState<string>("core-carbon");
   const [watchViewId, setWatchViewId] = useState<string>("scan-view");
   const [freeOnlySources, setFreeOnlySources] = useState<boolean>(() =>
@@ -2088,7 +2127,7 @@ export default function App() {
     Partial<Record<MarketProfile["id"], Record<string, number>>>
   >({});
   const [assistantQuestion, setAssistantQuestion] = useState(
-    "현재 이 시장은 매수 우위인지 매도 우위인지 판단해줘."
+    "Should the current market posture be increased, reduced, or held?"
   );
   const [assistantResponse, setAssistantResponse] = useState<DecisionAssistantResponse | null>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
@@ -2102,10 +2141,6 @@ export default function App() {
     [marketId]
   );
 
-  const localizedWorkspaces = useMemo(
-    () => workspacePresets.map((item) => localizeWorkspacePreset(item, appLocale)),
-    [appLocale]
-  );
   const localizedWatchlists = useMemo(
     () => watchlistPresets.map((item) => localizeWatchlistPreset(item, appLocale)),
     [appLocale]
@@ -2117,6 +2152,10 @@ export default function App() {
   const localizedSources = useMemo(
     () => sourceRegistry.map((item) => localizeSourceRegistryItem(item, appLocale)),
     [appLocale]
+  );
+  const selectedDeskRole = useMemo(
+    () => DESK_ROLES.find((item) => item.id === deskRole) ?? DESK_ROLES[1],
+    [deskRole]
   );
   const localizedBenchmarks = useMemo(
     () => benchmarkPlatforms.map((item) => localizeBenchmark(item, appLocale)),
@@ -2151,6 +2190,10 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem("cquant:free-only-sources", String(freeOnlySources));
   }, [freeOnlySources]);
+
+  useEffect(() => {
+    window.localStorage.setItem("cquant:desk-role", deskRole);
+  }, [deskRole]);
 
   useEffect(() => {
     const desk = getInstitutionDesk(appLocale, marketId);
@@ -2371,6 +2414,18 @@ export default function App() {
         .sort((left, right) => Math.abs(right.contribution) - Math.abs(left.contribution)),
     [appLocale, selectedForecast.contributions, selectedMarket.drivers]
   );
+  const selectedRoleDriverRows = useMemo(
+    () => {
+      const preferred = selectedDriverRows.filter((row) =>
+        selectedDeskRole.driverFamilies.includes(row.family)
+      );
+      const remainder = selectedDriverRows.filter(
+        (row) => !preferred.some((preferredRow) => preferredRow.id === row.id)
+      );
+      return [...preferred, ...remainder];
+    },
+    [selectedDeskRole.driverFamilies, selectedDriverRows]
+  );
   const selectedSourceHealthRows = useMemo<SourceHealthRow[]>(() => {
     const rows: SourceHealthRow[] = [];
 
@@ -2411,6 +2466,10 @@ export default function App() {
         (item) => item.marketId === marketId || item.marketId === "shared"
       ),
     [localizedCatalysts, marketId]
+  );
+  const selectedRoleCatalystRows = useMemo(
+    () => (deskRole === "trading" ? selectedCatalystRows.slice(0, 6) : selectedCatalystRows),
+    [deskRole, selectedCatalystRows]
   );
   const selectedTapeCompareSeries = useMemo<MultiLineSeries[]>(
     () => [
@@ -2662,10 +2721,6 @@ export default function App() {
     [appLocale, marketId]
   );
 
-  const activeWorkspace = useMemo(
-    () => localizedWorkspaces.find((item) => item.id === workspaceId) ?? localizedWorkspaces[0],
-    [localizedWorkspaces, workspaceId]
-  );
   const activeWatchlist = useMemo(
     () => localizedWatchlists.find((item) => item.id === watchlistId) ?? localizedWatchlists[0],
     [localizedWatchlists, watchlistId]
@@ -2935,21 +2990,6 @@ export default function App() {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
-  function applyWorkspace(id: string) {
-    setWorkspaceId(id);
-    const route = workspaceRouting[id];
-    if (!route) {
-      return;
-    }
-    setSurface(route.surface);
-    if (route.watchlistId) {
-      setWatchlistId(route.watchlistId);
-    }
-    if (route.marketId) {
-      setMarketId(route.marketId);
-    }
-  }
-
   return (
     <div className="terminal-shell">
       <header className="titlebar">
@@ -3031,29 +3071,33 @@ export default function App() {
           </div>
 
           <div className="sidebar-section">
-            <div className="sidebar-label">{t(appLocale, "워크스페이스", "Workspaces")}</div>
+            <div className="sidebar-label">{t(appLocale, "\uC6B4\uC6A9 \uBAA8\uB4DC", "Role mode")}</div>
             <div className="workspace-list">
-              {localizedWorkspaces.map((workspace) => (
+              {DESK_ROLES.map((role) => (
                 <button
-                  key={workspace.id}
-                  className={workspaceId === workspace.id ? "active" : ""}
-                  onClick={() => applyWorkspace(workspace.id)}
+                  key={role.id}
+                  className={deskRole === role.id ? "active" : ""}
+                  onClick={() => setDeskRole(role.id)}
                 >
-                  <strong>{workspace.title}</strong>
-                  <span>{workspace.summary}</span>
+                  <strong>{appLocale === "ko" ? role.ko : role.en}</strong>
+                  <span>{appLocale === "ko" ? role.summaryKo : role.summaryEn}</span>
                 </button>
               ))}
             </div>
           </div>
 
           <div className="sidebar-section sidebar-summary">
-            <div className="sidebar-label">{t(appLocale, "현재 포커스", "Current focus")}</div>
-            <strong>{getMarketDisplayName(appLocale, marketId)}</strong>
-            <p>{decisionView.summary}</p>
+            <div className="sidebar-label">{t(appLocale, "\uD604\uC7AC \uC77D\uB294 \uBC29\uC2DD", "Current read")}</div>
+            <strong>{`${getMarketDisplayName(appLocale, marketId)} - ${
+              appLocale === "ko" ? selectedDeskRole.ko : selectedDeskRole.en
+            }`}</strong>
+            <p>{appLocale === "ko" ? selectedDeskRole.focusKo : selectedDeskRole.focusEn}</p>
             <div className="workspace-modules">
-              {decisionView.thesis.slice(0, 3).map((label) => (
-                <span key={label}>{label}</span>
-              ))}
+              {[selectedDesk.focus, selectedDesk.check, ...decisionView.thesis]
+                .slice(0, 3)
+                .map((label) => (
+                  <span key={label}>{label}</span>
+                ))}
             </div>
           </div>
         </aside>
@@ -3125,8 +3169,8 @@ export default function App() {
               check={selectedDesk.check}
               priorityItems={selectedDesk.priorityItems}
               invalidationChecks={selectedDesk.invalidationChecks}
-              driverRows={selectedDriverRows}
-              catalystRows={selectedCatalystRows}
+              driverRows={selectedRoleDriverRows}
+              catalystRows={selectedRoleCatalystRows}
               sourceRows={selectedSourceHealthRows}
               feedItems={feedItems.slice(0, 6)}
               onOpenSource={handleOpenExternal}
@@ -3419,8 +3463,8 @@ export default function App() {
               question={assistantQuestion}
               onQuestionChange={setAssistantQuestion}
               onRunAssistant={handleRunAssistant}
-              driverRows={selectedDriverRows}
-              catalystRows={selectedCatalystRows}
+              driverRows={selectedRoleDriverRows}
+              catalystRows={selectedRoleCatalystRows}
               sourceRows={selectedSourceHealthRows}
               focus={selectedDesk.focus}
               check={selectedDesk.check}
