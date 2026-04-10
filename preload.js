@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   pickCsvFile: () => ipcRenderer.invoke("pick-csv-file"),
   readTextFile: (path) => ipcRenderer.invoke("read-text-file", path),
   refreshConnectedSources: () => ipcRenderer.invoke("refresh-connected-sources"),
+  getLiveQuoteHistory: (options) => ipcRenderer.invoke("get-live-quote-history", options),
   runWalkForwardModel: (options) =>
     ipcRenderer.invoke("run-walk-forward-model", options),
   getAppSettings: () => ipcRenderer.invoke("get-app-settings"),

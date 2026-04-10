@@ -88,6 +88,10 @@ declare global {
       closeWindow: () => Promise<void>;
       isWindowMaximized: () => Promise<boolean>;
       refreshConnectedSources: () => Promise<ConnectedSourcePayload>;
+      getLiveQuoteHistory: (options: {
+        quoteId: string;
+        range: "5d" | "1m" | "3m" | "6m" | "1y";
+      }) => Promise<MarketLiveQuote>;
       runWalkForwardModel: (options: {
         inputPath: string;
         marketId: MarketProfile["id"];
@@ -108,6 +112,7 @@ declare global {
 }
 
 type Surface = "overview" | "signals" | "lab" | "sources";
+type QuoteRangePreset = "5d" | "1m" | "3m" | "6m" | "1y";
 
 type AlertItem = {
   id: string;
@@ -231,6 +236,7 @@ const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
   { id: "lab", ko: "모델 실험", en: "Lab" },
   { id: "sources", ko: "출처", en: "Sources" }
 ];
+const LIVE_QUOTE_RANGE_OPTIONS: QuoteRangePreset[] = ["5d", "1m", "3m", "6m", "1y"];
 
 const DESK_ROLES: DeskRoleConfig[] = [
   {
@@ -958,7 +964,7 @@ function getOperatorDesk(locale: AppLocale, marketId: MarketProfile["id"]) {
   if (marketId === "eu-ets") {
     return {
       primaryQuoteId: "eua-dec-benchmark",
-      supportQuoteIds: ["ttf-gas-future", "keua-proxy"],
+      supportQuoteIds: ["co2-l-proxy", "keua-proxy", "ttf-gas-future"],
       focus: t(locale, "ICE EUA 선물과 공식 경매 가격의 괴리 확인", "Check ICE EUA futures versus the official auction tape"),
       check: t(
         locale,
@@ -971,7 +977,7 @@ function getOperatorDesk(locale: AppLocale, marketId: MarketProfile["id"]) {
   if (marketId === "k-ets") {
     return {
       primaryQuoteId: "krbn-proxy",
-      supportQuoteIds: ["eua-dec-benchmark"],
+      supportQuoteIds: ["eua-dec-benchmark", "kcca-proxy"],
       focus: t(locale, "KRX 공식 시세와 글로벌 탄소 프록시의 방향 차이 확인", "Check KRX official tape versus the global listed carbon proxy"),
       check: t(
         locale,
@@ -983,7 +989,7 @@ function getOperatorDesk(locale: AppLocale, marketId: MarketProfile["id"]) {
 
   return {
     primaryQuoteId: "krbn-proxy",
-    supportQuoteIds: ["eua-dec-benchmark"],
+    supportQuoteIds: ["eua-dec-benchmark", "kcca-proxy"],
     focus: t(locale, "중국 공식 공시와 글로벌 탄소 프록시의 괴리 확인", "Check the China official bulletin versus the global listed carbon proxy"),
     check: t(
       locale,
@@ -997,7 +1003,7 @@ function getInstitutionDesk(locale: AppLocale, marketId: MarketProfile["id"]): O
   if (marketId === "eu-ets") {
     return {
       primaryQuoteId: "eua-dec-benchmark",
-      supportQuoteIds: ["ttf-gas-future", "keua-proxy"],
+      supportQuoteIds: ["co2-l-proxy", "keua-proxy", "ttf-gas-future"],
       focus: t(
         locale,
         "EEX 공식 가격을 기준으로 두고, ICE EUA 선물로 상장 시장이 먼저 움직이는지 같이 봅니다.",
@@ -1053,7 +1059,7 @@ function getInstitutionDesk(locale: AppLocale, marketId: MarketProfile["id"]): O
   if (marketId === "k-ets") {
     return {
       primaryQuoteId: "krbn-proxy",
-      supportQuoteIds: ["eua-dec-benchmark"],
+      supportQuoteIds: ["eua-dec-benchmark", "kcca-proxy"],
       focus: t(
         locale,
         "KRX 공식 시세를 기준으로 두고, KRBN은 글로벌 분위기를 보는 참고용으로만 씁니다.",
@@ -1108,7 +1114,7 @@ function getInstitutionDesk(locale: AppLocale, marketId: MarketProfile["id"]): O
 
   return {
     primaryQuoteId: "krbn-proxy",
-    supportQuoteIds: ["eua-dec-benchmark"],
+    supportQuoteIds: ["eua-dec-benchmark", "kcca-proxy"],
     focus: t(
       locale,
       "중국은 MEE 공식 공지와 운영 발표를 먼저 보고, KRBN은 글로벌 분위기 확인용으로만 씁니다.",
@@ -2101,6 +2107,12 @@ export default function App() {
   const [surface, setSurface] = useState<Surface>("overview");
   const [marketId, setMarketId] = useState<MarketProfile["id"]>("eu-ets");
   const [selectedLiveQuoteId, setSelectedLiveQuoteId] = useState<string>("");
+  const [selectedQuoteRange, setSelectedQuoteRange] = useState<QuoteRangePreset>(() =>
+    readStoredChoice("cquant:quote-range", LIVE_QUOTE_RANGE_OPTIONS, "3m")
+  );
+  const [interactiveQuote, setInteractiveQuote] = useState<MarketLiveQuote | null>(null);
+  const [interactiveQuoteLoading, setInteractiveQuoteLoading] = useState(false);
+  const [interactiveQuoteError, setInteractiveQuoteError] = useState<string | null>(null);
   const [deskRole, setDeskRole] = useState<DeskRole>(() =>
     readStoredChoice(
       "cquant:desk-role",
@@ -2196,6 +2208,10 @@ export default function App() {
   }, [deskRole]);
 
   useEffect(() => {
+    window.localStorage.setItem("cquant:quote-range", selectedQuoteRange);
+  }, [selectedQuoteRange]);
+
+  useEffect(() => {
     const desk = getInstitutionDesk(appLocale, marketId);
     const relevantQuotes = connectedSources.liveQuotes.filter(
       (quote) => quote.markets.includes(marketId) || quote.markets.includes("shared")
@@ -2209,7 +2225,13 @@ export default function App() {
       .map((quoteId) => relevantQuotes.find((quote) => quote.id === quoteId))
       .filter((quote): quote is MarketLiveQuote => Boolean(quote));
 
-    setSelectedLiveQuoteId(preferredQuotes[0]?.id ?? relevantQuotes[0]?.id ?? "");
+    const preferredChartQuote =
+      preferredQuotes.find((quote) => (quote.series?.length ?? 0) > 1) ??
+      relevantQuotes.find((quote) => (quote.series?.length ?? 0) > 1) ??
+      preferredQuotes[0] ??
+      relevantQuotes[0];
+
+    setSelectedLiveQuoteId(preferredChartQuote?.id ?? "");
   }, [appLocale, connectedSources.liveQuotes, marketId, selectedLiveQuoteId]);
 
   useEffect(() => {
@@ -2221,12 +2243,74 @@ export default function App() {
   }, [appLocale]);
 
   useEffect(() => {
+    const quoteId = selectedLiveQuoteId;
+    if (!quoteId) {
+      setInteractiveQuote(null);
+      setInteractiveQuoteError(null);
+      return;
+    }
+
+    const fallbackQuote = connectedSources.liveQuotes.find((quote) => quote.id === quoteId) ?? null;
+
+    if (!window.desktopBridge?.getLiveQuoteHistory) {
+      setInteractiveQuote(fallbackQuote);
+      setInteractiveQuoteError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setInteractiveQuoteLoading(true);
+    setInteractiveQuoteError(null);
+
+    void window.desktopBridge
+      .getLiveQuoteHistory({
+        quoteId,
+        range: selectedQuoteRange
+      })
+      .then((next) => {
+        if (cancelled) {
+          return;
+        }
+        startTransition(() => {
+          setInteractiveQuote(next);
+        });
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+        setInteractiveQuote(fallbackQuote);
+        setInteractiveQuoteError(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setInteractiveQuoteLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connectedSources.fetchedAt, connectedSources.liveQuotes, selectedLiveQuoteId, selectedQuoteRange]);
+
+  useEffect(() => {
     void refreshSources();
+    const refreshTimer = window.desktopBridge
+      ? window.setInterval(() => {
+          void refreshSources();
+        }, 60_000)
+      : null;
     void window.desktopBridge?.isWindowMaximized().then((value) => setWindowMaximized(value));
     void window.desktopBridge?.getAppSettings().then((next) => {
       setSettings(next);
       setModelDraft(next.llmModel);
     });
+
+    return () => {
+      if (refreshTimer) {
+        window.clearInterval(refreshTimer);
+      }
+    };
   }, []);
 
   const cardsByMarket = useMemo(
@@ -2348,10 +2432,11 @@ export default function App() {
   );
   const selectedInteractiveQuote = useMemo(
     () =>
+      (interactiveQuote && interactiveQuote.id === selectedLiveQuoteId ? interactiveQuote : null) ??
       selectedRelevantQuotes.find((quote) => quote.id === selectedLiveQuoteId) ??
       selectedDeskQuotes[0] ??
       selectedRelevantQuotes[0],
-    [selectedDeskQuotes, selectedLiveQuoteId, selectedRelevantQuotes]
+    [interactiveQuote, selectedDeskQuotes, selectedLiveQuoteId, selectedRelevantQuotes]
   );
   const selectedInteractiveQuotePoints = useMemo(
     () => getSeriesPoints(selectedInteractiveQuote?.series),
@@ -3165,6 +3250,10 @@ export default function App() {
               linkedRows={selectedLinkedScoreRows}
               selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
               onSelectQuote={setSelectedLiveQuoteId}
+              selectedQuoteRange={selectedQuoteRange}
+              onSelectQuoteRange={setSelectedQuoteRange}
+              interactiveQuoteLoading={interactiveQuoteLoading}
+              interactiveQuoteError={interactiveQuoteError}
               focus={selectedDesk.focus}
               check={selectedDesk.check}
               priorityItems={selectedDesk.priorityItems}
@@ -3203,6 +3292,10 @@ export default function App() {
                     comparePoints={selectedTapeComparePoints}
                     compareStats={selectedTapeCompareStats}
                     compareSeries={selectedTapeCompareSeries}
+                    selectedRange={selectedQuoteRange}
+                    onSelectRange={setSelectedQuoteRange}
+                    loading={interactiveQuoteLoading}
+                    error={interactiveQuoteError}
                     onOpenSource={handleOpenExternal}
                   />
                   <LinkedTapeScoreboard
@@ -4529,6 +4622,10 @@ function InstitutionDeskSurface({
   linkedRows,
   selectedQuoteId,
   onSelectQuote,
+  selectedQuoteRange,
+  onSelectQuoteRange,
+  interactiveQuoteLoading,
+  interactiveQuoteError,
   focus,
   check,
   priorityItems,
@@ -4555,6 +4652,10 @@ function InstitutionDeskSurface({
   linkedRows: LinkedTapeScoreRow[];
   selectedQuoteId: string;
   onSelectQuote: (quoteId: string) => void;
+  selectedQuoteRange: QuoteRangePreset;
+  onSelectQuoteRange: (range: QuoteRangePreset) => void;
+  interactiveQuoteLoading: boolean;
+  interactiveQuoteError: string | null;
   focus: string;
   check: string;
   priorityItems: string[];
@@ -4666,6 +4767,31 @@ function InstitutionDeskSurface({
             </span>
           </div>
         </div>
+      </section>
+
+      <section className="panel panel-emphasis">
+        <SectionHeader
+          title={t(locale, "라이브 차트 워크벤치", "Live chart workbench")}
+          subtitle={t(
+            locale,
+            "선택한 선물·프록시를 앱 안에서 다시 불러오고, 기간을 바꿔가며 확인합니다.",
+            "Reload the selected futures or proxy tape inside the app and switch chart windows directly."
+          )}
+        />
+        <LiveTapeWorkbench
+          locale={locale}
+          officialCard={officialCard}
+          quote={selectedInteractiveQuote}
+          quotePoints={getSeriesPoints(selectedInteractiveQuote?.series)}
+          comparePoints={comparePoints}
+          compareStats={compareStats}
+          compareSeries={compareSeries}
+          selectedRange={selectedQuoteRange}
+          onSelectRange={onSelectQuoteRange}
+          loading={interactiveQuoteLoading}
+          error={interactiveQuoteError}
+          onOpenSource={onOpenSource}
+        />
       </section>
 
       <section className="panel">
@@ -4969,6 +5095,10 @@ function LiveTapeWorkbench({
   comparePoints,
   compareStats,
   compareSeries,
+  selectedRange,
+  onSelectRange,
+  loading,
+  error,
   onOpenSource
 }: {
   locale: AppLocale;
@@ -4978,6 +5108,10 @@ function LiveTapeWorkbench({
   comparePoints: MultiLinePoint[];
   compareStats: TapeCompareStats;
   compareSeries: MultiLineSeries[];
+  selectedRange: QuoteRangePreset;
+  onSelectRange: (range: QuoteRangePreset) => void;
+  loading: boolean;
+  error: string | null;
   onOpenSource: (url: string) => void | Promise<void>;
 }) {
   if (!quote) {
@@ -4995,6 +5129,32 @@ function LiveTapeWorkbench({
           {t(locale, "출처 보기", "Open source")}
         </button>
       </div>
+
+      <div className="tape-workbench-toolbar">
+        <div className="range-chip-group" role="tablist" aria-label="Live chart range">
+          {LIVE_QUOTE_RANGE_OPTIONS.map((range) => (
+            <button
+              key={range}
+              type="button"
+              className={`range-chip ${range === selectedRange ? "active" : ""}`}
+              onClick={() => onSelectRange(range)}
+            >
+              {range.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <div className="api-status-row">
+          <span>{t(locale, "앱 내부 API 차트", "In-app API chart")}</span>
+          <span>{quote.provider}</span>
+          <span>{t(locale, "기준 시각", "As of")} {formatDate(locale, quote.asOf)}</span>
+        </div>
+      </div>
+      {loading ? (
+        <div className="inline-status-note">
+          {t(locale, "선택한 기간의 차트를 다시 불러오는 중입니다.", "Reloading the selected chart window.")}
+        </div>
+      ) : null}
+      {error ? <div className="inline-status-note error">{error}</div> : null}
 
       <div className="tape-metric-strip">
         <MetricPill

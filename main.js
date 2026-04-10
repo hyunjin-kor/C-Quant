@@ -2,7 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { execFile } = require("node:child_process");
-const { getConnectedSources } = require("./electron/liveSources");
+const { getConnectedSources, getLiveQuoteHistory } = require("./electron/liveSources");
 const {
   DEFAULT_MODEL,
   runOpenAIDecisionAssistant
@@ -229,6 +229,9 @@ ipcMain.handle("run-walk-forward-model", async (_event, payload) =>
   runWalkForwardModel(payload)
 );
 ipcMain.handle("refresh-connected-sources", async () => getConnectedSources());
+ipcMain.handle("get-live-quote-history", async (_event, payload) =>
+  getLiveQuoteHistory(payload?.quoteId, payload?.range)
+);
 ipcMain.handle("get-app-settings", async () => getPublicSettings(await loadSettings()));
 ipcMain.handle("save-app-settings", async (_event, payload) =>
   getPublicSettings(await saveSettings(payload ?? {}))

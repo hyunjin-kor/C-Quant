@@ -4,10 +4,27 @@ const EEX_AUCTION_PAGE_URL =
   "https://www.eex.com/en/markets/environmental-markets/eu-ets-auctions";
 const KRX_MARKET_PAGE_URL =
   "https://ets.krx.co.kr/contents/ETS/03/03010000/ETS03010000.jsp";
+const KRX_OPEN_API_DETAIL_URL =
+  "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=IZiYdcgRQFMeENJPEMKG";
+const KRX_SAMPLE_API_URL = "https://data-dbg.krx.co.kr/svc/sample/apis/gen/ets_bydd_trd";
+const KRX_SAMPLE_AUTH_KEY = "74D1B99DFBF345BBA3FB4476510A4BED4C78D13A";
 const KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
 const KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
 const MEE_LIST_URL = "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
+const EU_CARD_CACHE_TTL_MS = 10 * 60 * 1000;
+const KRX_DAY_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const KRX_CARD_CACHE_TTL_MS = 15 * 60 * 1000;
+const CN_CARD_CACHE_TTL_MS = 30 * 60 * 1000;
+const QUOTE_CACHE_TTL_MS = 60 * 1000;
+const cacheStore = new Map();
+const QUOTE_RANGE_PRESETS = {
+  "5d": { range: "5d", interval: "1d", seriesLimit: 5 },
+  "1m": { range: "1mo", interval: "1d", seriesLimit: 22 },
+  "3m": { range: "3mo", interval: "1d", seriesLimit: null },
+  "6m": { range: "6mo", interval: "1d", seriesLimit: null },
+  "1y": { range: "1y", interval: "1wk", seriesLimit: null }
+};
 
 const DEFAULT_HEADERS = {
   "user-agent":
@@ -41,6 +58,15 @@ function toCompactDate(value) {
   )}`;
 }
 
+function compactToIsoDate(value) {
+  const normalized = normalizeWhitespace(value);
+  if (!/^\d{8}$/.test(normalized)) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 4)}-${normalized.slice(4, 6)}-${normalized.slice(6, 8)}`;
+}
+
 function normalizeWhitespace(value) {
   return String(value ?? "")
     .replace(/&nbsp;/g, " ")
@@ -66,12 +92,13 @@ function getLiveQuoteConfigs() {
       symbolCandidates: [`ECFZ${currentSuffix}.NYM`, `ECFZ${nextSuffix}.NYM`, `ECFZ${previousSuffix}.NYM`],
       category: "Benchmark futures",
       markets: ["eu-ets", "shared"],
-      provider: "Yahoo Finance chart API",
+      provider: "Public chart API",
       sourceUrl: "https://www.ice.com/products/197",
       role: "Primary listed hedge tape for EU carbon risk",
-      note: "December benchmark contract used as the main listed EUA reference.",
+      note:
+        "December benchmark contract used as the main listed EUA reference. Some free chart feeds expose the live price faster than the full historical curve.",
       delayNote:
-        "Reference tape via Yahoo Finance. Yahoo states NYMEX/NYM quotes may be delayed by 30 minutes."
+        "Reference chart API feed. Exchange delay may apply."
     },
     {
       id: "ttf-gas-future",
@@ -79,12 +106,12 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["TTF=F"],
       category: "Driver future",
       markets: ["eu-ets", "shared"],
-      provider: "Yahoo Finance chart API",
-      sourceUrl: "https://finance.yahoo.com/quote/TTF=F",
+      provider: "Public chart API",
+      sourceUrl: "https://www.ice.com/products/27996665/Dutch-TTF-Gas-Futures",
       role: "Fuel-switching driver for EU carbon",
       note: "Gas remains one of the key inputs behind short-term carbon repricing.",
       delayNote:
-        "Reference tape via Yahoo Finance. Exchange-specific delay may apply."
+        "Reference chart API feed. Exchange delay may apply."
     },
     {
       id: "brent-future",
@@ -92,12 +119,25 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["BZ=F"],
       category: "Driver future",
       markets: ["shared"],
-      provider: "Yahoo Finance chart API",
-      sourceUrl: "https://finance.yahoo.com/quote/BZ=F",
+      provider: "Public chart API",
+      sourceUrl: "https://www.ice.com/products/219/Brent-Crude-Futures",
       role: "Macro energy proxy",
       note: "Useful for broad energy risk context when carbon trades with the wider commodity complex.",
       delayNote:
-        "Reference tape via Yahoo Finance. Exchange-specific delay may apply."
+        "Reference chart API feed. Exchange delay may apply."
+    },
+    {
+      id: "co2-l-proxy",
+      title: "WisdomTree Carbon ETC",
+      symbolCandidates: ["CO2.L"],
+      category: "Listed proxy",
+      markets: ["eu-ets", "shared"],
+      provider: "Public chart API",
+      sourceUrl: "https://www.wisdomtree.eu/en-gb/etps/alternative/wisdomtree-carbon",
+      role: "Exchange-traded EU carbon proxy",
+      note: "Useful as a listed carbon proxy alongside the benchmark EUA future.",
+      delayNote:
+        "Reference chart API feed. Exchange delay may apply."
     },
     {
       id: "krbn-proxy",
@@ -105,12 +145,12 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["KRBN"],
       category: "Listed proxy",
       markets: ["k-ets", "cn-ets", "shared"],
-      provider: "Yahoo Finance chart API",
-      sourceUrl: "https://finance.yahoo.com/quote/KRBN",
+      provider: "Public chart API",
+      sourceUrl: "https://kraneshares.com/etf/krbn/",
       role: "Listed carbon proxy when local ETS futures are not available",
       note: "Proxy only. Do not treat this as an official local ETS settlement.",
       delayNote:
-        "Reference tape via Yahoo Finance. Use as a listed proxy, not as the official carbon price."
+        "Reference chart API feed. Use as a listed proxy, not as the official carbon price."
     },
     {
       id: "keua-proxy",
@@ -118,12 +158,25 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["KEUA"],
       category: "Listed proxy",
       markets: ["eu-ets", "shared"],
-      provider: "Yahoo Finance chart API",
+      provider: "Public chart API",
       sourceUrl: "https://kraneshares.com/etf/keua/",
       role: "Listed proxy for EU carbon exposure",
       note: "Proxy only. The official listed hedge anchor remains the ICE EUA future.",
       delayNote:
-        "Reference tape via Yahoo Finance. Use as a listed proxy, not as the official carbon price."
+        "Reference chart API feed. Use as a listed proxy, not as the official carbon price."
+    },
+    {
+      id: "kcca-proxy",
+      title: "KCCA California carbon ETF",
+      symbolCandidates: ["KCCA"],
+      category: "Listed proxy",
+      markets: ["shared"],
+      provider: "Public chart API",
+      sourceUrl: "https://kraneshares.com/etf/kcca/",
+      role: "Listed North American carbon proxy for cross-market risk appetite",
+      note: "Proxy only. Useful as an additional listed carbon sleeve, not as a local ETS settlement.",
+      delayNote:
+        "Reference chart API feed. Use as a listed proxy, not as an official carbon price."
     }
   ];
 }
@@ -179,6 +232,26 @@ function formatNumber(value, decimals = 2) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   }).format(numeric);
+}
+
+function parseNumeric(value) {
+  const numeric = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+async function withCache(key, ttlMs, loader) {
+  const cached = cacheStore.get(key);
+
+  if (cached && Date.now() - cached.fetchedAt < ttlMs) {
+    return cached.value;
+  }
+
+  const value = await loader();
+  cacheStore.set(key, {
+    fetchedAt: Date.now(),
+    value
+  });
+  return value;
 }
 
 function makeLinks(...items) {
@@ -268,7 +341,7 @@ function toDateLabelFromUnix(timestamp) {
   return toIsoDate(new Date(numeric * 1000));
 }
 
-function buildSeriesFromYahoo(timestamps, closes) {
+function buildSeriesFromYahoo(timestamps, closes, seriesLimit = 22) {
   const points = [];
 
   for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
@@ -288,13 +361,17 @@ function buildSeriesFromYahoo(timestamps, closes) {
     });
   }
 
-  return points.slice(-22);
+  return seriesLimit === null ? points : points.slice(-seriesLimit);
 }
 
-async function fetchYahooChartResult(symbol) {
+async function fetchYahooChartResult(symbol, options = {}) {
+  const range = options.range ?? "1mo";
+  const interval = options.interval ?? "1d";
   const url =
     `${YAHOO_CHART_BASE_URL}/${encodeURIComponent(symbol)}` +
-    "?interval=1d&range=1mo&includePrePost=false&events=div%2Csplits";
+    `?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(
+      range
+    )}&includePrePost=false&events=div%2Csplits`;
   const payload = await fetchJson(
     url,
     {
@@ -318,13 +395,15 @@ async function fetchYahooChartResult(symbol) {
   return result;
 }
 
-async function fetchLiveQuote(config) {
+async function fetchLiveQuote(config, options = {}) {
   let selectedSymbol = "";
   let result = null;
+  const seriesLimit =
+    Object.prototype.hasOwnProperty.call(options, "seriesLimit") ? options.seriesLimit : 22;
 
   for (const candidate of config.symbolCandidates) {
     try {
-      result = await fetchYahooChartResult(candidate);
+      result = await fetchYahooChartResult(candidate, options);
       selectedSymbol = candidate;
       break;
     } catch {
@@ -341,7 +420,7 @@ async function fetchLiveQuote(config) {
   const closes = Array.isArray(result?.indicators?.quote?.[0]?.close)
     ? result.indicators.quote[0].close
     : [];
-  const series = buildSeriesFromYahoo(timestamps, closes);
+  const series = buildSeriesFromYahoo(timestamps, closes, seriesLimit);
   const priceCandidate = Number(meta.regularMarketPrice);
   const lastClose = lastFiniteValue(closes);
   const price = Number.isFinite(priceCandidate) ? priceCandidate : lastClose;
@@ -378,6 +457,23 @@ async function fetchLiveQuote(config) {
   };
 }
 
+function getLiveQuoteConfigById(quoteId) {
+  return getLiveQuoteConfigs().find((config) => config.id === quoteId) ?? null;
+}
+
+async function getLiveQuoteHistory(quoteId, presetId = "3m") {
+  const config = getLiveQuoteConfigById(quoteId);
+  if (!config) {
+    throw new Error(`Unknown live quote: ${quoteId}`);
+  }
+
+  const preset = QUOTE_RANGE_PRESETS[presetId] ?? QUOTE_RANGE_PRESETS["3m"];
+
+  return withCache(`quote:${quoteId}:${presetId}`, QUOTE_CACHE_TTL_MS, () =>
+    fetchLiveQuote(config, preset)
+  );
+}
+
 function makeErrorQuote(config, error) {
   return {
     id: config.id,
@@ -404,254 +500,292 @@ function makeErrorQuote(config, error) {
 
 async function runQuoteTask(config) {
   try {
-    return await fetchLiveQuote(config);
+    return await withCache(`quote:${config.id}`, QUOTE_CACHE_TTL_MS, () =>
+      fetchLiveQuote(config)
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return makeErrorQuote(config, message);
   }
 }
 
-async function getKrxOtp(name, bld) {
-  const params = new URLSearchParams({ name, bld });
-  const response = await fetchText(`${KRX_OTP_URL}?${params.toString()}`, {
-    headers: DEFAULT_HEADERS
-  });
-
-  return response.trim();
-}
-
-async function postKrxForm(formData) {
-  const body = new URLSearchParams();
-  Object.entries(formData).forEach(([key, value]) => {
-    body.append(key, value);
-  });
-
-  const response = await fetchText(
-    KRX_DATA_URL,
-    {
-      method: "POST",
-      headers: {
-        ...DEFAULT_HEADERS,
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-        origin: "https://ets.krx.co.kr",
-        referer: KRX_MARKET_PAGE_URL
+async function fetchKrxApiRowsByDate(compactDate) {
+  return withCache(`krx-day:${compactDate}`, KRX_DAY_CACHE_TTL_MS, async () => {
+    const url = `${KRX_SAMPLE_API_URL}?basDd=${compactDate}`;
+    const payload = await fetchJson(
+      url,
+      {
+        headers: {
+          ...DEFAULT_HEADERS,
+          accept: "application/json,text/plain,*/*",
+          AUTH_KEY: KRX_SAMPLE_AUTH_KEY
+        }
       },
-      body
-    },
-    15000
-  );
+      15000
+    );
 
-  return JSON.parse(response);
+    return Array.isArray(payload?.OutBlock_1) ? payload.OutBlock_1 : [];
+  });
 }
 
-function chooseActiveKrxInstrument(items) {
-  const currentYearSuffix = Number(String(new Date().getFullYear()).slice(-2));
-  const allowanceItems = items
-    .filter((item) => /^KAU\d{2}$/.test(item.isu_abbrv))
-    .map((item) => ({
-      ...item,
-      year: Number(item.isu_abbrv.slice(-2))
+function chooseActiveKrxApiInstrument(rows) {
+  const allowances = rows
+    .filter((row) => /^KAU\d{2}$/.test(normalizeWhitespace(row.ISU_NM)))
+    .map((row) => ({
+      code: normalizeWhitespace(row.ISU_CD),
+      name: normalizeWhitespace(row.ISU_NM),
+      close: parseNumeric(row.TDD_CLSPRC),
+      change: parseNumeric(row.CMPPREVDD_PRC),
+      returnPct: parseNumeric(row.FLUC_RT),
+      open: parseNumeric(row.TDD_OPNPRC),
+      high: parseNumeric(row.TDD_HGPRC),
+      low: parseNumeric(row.TDD_LWPRC),
+      volume: parseNumeric(row.ACC_TRDVOL) ?? 0,
+      value: parseNumeric(row.ACC_TRDVAL) ?? 0,
+      year: Number(normalizeWhitespace(row.ISU_NM).slice(-2))
     }))
-    .sort((left, right) => left.year - right.year);
+    .sort((left, right) => {
+      if (right.volume !== left.volume) {
+        return right.volume - left.volume;
+      }
 
-  return (
-    allowanceItems.find((item) => item.year >= currentYearSuffix) ??
-    allowanceItems[0] ??
-    items.find((item) => item.isu_cd && item.isu_abbrv !== "ALL") ??
-    null
-  );
+      return right.year - left.year;
+    });
+
+  return allowances[0] ?? null;
 }
 
-async function fetchEuEtsCard() {
-  const candidateYears = [new Date().getFullYear(), new Date().getFullYear() - 1];
-  let workbookBuffer = null;
-  let directDataUrl = "";
+async function fetchLatestKrxTradingSnapshot() {
+  const today = new Date();
 
-  for (const year of candidateYears) {
-    const candidateUrl =
-      "https://public.eex-group.com/eex/eua-auction-report/" +
-      `emission-spot-primary-market-auction-report-${year}-data.xlsx`;
+  for (let offset = 0; offset < 10; offset += 1) {
+    const candidateDate = new Date(today);
+    candidateDate.setDate(today.getDate() - offset);
+    const compactDate = toCompactDate(candidateDate);
+    const rows = await fetchKrxApiRowsByDate(compactDate);
 
-    try {
-      workbookBuffer = await fetchBuffer(candidateUrl, {
-        headers: DEFAULT_HEADERS
-      });
-      directDataUrl = candidateUrl;
-      break;
-    } catch (error) {
-      if (year === candidateYears[candidateYears.length - 1]) {
-        throw error;
-      }
+    if (rows.length > 0) {
+      return {
+        compactDate,
+        rows
+      };
     }
   }
 
-  const workbookReader = new ExcelJS.Workbook();
-  await workbookReader.xlsx.load(workbookBuffer);
-  const worksheet =
-    workbookReader.getWorksheet("Primary Market Auction") ??
-    workbookReader.worksheets[0];
-  const rows = [];
-  worksheet.eachRow({ includeEmpty: false }, (row) => {
-    rows.push(row.values.slice(2));
-  });
+  throw new Error("KRX sample API returned no recent ETS rows.");
+}
 
-  const dataRows = rows
-    .slice(5)
-    .map((row) => ({
-      date: parseDateValue(row[0]),
-      auctionName: normalizeWhitespace(row[2]),
-      contract: normalizeWhitespace(row[3]),
-      auctionPrice: row[5],
-      volume: row[10],
-      coverRatio: row[20],
-      revenue: row[23]
-    }))
-    .filter((row) => row.date && row.auctionName);
+async function fetchKrxHistorySeries(instrumentCode, asOfCompactDate) {
+  const asOfDate = parseDateValue(compactToIsoDate(asOfCompactDate));
+  const dateCandidates = [];
 
-  if (dataRows.length === 0) {
-    throw new Error("No EEX auction rows were found in the official workbook.");
+  for (let offset = 0; offset < 45; offset += 1) {
+    const candidateDate = new Date(asOfDate);
+    candidateDate.setDate(asOfDate.getDate() - offset);
+    dateCandidates.push(toCompactDate(candidateDate));
   }
 
-  dataRows.sort((left, right) => right.date - left.date);
-  const latest = dataRows[0];
-  const previous = dataRows[1] ?? latest;
-  const priceDelta = Number(latest.auctionPrice) - Number(previous.auctionPrice);
-  const recentSeries = dataRows
-    .slice()
-    .sort((left, right) => left.date - right.date)
-    .slice(-14)
-    .map((row) => ({
-      date: toIsoDate(row.date),
-      value: Number(row.auctionPrice),
-      volume: Number(row.volume)
-    }));
+  const dayRows = await Promise.all(dateCandidates.map((date) => fetchKrxApiRowsByDate(date)));
 
-  return {
-    id: "eu-ets-official",
-    marketId: "eu-ets",
-    sourceName: "EEX EUA auction report",
-    coverage: "Official EU primary auction tape",
-    sourceUrl: EEX_AUCTION_PAGE_URL,
-    status: "connected",
-    asOf: toIsoDate(latest.date),
-    headline: latest.auctionName,
-    summary: `Latest official primary auction cleared at EUR ${formatNumber(
-      latest.auctionPrice
-    )}/tCO2.`,
-    metrics: [
-      { label: "Auction price", value: `EUR ${formatNumber(latest.auctionPrice)}/tCO2` },
-      { label: "Auction volume", value: `${formatNumber(latest.volume, 0)} tCO2` },
-      { label: "Cover ratio", value: `${formatNumber(latest.coverRatio)}x` },
-      { label: "Auction revenue", value: `EUR ${formatNumber(latest.revenue, 0)}` },
-      {
-        label: "Price change vs prior auction",
-        value: `${priceDelta >= 0 ? "+" : ""}${formatNumber(priceDelta)} EUR/tCO2`
+  return dayRows
+    .map((rows, index) => {
+      const matchedRow = rows.find(
+        (row) => normalizeWhitespace(row.ISU_CD) === instrumentCode
+      );
+
+      if (!matchedRow) {
+        return null;
       }
-    ],
-    notes: [
-      "This official feed covers primary auctions. It does not replace ICE secondary-market futures data."
-    ],
-    series: recentSeries,
-    seriesLabel: "Auction price",
-    volumeSeries: recentSeries.map((point) => ({
-      date: point.date,
-      value: point.volume ?? 0
-    })),
-    links: makeLinks(
-      { label: "EEX auction page", url: EEX_AUCTION_PAGE_URL },
-      { label: "Direct auction workbook", url: directDataUrl }
-    )
-  };
+
+      const close = parseNumeric(matchedRow.TDD_CLSPRC);
+      if (!Number.isFinite(close)) {
+        return null;
+      }
+
+      return {
+        date: compactToIsoDate(dateCandidates[index]),
+        value: close,
+        volume: parseNumeric(matchedRow.ACC_TRDVOL) ?? 0
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => new Date(left.date) - new Date(right.date))
+    .slice(-24);
+}
+
+async function fetchEuEtsCard() {
+  return withCache("card:eu-ets-official", EU_CARD_CACHE_TTL_MS, async () => {
+    const candidateYears = [new Date().getFullYear(), new Date().getFullYear() - 1];
+    let workbookBuffer = null;
+    let directDataUrl = "";
+
+    for (const year of candidateYears) {
+      const candidateUrl =
+        "https://public.eex-group.com/eex/eua-auction-report/" +
+        `emission-spot-primary-market-auction-report-${year}-data.xlsx`;
+
+      try {
+        workbookBuffer = await fetchBuffer(candidateUrl, {
+          headers: DEFAULT_HEADERS
+        });
+        directDataUrl = candidateUrl;
+        break;
+      } catch (error) {
+        if (year === candidateYears[candidateYears.length - 1]) {
+          throw error;
+        }
+      }
+    }
+
+    const workbookReader = new ExcelJS.Workbook();
+    await workbookReader.xlsx.load(workbookBuffer);
+    const worksheet =
+      workbookReader.getWorksheet("Primary Market Auction") ??
+      workbookReader.worksheets[0];
+    const rows = [];
+    worksheet.eachRow({ includeEmpty: false }, (row) => {
+      rows.push(row.values.slice(2));
+    });
+
+    const dataRows = rows
+      .slice(5)
+      .map((row) => ({
+        date: parseDateValue(row[0]),
+        auctionName: normalizeWhitespace(row[2]),
+        contract: normalizeWhitespace(row[3]),
+        auctionPrice: row[5],
+        volume: row[10],
+        coverRatio: row[20],
+        revenue: row[23]
+      }))
+      .filter((row) => row.date && row.auctionName);
+
+    if (dataRows.length === 0) {
+      throw new Error("No EEX auction rows were found in the official workbook.");
+    }
+
+    dataRows.sort((left, right) => right.date - left.date);
+    const latest = dataRows[0];
+    const previous = dataRows[1] ?? latest;
+    const priceDelta = Number(latest.auctionPrice) - Number(previous.auctionPrice);
+    const recentSeries = dataRows
+      .slice()
+      .sort((left, right) => left.date - right.date)
+      .slice(-14)
+      .map((row) => ({
+        date: toIsoDate(row.date),
+        value: Number(row.auctionPrice),
+        volume: Number(row.volume)
+      }));
+
+    return {
+      id: "eu-ets-official",
+      marketId: "eu-ets",
+      sourceName: "EEX EUA auction report",
+      coverage: "Official EU primary auction tape",
+      sourceUrl: EEX_AUCTION_PAGE_URL,
+      status: "connected",
+      asOf: toIsoDate(latest.date),
+      headline: latest.auctionName,
+      summary: `Latest official primary auction cleared at EUR ${formatNumber(
+        latest.auctionPrice
+      )}/tCO2.`,
+      metrics: [
+        { label: "Auction price", value: `EUR ${formatNumber(latest.auctionPrice)}/tCO2` },
+        { label: "Auction volume", value: `${formatNumber(latest.volume, 0)} tCO2` },
+        { label: "Cover ratio", value: `${formatNumber(latest.coverRatio)}x` },
+        { label: "Auction revenue", value: `EUR ${formatNumber(latest.revenue, 0)}` },
+        {
+          label: "Price change vs prior auction",
+          value: `${priceDelta >= 0 ? "+" : ""}${formatNumber(priceDelta)} EUR/tCO2`
+        }
+      ],
+      notes: [
+        "This official feed covers primary auctions. It does not replace ICE secondary-market futures data."
+      ],
+      series: recentSeries,
+      seriesLabel: "Auction price",
+      volumeSeries: recentSeries.map((point) => ({
+        date: point.date,
+        value: point.volume ?? 0
+      })),
+      links: makeLinks(
+        { label: "EEX auction page", url: EEX_AUCTION_PAGE_URL },
+        { label: "Direct auction workbook", url: directDataUrl }
+      )
+    };
+  });
 }
 
 async function fetchKrxCard() {
-  const instrumentCode = await getKrxOtp("selectbox", "COM/ets_itemSearch2");
-  const instrumentPayload = await postKrxForm({ code: instrumentCode });
-  const instruments = firstArrayValue(instrumentPayload);
-  const activeInstrument = chooseActiveKrxInstrument(instruments);
+  return withCache("card:k-ets-official", KRX_CARD_CACHE_TTL_MS, async () => {
+    const latestSnapshot = await fetchLatestKrxTradingSnapshot();
+    const activeInstrument = chooseActiveKrxApiInstrument(latestSnapshot.rows);
 
-  if (!activeInstrument) {
-    throw new Error("KRX did not return an active KAU instrument.");
-  }
+    if (!activeInstrument) {
+      throw new Error("KRX sample API did not return an active KAU instrument.");
+    }
 
-  const today = new Date();
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(today.getDate() - 35);
+    const recentSeries = await fetchKrxHistorySeries(
+      activeInstrument.code,
+      latestSnapshot.compactDate
+    );
 
-  const currentCode = await getKrxOtp(
-    "tablesubmit",
-    "ETS/03/03010000/ets03010000_04"
-  );
-  const currentPayload = await postKrxForm({
-    code: currentCode,
-    bldcode: "ETS/03/03010000/ets03010000_04",
-    isu_cd: activeInstrument.isu_cd,
-    fromdate: toCompactDate(today),
-    todate: toCompactDate(today)
+    if (recentSeries.length === 0) {
+      throw new Error("KRX sample API returned no recent series for the active allowance.");
+    }
+
+    const recentVolumes = recentSeries
+      .map((point) => point.volume ?? 0)
+      .filter((value) => Number.isFinite(value))
+      .slice(-20);
+    const averageVolume =
+      recentVolumes.length > 0
+        ? recentVolumes.reduce((sum, value) => sum + value, 0) / recentVolumes.length
+        : 0;
+    const latestPoint = recentSeries[recentSeries.length - 1];
+
+    return {
+      id: "k-ets-official",
+      marketId: "k-ets",
+      sourceName: "KRX ETS sample API",
+      coverage: "Official KRX Open API sample (daily market tape)",
+      sourceUrl: KRX_OPEN_API_DETAIL_URL,
+      status: "connected",
+      asOf: compactToIsoDate(latestSnapshot.compactDate),
+      headline: `${activeInstrument.name} official close`,
+      summary: `Official KRX sample API data for ${activeInstrument.name} on ${compactToIsoDate(
+        latestSnapshot.compactDate
+      )}.`,
+      metrics: [
+        { label: "Close", value: `KRW ${formatNumber(activeInstrument.close, 0)}` },
+        {
+          label: "Day change",
+          value: `${activeInstrument.change >= 0 ? "+" : ""}${formatNumber(
+            activeInstrument.change,
+            0
+          )} KRW`
+        },
+        { label: "Return", value: `${formatNumber(activeInstrument.returnPct, 2)}%` },
+        { label: "Volume", value: `${formatNumber(latestPoint.volume ?? 0, 0)} t` },
+        { label: "20d avg volume", value: `${formatNumber(averageVolume, 0)} t` }
+      ],
+      notes: [
+        "This uses the official KRX Open API sample endpoint published on the service detail page.",
+        "Daily market tape only. Zero-volume rows are preserved as official records."
+      ],
+      series: recentSeries,
+      seriesLabel: "Official close",
+      volumeSeries: recentSeries.map((point) => ({
+        date: point.date,
+        value: point.volume ?? 0
+      })),
+      links: makeLinks(
+        { label: "KRX Open API detail", url: KRX_OPEN_API_DETAIL_URL },
+        { label: "KRX ETS market page", url: KRX_MARKET_PAGE_URL }
+      )
+    };
   });
-  const currentRows = firstArrayValue(currentPayload);
-  const current = currentRows[0];
-
-  const historyCode = await getKrxOtp("grid", "ETS/03/03010000/ets03010000_05");
-  const historyPayload = await postKrxForm({
-    code: historyCode,
-    gNo: "d3d9446802a44259755d38e6d163e820",
-    isu_cd: activeInstrument.isu_cd,
-    fromdate: toCompactDate(thirtyDaysAgo),
-    todate: toCompactDate(today)
-  });
-  const history = firstArrayValue(historyPayload);
-
-  if (!current || history.length === 0) {
-    throw new Error("KRX returned no price rows for the selected allowance.");
-  }
-
-  const recentVolumes = history
-    .slice(0, 20)
-    .map((row) => Number(String(row.acc_trdvol ?? "0").replace(/,/g, "")))
-    .filter((value) => Number.isFinite(value));
-  const averageVolume =
-    recentVolumes.length > 0
-      ? recentVolumes.reduce((sum, value) => sum + value, 0) / recentVolumes.length
-      : 0;
-  const recentSeries = history
-    .map((row) => ({
-      date: normalizeWhitespace(row.trd_dd).replace(/\./g, "-"),
-      value: Number(String(row.tdd_clsprc ?? "0").replace(/,/g, "")),
-      volume: Number(String(row.acc_trdvol ?? "0").replace(/,/g, ""))
-    }))
-    .filter((row) => Number.isFinite(row.value))
-    .sort((left, right) => new Date(left.date) - new Date(right.date))
-    .slice(-24);
-
-  return {
-    id: "k-ets-official",
-    marketId: "k-ets",
-    sourceName: "KRX ETS market tape",
-    coverage: "Official KRX market price and volume",
-    sourceUrl: KRX_MARKET_PAGE_URL,
-    status: "connected",
-    asOf: history[0].trd_dd,
-    headline: `${current.isu_cd} official close`,
-    summary: `KRX official screen data for ${current.isu_cd} on ${history[0].trd_dd}.`,
-    metrics: [
-      { label: "Close", value: `KRW ${current.tdd_clsprc}` },
-      { label: "Day change", value: `${current.cmpprevdd_prc} KRW` },
-      { label: "Return", value: `${current.fluc_rt}%` },
-      { label: "Volume", value: `${history[0].acc_trdvol} t` },
-      { label: "20d avg volume", value: `${formatNumber(averageVolume, 0)} t` }
-    ],
-    notes: [
-      "KRX returns valid zero-volume rows on inactive trading days. The app surfaces the official value without backfilling."
-    ],
-    series: recentSeries,
-    seriesLabel: "Official close",
-    volumeSeries: recentSeries.map((point) => ({
-      date: point.date,
-      value: point.volume ?? 0
-    })),
-    links: makeLinks({ label: "KRX market page", url: KRX_MARKET_PAGE_URL })
-  };
 }
 
 function parseMeeListEntries(html) {
@@ -703,6 +837,7 @@ function extractMeeOperationalMetrics(html) {
 }
 
 async function fetchCnEtsCard() {
+  return withCache("card:cn-ets-official", CN_CARD_CACHE_TTL_MS, async () => {
   const listHtml = await fetchText(MEE_LIST_URL, {
     headers: DEFAULT_HEADERS
   });
@@ -770,6 +905,7 @@ async function fetchCnEtsCard() {
         : [])
     )
   };
+  });
 }
 
 async function runSourceTask(task, fallbackConfig) {
@@ -796,9 +932,9 @@ async function getConnectedSources() {
     runSourceTask(fetchKrxCard, {
       id: "k-ets-official",
       marketId: "k-ets",
-      sourceName: "KRX ETS market tape",
-      sourceUrl: KRX_MARKET_PAGE_URL,
-      coverage: "Official KRX market price and volume"
+      sourceName: "KRX ETS sample API",
+      sourceUrl: KRX_OPEN_API_DETAIL_URL,
+      coverage: "Official KRX Open API sample (daily market tape)"
     }),
     runSourceTask(fetchCnEtsCard, {
       id: "cn-ets-official",
@@ -826,5 +962,6 @@ async function getConnectedSources() {
 }
 
 module.exports = {
-  getConnectedSources
+  getConnectedSources,
+  getLiveQuoteHistory
 };

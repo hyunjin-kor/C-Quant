@@ -14,6 +14,7 @@ It does not place trades.
 
 - Shows official market prices first when available
 - Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
+- Reloads linked tapes inside the desktop app through API calls and lets you switch chart windows from `5D` to `1Y`
 - Compares EU ETS, K-ETS, and China ETS on one screen
 - Shows overlap stats between the official tape and linked tapes, including gap, recent move, correlation, and direction match
 - Ranks linked tapes on a scoreboard so you can see which futures or proxies are tracking the official market best
@@ -30,7 +31,28 @@ The app is built to work even if you do not want to pay for data.
 - `Sources` now includes a `Free sources only` toggle
 - Official web pages, official files, and public APIs are treated as the main path
 - Commercial APIs are labeled clearly as paid options
-- Yahoo pages are reference-only watch links, not core decision data
+- Public chart API tapes are pulled into the app directly instead of opening quote pages
+
+## Live Data Layer
+
+- `EU ETS official`
+  - official EEX primary auction workbook and auction page
+  - used as the official anchor for EU carbon
+- `K-ETS official`
+  - official KRX Open API sample endpoint for `ets_bydd_trd`
+  - used for daily close and volume history
+- `China ETS official`
+  - official MEE carbon-market release feed
+  - used for bulletin and operating-statistics coverage when available
+- `Linked live tapes in app`
+  - public chart API pulls for ICE EUA benchmark futures, TTF gas, Brent, KRBN, KEUA, CO2.L, and KCCA
+  - these are shown inside the desktop app as linked futures or proxy tapes, not as official local settlements
+
+## Truth Boundary
+
+- If an official public API is not confirmed, the app labels the source as an official web flow or official file instead of pretending it is an API.
+- If a listed tape is only available as a public chart feed, the app labels it as a linked tape or proxy and keeps the official carbon source separate.
+- China ETS daily exchange pages can be rate-limited or blocked in some environments, so the official China layer remains bulletin-first unless a stable official feed is reachable.
 
 ## Main Screens
 
