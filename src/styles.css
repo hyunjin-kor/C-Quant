@@ -584,6 +584,133 @@ textarea {
   gap: 0.9rem;
 }
 
+.tape-scoreboard {
+  display: grid;
+  gap: 0.8rem;
+  padding-top: 0.5rem;
+}
+
+.tape-scoreboard-head {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.tape-scoreboard-head strong {
+  color: var(--text-strong);
+  font-size: 0.92rem;
+}
+
+.tape-scoreboard-head span {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.tape-score-table {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.tape-score-header,
+.tape-score-row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.25fr)
+    minmax(108px, 0.9fr)
+    minmax(110px, 0.95fr)
+    minmax(90px, 0.8fr)
+    minmax(90px, 0.82fr)
+    minmax(70px, 0.62fr)
+    minmax(98px, 0.8fr);
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.tape-score-header {
+  padding: 0 0.2rem;
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tape-score-row {
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(130, 146, 182, 0.12);
+  background: rgba(255, 255, 255, 0.76);
+  text-align: left;
+}
+
+.tape-score-row.active {
+  border-color: rgba(47, 123, 246, 0.26);
+  box-shadow: 0 16px 32px rgba(47, 123, 246, 0.08);
+}
+
+.tape-score-row strong {
+  display: block;
+  color: var(--text-strong);
+  font-size: 0.86rem;
+}
+
+.tape-score-row small,
+.tape-score-row span {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.alignment-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.alignment-pill.positive {
+  background: rgba(34, 199, 122, 0.12);
+  color: #108350;
+}
+
+.alignment-pill.neutral {
+  background: rgba(47, 123, 246, 0.12);
+  color: #205fbe;
+}
+
+.alignment-pill.negative {
+  background: rgba(255, 111, 97, 0.12);
+  color: #b44337;
+}
+
+@media (max-width: 1280px) {
+  .tape-score-header,
+  .tape-score-row {
+    grid-template-columns:
+      minmax(180px, 1.25fr)
+      minmax(108px, 0.9fr)
+      minmax(110px, 0.95fr)
+      minmax(90px, 0.8fr);
+  }
+
+  .tape-score-header span:nth-child(n + 5),
+  .tape-score-row > *:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .tape-score-header {
+    display: none;
+  }
+
+  .tape-score-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.32rem;
+  }
+}
+
 .operator-desk {
   display: grid;
   gap: 0.8rem;

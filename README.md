@@ -16,6 +16,7 @@ It does not place trades.
 - Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
 - Compares EU ETS, K-ETS, and China ETS on one screen
 - Shows overlap stats between the official tape and linked tapes, including gap, recent move, correlation, and direction match
+- Ranks linked tapes on a scoreboard so you can see which futures or proxies are tracking the official market best
 - Adds an institution-style checklist for what to confirm before leaning buy, reduce, or hold
 - Explains what is moving carbon prices
 - Summarizes the current market tone with a rule-based decision layer

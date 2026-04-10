@@ -182,6 +182,13 @@ type OperatorDeskConfig = {
   invalidationChecks: string[];
 };
 
+type LinkedTapeScoreRow = {
+  quote: MarketLiveQuote;
+  stats: TapeCompareStats;
+  alignmentLabel: string;
+  alignmentTone: "positive" | "neutral" | "negative";
+};
+
 const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
   { id: "overview", ko: "한눈에 보기", en: "Overview" },
   { id: "signals", ko: "지금 판단", en: "Decision" },
@@ -1063,6 +1070,38 @@ function formatOverlapWindow(locale: AppLocale, overlapCount: number) {
     return t(locale, "겹침 없음", "No overlap");
   }
   return locale === "ko" ? `${overlapCount}일` : `${overlapCount} days`;
+}
+
+function getTapeAlignment(locale: AppLocale, stats: TapeCompareStats) {
+  if (stats.overlapCount < 2) {
+    return {
+      label: t(locale, "보조 참고", "Context only"),
+      tone: "neutral" as const
+    };
+  }
+
+  const gap = Math.abs(stats.normalizedGapPct ?? 0);
+  const match = stats.directionMatchPct ?? 0;
+  const correlation = stats.recentCorrelation ?? 0;
+
+  if (match >= 70 && correlation >= 0.6 && gap <= 5) {
+    return {
+      label: t(locale, "정합 양호", "Well aligned"),
+      tone: "positive" as const
+    };
+  }
+
+  if (match >= 50 && correlation >= 0.2 && gap <= 10) {
+    return {
+      label: t(locale, "부분 정합", "Mixed"),
+      tone: "neutral" as const
+    };
+  }
+
+  return {
+    label: t(locale, "정합 약함", "Weak"),
+    tone: "negative" as const
+  };
 }
 
 function localizeQuantIndicator(locale: AppLocale, indicator: (typeof quantIndicators)[number]) {
@@ -2021,11 +2060,21 @@ export default function App() {
   }, [freeOnlySources]);
 
   useEffect(() => {
-    if (selectedRelevantQuotes.some((quote) => quote.id === selectedLiveQuoteId)) {
+    const desk = getInstitutionDesk(appLocale, marketId);
+    const relevantQuotes = connectedSources.liveQuotes.filter(
+      (quote) => quote.markets.includes(marketId) || quote.markets.includes("shared")
+    );
+
+    if (relevantQuotes.some((quote) => quote.id === selectedLiveQuoteId)) {
       return;
     }
-    setSelectedLiveQuoteId(selectedDeskQuotes[0]?.id ?? selectedRelevantQuotes[0]?.id ?? "");
-  }, [marketId, selectedDeskQuotes, selectedLiveQuoteId, selectedRelevantQuotes]);
+
+    const preferredQuotes = [desk.primaryQuoteId, ...desk.supportQuoteIds]
+      .map((quoteId) => relevantQuotes.find((quote) => quote.id === quoteId))
+      .filter((quote): quote is MarketLiveQuote => Boolean(quote));
+
+    setSelectedLiveQuoteId(preferredQuotes[0]?.id ?? relevantQuotes[0]?.id ?? "");
+  }, [appLocale, connectedSources.liveQuotes, marketId, selectedLiveQuoteId]);
 
   useEffect(() => {
     const nextQuestion =
@@ -2179,6 +2228,32 @@ export default function App() {
   const selectedTapeCompareStats = useMemo(
     () => buildTapeCompareStats(localizedSelectedCard?.series, selectedInteractiveQuote?.series),
     [localizedSelectedCard?.series, selectedInteractiveQuote?.series]
+  );
+  const selectedLinkedScoreRows = useMemo<LinkedTapeScoreRow[]>(
+    () =>
+      selectedRelevantQuotes
+        .map((quote) => {
+        const stats = buildTapeCompareStats(localizedSelectedCard?.series, quote.series);
+        const alignment = getTapeAlignment(appLocale, stats);
+        return {
+          quote,
+          stats,
+          alignmentLabel: alignment.label,
+          alignmentTone: alignment.tone
+        };
+      })
+        .sort((left, right) => {
+          const leftScore =
+            (left.stats.directionMatchPct ?? 0) +
+            (left.stats.recentCorrelation ?? 0) * 100 -
+            Math.abs(left.stats.normalizedGapPct ?? 100);
+          const rightScore =
+            (right.stats.directionMatchPct ?? 0) +
+            (right.stats.recentCorrelation ?? 0) * 100 -
+            Math.abs(right.stats.normalizedGapPct ?? 100);
+          return rightScore - leftScore;
+        }),
+    [appLocale, localizedSelectedCard?.series, selectedRelevantQuotes]
   );
   const selectedTapeCompareSeries = useMemo<MultiLineSeries[]>(
     () => [
@@ -2896,6 +2971,12 @@ export default function App() {
                     compareStats={selectedTapeCompareStats}
                     compareSeries={selectedTapeCompareSeries}
                     onOpenSource={handleOpenExternal}
+                  />
+                  <LinkedTapeScoreboard
+                    locale={appLocale}
+                    rows={selectedLinkedScoreRows}
+                    selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
+                    onSelectQuote={setSelectedLiveQuoteId}
                   />
                 </div>
 
@@ -4100,6 +4181,66 @@ function LiveTapeWorkbench({
             </span>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LinkedTapeScoreboard({
+  locale,
+  rows,
+  selectedQuoteId,
+  onSelectQuote
+}: {
+  locale: AppLocale;
+  rows: LinkedTapeScoreRow[];
+  selectedQuoteId: string;
+  onSelectQuote: (quoteId: string) => void;
+}) {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="tape-scoreboard">
+      <div className="tape-scoreboard-head">
+        <strong>{t(locale, "연결 테이프 비교 보드", "Linked tape scoreboard")}</strong>
+        <span>
+          {t(
+            locale,
+            "공식 시세와 얼마나 같이 움직였는지 기준으로 연결 테이프를 고릅니다.",
+            "Use this board to pick the linked tape that is tracking the official market best."
+          )}
+        </span>
+      </div>
+      <div className="tape-score-table">
+        <div className="tape-score-header">
+          <span>{t(locale, "테이프", "Tape")}</span>
+          <span>{t(locale, "용도", "Use")}</span>
+          <span>{t(locale, "현재 값", "Current")}</span>
+          <span>{t(locale, "괴리", "Gap")}</span>
+          <span>{t(locale, "방향 일치", "Match")}</span>
+          <span>{t(locale, "상관", "Corr")}</span>
+          <span>{t(locale, "판정", "Read")}</span>
+        </div>
+        {rows.map((row) => (
+          <button
+            key={row.quote.id}
+            className={`tape-score-row ${row.quote.id === selectedQuoteId ? "active" : ""}`}
+            onClick={() => onSelectQuote(row.quote.id)}
+          >
+            <div>
+              <strong>{row.quote.title}</strong>
+              <small>{row.quote.symbol}</small>
+            </div>
+            <span>{localizeLiveQuoteCategory(locale, row.quote.category)}</span>
+            <span>{formatLiveQuotePrice(locale, row.quote)}</span>
+            <span>{formatPercentStat(locale, row.stats.normalizedGapPct, 1, true)}</span>
+            <span>{formatPercentStat(locale, row.stats.directionMatchPct, 0)}</span>
+            <span>{formatPlainStat(locale, row.stats.recentCorrelation, 2)}</span>
+            <span className={`alignment-pill ${row.alignmentTone}`}>{row.alignmentLabel}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
