@@ -27,6 +27,23 @@ It does not place trades.
 - Lets you run local backtests and walk-forward model checks
 - Keeps the main workflow inside the desktop app and leaves external pages as secondary source references only
 
+## Open-Source Benchmark Map
+
+C-Quant now keeps an explicit benchmark map for the open-source systems it borrows from.
+
+- Registry and audit patterns from `hyperledger-labs/blockchain-carbon-accounting`
+- Credit lifecycle visibility from `CarbonScribe/carbon-scribe`
+- Token-market structure concepts from `CarbonCreditProject/Carbon-Project`
+- Phase-aware factor research from `SaveChris/Inf-Imb-for-EUA23`
+- Registry ingestion patterns from `yc-wang00/verra-scaper`
+- Nature-credit risk overlays from `carbonplan/forest-risks`
+- Multi-objective portfolio framing from `hgribeirogeo/qaoa-carbon-cerrado`
+- Macro scenario logic from `JGCRI/gcam-core`
+
+The product adapts those patterns into a read-only decision workflow and excludes order execution, token issuance, AMM logic, and retirement transactions.
+
+See [docs/open-source-benchmark-map.md](docs/open-source-benchmark-map.md).
+
 ## Free-Source-First
 
 The app is built to work even if you do not want to pay for data.
@@ -87,7 +104,8 @@ The app is built to work even if you do not want to pay for data.
 - This is a research and monitoring tool, not a broker.
 - Yahoo Finance data can be delayed depending on the exchange, so it is shown as a reference source only.
 - Local ETS futures are not added unless a verified free feed is available; where needed, the app labels listed proxies explicitly as proxies.
-- The AI brief is optional and runs only when an OpenAI API key is saved in the desktop app.
+- The AI layer is a carbon-market copilot and runs only when an OpenAI API key is saved in the desktop app.
+- The copilot is designed to explain posture, contrary evidence, missing data, and next checks. It is not allowed to fabricate official facts or behave like an execution assistant.
 - The walk-forward model uses local Python and requires `pandas`, `numpy`, and `scikit-learn`.
 
 ## Run

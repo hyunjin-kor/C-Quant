@@ -1590,6 +1590,30 @@ textarea {
   font-size: 0.84rem;
 }
 
+.benchmark-item-detailed {
+  padding-bottom: 1rem;
+}
+
+.benchmark-detail {
+  display: grid;
+  gap: 0.16rem;
+  margin-top: 0.55rem;
+}
+
+.benchmark-detail span {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.benchmark-detail small {
+  color: var(--text-strong);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .feed-item.positive {
   border-bottom-color: rgba(34, 199, 122, 0.24);
 }

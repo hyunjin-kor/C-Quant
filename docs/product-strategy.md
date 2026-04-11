@@ -21,7 +21,7 @@ The product is not a brokerage product and does not execute orders.
 - Premium value comes from trustworthy information, saved workspaces, alerts, and briefings.
 - Any model output must remain a research overlay, not individualized trading advice.
 
-## Benchmark Stack
+## Product Benchmark Stack
 
 These are the current official product pages or product-owned pages used as benchmark anchors on 2026-04-09.
 
@@ -31,6 +31,37 @@ These are the current official product pages or product-owned pages used as benc
 - Carbon Pulse: [https://carbon-pulse.com/](https://carbon-pulse.com/)
 - Sylvera: [https://www.sylvera.com/](https://www.sylvera.com/)
 - ClearBlue Vantage Position Optimization: [https://www.clearbluemarkets.com/news/introducing-vantage-position-optimization-enhancing-carbon-market-management](https://www.clearbluemarkets.com/news/introducing-vantage-position-optimization-enhancing-carbon-market-management)
+
+## Open-Source Benchmark Stack
+
+These repositories are now benchmarked as implementation references, but only inside the C-Quant product boundary.
+
+- `hyperledger-labs/blockchain-carbon-accounting`
+  - Keep: provenance, verification workflow, supply-chain accounting patterns.
+  - Exclude: token issuance, DAO governance, settlement rails.
+- `CarbonScribe/carbon-scribe`
+  - Keep: issuance-to-retirement lifecycle visibility.
+  - Exclude: purchase and retirement execution.
+- `CarbonCreditProject/Carbon-Project`
+  - Keep: lifecycle-state and liquidity-monitor concepts.
+  - Exclude: AMM, DEX, ERC-20, NFT issuance.
+- `SaveChris/Inf-Imb-for-EUA23`
+  - Keep: phase-aware factor ranking, weekly time-scale discipline, research-grade variable selection.
+  - Exclude: treating academic outputs as live executable price targets.
+- `yc-wang00/verra-scaper`
+  - Keep: registry metadata and document ingestion pipeline.
+  - Exclude: any implied endorsement of scraped projects.
+- `carbonplan/forest-risks`
+  - Keep: project integrity and hazard-risk overlays.
+  - Exclude: naive geographic over-generalization.
+- `hgribeirogeo/qaoa-carbon-cerrado`
+  - Keep: multi-objective portfolio optimization framing.
+  - Exclude: quantum hardware as a product dependency.
+- `JGCRI/gcam-core`
+  - Keep: long-horizon macro and policy scenario logic.
+  - Exclude: using long-cycle scenarios as short-term trade signals.
+
+Detailed adaptation notes live in [open-source-benchmark-map.md](./open-source-benchmark-map.md).
 
 ## Benchmark To Product Map
 
@@ -79,12 +110,25 @@ The app now centers charts before text.
    - Watchlists and proxy links
    - Trust principles and subscription value
 
-## LLM Layer
+## Carbon Market Copilot
 
-- The LLM is optional and lives above the deterministic research engine.
+- The LLM should be a carbon-market copilot, not a generic chatbot.
 - The app always computes a local rule-based posture first.
-- The LLM receives only the selected market's official card, factor-family scores, alerts, catalysts, and quant-indicator context.
-- The prompt explicitly forbids inventing prices or regulations and frames the output as decision support, not trade intermediation.
+- The LLM should receive only grounded inputs:
+  - official market cards
+  - linked futures and proxy tapes
+  - factor-family scores
+  - alerts and catalysts
+  - registry freshness and project evidence
+  - project integrity overlays
+  - portfolio sleeve constraints
+- The output should remain inside decision-support boundaries:
+  - support case
+  - contrary case
+  - missing-data warning
+  - next checks by role
+  - scenario summary
+- The prompt must forbid invented prices, policies, registry facts, and individualized execution language.
 - The API key is stored in the Electron user-data directory, not in the renderer bundle.
 
 ## Autonomous Build Plan

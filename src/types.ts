@@ -51,6 +51,17 @@ export type BenchmarkPlatform = {
   implementedAs?: string[];
 };
 
+export type OpenSourceBenchmark = {
+  id: string;
+  name: string;
+  category: string;
+  verifiedCapability: string;
+  adaptForCQuant: string;
+  boundaryNote: string;
+  llmUse: string;
+  source: SourceLink;
+};
+
 export type DataColumnSpec = {
   name: string;
   required: boolean;

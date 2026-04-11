@@ -28,6 +28,7 @@ import {
   watchViewPresets,
   watchlistPresets
 } from "./data/experience";
+import { openSourceBenchmarks } from "./data/openSourceBenchmarks";
 import {
   localeOptions,
   type AppLocale,
@@ -39,6 +40,7 @@ import {
   localizeBenchmark,
   localizeCatalystWindow,
   localizeMarketWatchItem,
+  localizeOpenSourceBenchmark,
   localizeSourceRegistryItem,
   localizeSubscriptionFeature,
   localizeTrustPrinciple,
@@ -2528,6 +2530,10 @@ export default function App() {
     () => benchmarkPlatforms.map((item) => localizeBenchmark(item, appLocale)),
     [appLocale]
   );
+  const localizedOpenSourceBenchmarks = useMemo(
+    () => openSourceBenchmarks.map((item) => localizeOpenSourceBenchmark(item, appLocale)),
+    [appLocale]
+  );
   const localizedSubscription = useMemo(
     () => subscriptionFeatures.map((item) => localizeSubscriptionFeature(item, appLocale)),
     [appLocale]
@@ -4495,6 +4501,44 @@ export default function App() {
                         <strong>{item.name}</strong>
                         <span>{localizeLabel(appLocale, item.category, CATEGORY_LABELS_KO)}</span>
                         <p>{item.strength}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "오픈소스 벤치마크 맵", "Open-source benchmark map")}
+                    subtitle={t(
+                      appLocale,
+                      "무엇을 참고하고, 무엇은 제품 경계 때문에 제외하는지 분리합니다.",
+                      "Separate what C-Quant borrows from what it refuses to copy because of product boundary."
+                    )}
+                  />
+                  <div className="benchmark-list">
+                    {localizedOpenSourceBenchmarks.map((item) => (
+                      <button
+                        key={item.id}
+                        className="benchmark-item benchmark-item-detailed"
+                        onClick={() => void handleOpenExternal(item.source.url)}
+                      >
+                        <strong>{item.name}</strong>
+                        <span>{item.category}</span>
+                        <p>{item.verifiedCapability}</p>
+                        <div className="benchmark-detail">
+                          <span>{t(appLocale, "C-Quant 반영", "Adapt in C-Quant")}</span>
+                          <small>{item.adaptForCQuant}</small>
+                        </div>
+                        <div className="benchmark-detail">
+                          <span>{t(appLocale, "제외할 것", "Do not copy")}</span>
+                          <small>{item.boundaryNote}</small>
+                        </div>
+                        <div className="benchmark-detail">
+                          <span>{t(appLocale, "LLM 활용", "LLM use")}</span>
+                          <small>{item.llmUse}</small>
+                        </div>
                       </button>
                     ))}
                   </div>

@@ -5,6 +5,7 @@ import type {
   CatalystWindow,
   DriverImportance,
   MarketWatchItem,
+  OpenSourceBenchmark,
   SourceRegistryItem,
   SubscriptionFeature,
   TrustPrinciple,
@@ -509,6 +510,108 @@ const benchmarkCopy = {
   }
 } as const;
 
+const openSourceBenchmarkCopy = {
+  ko: {
+    "hyperledger-carbon-accounting": {
+      name: "hyperledger-labs/blockchain-carbon-accounting",
+      category: "레지스트리·감사 원장",
+      verifiedCapability:
+        "README 기준으로 permissioned ledger, 토큰화된 기후 자산, 검증 워크플로, 공급망 배출량 계산 구조를 확인했습니다.",
+      adaptForCQuant:
+        "C-Quant에서는 원장 자체가 아니라 출처 계보, 검증 상태, 크레딧 생애주기 추적 화면으로 변형해 씁니다.",
+      boundaryNote:
+        "토큰 발행, DAO 투표, 결제·정산 레일은 넣지 않습니다. C-Quant는 관찰과 증빙 소프트웨어에 머뭅니다.",
+      llmUse:
+        "LLM은 검증 누락, 증빙 충돌, 프로젝트 계보 공백을 설명하는 역할에만 씁니다."
+    },
+    "carbon-scribe": {
+      name: "CarbonScribe/carbon-scribe",
+      category: "크레딧 생애주기 플랫폼",
+      verifiedCapability:
+        "README 기준으로 Stellar 자산 발행과 retirement proof 중심의 end-to-end credit lifecycle 구조를 확인했습니다.",
+      adaptForCQuant:
+        "발행, 이력, 소각 증빙을 하나의 타임라인으로 보여주는 인텔리전스 화면에 참고합니다.",
+      boundaryNote:
+        "구매·소각 실행은 넣지 않습니다. 제가 확인한 자료 기준으로 pricing AI는 검증하지 못했으므로 제품 기능으로 가정하지 않습니다.",
+      llmUse:
+        "LLM은 생애주기 증빙이 충분한지, 문서가 비어 있는지 요약하는 데 씁니다."
+    },
+    "carbon-project": {
+      name: "CarbonCreditProject/Carbon-Project",
+      category: "토큰 시장 구조",
+      verifiedCapability:
+        "README 기준으로 ERC-20 mint/burn, validator 역할, NFT certificate, AMM 풀 구조를 확인했습니다.",
+      adaptForCQuant:
+        "발행, 검증, 유동성, 소각, 인증서 상태를 보여주는 시장 구조 모니터 개념만 가져옵니다.",
+      boundaryNote:
+        "AMM, DEX, ERC-20 발행, NFT 발행, 실제 거래 기능은 제품 경계를 넘기므로 제외합니다.",
+      llmUse:
+        "LLM은 유동성 상태와 소각 병목이 시장 신뢰에 어떤 영향을 주는지 설명하는 데 씁니다."
+    },
+    "inf-imb-eua23": {
+      name: "SaveChris/Inf-Imb-for-EUA23",
+      category: "가격 결정 요인 연구",
+      verifiedCapability:
+        "README 기준으로 Information Imbalance 기반 EUA 가격 결정 요인 분석, 주간 시계열 선택, Gaussian Process 예측 구조를 확인했습니다.",
+      adaptForCQuant:
+        "시장 국면별 상위 변수 랭킹, 정보량이 큰 변수 선별, 연구 검증 화면의 기준으로 씁니다.",
+      boundaryNote:
+        "논문 결과를 실시간 목표가처럼 보여주지 않습니다. 팩터 선택과 연구 검증 기준으로만 씁니다.",
+      llmUse:
+        "LLM은 팩터 랭킹을 쉬운 언어의 매수·보류·감시 이유로 번역하는 데 씁니다."
+    },
+    "verra-scaper": {
+      name: "yc-wang00/verra-scaper",
+      category: "레지스트리 수집 파이프라인",
+      verifiedCapability:
+        "README 기준으로 Verra VCS summary data, metadata, PDF link 수집 기능을 확인했습니다.",
+      adaptForCQuant:
+        "프로젝트 도시에, 문서 패킷, 자료 최신성 점검, 출처 정규화 파이프라인에 참고합니다.",
+      boundaryNote:
+        "문서 수집과 메타데이터 정리에 한정합니다. 프로젝트 보증이나 토큰 발행 의미를 부여하지 않습니다.",
+      llmUse:
+        "LLM은 프로젝트 문서를 요약하고 빠진 공시를 찾아내는 데 씁니다."
+    },
+    "forest-risks": {
+      name: "carbonplan/forest-risks",
+      category: "자연기반 크레딧 리스크 모델",
+      verifiedCapability:
+        "README 기준으로 biomass, fire, drought, insects 리스크 레이어와 모델링 도구를 확인했습니다.",
+      adaptForCQuant:
+        "산림·토지 기반 크레딧에 대해 위험 오버레이와 무결성 경고를 추가하는 기준으로 씁니다.",
+      boundaryNote:
+        "미국 중심 레이어를 모든 지역에 일반화하지 않습니다. 지역 범위와 적용 한계를 항상 드러냅니다.",
+      llmUse:
+        "LLM은 위험 레이어를 읽기 쉬운 프로젝트 리스크 브리프로 바꾸는 데 씁니다."
+    },
+    "qaoa-carbon-cerrado": {
+      name: "hgribeirogeo/qaoa-carbon-cerrado",
+      category: "포트폴리오 최적화 연구",
+      verifiedCapability:
+        "README 기준으로 탄소·생물다양성·사회영향을 함께 다루는 multi-objective portfolio optimization 문제를 확인했습니다.",
+      adaptForCQuant:
+        "C-Quant에서는 유동성, basis risk, integrity, concentration, policy fit을 함께 보는 포트폴리오 슬리브 최적화로 바꿉니다.",
+      boundaryNote:
+        "양자 하드웨어를 제품 요구조건으로 삼지 않습니다. 실무형 고전 최적화가 먼저입니다.",
+      llmUse:
+        "LLM은 가중치 변경이 왜 포트폴리오 frontier를 바꾸는지 설명하는 데 씁니다."
+    },
+    "gcam-core": {
+      name: "JGCRI/gcam-core",
+      category: "거시 시나리오 엔진",
+      verifiedCapability:
+        "README 기준으로 economy, energy, land, water, trade, climate를 연결하는 multisector scenario model을 확인했습니다.",
+      adaptForCQuant:
+        "장기 정책·에너지 시나리오가 탄소 노출에 어떤 방향성을 주는지 설명하는 시나리오 레이어에 참고합니다.",
+      boundaryNote:
+        "GCAM류 결과를 단기 매매 신호처럼 포장하지 않습니다. 장기 정책 스트레스 테스트에만 둡니다.",
+      llmUse:
+        "LLM은 장기 시나리오를 가까운 체크포인트와 운영 메모로 바꿔 주는 데 씁니다."
+    }
+  },
+  en: {}
+} as const;
+
 const alertTemplateCopy = {
   ko: {
     "official-refresh": { title: "공식 소스 상태", scope: "EU ETS / K-ETS / China ETS", trigger: "공식 카드가 limited 또는 error로 바뀌면 인박스에 올립니다.", delivery: "인앱 인박스 + 일일 브리프" },
@@ -686,6 +789,13 @@ export function localizeMarketWatchItem(item: MarketWatchItem, locale: AppLocale
 
 export function localizeBenchmark(item: BenchmarkPlatform, locale: AppLocale): BenchmarkPlatform {
   return mergeLocalized(item, locale, benchmarkCopy);
+}
+
+export function localizeOpenSourceBenchmark(
+  item: OpenSourceBenchmark,
+  locale: AppLocale
+): OpenSourceBenchmark {
+  return mergeLocalized(item, locale, openSourceBenchmarkCopy);
 }
 
 export function localizeAlertTemplate(item: AlertTemplate, locale: AppLocale): AlertTemplate {
