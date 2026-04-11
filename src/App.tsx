@@ -2302,7 +2302,13 @@ export default function App() {
   );
   const [appLocale, setAppLocale] = useState<AppLocale>(locale);
   const [surface, setSurface] = useState<Surface>("overview");
-  const [marketId, setMarketId] = useState<MarketProfile["id"]>("eu-ets");
+  const [marketId, setMarketId] = useState<MarketProfile["id"]>(() =>
+    readStoredChoice(
+      "cquant:market",
+      marketProfiles.map((item) => item.id),
+      "k-ets"
+    )
+  );
   const [selectedLiveQuoteId, setSelectedLiveQuoteId] = useState<string>("");
   const [selectedQuoteRange, setSelectedQuoteRange] = useState<QuoteRangePreset>(() =>
     readStoredChoice("cquant:quote-range", LIVE_QUOTE_RANGE_OPTIONS, "3m")
@@ -2408,6 +2414,10 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem("cquant:desk-role", deskRole);
   }, [deskRole]);
+
+  useEffect(() => {
+    window.localStorage.setItem("cquant:market", marketId);
+  }, [marketId]);
 
   useEffect(() => {
     window.localStorage.setItem("cquant:quote-range", selectedQuoteRange);
@@ -5006,6 +5016,42 @@ function InspectorWorkbenchPanel({
     selectedQuote: quote,
     compareStats
   });
+  const officialStatusLabel = officialCard
+    ? getStatusLabel(locale, officialCard.status)
+    : t(locale, "공식값 없음", "No official feed");
+  const highlightStats = [
+    {
+      label: t(locale, "포지션", "Position"),
+      value: stanceLabel(locale, decision.stance),
+      detail: `${t(locale, "신뢰도", "Confidence")} ${formatNumber(locale, decision.confidence * 100, 0)}%`
+    },
+    {
+      label: t(locale, "공식값", "Official"),
+      value: officialCard ? formatDate(locale, officialCard.asOf) : t(locale, "미연결", "Offline"),
+      detail: officialCard ? `${officialStatusLabel} · ${officialCard.sourceName}` : officialStatusLabel
+    },
+    {
+      label: t(locale, "비교 기준", "Anchor"),
+      value: quote ? quote.symbol : t(locale, "없음", "None"),
+      detail: quote
+        ? `${formatLiveQuotePrice(locale, quote)} · ${quote.delayNote}`
+        : t(locale, "연결된 테이프가 없습니다.", "No linked tape is connected.")
+    },
+    {
+      label: t(locale, "추적 상태", "Tracking"),
+      value: formatPercentStat(locale, compareStats.directionMatchPct, 0),
+      detail: `${t(locale, "괴리", "Gap")} ${formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)} · ${t(
+        locale,
+        "상관",
+        "Corr"
+      )} ${formatPlainStat(locale, compareStats.recentCorrelation, 2)}`
+    }
+  ];
+  const whyNowItems = decision.supportingEvidence.slice(0, 3);
+  const cautionReasonItems = decision.counterEvidence.slice(0, 3);
+  const healthItems = decision.dataHealth.slice(0, 3);
+  const checkpointItems = decision.checkpoints.slice(0, 3);
+  const spotlightItems = spotlight.bullets.slice(0, 3);
 
   return (
     <div className="inspector-panel">
@@ -5021,7 +5067,18 @@ function InspectorWorkbenchPanel({
         ) : null}
       </div>
 
-      <div className="inspector-summary">
+      <div className="inspector-key-grid">
+        {highlightStats.map((item) => (
+          <div key={item.label} className="inspector-key-card">
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </div>
+        ))}
+      </div>
+
+      <div className="inspector-summary compact">
+        <strong>{t(locale, "지금 해석", "Now")}</strong>
         <p>{spotlight.summary}</p>
       </div>
 
@@ -5080,21 +5137,14 @@ function InspectorWorkbenchPanel({
             )}
           </div>
           <div className="inspector-card">
-            <strong>{t(locale, "현재 판단", "Current call")}</strong>
-            <div className="inspector-stat-grid">
-              <MetricPill label={t(locale, "스탠스", "Stance")} value={stanceLabel(locale, decision.stance)} />
-              <MetricPill
-                label={t(locale, "신뢰도", "Confidence")}
-                value={`${formatNumber(locale, decision.confidence * 100, 0)}%`}
-              />
-              <MetricPill
-                label={t(locale, "방향 일치", "Direction match")}
-                value={formatPercentStat(locale, compareStats.directionMatchPct, 0)}
-              />
-              <MetricPill
-                label={t(locale, "공식 대비 괴리", "Gap vs official")}
-                value={formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)}
-              />
+            <strong>{t(locale, "왜 이 포지션인가", "Why this posture")}</strong>
+            <div className="inspector-note-grid">
+              {whyNowItems.map((item) => (
+                <div key={item.title} className="inspector-note-row">
+                  <strong>{item.title}</strong>
+                  <span>{item.detail}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -5126,7 +5176,7 @@ function InspectorWorkbenchPanel({
             )}
           </div>
           <div className="inspector-card">
-            <strong>{t(locale, "테이프 해석", "Tape interpretation")}</strong>
+            <strong>{t(locale, "테이프 상태", "Tape status")}</strong>
             <div className="inspector-stat-grid">
               <MetricPill
                 label={t(locale, "현재가", "Current")}
@@ -5141,15 +5191,17 @@ function InspectorWorkbenchPanel({
                 value={formatPercentStat(locale, compareStats.directionMatchPct, 0)}
               />
               <MetricPill
-                label={t(locale, "상관", "Correlation")}
-                value={formatPlainStat(locale, compareStats.recentCorrelation, 2)}
+                label={t(locale, "겹친 구간", "Overlap")}
+                value={formatOverlapWindow(locale, compareStats.overlapCount)}
               />
             </div>
-            <ul className="inspector-list">
-              {spotlight.bullets.map((item) => (
-                <li key={item}>{item}</li>
+            <div className="inspector-note-grid">
+              {spotlightItems.map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       ) : null}
@@ -5166,12 +5218,14 @@ function InspectorWorkbenchPanel({
             />
           </div>
           <div className="inspector-card">
-            <strong>{t(locale, "드릴다운 메모", "Drill-down notes")}</strong>
-            <ul className="inspector-list">
-              {spotlight.bullets.map((item) => (
-                <li key={item}>{item}</li>
+            <strong>{t(locale, "드라이버 메모", "Driver note")}</strong>
+            <div className="inspector-note-grid">
+              {spotlightItems.map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       ) : null}
@@ -5191,12 +5245,14 @@ function InspectorWorkbenchPanel({
             </div>
           </div>
           <div className="inspector-card">
-            <strong>{t(locale, "이벤트 해석", "Event interpretation")}</strong>
-            <ul className="inspector-list">
-              {spotlight.bullets.map((item) => (
-                <li key={item}>{item}</li>
+            <strong>{t(locale, "이벤트 메모", "Event note")}</strong>
+            <div className="inspector-note-grid">
+              {spotlightItems.map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       ) : null}
@@ -5217,39 +5273,98 @@ function InspectorWorkbenchPanel({
           </div>
           <div className="inspector-card">
             <strong>{t(locale, "소스 메모", "Source note")}</strong>
-            <ul className="inspector-list">
-              {spotlight.bullets.map((item) => (
-                <li key={item}>{item}</li>
+            <div className="inspector-note-grid">
+              {spotlightItems.map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       ) : null}
 
       <div className="inspector-card">
         <strong>{getDeskRoleLabel(locale, deskRole)}</strong>
-        <p className="inspector-card-copy">{roleLens.summary}</p>
         <div className="inspector-role-grid">
           <div>
             <span className="inspector-card-label">{t(locale, "먼저 볼 것", "Check first")}</span>
-            <ul className="inspector-list">
-              {roleLens.focusItems.map((item) => (
-                <li key={item}>{item}</li>
+            <div className="inspector-note-grid">
+              {roleLens.focusItems.slice(0, 3).map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
           <div>
             <span className="inspector-card-label">{t(locale, "판단 낮출 때", "Lower confidence when")}</span>
-            <ul className="inspector-list">
-              {roleLens.cautionItems.map((item) => (
-                <li key={item}>{item}</li>
+            <div className="inspector-note-grid">
+              {roleLens.cautionItems.slice(0, 3).map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
         <div className="operator-row">
           <strong>{t(locale, "운용 메모", "Desk note")}</strong>
           <span>{executionNote}</span>
+        </div>
+      </div>
+
+      <div className="inspector-card">
+        <strong>{t(locale, "판단 근거와 반대 근거", "Decision reasons and pushback")}</strong>
+        <div className="inspector-status-strip">
+          <div>
+            <span className="inspector-card-label">{t(locale, "지지 근거", "Support")}</span>
+            <div className="inspector-note-grid">
+              {whyNowItems.map((item) => (
+                <div key={item.title} className="inspector-note-row">
+                  <strong>{item.title}</strong>
+                  <span>{item.detail}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="inspector-card-label">{t(locale, "반대 근거", "Pushback")}</span>
+            <div className="inspector-note-grid">
+              {cautionReasonItems.map((item) => (
+                <div key={item.title} className="inspector-note-row">
+                  <strong>{item.title}</strong>
+                  <span>{item.detail}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="inspector-card">
+        <strong>{t(locale, "데이터 상태와 다음 확인", "Data state and next checks")}</strong>
+        <div className="inspector-status-strip">
+          <div>
+            <span className="inspector-card-label">{t(locale, "데이터 상태", "Data health")}</span>
+            <div className="inspector-note-grid">
+              {healthItems.map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="inspector-card-label">{t(locale, "다음 확인", "Next checks")}</span>
+            <div className="inspector-note-grid">
+              {checkpointItems.map((item) => (
+                <div key={item} className="inspector-note-row compact">
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
