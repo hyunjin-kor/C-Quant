@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell, screen } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { execFile } = require("node:child_process");
@@ -10,27 +10,118 @@ const {
 
 const isDev = !app.isPackaged;
 const SETTINGS_FILENAME = "settings.json";
+let mainWindow = null;
+
+function showFallbackPage(window, title, detail) {
+  if (!window || window.isDestroyed()) {
+    return;
+  }
+
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${title}</title>
+        <style>
+          body {
+            margin: 0;
+            font-family: "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f7f9fd;
+            color: #111827;
+          }
+          .wrap {
+            max-width: 760px;
+            margin: 64px auto;
+            padding: 0 24px;
+          }
+          .card {
+            background: #ffffff;
+            border: 1px solid #d9e1ef;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+          }
+          h1 { margin: 0 0 12px; font-size: 28px; }
+          p { margin: 0 0 12px; line-height: 1.6; color: #445066; }
+          pre {
+            margin: 16px 0 0;
+            padding: 16px;
+            overflow: auto;
+            background: #f3f6fb;
+            border-radius: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <div class="card">
+            <h1>${title}</h1>
+            <p>C-Quant desktop could not render its main screen.</p>
+            <p>Restart the app. If the problem repeats, share the message below.</p>
+            <pre>${detail}</pre>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  void window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+}
+
+function revealWindow(window) {
+  if (!window || window.isDestroyed()) {
+    return;
+  }
+
+  if (window.isMinimized()) {
+    window.restore();
+  }
+
+  if (!window.isVisible()) {
+    window.show();
+  }
+
+  window.focus();
+}
 
 function getWindowIconPath() {
   return path.join(__dirname, "assets", "app-icon.png");
 }
 
 function createWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    revealWindow(mainWindow);
+    return mainWindow;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const workArea = primaryDisplay.workArea;
+  const width = Math.min(1560, Math.max(1200, workArea.width - 80));
+  const height = Math.min(980, Math.max(760, workArea.height - 80));
+  const x = Math.round(workArea.x + (workArea.width - width) / 2);
+  const y = Math.round(workArea.y + (workArea.height - height) / 2);
+
   const window = new BrowserWindow({
-    width: 1560,
-    height: 980,
+    x,
+    y,
+    width,
+    height,
     minWidth: 980,
     minHeight: 680,
     title: "C-Quant",
     icon: getWindowIconPath(),
-    frame: false,
+    center: false,
+    frame: true,
     thickFrame: true,
     movable: true,
     minimizable: true,
     maximizable: true,
     resizable: true,
-    show: false,
-    backgroundColor: "#eef2f8",
+    show: true,
+    backgroundColor: "#f7f9fd",
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -39,15 +130,60 @@ function createWindow() {
     }
   });
 
+  mainWindow = window;
+
+  const reveal = () => revealWindow(window);
+  const fallbackTimer = setTimeout(reveal, isDev ? 5000 : 2500);
+
+  window.once("ready-to-show", reveal);
+  window.webContents.once("did-finish-load", reveal);
+  window.once("show", () => {
+    window.setAlwaysOnTop(true);
+    setTimeout(() => {
+      if (!window.isDestroyed()) {
+        window.setAlwaysOnTop(false);
+        revealWindow(window);
+      }
+    }, 600);
+  });
+  window.on("show", () => clearTimeout(fallbackTimer));
+  window.on("closed", () => {
+    clearTimeout(fallbackTimer);
+    if (mainWindow === window) {
+      mainWindow = null;
+    }
+  });
+
+  window.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
+    clearTimeout(fallbackTimer);
+    dialog.showErrorBox(
+      "C-Quant failed to load",
+      `The desktop window could not load its UI.\n\nCode: ${errorCode}\nMessage: ${errorDescription}`
+    );
+    showFallbackPage(
+      window,
+      "C-Quant failed to load",
+      `Code: ${errorCode}\nMessage: ${errorDescription}`
+    );
+  });
+
+  window.webContents.on("render-process-gone", (_event, details) => {
+    clearTimeout(fallbackTimer);
+    dialog.showErrorBox(
+      "C-Quant renderer stopped",
+      `The app window stopped unexpectedly.\n\nReason: ${details.reason}`
+    );
+    showFallbackPage(window, "C-Quant renderer stopped", `Reason: ${details.reason}`);
+  });
+
   if (isDev) {
-    window.loadURL("http://127.0.0.1:5173");
+    window.loadURL("http://localhost:5173");
     window.webContents.openDevTools({ mode: "detach" });
-    window.once("ready-to-show", () => window.show());
-    return;
+    return window;
   }
 
   window.loadFile(path.join(__dirname, "dist", "index.html"));
-  window.once("ready-to-show", () => window.show());
+  return window;
 }
 
 function execFileAsync(command, args) {
@@ -252,15 +388,31 @@ ipcMain.handle("run-decision-assistant", async (_event, payload) => {
   });
 });
 
-app.whenReady().then(() => {
-  createWindow();
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      revealWindow(mainWindow);
+      return;
     }
+    createWindow();
   });
-});
+
+  app.whenReady().then(() => {
+    createWindow();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+        return;
+      }
+      revealWindow(mainWindow);
+    });
+  });
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

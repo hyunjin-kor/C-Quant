@@ -2814,10 +2814,6 @@ export default function App() {
   );
 
   const selectedDecision = decisionsByMarket[marketId];
-  const selectedMarketBoardRow = useMemo(
-    () => marketBoardRows.find((row) => row.marketId === marketId) ?? null,
-    [marketBoardRows, marketId]
-  );
 
   const decisionView = useMemo(
     () =>
@@ -2845,12 +2841,6 @@ export default function App() {
         : selectedDecision,
     [assistantResponse, selectedDecision]
   );
-
-  useEffect(() => {
-    if (selectedMarketBoardRow) {
-      setSpotlight(buildMarketSpotlight(appLocale, selectedMarketBoardRow, selectedDecision));
-    }
-  }, [appLocale, selectedDecision, selectedMarketBoardRow, surface]);
   const decisionReasonHeader = useMemo(
     () => ({
       title: t(appLocale, "매수·매도 판단 근거", "Decision reasoning"),
@@ -2922,6 +2912,15 @@ export default function App() {
       }),
     [appLocale, cardsByMarket, decisionsByMarket, forecasts, liveQuotesById, snapshotCards]
   );
+  const selectedMarketBoardRow = useMemo(
+    () => marketBoardRows.find((row) => row.marketId === marketId) ?? null,
+    [marketBoardRows, marketId]
+  );
+  useEffect(() => {
+    if (selectedMarketBoardRow) {
+      setSpotlight(buildMarketSpotlight(appLocale, selectedMarketBoardRow, selectedDecision));
+    }
+  }, [appLocale, selectedDecision, selectedMarketBoardRow, surface]);
 
   const heatmapRows = useMemo<HeatmapRow[]>(
     () =>
