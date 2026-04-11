@@ -586,7 +586,7 @@ textarea {
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.25rem 0.15rem 0.1rem;
+   padding: 0.1rem 0.1rem 0;
 }
 
 .eyebrow {
@@ -599,15 +599,15 @@ textarea {
 
 .hero-strip h1 {
   margin: 0.22rem 0 0;
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-size: clamp(1.55rem, 2.6vw, 2.2rem);
   line-height: 1.05;
   color: var(--text-strong);
 }
 
 .hero-strip p {
-  max-width: 620px;
-  margin: 0.55rem 0 0;
-  font-size: 0.9rem;
+  max-width: 720px;
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
   color: var(--text-soft);
 }
 
@@ -620,8 +620,8 @@ textarea {
 
 .primary-button,
 .secondary-button {
-  padding: 0.85rem 1rem;
-  border-radius: 16px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
   font-weight: 700;
   transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
   white-space: nowrap;
@@ -631,14 +631,14 @@ textarea {
   background: linear-gradient(180deg, #2f7bf6, #246ae0);
   color: #ffffff;
   box-shadow: 0 18px 32px rgba(47, 123, 246, 0.24);
-  min-width: 156px;
+  min-width: 144px;
 }
 
 .secondary-button {
   background: rgba(255, 255, 255, 0.76);
   color: var(--text-strong);
   border: 1px solid rgba(130, 146, 182, 0.18);
-  min-width: 132px;
+  min-width: 118px;
 }
 
 .primary-button:hover,

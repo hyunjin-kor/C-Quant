@@ -868,6 +868,147 @@ function localizeMetricLabel(locale: AppLocale, label: string) {
   return label;
 }
 
+const DRIVER_VARIABLE_LABELS_KO: Record<string, string> = {
+  "Cap path, LRF, Fit for 55 revisions, ETS2 spillover expectations": "총량 경로, LRF, Fit for 55 개편, ETS2 파급",
+  "TNAC and Market Stability Reserve auction withdrawals": "TNAC와 MSR 경매 유보",
+  "Wholesale electricity price and implied thermal generation margin": "도매 전력가격과 화력 발전 마진",
+  "TTF gas / LNG complex": "TTF 가스·LNG",
+  "Rotterdam coal futures": "로테르담 석탄 선물",
+  "Brent crude / broad commodity complex": "브렌트유·광범위 원자재 흐름",
+  "Equity index, credit stress, EUR/CHF uncertainty": "주가 지수, 신용 스트레스, EUR/CHF 불확실성",
+  "Industrial production and manufacturing activity": "산업생산과 제조업 활동",
+  "Temperature extremes, heating demand, wind and hydro conditions": "기온 극단값, 난방 수요, 풍력·수력 조건",
+  "Auction schedule, auction coverage, open interest, liquidity": "경매 일정, 커버율, 미결제약정, 유동성",
+  "Compliance cycle and surrender deadlines": "이행 주기와 제출 마감",
+  "Allocation balance, free allocation share, auction share": "할당 잔액, 무상할당 비중, 경매 비중",
+  "Market Stabilization Mechanism and cancellation rules": "시장안정화 장치와 취소 규정",
+  "Carryover, banking, and offset conversion rules": "이월, 뱅킹, 상쇄배출권 전환 규정",
+  "KCU and KOC prices and transaction volumes": "KCU·KOC 가격과 거래량",
+  "Verification report and surrender timing around February-March": "2~3월 검증보고·제출 일정",
+  "Participation breadth, brokerage access, delegated trading": "참여 폭, 증권사 접근, 위탁거래",
+  "WTI/Brent oil shock as fuel cost proxy": "WTI·브렌트 유가 충격",
+  "Exchange rate and call rate": "환율과 콜금리",
+  "Domestic equity conditions / stock index proxy": "국내 주식시장 여건",
+  "Auction monthly carryover and bid ratio": "월별 경매 이월과 입찰 비율",
+  "Sector expansion into steel, cement, and aluminum": "철강·시멘트·알루미늄으로의 부문 확대",
+  "Power-sector reform and electricity spot price": "전력부문 개혁과 전력 현물가격",
+  "Coal price and coal-heavy dispatch economics": "석탄 가격과 석탄 중심 발전 경제성",
+  "LNG / natural gas price": "LNG·천연가스 가격",
+  "Trading volume and depth": "거래량과 시장 깊이",
+  "Intensity-based allowance allocation and compliance rules": "원단위 기반 할당과 이행 규정",
+  "AQI / pollution pressure proxy": "AQI·오염 압력 지표",
+  "Shanghai industrial index / industrial activity proxy": "상하이 산업지수·산업 활동 지표",
+  "MRV quality, annual power emission factors, verification completion": "MRV 품질, 연간 전력 배출계수, 검증 완료율"
+};
+
+const DRIVER_NOTE_LABELS_KO: Record<string, string> = {
+  "Scarcity depends on the cap, sector grouping, and how much supply is auctioned versus freely allocated.": "희소성은 총량, 업종 묶음, 경매 물량과 무상할당 비중에 따라 달라집니다.",
+  "The 2026-2035 basic plan introduces automatic stabilization, which directly changes supply-demand adjustment expectations.": "2026~2035 기본계획의 자동 안정화 장치는 수급 조정 기대를 직접 바꿉니다.",
+  "Relaxed carryover changes intertemporal scarcity and softens forced selling near compliance windows.": "이월 완화는 기간 간 희소성을 바꾸고 이행 구간의 강제 매도를 줄입니다.",
+  "Local research shows complementary credit prices and volumes became statistically significant as the market matured.": "국내 연구에서는 시장이 성숙할수록 보완배출권 가격과 거래량의 설명력이 커졌습니다.",
+  "The compliance filing calendar is one of the few variables shown as significant across commitment periods in Korean literature.": "국내 문헌에서 이행 신고 일정은 여러 기간에 걸쳐 유의하게 확인된 핵심 변수입니다.",
+  "Liquidity reforms in February 2025 changed who can participate and how orders reach the market.": "2025년 2월 유동성 개편으로 참여 주체와 주문 유입 구조가 달라졌습니다.",
+  "Oil acts as an external energy-cost proxy; its explanatory power rises after the market matures and policy frictions ease.": "유가는 외부 에너지 비용 대용치로 작동하며, 시장이 성숙할수록 설명력이 커집니다.",
+  "Local evidence indicates that exchange rate and interest-rate conditions become significant once the market internalizes trading experience.": "국내 연구에서는 시장이 거래 경험을 내재화할수록 환율과 금리 조건의 영향이 커집니다.",
+  "A useful secondary proxy for industrial cycle and compliance purchasing capacity.": "산업 사이클과 이행 매수 여력을 보는 보조 지표로 유용합니다.",
+  "Auction design now reacts to prior-month bid ratios, so auction coverage becomes a live microstructure signal.": "경매 설계가 전월 입찰비율에 반응하므로 커버율 자체가 실시간 미시구조 신호가 됩니다."
+};
+
+const DRIVER_SOURCE_LABELS_KO: Record<string, string> = {
+  "ICAP - K-ETS overview and phase structure": "ICAP - K-ETS 개요와 단계 구조",
+  "KRX ETS platform - market feature overview": "KRX ETS 플랫폼 - 시장 특성 개요",
+  "ICAP - fourth Basic Plan measures": "ICAP - 4차 기본계획 조치",
+  "Korean MOE English press release on liquidity reform": "환경부 영문 보도자료 - 유동성 개편",
+  "ICAP - 2024 liquidity measures": "ICAP - 2024 유동성 조치",
+  "KEREA 2018 - learning-by-doing in K-ETS pricing": "자원환경경제연구 2018 - K-ETS 가격의 학습효과",
+  "KRX ETS platform - offsets overview": "KRX ETS 플랫폼 - 상쇄배출권 개요",
+  "KEREA 2018 - submission timing binary variables": "자원환경경제연구 2018 - 제출 시기 더미변수",
+  "KRX ETS platform - verification and statement flow": "KRX ETS 플랫폼 - 검증·명세 흐름",
+  "MOE English press release - wider institution access": "환경부 영문 보도자료 - 기관 접근 확대",
+  "KRX ETS platform - account and consignment rules": "KRX ETS 플랫폼 - 계좌·위탁 규정",
+  "KEREA 2018 - macro conditions become significant in second period": "자원환경경제연구 2018 - 2기 거시 변수 유의성",
+  "KEREA 2018 - exchange rate and call rate significance": "자원환경경제연구 2018 - 환율·콜금리 유의성",
+  "KEREA 2018 - stock price significance in second period": "자원환경경제연구 2018 - 2기 주가 유의성",
+  "ICAP - auction volume linked to prior bid ratio": "ICAP - 전월 입찰비율 연동 경매 물량"
+};
+
+const LIVE_QUOTE_LABELS_KO: Record<
+  string,
+  Partial<Pick<MarketLiveQuote, "title" | "role" | "note" | "delayNote">>
+> = {
+  "eua-dec-benchmark": {
+    title: "ICE EUA 12월물 기준 선물",
+    role: "EU 탄소 리스크를 보는 대표 상장 헤지 테이프",
+    note: "12월물 기준 계약입니다. 무료 차트 피드는 실시간 가격은 빠르게 보일 수 있어도 전체 히스토리는 얕을 수 있습니다.",
+    delayNote: "참고용 차트 API 피드입니다. 거래소 지연이 있을 수 있습니다."
+  },
+  "ttf-gas-future": {
+    title: "네덜란드 TTF 가스 선물",
+    role: "EU 탄소의 연료 전환 드라이버",
+    note: "가스는 단기 탄소 재평가를 움직이는 핵심 변수 중 하나입니다.",
+    delayNote: "참고용 차트 API 피드입니다. 거래소 지연이 있을 수 있습니다."
+  },
+  "brent-future": {
+    title: "브렌트유 선물",
+    role: "거시 에너지 프록시",
+    note: "탄소가 넓은 원자재 복합체와 함께 움직일 때 참고합니다.",
+    delayNote: "참고용 차트 API 피드입니다. 거래소 지연이 있을 수 있습니다."
+  },
+  "co2-l-proxy": {
+    title: "WisdomTree Carbon ETC",
+    role: "상장형 EU 탄소 프록시",
+    note: "ICE EUA 선물과 함께 상장형 탄소 프록시로 참고합니다.",
+    delayNote: "참고용 차트 API 피드입니다. 상장 프록시로만 사용하세요."
+  },
+  "krbn-proxy": {
+    title: "KRBN 글로벌 탄소 ETF",
+    role: "현지 선물이 없을 때 보는 상장 탄소 프록시",
+    note: "프록시일 뿐이며 현지 ETS 공식 종가로 해석하면 안 됩니다.",
+    delayNote: "참고용 차트 API 피드입니다. 공식 탄소 가격이 아니라 상장 프록시입니다."
+  },
+  "keua-proxy": {
+    title: "KEUA 유럽 탄소 ETF",
+    role: "EU 탄소 노출을 보는 상장 프록시",
+    note: "프록시일 뿐이며 공식 헤지 기준값은 여전히 ICE EUA 선물입니다.",
+    delayNote: "참고용 차트 API 피드입니다. 공식 탄소 가격이 아니라 상장 프록시입니다."
+  },
+  "kcca-proxy": {
+    title: "KCCA 캘리포니아 탄소 ETF",
+    role: "북미 탄소 위험 선호를 보는 상장 프록시",
+    note: "지역 시장 결제값이 아니라 추가적인 상장 탄소 슬리브로만 참고합니다.",
+    delayNote: "참고용 차트 API 피드입니다. 공식 탄소 가격이 아니라 상장 프록시입니다."
+  }
+};
+
+function localizeDriverVariable(locale: AppLocale, value: string) {
+  if (locale === "en") {
+    return value;
+  }
+  return DRIVER_VARIABLE_LABELS_KO[value] ?? value;
+}
+
+function localizeDriverNote(locale: AppLocale, value: string) {
+  if (locale === "en") {
+    return value;
+  }
+  return DRIVER_NOTE_LABELS_KO[value] ?? value;
+}
+
+function localizeDriverSourceLabel(locale: AppLocale, value: string) {
+  if (locale === "en") {
+    return value;
+  }
+  return DRIVER_SOURCE_LABELS_KO[value] ?? value;
+}
+
+function localizeLiveQuote(locale: AppLocale, quote: MarketLiveQuote | undefined) {
+  if (!quote || locale === "en") {
+    return quote;
+  }
+  const mapped = LIVE_QUOTE_LABELS_KO[quote.id];
+  return mapped ? { ...quote, ...mapped } : quote;
+}
+
 function localizeConnectedCard(locale: AppLocale, card: ConnectedSourceCard | undefined) {
   if (!card) {
     return undefined;
@@ -1634,6 +1775,7 @@ function buildRuleDecision(
   const detailedDrivers = forecast.contributions.slice(0, 6).map((entry) => {
     const driverMeta = market.drivers.find((driver) => driver.id === entry.driverId);
     const stateValue = state[entry.driverId] ?? 0;
+    const driverLabel = localizeDriverVariable(locale, driverMeta?.variable ?? entry.variable);
     const directionWord =
       entry.contribution >= 0
         ? t(locale, "상방", "upside")
@@ -1644,10 +1786,10 @@ function buildRuleDecision(
 
     return {
       ...entry,
-      title: entry.variable,
+      title: driverLabel,
       detail:
         locale === "ko"
-          ? `${entry.variable}는 현재 ${directionWord} 압력 ${formatNumber(
+          ? `${driverLabel}는 현재 ${directionWord} 압력 ${formatNumber(
               locale,
               Math.abs(entry.contribution),
               2
@@ -1655,8 +1797,8 @@ function buildRuleDecision(
               locale,
               stateValue,
               2
-            )}입니다. ${driverMeta?.note ?? "시장에 주는 방향성을 계속 확인해야 합니다."}`
-          : `${entry.variable} is contributing ${formatNumber(
+            )}입니다. ${localizeDriverNote(locale, driverMeta?.note ?? "시장에 주는 방향성을 계속 확인해야 합니다.")}`
+          : `${driverLabel} is contributing ${formatNumber(
               locale,
               Math.abs(entry.contribution),
               2
@@ -1664,7 +1806,7 @@ function buildRuleDecision(
               locale,
               stateValue,
               2
-            )}. ${driverMeta?.note ?? "Keep checking whether this driver is still active."}`
+            )}. ${localizeDriverNote(locale, driverMeta?.note ?? "Keep checking whether this driver is still active.")}`
     };
   });
 
@@ -1849,23 +1991,26 @@ function buildExplainableRuleDecision(
   const detailedDrivers = forecast.contributions.slice(0, 6).map((entry) => {
     const driverMeta = market.drivers.find((driver) => driver.id === entry.driverId);
     const stateValue = state[entry.driverId] ?? 0;
+    const driverLabel = localizeDriverVariable(locale, driverMeta?.variable ?? entry.variable);
     const importanceLabel = driverMeta
       ? getImportanceLabel(locale, driverMeta.importance)
       : t(locale, "기본", "Base");
     const driverNote =
-      driverMeta?.note ??
+      localizeDriverNote(
+        locale,
+        driverMeta?.note ??
       t(
         locale,
         "이 요인이 지금도 계속 유지되는지 다시 확인할 필요가 있습니다.",
         "Check whether this driver is still active right now."
-      );
+      ));
 
     return {
-      title: entry.variable,
+      title: driverLabel,
       contribution: entry.contribution,
       detail:
         locale === "ko"
-          ? `${entry.variable}는 현재 가격을 ${
+          ? `${driverLabel}는 현재 가격을 ${
               entry.contribution >= 0 ? "올리는" : "누르는"
             } 핵심 요인입니다. 의사결정 점수 기준 ${formatNumber(
               locale,
@@ -2252,7 +2397,10 @@ function buildDecisionPayload(args: {
       score: forecast.score,
       direction: forecast.direction,
       confidence: forecast.confidence,
-      topDrivers: forecast.contributions.slice(0, 6)
+      topDrivers: forecast.contributions.slice(0, 6).map((item) => ({
+        ...item,
+        variable: localizeDriverVariable(locale, item.variable)
+      }))
     },
     familyScores,
     alerts: alerts.map((item) => ({
@@ -2271,20 +2419,23 @@ function buildDecisionPayload(args: {
       family: item.family,
       whyItMatters: item.whyItMatters
     })),
-    liveQuotes: liveQuotes.slice(0, 6).map((quote) => ({
-      title: quote.title,
+    liveQuotes: liveQuotes.slice(0, 6).map((quote) => {
+      const localizedQuote = localizeLiveQuote(locale, quote) ?? quote;
+      return {
+      title: localizedQuote.title,
       symbol: quote.symbol,
       category: quote.category,
-      role: quote.role,
-      note: quote.note,
-      delayNote: quote.delayNote,
+      role: localizedQuote.role,
+      note: localizedQuote.note,
+      delayNote: localizedQuote.delayNote,
       status: quote.status,
       price: quote.price,
       change: quote.change,
       changePct: quote.changePct,
       currency: quote.currency,
       asOf: quote.asOf
-    })),
+    };
+    }),
     officialSeries: (card?.series ?? []).slice(-18),
     notes: card?.notes ?? []
   };
@@ -2535,9 +2686,9 @@ export default function App() {
   const liveQuotesById = useMemo(
     () =>
       Object.fromEntries(
-        connectedSources.liveQuotes.map((quote) => [quote.id, quote])
+        connectedSources.liveQuotes.map((quote) => [quote.id, localizeLiveQuote(appLocale, quote) ?? quote])
       ) as Record<string, MarketLiveQuote>,
-    [connectedSources.liveQuotes]
+    [appLocale, connectedSources.liveQuotes]
   );
 
   const derivedStates = useMemo(
@@ -2639,16 +2790,18 @@ export default function App() {
     () =>
       connectedSources.liveQuotes.filter(
         (quote) => quote.markets.includes(marketId) || quote.markets.includes("shared")
-      ),
-    [connectedSources.liveQuotes, marketId]
+      ).map((quote) => liveQuotesById[quote.id] ?? quote),
+    [connectedSources.liveQuotes, liveQuotesById, marketId]
   );
   const selectedInteractiveQuote = useMemo(
     () =>
-      (interactiveQuote && interactiveQuote.id === selectedLiveQuoteId ? interactiveQuote : null) ??
+      ((interactiveQuote && interactiveQuote.id === selectedLiveQuoteId
+        ? localizeLiveQuote(appLocale, interactiveQuote)
+        : null) ??
       selectedRelevantQuotes.find((quote) => quote.id === selectedLiveQuoteId) ??
       selectedDeskQuotes[0] ??
-      selectedRelevantQuotes[0],
-    [interactiveQuote, selectedDeskQuotes, selectedLiveQuoteId, selectedRelevantQuotes]
+      selectedRelevantQuotes[0]),
+    [appLocale, interactiveQuote, selectedDeskQuotes, selectedLiveQuoteId, selectedRelevantQuotes]
   );
   const selectedInteractiveQuotePoints = useMemo(
     () => getSeriesPoints(selectedInteractiveQuote?.series),
@@ -2698,13 +2851,15 @@ export default function App() {
           return {
             id: driver.id,
             family: driver.category,
-            variable: driver.variable,
+            variable: localizeDriverVariable(appLocale, driver.variable),
             importance: getImportanceLabel(appLocale, driver.importance),
             contribution,
             read: getContributionRead(appLocale, contribution),
             tone: getContributionTone(contribution),
-            note: driver.note,
-            sourceLabel: driver.sources[0]?.label ?? t(appLocale, "대표 출처 없음", "No primary source"),
+            note: localizeDriverNote(appLocale, driver.note),
+            sourceLabel:
+              localizeDriverSourceLabel(appLocale, driver.sources[0]?.label ?? "") ||
+              t(appLocale, "대표 출처 없음", "No primary source"),
             sourceUrl: driver.sources[0]?.url
           };
         })
@@ -2903,14 +3058,17 @@ export default function App() {
           updatedLabel: formatDate(appLocale, localizedCard?.asOf),
           sourceName: localizedCard?.sourceName ?? t(appLocale, "공식 소스 미연결", "No official source"),
           topDriver:
-            forecasts[profile.id].contributions[0]?.variable ??
+            localizeDriverVariable(
+              appLocale,
+              forecasts[profile.id].contributions[0]?.variable ?? ""
+            ) ||
             t(appLocale, "주요 인자 없음", "No primary driver"),
           benchmarkTicker: primaryQuote?.symbol ?? "N/A",
           benchmarkTitle:
             primaryQuote?.title ??
             t(appLocale, "연결된 선물/프록시 없음", "No linked futures or proxy"),
           benchmarkRole:
-            primaryQuote?.role ?? "No linked anchor",
+            primaryQuote?.role ?? t(appLocale, "연결된 기준값 없음", "No linked anchor"),
           benchmarkValue: formatLiveQuotePrice(appLocale, primaryQuote),
           benchmarkMove: formatLiveQuoteMove(appLocale, primaryQuote),
           benchmarkNote:
@@ -3476,11 +3634,12 @@ export default function App() {
               <div className="eyebrow">{t(appLocale, "오늘 한눈에", "Today")}</div>
               <h1>{getMarketDisplayName(appLocale, marketId)}</h1>
               <p>
-                {t(
-                  appLocale,
-                  "공식값, 비교 기준, 오늘 바로 볼 체크포인트만 한 화면에 모았습니다.",
-                  "See the official tape, the hedge anchor, and today's check points on one screen."
-                )}
+                {localizedSelectedCard
+                  ? `${t(appLocale, "공식 갱신", "Official update")} ${formatDate(appLocale, localizedSelectedCard.asOf)} · ${getStatusLabel(
+                      appLocale,
+                      localizedSelectedCard.status
+                    )} · ${stanceLabel(appLocale, decisionView.stance)}`
+                  : t(appLocale, "공식값 상태를 먼저 확인하세요.", "Check the official feed status first.")}
               </p>
             </div>
             <div className="hero-actions">
@@ -3512,12 +3671,14 @@ export default function App() {
             />
           </section>
 
-          <InteractionStage
-            locale={appLocale}
-            spotlight={spotlight}
-            onOpenSource={handleOpenExternal}
-            onGoSurface={handleSurfaceChange}
-          />
+          {surface !== "overview" ? (
+            <InteractionStage
+              locale={appLocale}
+              spotlight={spotlight}
+              onOpenSource={handleOpenExternal}
+              onGoSurface={handleSurfaceChange}
+            />
+          ) : null}
 
           {surface === "overview" ? (
             <div className="surface-stage" key={`overview-${marketId}-${spotlight?.id ?? "default"}`}>
@@ -6184,6 +6345,56 @@ function InstitutionDeskSurface({
             alertCount={alertCount}
           />
         </div>
+        <div className="panel panel-emphasis">
+          <SectionHeader
+            title={t(locale, "실시간 비교 차트", "Live comparison chart")}
+            subtitle={t(
+              locale,
+              "선택한 비교 기준을 앱 안에서 바로 보고, 공식값과 같은 방향인지 바로 확인합니다.",
+              "Review the selected comparison tape inside the app and check whether it is moving with the official tape."
+            )}
+          />
+          {selectedInteractiveQuote ? (
+            <LiveTapeWorkbench
+              locale={locale}
+              officialCard={officialCard}
+              quote={selectedInteractiveQuote}
+              quotePoints={getSeriesPoints(selectedInteractiveQuote.series)}
+              comparePoints={comparePoints}
+              compareStats={compareStats}
+              compareSeries={compareSeries}
+              selectedRange={selectedQuoteRange}
+              onSelectRange={onSelectQuoteRange}
+              loading={interactiveQuoteLoading}
+              error={interactiveQuoteError}
+              onOpenSource={onOpenSource}
+            />
+          ) : (
+            <div className="empty-plot">
+              {t(locale, "비교할 테이프가 아직 연결되지 않았습니다.", "No comparison tape is connected yet.")}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="overview-grid desk-core-grid">
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "연결 테이프 점수판", "Linked tape scoreboard")}
+            subtitle={t(
+              locale,
+              "지금 공식값을 가장 잘 따라가는 비교 기준을 먼저 고릅니다.",
+              "Pick the comparison tape that is tracking the official market best right now."
+            )}
+          />
+          <LinkedTapeScoreboard
+            locale={locale}
+            rows={linkedRows}
+            selectedQuoteId={selectedQuoteId}
+            onSelectQuote={onSelectQuote}
+          />
+        </div>
+
         <div className="panel">
           <SectionHeader
             title={t(locale, "리스크 게이트", "Risk gates")}
@@ -6202,99 +6413,6 @@ function InstitutionDeskSurface({
             invalidationChecks={invalidationChecks}
           />
         </div>
-      </section>
-
-      <section className="overview-grid desk-core-grid">
-        <div className="panel panel-emphasis">
-          <SectionHeader
-            title={t(locale, "공식 시세와 헤지 앵커", "Official tape vs hedge anchor")}
-            subtitle={t(
-              locale,
-              "실제 공식 시세와 현재 선택한 헤지 앵커를 같은 기준선에서 비교합니다.",
-              "Compare the official tape and the selected hedge anchor on the same baseline."
-            )}
-          />
-          {comparePoints.length > 1 ? (
-            <MultiLineChart
-              points={comparePoints}
-              series={compareSeries}
-              valueFormatter={(value) => formatNumber(locale, value, 0)}
-            />
-          ) : selectedSeries.length > 1 ? (
-            <LineChart
-              points={selectedSeries}
-              color={marketColor(officialCard?.marketId ?? "eu-ets")}
-              title={officialCard?.sourceName}
-              subtitle={t(locale, "공식 시계열만 사용 가능", "Only the official time series is available")}
-            />
-          ) : (
-            <div className="empty-plot">
-              <strong>{t(locale, "비교용 시계열이 아직 부족합니다.", "Not enough history to compare yet.")}</strong>
-              <p>{officialCard?.summary}</p>
-            </div>
-          )}
-          {selectedVolumeSeries.length > 0 ? (
-            <div className="mini-volume-block">
-              <strong>{t(locale, "최근 거래량", "Recent volume")}</strong>
-              <ColumnChart
-                points={selectedVolumeSeries.slice(-8)}
-                color={marketColor(officialCard?.marketId ?? "eu-ets")}
-                valueFormatter={(value) => formatCompact(locale, value)}
-                height={148}
-              />
-            </div>
-          ) : null}
-        </div>
-
-        <div className="panel">
-          <SectionHeader
-            title={t(locale, "연결 테이프 비교", "Linked tape scoreboard")}
-            subtitle={t(
-              locale,
-              "어떤 선물 또는 프록시가 지금 공식 시세를 가장 잘 따라가는지 바로 고릅니다.",
-              "Choose the futures or proxy tape that is tracking the official tape best right now."
-            )}
-          />
-          <LinkedTapeScoreboard
-            locale={locale}
-            rows={linkedRows}
-            selectedQuoteId={selectedQuoteId}
-            onSelectQuote={onSelectQuote}
-          />
-          <div className="linked-tape-callout">
-            <strong>{t(locale, "현재 선택된 비교 테이프", "Selected comparison tape")}</strong>
-            <span>
-              {selectedInteractiveQuote
-                ? `${selectedInteractiveQuote.title} · ${formatLiveQuotePrice(locale, selectedInteractiveQuote)}`
-                : t(locale, "선택된 테이프 없음", "No tape selected")}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel panel-emphasis">
-        <SectionHeader
-          title={t(locale, "라이브 차트 워크벤치", "Live chart workbench")}
-          subtitle={t(
-            locale,
-            "선택한 선물·프록시를 앱 안에서 다시 불러오고, 기간을 바꿔가며 확인합니다.",
-            "Reload the selected futures or proxy tape inside the app and switch chart windows directly."
-          )}
-        />
-        <LiveTapeWorkbench
-          locale={locale}
-          officialCard={officialCard}
-          quote={selectedInteractiveQuote}
-          quotePoints={getSeriesPoints(selectedInteractiveQuote?.series)}
-          comparePoints={comparePoints}
-          compareStats={compareStats}
-          compareSeries={compareSeries}
-          selectedRange={selectedQuoteRange}
-          onSelectRange={onSelectQuoteRange}
-          loading={interactiveQuoteLoading}
-          error={interactiveQuoteError}
-          onOpenSource={onOpenSource}
-        />
       </section>
 
       <section className="panel">
