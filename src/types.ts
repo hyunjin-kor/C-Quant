@@ -87,6 +87,7 @@ export type CreditLifecycleDossier = {
   id: string;
   title: string;
   markets: Array<MarketProfile["id"] | "shared">;
+  registryTrackId: string;
   registry: string;
   projectType: string;
   region: string;
@@ -114,6 +115,24 @@ export type NatureRiskOverlay = {
   source: SourceLink;
   components: NatureRiskComponent[];
   watchItems: string[];
+};
+
+export type RegistryOperationsHealth = "healthy" | "watch" | "blocked";
+
+export type RegistryOperationsTrack = {
+  id: string;
+  registry: string;
+  markets: Array<MarketProfile["id"] | "shared">;
+  accessMethod: string;
+  refreshCadence: string;
+  freshnessSla: string;
+  lastReviewed: string;
+  status: RegistryOperationsHealth;
+  operatorRead: string;
+  steps: CreditLifecycleStage[];
+  watchItems: string[];
+  blockers: string[];
+  source: SourceLink;
 };
 
 export type DataColumnSpec = {
@@ -382,6 +401,11 @@ export type DecisionAssistantResponse = {
   counterEvidence: DecisionReasonItem[];
   dataHealth: string[];
   checkpoints: string[];
+  operatorBrief: Array<{
+    title: string;
+    summary: string;
+    bullets: string[];
+  }>;
   disclaimer: string;
   generatedAt: string;
 };

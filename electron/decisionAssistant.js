@@ -65,6 +65,29 @@ function sanitizeReasonItems(value, limit = 6) {
     }));
 }
 
+function sanitizeOperatorBrief(value, limit = 4) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(
+      (entry) =>
+        entry &&
+        typeof entry === "object" &&
+        typeof entry.title === "string" &&
+        entry.title.trim() &&
+        typeof entry.summary === "string" &&
+        entry.summary.trim()
+    )
+    .slice(0, limit)
+    .map((entry) => ({
+      title: entry.title.trim(),
+      summary: entry.summary.trim(),
+      bullets: sanitizeStringList(entry.bullets, 4)
+    }));
+}
+
 function normalizeResponse(payload, provider, model) {
   const stance =
     payload?.stance === "Buy Bias" ||
@@ -91,6 +114,7 @@ function normalizeResponse(payload, provider, model) {
     counterEvidence: sanitizeReasonItems(payload?.counterEvidence),
     dataHealth: sanitizeStringList(payload?.dataHealth, 8),
     checkpoints: sanitizeStringList(payload?.checkpoints, 8),
+    operatorBrief: sanitizeOperatorBrief(payload?.operatorBrief),
     disclaimer:
       typeof payload?.disclaimer === "string" && payload.disclaimer.trim()
         ? payload.disclaimer.trim()
@@ -101,17 +125,17 @@ function normalizeResponse(payload, provider, model) {
 
 function buildPrompt(payload, locale) {
   const sharedInstruction =
-    "Use only the supplied data. Do not invent prices, history, regulations, registry facts, retirement evidence, or integrity claims. If the supplied data is stale or incomplete, say so clearly. The platform does not intermediate trades, so frame the answer as a decision-support overlay, not individualized advice or execution language. Treat lifecycle dossiers, registry freshness, and integrity overlays as read-only evidence layers.";
+    "Use only the supplied data. Do not invent prices, history, regulations, registry facts, retirement evidence, or integrity claims. If the supplied data is stale or incomplete, say so clearly. The platform does not intermediate trades, so frame the answer as a decision-support overlay, not individualized advice or execution language. Treat lifecycle dossiers, registry freshness, registry operations, and integrity overlays as read-only evidence layers.";
 
   if (locale === "ko") {
     return {
       system:
-        "당신은 탄소배출권 의사결정 지원 분석가다. " +
+        "당신은 기관용 탄소배출권 의사결정 코파일럿입니다. " +
         sharedInstruction +
-        ' JSON만 출력하라. 스키마는 {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0~1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."} 이다.',
+        ' JSON만 출력하세요. 스키마는 {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0~1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"operatorBrief":[{"title":"...","summary":"...","bullets":["..."]}],"disclaimer":"..."} 입니다.',
       user:
-        "아래 JSON을 읽고 현재 시장을 왜 매수 우위/관망/매도 우위로 보는지 자세히 정리하라. " +
-        "반드시 근거, 반대 근거, 데이터 상태, 다음 체크 항목을 분리해서 적어라.\n\n" +
+        "아래 JSON을 읽고 현재 시장이 왜 매수 우위, 관망, 매도 우위인지 자세히 설명하세요. " +
+        "찬성 근거, 반대 근거, 데이터 상태, 다음 체크포인트를 분리하고, operatorBrief에는 실무자가 바로 읽을 수 있는 3~4개 운영 브리프 섹션을 넣으세요.\n\n" +
         JSON.stringify(payload, null, 2)
     };
   }
@@ -120,10 +144,10 @@ function buildPrompt(payload, locale) {
     system:
       "You are a carbon-market copilot for institutional carbon decision workflows. " +
       sharedInstruction +
-      ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."}',
+      ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"operatorBrief":[{"title":"...","summary":"...","bullets":["..."]}],"disclaimer":"..."}',
     user:
       "Read the following JSON and explain in detail why the market currently leans buy, hold, or reduce. " +
-      "Separate supporting evidence, counter-evidence, data health, and next checkpoints. Include market structure, official-vs-linked tape agreement, lifecycle dossier evidence, registry freshness, and integrity-risk considerations when they are present.\n\n" +
+      "Separate supporting evidence, counter-evidence, data health, and next checkpoints. Include market structure, official-vs-linked tape agreement, lifecycle dossier evidence, registry freshness, registry operations, and integrity-risk considerations when they are present. Add an operatorBrief array with 3-4 practical sections for a real desk user.\n\n" +
       JSON.stringify(payload, null, 2)
   };
 }
@@ -135,13 +159,14 @@ function buildExplainablePrompt(payload, locale) {
   if (locale === "ko") {
     return {
       system:
-        "당신은 탄소배출권 의사결정 지원 분석가다. " +
+        "당신은 기관용 탄소배출권 의사결정 코파일럿입니다. " +
         sharedInstruction +
-        ' JSON만 출력하라. 스키마는 {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0~1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."} 이다.',
+        ' JSON만 출력하세요. 스키마는 {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0~1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"operatorBrief":[{"title":"...","summary":"...","bullets":["..."]}],"disclaimer":"..."} 입니다.',
       user:
-        "아래 JSON만 읽고 현재 시장을 왜 매수 우위, 관망, 매도 우위로 보는지 아주 자세하게 설명하라. " +
-        "반드시 쉬운 말로 쓰고, 각 항목에서 가격을 어느 방향으로 움직이는지, 왜 중요한지, 무엇을 다시 확인해야 하는지 분리해서 정리하라. " +
-        "특히 supportingEvidence와 counterEvidence는 제목 한 줄이 아니라 사용자가 바로 이해할 수 있는 상세 설명으로 채워라.\n\n" +
+        "아래 JSON을 읽고 현재 시장이 왜 매수 우위, 관망, 매도 우위인지 아주 자세하게 설명하세요. " +
+        "쉬운 문장을 쓰고, 각 근거가 가격을 어느 방향으로 밀고 있는지, 왜 중요한지, 무엇이 이 판단을 깨는지 분리하세요. " +
+        "supportingEvidence와 counterEvidence는 제목만 적지 말고 실무자가 바로 이해할 수 있는 설명으로 채우세요. " +
+        "operatorBrief에는 운영자가 바로 읽을 수 있는 3~4개 구조화된 브리프 섹션을 넣으세요.\n\n" +
         JSON.stringify(payload, null, 2)
     };
   }
@@ -150,12 +175,12 @@ function buildExplainablePrompt(payload, locale) {
     system:
       "You are a carbon-market copilot for institutional carbon decision workflows. " +
       sharedInstruction +
-      ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."}',
+      ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"operatorBrief":[{"title":"...","summary":"...","bullets":["..."]}],"disclaimer":"..."}',
     user:
       "Read the following JSON and explain in detail why the market currently leans buy, hold, or reduce. " +
       "Use plain language. Separate supporting evidence, counter-evidence, data health, and next checkpoints. " +
       "For each evidence item, explain which way it pushes the market, why it matters, and what could invalidate it. " +
-      "When lifecycle dossier, registry freshness, or integrity overlay fields are present, treat them as operator evidence and explicitly connect them to conviction, not execution.\n\n" +
+      "When lifecycle dossier, registry freshness, registry operations, or integrity overlay fields are present, treat them as operator evidence and explicitly connect them to conviction, not execution. Add an operatorBrief array with 3-4 practical desk sections.\n\n" +
       JSON.stringify(payload, null, 2)
   };
 }

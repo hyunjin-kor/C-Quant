@@ -97,8 +97,9 @@ The app now centers charts before text.
    - Driver waterfall
    - Scenario sliders for the most important drivers
    - Rule-based posture engine
-   - Optional LLM brief
+   - Structured operator brief with optional LLM expansion
    - Project intelligence sidecar with lifecycle dossier and registry freshness
+   - Registry operations board with workflow, cadence, and blocker visibility
    - Integrity overlay for nature-based credit risk
    - Alert hub and quant-indicator list
 3. `Lab`
@@ -111,6 +112,7 @@ The app now centers charts before text.
    - Source registry
    - Credit lifecycle dossier shelf
    - Registry evidence freshness monitor
+   - Registry operations board
    - Nature-based risk overlays
    - Watchlists and proxy links
    - Trust principles and subscription value
@@ -131,6 +133,7 @@ The app now centers charts before text.
   - support case
   - contrary case
   - missing-data warning
+  - structured operator brief by workflow
   - next checks by role
   - scenario summary
 - The prompt must forbid invented prices, policies, registry facts, and individualized execution language.

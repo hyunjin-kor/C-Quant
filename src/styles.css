@@ -1666,6 +1666,10 @@ textarea {
   background: rgba(247, 250, 255, 0.88);
 }
 
+.project-document-row.static {
+  cursor: default;
+}
+
 .project-document-row span,
 .project-document-row small {
   color: var(--text-soft);
@@ -1678,6 +1682,39 @@ textarea {
   display: grid;
   gap: 0.38rem;
   color: var(--text-soft);
+}
+
+.registry-track-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.registry-track-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.registry-track-head > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.registry-track-head span {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.registry-track-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 0.9rem;
+}
+
+.registry-track-side {
+  display: grid;
+  gap: 0.55rem;
 }
 
 .feed-item.positive {
@@ -3009,6 +3046,50 @@ textarea {
 .decision-memo {
   display: grid;
   gap: 0.75rem;
+}
+
+.operator-brief-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.operator-brief-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(130, 146, 182, 0.12);
+  background: rgba(247, 250, 255, 0.82);
+}
+
+.operator-brief-card strong {
+  color: var(--text-strong);
+  font-size: 0.88rem;
+}
+
+.operator-brief-card p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.operator-brief-card ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 1180px) {
+  .operator-brief-grid,
+  .registry-track-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 .linked-tape-callout {

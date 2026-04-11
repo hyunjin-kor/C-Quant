@@ -1,4 +1,8 @@
-import type { CreditLifecycleDossier, NatureRiskOverlay } from "../types";
+import type {
+  CreditLifecycleDossier,
+  NatureRiskOverlay,
+  RegistryOperationsTrack
+} from "../types";
 
 const accessed = "2026-04-11";
 
@@ -7,6 +11,7 @@ export const creditLifecycleDossiers: CreditLifecycleDossier[] = [
     id: "verra-forest-avoidance",
     title: "Verra forestry avoidance sleeve",
     markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
+    registryTrackId: "verra-registry-webflow",
     registry: "Verra VCS",
     projectType: "Avoided deforestation / REDD+",
     region: "Latin America",
@@ -104,6 +109,7 @@ export const creditLifecycleDossiers: CreditLifecycleDossier[] = [
     id: "verra-arr-removal",
     title: "Verra ARR removal sleeve",
     markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
+    registryTrackId: "verra-registry-webflow",
     registry: "Verra VCS",
     projectType: "Afforestation / reforestation removal",
     region: "Southeast Asia",
@@ -188,6 +194,7 @@ export const creditLifecycleDossiers: CreditLifecycleDossier[] = [
     id: "engineered-biochar",
     title: "Engineered removal biochar sleeve",
     markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
+    registryTrackId: "issuer-filing-watch",
     registry: "Multi-registry watch",
     projectType: "Engineered carbon removal",
     region: "North America",
@@ -254,6 +261,113 @@ export const creditLifecycleDossiers: CreditLifecycleDossier[] = [
         }
       }
     ]
+  }
+];
+
+export const registryOperationsTracks: RegistryOperationsTrack[] = [
+  {
+    id: "verra-registry-webflow",
+    registry: "Verra VCS",
+    markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
+    accessMethod: "Official registry web flow",
+    refreshCadence: "Daily check, plus event-driven recheck after new issuance, monitoring, or retirement activity",
+    freshnessSla: "Core registry evidence <= 90 days, monitoring support <= 180 days",
+    lastReviewed: "2026-04-11",
+    status: "watch",
+    operatorRead:
+      "The workflow is usable for desk support, but confidence should stay capped if monitoring or retirement evidence lags the market narrative.",
+    steps: [
+      {
+        id: "registry-status",
+        label: "Registry status pull",
+        status: "done",
+        note: "Project status and issuance history are visible from the official registry web flow."
+      },
+      {
+        id: "document-sync",
+        label: "Document sync",
+        status: "active",
+        note: "Monitoring and verification packs are available, but freshness still needs manual control."
+      },
+      {
+        id: "retirement-check",
+        label: "Retirement trail check",
+        status: "active",
+        note: "Buyer-side retirement proof exists, yet concentration and timing should be rechecked before raising conviction."
+      },
+      {
+        id: "method-watch",
+        label: "Method watch",
+        status: "warning",
+        note: "Method changes or baseline disputes can invalidate the integrity read quickly."
+      }
+    ],
+    watchItems: [
+      "Do not treat registry availability as evidence freshness. Check document dates explicitly.",
+      "If retirement flow is the thesis, confirm the latest retirement trail before leaning on demand quality.",
+      "When methodology is under review, lower conviction even if issuance and retirement look orderly."
+    ],
+    blockers: [
+      "No confirmed public API has been validated for the full registry workflow in this product.",
+      "Document freshness still depends on disciplined web-flow review rather than automatic structured feeds."
+    ],
+    source: {
+      label: "Verra registry",
+      url: "https://registry.verra.org/",
+      accessed
+    }
+  },
+  {
+    id: "issuer-filing-watch",
+    registry: "Registry and issuer filing watch",
+    markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
+    accessMethod: "Official web flow and issuer filing review",
+    refreshCadence: "Weekly review, plus event-driven checks around issuance and audit updates",
+    freshnessSla: "Method or audit evidence <= 120 days; operating proof should remain in the current cycle",
+    lastReviewed: "2026-04-11",
+    status: "watch",
+    operatorRead:
+      "Engineered removals are easier to document than forestry sleeves, but comparability still breaks if audit cadence and issuance cadence drift apart.",
+    steps: [
+      {
+        id: "method-note",
+        label: "Method note review",
+        status: "done",
+        note: "Method and process framing are linked."
+      },
+      {
+        id: "audit-window",
+        label: "Audit window",
+        status: "active",
+        note: "Latest audit is usable, but the next cycle should not slip."
+      },
+      {
+        id: "issuance-cadence",
+        label: "Issuance cadence",
+        status: "active",
+        note: "Check that issuance remains consistent with plant throughput."
+      },
+      {
+        id: "buyer-concentration",
+        label: "Buyer concentration",
+        status: "queued",
+        note: "Demand concentration still needs separate review."
+      }
+    ],
+    watchItems: [
+      "Do not over-credit engineered removals if issuance cadence drifts away from operating evidence.",
+      "Method comparability should be checked before mixing engineered sleeves with nature-based integrity assumptions.",
+      "If audit timing slips, treat the sleeve as watch rather than clean."
+    ],
+    blockers: [
+      "Cross-registry comparability is still partly manual in this product.",
+      "Buyer concentration is not yet supported by a structured public feed."
+    ],
+    source: {
+      label: "Registry and issuer filings",
+      url: "https://registry.verra.org/",
+      accessed
+    }
   }
 ];
 

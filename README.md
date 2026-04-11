@@ -23,8 +23,10 @@ It does not place trades.
 - Ranks linked tapes on a scoreboard so you can see which futures or proxies are tracking the official market best
 - Adds an institution-style checklist for what to confirm before leaning buy, reduce, or hold
 - Adds read-only credit lifecycle dossiers, registry document freshness tracking, and nature-based integrity overlays
+- Adds a registry operations board so evidence workflow, refresh cadence, and blockers are visible
 - Explains what is moving carbon prices
 - Summarizes the current market tone with a rule-based decision layer
+- Turns the decision memo into a structured operator brief for real desk use
 - Lets you run local backtests and walk-forward model checks
 - Keeps the main workflow inside the desktop app and leaves external pages as secondary source references only
 
@@ -85,10 +87,11 @@ The app is built to work even if you do not want to pay for data.
   - catalyst calendar and source freshness tables
   - short market notes for fast scanning
 - `Decision`
-  - decision memo with support and counter-evidence
+  - structured operator brief with support and counter-evidence
   - pre-trade risk gates
   - driver table behind the current call
   - project intelligence sidecar and integrity-risk overlay
+  - registry operations board
   - next catalysts and data-status checks
   - optional AI follow-up explanation
 - `Lab`
@@ -101,6 +104,7 @@ The app is built to work even if you do not want to pay for data.
   - source registry
   - credit lifecycle dossiers
   - registry evidence freshness
+  - registry operations board
   - nature-based risk overlays
   - watchlists
 

@@ -29,7 +29,11 @@ import {
   watchlistPresets
 } from "./data/experience";
 import { openSourceBenchmarks } from "./data/openSourceBenchmarks";
-import { creditLifecycleDossiers, natureRiskOverlays } from "./data/projectIntel";
+import {
+  creditLifecycleDossiers,
+  natureRiskOverlays,
+  registryOperationsTracks
+} from "./data/projectIntel";
 import {
   localeOptions,
   type AppLocale,
@@ -72,6 +76,7 @@ import type {
   MarketProfile,
   NatureRiskOverlay,
   ParsedSeriesPoint,
+  RegistryOperationsTrack,
   WalkForwardResult
 } from "./types";
 
@@ -239,7 +244,7 @@ type SpotlightTone = "positive" | "neutral" | "negative";
 
 type InteractionSpotlight = {
   id: string;
-  kind: "market" | "tape" | "driver" | "catalyst" | "source" | "dossier" | "risk";
+  kind: "market" | "tape" | "driver" | "catalyst" | "source" | "dossier" | "risk" | "registry";
   eyebrow: string;
   title: string;
   summary: string;
@@ -847,6 +852,34 @@ function buildRiskSpotlight(locale: AppLocale, overlay: NatureRiskOverlay): Inte
   };
 }
 
+function buildRegistryTrackSpotlight(
+  locale: AppLocale,
+  track: RegistryOperationsTrack
+): InteractionSpotlight {
+  return {
+    id: `registry-${track.id}`,
+    kind: "registry",
+    eyebrow: t(locale, "선택한 레지스트리 운영 흐름", "Selected registry workflow"),
+    title: track.registry,
+    summary: track.operatorRead,
+    bullets: [
+      `${t(locale, "접근 방식", "Access method")}: ${track.accessMethod}`,
+      `${t(locale, "검토 주기", "Refresh cadence")}: ${track.refreshCadence}`,
+      `${t(locale, "신선도 기준", "Freshness SLA")}: ${track.freshnessSla}`
+    ],
+    tone:
+      track.status === "healthy"
+        ? "positive"
+        : track.status === "blocked"
+          ? "negative"
+          : "neutral",
+    ctaLabel: t(locale, "출처 화면 유지", "Stay in sources"),
+    ctaSurface: "sources",
+    sourceLabel: track.source.label,
+    sourceUrl: track.source.url
+  };
+}
+
 function getSpotlightEntityId(spotlight: InteractionSpotlight | null) {
   if (!spotlight) {
     return "";
@@ -921,6 +954,27 @@ function registryStatusTone(status: "fresh" | "watch" | "stale") {
   return "neutral";
 }
 
+function registryHealthLabel(
+  locale: AppLocale,
+  status: "healthy" | "watch" | "blocked"
+) {
+  if (locale === "en") {
+    if (status === "healthy") return "Healthy";
+    if (status === "watch") return "Watch";
+    return "Blocked";
+  }
+
+  if (status === "healthy") return "정상";
+  if (status === "watch") return "점검";
+  return "막힘";
+}
+
+function registryHealthTone(status: "healthy" | "watch" | "blocked") {
+  if (status === "healthy") return "positive";
+  if (status === "blocked") return "negative";
+  return "neutral";
+}
+
 function dedupeStrings(items: string[], limit = 8) {
   return Array.from(new Set(items.filter(Boolean))).slice(0, limit);
 }
@@ -939,6 +993,106 @@ function dedupeReasonItems(items: DecisionReasonItem[], limit = 6) {
     }
   }
   return result;
+}
+
+function buildOperatorBrief(args: {
+  locale: AppLocale;
+  marketLabel: string;
+  deskRole: DeskRole;
+  decision: DecisionAssistantResponse;
+  compareStats: TapeCompareStats;
+  dossier: CreditLifecycleDossier | null;
+  registryTrack: RegistryOperationsTrack | null;
+  riskOverlay: NatureRiskOverlay | null;
+  focus: string;
+  check: string;
+}) {
+  const {
+    locale,
+    marketLabel,
+    deskRole,
+    decision,
+    compareStats,
+    dossier,
+    registryTrack,
+    riskOverlay,
+    focus,
+    check
+  } = args;
+
+  const sections: DecisionAssistantResponse["operatorBrief"] = [
+    {
+      title: t(locale, "현재 콜", "Current call"),
+      summary: `${marketLabel} · ${getDeskRoleLabel(locale, deskRole)} · ${stanceLabel(locale, decision.stance)}`,
+      bullets: dedupeStrings([decision.summary, ...decision.thesis.slice(0, 2)], 3)
+    },
+    {
+      title: t(locale, "테이프 정합성", "Tape agreement"),
+      summary: t(
+        locale,
+        `괴리 ${formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)} · 방향 일치 ${formatPercentStat(locale, compareStats.directionMatchPct, 0)} · 상관 ${formatPlainStat(locale, compareStats.recentCorrelation, 2)}`,
+        `Gap ${formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)} · direction match ${formatPercentStat(locale, compareStats.directionMatchPct, 0)} · corr ${formatPlainStat(locale, compareStats.recentCorrelation, 2)}`
+      ),
+      bullets: dedupeStrings(
+        [
+          t(
+            locale,
+            `공식값 5일 변화 ${formatPercentStat(locale, compareStats.officialFiveDayReturnPct, 1, true)}`,
+            `Official 5-day move ${formatPercentStat(locale, compareStats.officialFiveDayReturnPct, 1, true)}`
+          ),
+          t(
+            locale,
+            `비교 테이프 5일 변화 ${formatPercentStat(locale, compareStats.quoteFiveDayReturnPct, 1, true)}`,
+            `Linked tape 5-day move ${formatPercentStat(locale, compareStats.quoteFiveDayReturnPct, 1, true)}`
+          ),
+          compareStats.overlapCount > 0
+            ? t(locale, `겹치는 관측치 ${compareStats.overlapCount}건`, `${compareStats.overlapCount} overlapping observations`)
+            : t(locale, "겹치는 관측치가 부족합니다.", "Overlap is still thin.")
+        ],
+        3
+      )
+    }
+  ];
+
+  if (dossier || registryTrack) {
+    sections.push({
+      title: t(locale, "증빙 게이트", "Evidence gate"),
+      summary:
+        registryTrack?.operatorRead ??
+        dossier?.currentRead ??
+        t(locale, "연결된 프로젝트 파일이 없습니다.", "No linked dossier."),
+      bullets: dedupeStrings(
+        [
+          dossier
+            ? t(locale, `${dossier.registry} · ${dossier.projectType}`, `${dossier.registry} · ${dossier.projectType}`)
+            : "",
+          registryTrack
+            ? t(locale, `신선도 기준 ${registryTrack.freshnessSla}`, `Freshness SLA ${registryTrack.freshnessSla}`)
+            : "",
+          registryTrack
+            ? t(locale, `검토 주기 ${registryTrack.refreshCadence}`, `Refresh cadence ${registryTrack.refreshCadence}`)
+            : ""
+        ],
+        3
+      )
+    });
+  }
+
+  sections.push({
+    title: t(locale, "운용 체크", "Operator checks"),
+    summary: focus,
+    bullets: dedupeStrings(
+      [
+        check,
+        ...(registryTrack?.watchItems ?? []).slice(0, 1),
+        ...(riskOverlay?.watchItems ?? []).slice(0, 1),
+        ...decision.actions.slice(0, 1)
+      ],
+      4
+    )
+  });
+
+  return sections.slice(0, 4);
 }
 
 function useLocalizedCatalysts(locale: AppLocale, marketId: MarketProfile["id"]) {
@@ -2074,6 +2228,7 @@ function buildRuleDecision(
           ],
     dataHealth,
     checkpoints,
+    operatorBrief: [],
     disclaimer: t(
       locale,
       "참고용 리서치 오버레이입니다. 이 플랫폼은 주문을 중개하지 않으며 개인 맞춤 자문을 제공하지 않습니다.",
@@ -2343,6 +2498,7 @@ function buildExplainableRuleDecision(
     counterEvidence: safeCounterEvidence,
     dataHealth,
     checkpoints,
+    operatorBrief: [],
     disclaimer: t(
       locale,
       "참고용 리서치 화면입니다. 주문을 중계하지 않으며, 개인 맞춤형 투자 자문을 제공하지 않습니다.",
@@ -2505,6 +2661,7 @@ function buildDecisionPayload(args: {
   deskRole: DeskRole;
   compareStats: TapeCompareStats;
   dossier: CreditLifecycleDossier | null;
+  registryTrack: RegistryOperationsTrack | null;
   natureRisk: NatureRiskOverlay | null;
   question: string;
 }) {
@@ -2520,6 +2677,7 @@ function buildDecisionPayload(args: {
     deskRole,
     compareStats,
     dossier,
+    registryTrack,
     natureRisk,
     question
   } = args;
@@ -2611,6 +2769,24 @@ function buildDecisionPayload(args: {
           }))
         }
       : null,
+    registryOperations: registryTrack
+      ? {
+          registry: registryTrack.registry,
+          accessMethod: registryTrack.accessMethod,
+          refreshCadence: registryTrack.refreshCadence,
+          freshnessSla: registryTrack.freshnessSla,
+          lastReviewed: registryTrack.lastReviewed,
+          status: registryTrack.status,
+          operatorRead: registryTrack.operatorRead,
+          steps: registryTrack.steps.map((step) => ({
+            label: step.label,
+            status: step.status,
+            note: step.note
+          })),
+          watchItems: registryTrack.watchItems,
+          blockers: registryTrack.blockers
+        }
+      : null,
     natureRisk: natureRisk
       ? {
           title: natureRisk.title,
@@ -2666,6 +2842,7 @@ export default function App() {
     readStoredBoolean("cquant:free-only-sources", true)
   );
   const [selectedDossierId, setSelectedDossierId] = useState<string>("");
+  const [selectedRegistryTrackId, setSelectedRegistryTrackId] = useState<string>("");
   const [selectedRiskOverlayId, setSelectedRiskOverlayId] = useState<string>("");
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(emptySources);
   const [refreshingSources, setRefreshingSources] = useState(false);
@@ -2755,6 +2932,28 @@ export default function App() {
     () => visibleDossiers.find((item) => item.id === selectedDossierId) ?? visibleDossiers[0] ?? null,
     [selectedDossierId, visibleDossiers]
   );
+  const visibleRegistryTracks = useMemo(() => {
+    const relevant = registryOperationsTracks.filter(
+      (item) => item.markets.includes("shared") || item.markets.includes(marketId)
+    );
+
+    if (!selectedDossier) {
+      return relevant;
+    }
+
+    return relevant.sort((left, right) => {
+      if (left.id === selectedDossier.registryTrackId) return -1;
+      if (right.id === selectedDossier.registryTrackId) return 1;
+      return left.registry.localeCompare(right.registry);
+    });
+  }, [marketId, selectedDossier]);
+  const selectedRegistryTrack = useMemo(
+    () =>
+      visibleRegistryTracks.find((item) => item.id === selectedRegistryTrackId) ??
+      visibleRegistryTracks[0] ??
+      null,
+    [selectedRegistryTrackId, visibleRegistryTracks]
+  );
   const visibleNatureRiskOverlays = useMemo(() => {
     const relevant = natureRiskOverlays.filter(
       (item) =>
@@ -2803,6 +3002,31 @@ export default function App() {
     ],
     [appLocale, registryFreshnessRows]
   );
+  const registryOperationsPoints = useMemo<ChartPoint[]>(
+    () => [
+      {
+        label: t(appLocale, "정상", "Healthy"),
+        value: visibleRegistryTracks.filter((item) => item.status === "healthy").length
+      },
+      {
+        label: t(appLocale, "점검", "Watch"),
+        value: visibleRegistryTracks.filter((item) => item.status === "watch").length
+      },
+      {
+        label: t(appLocale, "막힘", "Blocked"),
+        value: visibleRegistryTracks.filter((item) => item.status === "blocked").length
+      }
+    ],
+    [appLocale, visibleRegistryTracks]
+  );
+  const registryStagePoints = useMemo<ChartPoint[]>(
+    () =>
+      (selectedRegistryTrack?.steps ?? []).map((item) => ({
+        label: item.label,
+        value: item.status === "done" ? 100 : item.status === "active" ? 70 : item.status === "queued" ? 45 : 20
+      })),
+    [selectedRegistryTrack]
+  );
   const natureRiskPoints = useMemo<ChartPoint[]>(
     () =>
       (selectedNatureRiskOverlay?.components ?? []).map((item) => ({
@@ -2836,6 +3060,18 @@ export default function App() {
       setSelectedDossierId(visibleDossiers[0].id);
     }
   }, [selectedDossier, visibleDossiers]);
+
+  useEffect(() => {
+    if (!visibleRegistryTracks.length) {
+      return;
+    }
+    if (
+      !selectedRegistryTrack ||
+      !visibleRegistryTracks.some((item) => item.id === selectedRegistryTrack.id)
+    ) {
+      setSelectedRegistryTrackId(visibleRegistryTracks[0].id);
+    }
+  }, [selectedRegistryTrack, visibleRegistryTracks]);
 
   useEffect(() => {
     if (!visibleNatureRiskOverlays.length) {
@@ -3311,6 +3547,48 @@ export default function App() {
       );
     }
 
+    if (selectedRegistryTrack) {
+      supportingEvidence.push({
+        title: t(appLocale, "레지스트리 운영 흐름", "Registry workflow"),
+        detail: `${selectedRegistryTrack.registry}: ${selectedRegistryTrack.operatorRead}`
+      });
+
+      dataHealth.push(
+        t(
+          appLocale,
+          `${selectedRegistryTrack.registry} 운영 흐름은 ${registryHealthLabel(appLocale, selectedRegistryTrack.status)} 상태이며, 마지막 검토는 ${formatDate(appLocale, selectedRegistryTrack.lastReviewed)}입니다.`,
+          `${selectedRegistryTrack.registry} workflow is ${registryHealthLabel(appLocale, selectedRegistryTrack.status)} and was last reviewed on ${formatDate(appLocale, selectedRegistryTrack.lastReviewed)}.`
+        )
+      );
+      checkpoints.push(
+        t(
+          appLocale,
+          `문서 갱신 주기와 신선도 기준(${selectedRegistryTrack.freshnessSla})이 계속 지켜지는지 확인하세요.`,
+          `Check that the refresh cadence and freshness SLA (${selectedRegistryTrack.freshnessSla}) are still being met.`
+        )
+      );
+      actions.push(
+        t(
+          appLocale,
+          `${selectedRegistryTrack.registry} 운영 흐름에서 현재 막힘 요인이 있는지 먼저 확인`,
+          `Confirm whether the ${selectedRegistryTrack.registry} workflow has any active blockers before leaning harder`
+        )
+      );
+
+      if (selectedRegistryTrack.status !== "healthy" || selectedRegistryTrack.blockers.length > 0) {
+        counterEvidence.push({
+          title: t(appLocale, "운영 흐름 점검", "Workflow watch"),
+          detail: t(
+            appLocale,
+            `${selectedRegistryTrack.registry} 운영 흐름이 완전히 정상 상태가 아니어서 증빙 신뢰도를 보수적으로 봐야 합니다.`,
+            `${selectedRegistryTrack.registry} is not in a fully healthy workflow state, so evidence confidence should stay conservative.`
+          )
+        });
+      }
+
+      risks.push(...selectedRegistryTrack.blockers.slice(0, 2));
+    }
+
     if (selectedNatureRiskOverlay) {
       const maxComponent =
         selectedNatureRiskOverlay.components.reduce((top, item) =>
@@ -3344,7 +3622,34 @@ export default function App() {
     }
 
     return { supportingEvidence, counterEvidence, dataHealth, checkpoints, actions, risks };
-  }, [appLocale, selectedDossier, selectedNatureRiskOverlay]);
+  }, [appLocale, selectedDossier, selectedNatureRiskOverlay, selectedRegistryTrack]);
+
+  const localOperatorBrief = useMemo(
+    () =>
+      buildOperatorBrief({
+        locale: appLocale,
+        marketLabel: getMarketDisplayName(appLocale, marketId),
+        deskRole,
+        decision: selectedDecision,
+        compareStats: selectedTapeCompareStats,
+        dossier: selectedDossier,
+        registryTrack: selectedRegistryTrack,
+        riskOverlay: selectedNatureRiskOverlay,
+        focus: selectedDesk.focus,
+        check: selectedDesk.check
+      }),
+    [
+      appLocale,
+      deskRole,
+      marketId,
+      selectedDecision,
+      selectedDossier,
+      selectedNatureRiskOverlay,
+      selectedRegistryTrack,
+      selectedTapeCompareStats,
+      selectedDesk
+    ]
+  );
 
   const decisionView = useMemo(
     () => {
@@ -3367,7 +3672,11 @@ export default function App() {
             checkpoints:
               assistantResponse.checkpoints.length > 0
                 ? assistantResponse.checkpoints
-                : selectedDecision.checkpoints
+                : selectedDecision.checkpoints,
+            operatorBrief:
+              assistantResponse.operatorBrief.length > 0
+                ? assistantResponse.operatorBrief
+                : localOperatorBrief
           }
         : selectedDecision;
 
@@ -3384,10 +3693,11 @@ export default function App() {
         dataHealth: dedupeStrings([...base.dataHealth, ...decisionOverlay.dataHealth], 8),
         checkpoints: dedupeStrings([...base.checkpoints, ...decisionOverlay.checkpoints], 8),
         actions: dedupeStrings([...base.actions, ...decisionOverlay.actions], 8),
-        risks: dedupeStrings([...base.risks, ...decisionOverlay.risks], 8)
+        risks: dedupeStrings([...base.risks, ...decisionOverlay.risks], 8),
+        operatorBrief: base.operatorBrief.length > 0 ? base.operatorBrief : localOperatorBrief
       };
     },
-    [assistantResponse, decisionOverlay, selectedDecision]
+    [assistantResponse, decisionOverlay, localOperatorBrief, selectedDecision]
   );
   const decisionReasonHeader = useMemo(
     () => ({
@@ -3823,6 +4133,7 @@ export default function App() {
           deskRole,
           compareStats: selectedTapeCompareStats,
           dossier: selectedDossier,
+          registryTrack: selectedRegistryTrack,
           natureRisk: selectedNatureRiskOverlay,
           question: assistantQuestion
         })
@@ -3886,11 +4197,20 @@ export default function App() {
     const dossier = visibleDossiers.find((item) => item.id === dossierId);
     if (dossier) {
       setSelectedDossierId(dossier.id);
+      setSelectedRegistryTrackId(dossier.registryTrackId);
       const linkedRisk = visibleNatureRiskOverlays.find((item) => item.dossierId === dossier.id);
       if (linkedRisk) {
         setSelectedRiskOverlayId(linkedRisk.id);
       }
       setSpotlight(buildDossierSpotlight(appLocale, dossier));
+    }
+  }
+
+  function handleInspectRegistryTrack(trackId: string) {
+    const track = visibleRegistryTracks.find((item) => item.id === trackId);
+    if (track) {
+      setSelectedRegistryTrackId(track.id);
+      setSpotlight(buildRegistryTrackSpotlight(appLocale, track));
     }
   }
 
@@ -4423,6 +4743,7 @@ export default function App() {
               sourceRows={selectedSourceHealthRows}
               dossier={selectedDossier}
               registryRows={registryFreshnessRows}
+              registryTrack={selectedRegistryTrack}
               riskOverlay={selectedNatureRiskOverlay}
               focus={selectedDesk.focus}
               check={selectedDesk.check}
@@ -4433,6 +4754,7 @@ export default function App() {
               onInspectCatalyst={handleInspectCatalyst}
               onInspectSource={handleInspectSource}
               onInspectDossier={handleInspectDossier}
+              onInspectRegistryTrack={handleInspectRegistryTrack}
               onInspectRisk={handleInspectRiskOverlay}
             />
             </div>
@@ -4913,6 +5235,95 @@ export default function App() {
               <section className="overview-grid secondary">
                 <div className="panel">
                   <SectionHeader
+                    title={t(appLocale, "레지스트리 운영 보드", "Registry operations board")}
+                    subtitle={t(
+                      appLocale,
+                      "문서 흐름, 검토 주기, 막힘 요인을 따로 보는 운영 보드입니다.",
+                      "Track evidence workflow, refresh cadence, and blockers separately from market direction."
+                    )}
+                  />
+                  <ColumnChart
+                    points={registryOperationsPoints}
+                    color={marketColor(marketId)}
+                    valueFormatter={(value) => formatNumber(appLocale, value, 0)}
+                    height={170}
+                  />
+                  <div className="benchmark-list">
+                    {visibleRegistryTracks.map((item) => (
+                      <button
+                        key={item.id}
+                        className={`benchmark-item benchmark-item-detailed ${selectedRegistryTrack?.id === item.id ? "active" : ""}`}
+                        onClick={() => handleInspectRegistryTrack(item.id)}
+                      >
+                        <strong>{item.registry}</strong>
+                        <span>{`${item.accessMethod} · ${registryHealthLabel(appLocale, item.status)}`}</span>
+                        <p>{item.operatorRead}</p>
+                        <div className="status-chip-row">
+                          <span className={`driver-chip ${registryHealthTone(item.status)}`}>
+                            {registryHealthLabel(appLocale, item.status)}
+                          </span>
+                          <span className="driver-chip neutral">{item.refreshCadence}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "선택한 운영 흐름", "Selected workflow")}
+                    subtitle={selectedRegistryTrack?.registry ?? t(appLocale, "선택된 운영 흐름 없음", "No workflow selected")}
+                  />
+                  {selectedRegistryTrack ? (
+                    <div className="registry-track-panel">
+                      <div className="registry-track-head">
+                        <div>
+                          <strong>{selectedRegistryTrack.registry}</strong>
+                          <span>{`${selectedRegistryTrack.accessMethod} · ${formatDate(appLocale, selectedRegistryTrack.lastReviewed)}`}</span>
+                        </div>
+                        <button className="subtle-button" onClick={() => void handleOpenExternal(selectedRegistryTrack.source.url)}>
+                          {t(appLocale, "출처 열기", "Open source")}
+                        </button>
+                      </div>
+                      <p>{selectedRegistryTrack.operatorRead}</p>
+                      <div className="status-chip-row">
+                        <span className={`driver-chip ${registryHealthTone(selectedRegistryTrack.status)}`}>
+                          {registryHealthLabel(appLocale, selectedRegistryTrack.status)}
+                        </span>
+                        <span className="driver-chip neutral">
+                          {t(appLocale, "기준", "SLA")} · {selectedRegistryTrack.freshnessSla}
+                        </span>
+                      </div>
+                      <ColumnChart
+                        points={registryStagePoints}
+                        color={marketColor(marketId)}
+                        valueFormatter={(value) => `${formatNumber(appLocale, value, 0)}`}
+                        height={180}
+                      />
+                      <div className="registry-track-columns">
+                        <ul className="project-risk-list">
+                          {selectedRegistryTrack.watchItems.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                        <ul className="project-risk-list">
+                          {selectedRegistryTrack.blockers.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-plot compact">
+                      {t(appLocale, "연결된 레지스트리 운영 흐름이 없습니다.", "No registry workflow is linked.")}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
                     title={t(appLocale, "오픈소스 벤치마크 맵", "Open-source benchmark map")}
                     subtitle={t(
                       appLocale,
@@ -5159,6 +5570,7 @@ export default function App() {
             sourceRows={selectedSourceHealthRows}
             dossier={selectedDossier}
             registryRows={registryFreshnessRows}
+            registryTrack={selectedRegistryTrack}
             riskOverlay={selectedNatureRiskOverlay}
             linkedRows={selectedLinkedScoreRows}
             selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
@@ -5733,6 +6145,7 @@ function InspectorWorkbenchPanel({
   sourceRows,
   dossier,
   registryRows,
+  registryTrack,
   riskOverlay,
   linkedRows,
   selectedQuoteId,
@@ -5762,6 +6175,7 @@ function InspectorWorkbenchPanel({
   sourceRows: SourceHealthRow[];
   dossier: CreditLifecycleDossier | null;
   registryRows: RegistryFreshnessRow[];
+  registryTrack: RegistryOperationsTrack | null;
   riskOverlay: NatureRiskOverlay | null;
   linkedRows: LinkedTapeScoreRow[];
   selectedQuoteId: string;
@@ -6082,6 +6496,31 @@ function InspectorWorkbenchPanel({
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "registry" && registryTrack ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "운영 단계", "Workflow stages")}</strong>
+            <div className="inspector-rail-list">
+              {registryTrack.steps.map((step) => (
+                <div key={step.id} className="inspector-rail-item active">
+                  <small>{lifecycleStatusLabel(locale, step.status)}</small>
+                  <strong>{step.label}</strong>
+                  <span>{step.note}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "운영 막힘", "Workflow blockers")}</strong>
+            <ul className="inspector-list">
+              {[...registryTrack.watchItems, ...registryTrack.blockers].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
         </div>
       ) : null}
@@ -7171,6 +7610,7 @@ function InstitutionDecisionSurface({
   sourceRows,
   dossier,
   registryRows,
+  registryTrack,
   riskOverlay,
   focus,
   check,
@@ -7181,6 +7621,7 @@ function InstitutionDecisionSurface({
   onInspectCatalyst,
   onInspectSource,
   onInspectDossier,
+  onInspectRegistryTrack,
   onInspectRisk
 }: {
   locale: AppLocale;
@@ -7196,6 +7637,7 @@ function InstitutionDecisionSurface({
   sourceRows: SourceHealthRow[];
   dossier: CreditLifecycleDossier | null;
   registryRows: RegistryFreshnessRow[];
+  registryTrack: RegistryOperationsTrack | null;
   riskOverlay: NatureRiskOverlay | null;
   focus: string;
   check: string;
@@ -7206,6 +7648,7 @@ function InstitutionDecisionSurface({
   onInspectCatalyst: (rowId: string) => void;
   onInspectSource: (rowId: string) => void;
   onInspectDossier: (dossierId: string) => void;
+  onInspectRegistryTrack: (trackId: string) => void;
   onInspectRisk: (riskId: string) => void;
 }) {
   return (
@@ -7388,6 +7831,65 @@ function InstitutionDecisionSurface({
           )}
         </div>
       </section>
+
+      <section className="panel">
+        <SectionHeader
+          title={t(locale, "레지스트리 운영 보드", "Registry operations board")}
+          subtitle={t(
+            locale,
+            "실제 문서 흐름이 얼마나 믿을 만한지, 어떤 운영 막힘이 남아 있는지 따로 봅니다.",
+            "Separate workflow quality from market direction so evidence friction is visible."
+          )}
+        />
+        {registryTrack ? (
+          <div className="registry-track-panel">
+            <div className="registry-track-head">
+              <div>
+                <strong>{registryTrack.registry}</strong>
+                <span>{`${registryTrack.accessMethod} · ${registryHealthLabel(locale, registryTrack.status)}`}</span>
+              </div>
+              <button className="subtle-button" onClick={() => onInspectRegistryTrack(registryTrack.id)}>
+                {t(locale, "운영 흐름 자세히 보기", "Inspect workflow")}
+              </button>
+            </div>
+            <p>{registryTrack.operatorRead}</p>
+            <div className="status-chip-row">
+              <span className={`driver-chip ${registryHealthTone(registryTrack.status)}`}>
+                {registryHealthLabel(locale, registryTrack.status)}
+              </span>
+              <span className="driver-chip neutral">
+                {t(locale, "주기", "Cadence")} · {registryTrack.refreshCadence}
+              </span>
+              <span className="driver-chip neutral">
+                {t(locale, "기준", "SLA")} · {registryTrack.freshnessSla}
+              </span>
+            </div>
+            <div className="registry-track-columns">
+              <div className="project-document-list">
+                {registryTrack.steps.map((step) => (
+                  <div key={step.id} className="project-document-row static">
+                    <strong>{step.label}</strong>
+                    <span>{lifecycleStatusLabel(locale, step.status)}</span>
+                    <small>{step.note}</small>
+                  </div>
+                ))}
+              </div>
+              <div className="registry-track-side">
+                <strong>{t(locale, "운영 막힘과 주의사항", "Watch items and blockers")}</strong>
+                <ul className="project-risk-list">
+                  {[...registryTrack.watchItems, ...registryTrack.blockers].map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-plot compact">
+            {t(locale, "연결된 레지스트리 운영 흐름이 없습니다.", "No registry workflow is linked.")}
+          </div>
+        )}
+      </section>
     </>
   );
 }
@@ -7426,6 +7928,22 @@ function DecisionMemoPanel({
           <strong>{formatNumber(locale, decision.confidence * 100, 0)}%</strong>
         </div>
       </div>
+
+      {decision.operatorBrief.length > 0 ? (
+        <div className="operator-brief-grid">
+          {decision.operatorBrief.map((section) => (
+            <section key={section.title} className="operator-brief-card">
+              <strong>{section.title}</strong>
+              <p>{section.summary}</p>
+              <ul>
+                {section.bullets.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      ) : null}
 
       <div className="memo-grid">
         <section>
