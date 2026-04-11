@@ -22,6 +22,7 @@ It does not place trades.
 - Shows overlap stats between the official tape and linked tapes, including gap, recent move, correlation, and direction match
 - Ranks linked tapes on a scoreboard so you can see which futures or proxies are tracking the official market best
 - Adds an institution-style checklist for what to confirm before leaning buy, reduce, or hold
+- Adds read-only credit lifecycle dossiers, registry document freshness tracking, and nature-based integrity overlays
 - Explains what is moving carbon prices
 - Summarizes the current market tone with a rule-based decision layer
 - Lets you run local backtests and walk-forward model checks
@@ -87,6 +88,7 @@ The app is built to work even if you do not want to pay for data.
   - decision memo with support and counter-evidence
   - pre-trade risk gates
   - driver table behind the current call
+  - project intelligence sidecar and integrity-risk overlay
   - next catalysts and data-status checks
   - optional AI follow-up explanation
 - `Lab`
@@ -97,6 +99,9 @@ The app is built to work even if you do not want to pay for data.
   - source coverage
   - free-only filtering
   - source registry
+  - credit lifecycle dossiers
+  - registry evidence freshness
+  - nature-based risk overlays
   - watchlists
 
 ## Important Notes

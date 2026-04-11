@@ -565,6 +565,12 @@ textarea {
   box-shadow: inset 3px 0 0 rgba(47, 123, 246, 0.8);
 }
 
+.inspector-rail-item.button-like {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
 .inspector-rail-item small {
   color: var(--text-soft);
   font-size: 0.74rem;
@@ -1594,6 +1600,11 @@ textarea {
   padding-bottom: 1rem;
 }
 
+.benchmark-item.active {
+  border-bottom-color: rgba(47, 123, 246, 0.28);
+  background: rgba(47, 123, 246, 0.03);
+}
+
 .benchmark-detail {
   display: grid;
   gap: 0.16rem;
@@ -1612,6 +1623,61 @@ textarea {
   color: var(--text-strong);
   font-size: 0.8rem;
   line-height: 1.45;
+}
+
+.status-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  margin-top: 0.5rem;
+}
+
+.project-dossier-panel,
+.project-risk-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.project-dossier-copy,
+.project-risk-head {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.project-dossier-copy span,
+.project-risk-head span {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.project-document-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.project-document-row {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 0.16rem;
+  padding: 0.8rem 0.85rem;
+  border-radius: 16px;
+  border: 1px solid rgba(130, 146, 182, 0.1);
+  background: rgba(247, 250, 255, 0.88);
+}
+
+.project-document-row span,
+.project-document-row small {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.project-risk-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.38rem;
+  color: var(--text-soft);
 }
 
 .feed-item.positive {

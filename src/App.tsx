@@ -29,6 +29,7 @@ import {
   watchlistPresets
 } from "./data/experience";
 import { openSourceBenchmarks } from "./data/openSourceBenchmarks";
+import { creditLifecycleDossiers, natureRiskOverlays } from "./data/projectIntel";
 import {
   localeOptions,
   type AppLocale,
@@ -60,6 +61,7 @@ import type {
   AppSettings,
   BacktestRun,
   BacktestStrategy,
+  CreditLifecycleDossier,
   ConnectedSourceCard,
   ConnectedSourcePayload,
   ConnectedSourceSeriesPoint,
@@ -68,6 +70,7 @@ import type {
   MarketLiveQuote,
   MarketDriver,
   MarketProfile,
+  NatureRiskOverlay,
   ParsedSeriesPoint,
   WalkForwardResult
 } from "./types";
@@ -222,11 +225,21 @@ type SourceHealthRow = {
   note: string;
 };
 
+type RegistryFreshnessRow = {
+  id: string;
+  title: string;
+  docType: string;
+  status: "fresh" | "watch" | "stale";
+  publishedAt: string;
+  note: string;
+  sourceUrl: string;
+};
+
 type SpotlightTone = "positive" | "neutral" | "negative";
 
 type InteractionSpotlight = {
   id: string;
-  kind: "market" | "tape" | "driver" | "catalyst" | "source";
+  kind: "market" | "tape" | "driver" | "catalyst" | "source" | "dossier" | "risk";
   eyebrow: string;
   title: string;
   summary: string;
@@ -354,7 +367,7 @@ const CATEGORY_LABELS_KO: Record<string, string> = {
   "Consumer scan UX": "소비자 스캔 UX",
   "Trading workspace": "트레이딩 워크스페이스",
   "Research dashboard": "리서치 대시보드",
-  "Carbon news and dossiers": "탄소 뉴스·도시에",
+  "Carbon news and dossiers": "탄소 뉴스·프로젝트 파일",
   "Decision layer": "의사결정 레이어",
   "Position optimization": "포지션 최적화",
   "Primary price source": "핵심 가격 소스",
@@ -783,6 +796,57 @@ function buildSourceSpotlight(locale: AppLocale, row: SourceHealthRow): Interact
   };
 }
 
+function buildDossierSpotlight(locale: AppLocale, dossier: CreditLifecycleDossier): InteractionSpotlight {
+  return {
+    id: `dossier-${dossier.id}`,
+    kind: "dossier",
+    eyebrow: t(locale, "선택한 프로젝트 파일", "Selected dossier"),
+    title: dossier.title,
+    summary: dossier.currentRead,
+    bullets: [
+      `${t(locale, "레지스트리", "Registry")}: ${dossier.registry}`,
+      `${t(locale, "유형", "Type")}: ${dossier.projectType}`,
+      `${t(locale, "지역", "Region")}: ${dossier.region}`,
+      `${t(locale, "운용 메모", "Use in desk")}: ${dossier.operatorUse}`
+    ],
+    tone:
+      dossier.documents.some((item) => item.status === "stale")
+        ? "negative"
+        : dossier.documents.some((item) => item.status === "watch")
+          ? "neutral"
+          : "positive",
+    ctaLabel: t(locale, "출처 화면 유지", "Stay in sources"),
+    ctaSurface: "sources",
+    sourceLabel: dossier.source.label,
+    sourceUrl: dossier.source.url
+  };
+}
+
+function buildRiskSpotlight(locale: AppLocale, overlay: NatureRiskOverlay): InteractionSpotlight {
+  return {
+    id: `risk-${overlay.id}`,
+    kind: "risk",
+    eyebrow: t(locale, "선택한 리스크 오버레이", "Selected risk overlay"),
+    title: overlay.title,
+    summary: overlay.summary,
+    bullets: [
+      `${t(locale, "지역", "Region")}: ${overlay.region}`,
+      `${t(locale, "현재 읽기", "Current read")}: ${overlay.posture}`,
+      ...overlay.watchItems.slice(0, 2)
+    ],
+    tone:
+      overlay.components.some((item) => item.value >= 65)
+        ? "negative"
+        : overlay.components.some((item) => item.value >= 45)
+          ? "neutral"
+          : "positive",
+    ctaLabel: t(locale, "판단 화면 열기", "Open decision"),
+    ctaSurface: "signals",
+    sourceLabel: overlay.source.label,
+    sourceUrl: overlay.source.url
+  };
+}
+
 function getSpotlightEntityId(spotlight: InteractionSpotlight | null) {
   if (!spotlight) {
     return "";
@@ -814,6 +878,67 @@ function getAccessTier(
     tone: "free",
     label: t(locale, "무료로 바로 보기", "Free to access")
   };
+}
+
+function lifecycleStatusLabel(
+  locale: AppLocale,
+  status: "done" | "active" | "queued" | "warning"
+) {
+  if (locale === "en") {
+    if (status === "done") return "Done";
+    if (status === "active") return "Active";
+    if (status === "queued") return "Queued";
+    return "Warning";
+  }
+
+  if (status === "done") return "완료";
+  if (status === "active") return "진행 중";
+  if (status === "queued") return "대기";
+  return "주의";
+}
+
+function lifecycleStatusTone(status: "done" | "active" | "queued" | "warning") {
+  if (status === "done") return "positive";
+  if (status === "warning") return "negative";
+  return "neutral";
+}
+
+function registryStatusLabel(locale: AppLocale, status: "fresh" | "watch" | "stale") {
+  if (locale === "en") {
+    if (status === "fresh") return "Fresh";
+    if (status === "watch") return "Watch";
+    return "Stale";
+  }
+
+  if (status === "fresh") return "최신";
+  if (status === "watch") return "점검";
+  return "오래됨";
+}
+
+function registryStatusTone(status: "fresh" | "watch" | "stale") {
+  if (status === "fresh") return "positive";
+  if (status === "stale") return "negative";
+  return "neutral";
+}
+
+function dedupeStrings(items: string[], limit = 8) {
+  return Array.from(new Set(items.filter(Boolean))).slice(0, limit);
+}
+
+function dedupeReasonItems(items: DecisionReasonItem[], limit = 6) {
+  const seen = new Set<string>();
+  const result: DecisionReasonItem[] = [];
+  for (const item of items) {
+    const key = `${item.title}::${item.detail}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(item);
+    }
+    if (result.length >= limit) {
+      break;
+    }
+  }
+  return result;
 }
 
 function useLocalizedCatalysts(locale: AppLocale, marketId: MarketProfile["id"]) {
@@ -2377,13 +2502,32 @@ function buildDecisionPayload(args: {
   familyScores: Record<string, number>;
   alerts: AlertItem[];
   catalysts: ReturnType<typeof useLocalizedCatalysts>;
+  deskRole: DeskRole;
+  compareStats: TapeCompareStats;
+  dossier: CreditLifecycleDossier | null;
+  natureRisk: NatureRiskOverlay | null;
   question: string;
 }) {
-  const { locale, market, card, liveQuotes, forecast, familyScores, alerts, catalysts, question } = args;
+  const {
+    locale,
+    market,
+    card,
+    liveQuotes,
+    forecast,
+    familyScores,
+    alerts,
+    catalysts,
+    deskRole,
+    compareStats,
+    dossier,
+    natureRisk,
+    question
+  } = args;
 
   return {
     question,
     locale,
+    deskRole,
     market: {
       id: market.id,
       name: getMarketDisplayName(locale, market.id),
@@ -2438,6 +2582,45 @@ function buildDecisionPayload(args: {
       asOf: quote.asOf
     };
     }),
+    tapeComparison: {
+      gapPct: compareStats.normalizedGapPct,
+      directionMatchPct: compareStats.directionMatchPct,
+      correlation: compareStats.recentCorrelation,
+      officialFiveDayReturnPct: compareStats.officialFiveDayReturnPct,
+      quoteFiveDayReturnPct: compareStats.quoteFiveDayReturnPct
+    },
+    lifecycleDossier: dossier
+      ? {
+          title: dossier.title,
+          registry: dossier.registry,
+          projectType: dossier.projectType,
+          region: dossier.region,
+          currentRead: dossier.currentRead,
+          operatorUse: dossier.operatorUse,
+          stages: dossier.stages.map((stage) => ({
+            label: stage.label,
+            status: stage.status,
+            note: stage.note
+          })),
+          documents: dossier.documents.map((doc) => ({
+            title: doc.title,
+            docType: doc.docType,
+            publishedAt: doc.publishedAt,
+            status: doc.status,
+            note: doc.note
+          }))
+        }
+      : null,
+    natureRisk: natureRisk
+      ? {
+          title: natureRisk.title,
+          region: natureRisk.region,
+          posture: natureRisk.posture,
+          summary: natureRisk.summary,
+          components: natureRisk.components,
+          watchItems: natureRisk.watchItems
+        }
+      : null,
     officialSeries: (card?.series ?? []).slice(-18),
     notes: card?.notes ?? []
   };
@@ -2482,6 +2665,8 @@ export default function App() {
   const [freeOnlySources, setFreeOnlySources] = useState<boolean>(() =>
     readStoredBoolean("cquant:free-only-sources", true)
   );
+  const [selectedDossierId, setSelectedDossierId] = useState<string>("");
+  const [selectedRiskOverlayId, setSelectedRiskOverlayId] = useState<string>("");
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(emptySources);
   const [refreshingSources, setRefreshingSources] = useState(false);
   const [windowMaximized, setWindowMaximized] = useState(false);
@@ -2496,7 +2681,7 @@ export default function App() {
     Partial<Record<MarketProfile["id"], Record<string, number>>>
   >({});
   const [assistantQuestion, setAssistantQuestion] = useState(
-    "Should the current market posture be increased, reduced, or held?"
+    "Explain the current carbon market posture, the contrary case, registry freshness risk, and what should be checked next."
   );
   const [assistantResponse, setAssistantResponse] = useState<DecisionAssistantResponse | null>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
@@ -2559,6 +2744,73 @@ export default function App() {
     () => pickQuantIndicatorsForMarket(marketId, localizedQuantIndicators),
     [localizedQuantIndicators, marketId]
   );
+  const visibleDossiers = useMemo(
+    () =>
+      creditLifecycleDossiers.filter(
+        (item) => item.markets.includes("shared") || item.markets.includes(marketId)
+      ),
+    [marketId]
+  );
+  const selectedDossier = useMemo(
+    () => visibleDossiers.find((item) => item.id === selectedDossierId) ?? visibleDossiers[0] ?? null,
+    [selectedDossierId, visibleDossiers]
+  );
+  const visibleNatureRiskOverlays = useMemo(() => {
+    const relevant = natureRiskOverlays.filter(
+      (item) =>
+        (item.markets.includes("shared") || item.markets.includes(marketId)) &&
+        (!selectedDossier || item.dossierId === selectedDossier.id)
+    );
+
+    return relevant.length > 0
+      ? relevant
+      : natureRiskOverlays.filter((item) => item.markets.includes("shared") || item.markets.includes(marketId));
+  }, [marketId, selectedDossier]);
+  const selectedNatureRiskOverlay = useMemo(
+    () =>
+      visibleNatureRiskOverlays.find((item) => item.id === selectedRiskOverlayId) ??
+      visibleNatureRiskOverlays[0] ??
+      null,
+    [selectedRiskOverlayId, visibleNatureRiskOverlays]
+  );
+  const registryFreshnessRows = useMemo<RegistryFreshnessRow[]>(
+    () =>
+      (selectedDossier?.documents ?? []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        docType: item.docType,
+        status: item.status,
+        publishedAt: item.publishedAt,
+        note: item.note,
+        sourceUrl: item.source.url
+      })),
+    [selectedDossier]
+  );
+  const registryFreshnessPoints = useMemo<ChartPoint[]>(
+    () => [
+      {
+        label: t(appLocale, "최신", "Fresh"),
+        value: registryFreshnessRows.filter((item) => item.status === "fresh").length
+      },
+      {
+        label: t(appLocale, "점검", "Watch"),
+        value: registryFreshnessRows.filter((item) => item.status === "watch").length
+      },
+      {
+        label: t(appLocale, "오래됨", "Stale"),
+        value: registryFreshnessRows.filter((item) => item.status === "stale").length
+      }
+    ],
+    [appLocale, registryFreshnessRows]
+  );
+  const natureRiskPoints = useMemo<ChartPoint[]>(
+    () =>
+      (selectedNatureRiskOverlay?.components ?? []).map((item) => ({
+        label: item.label,
+        value: item.value
+      })),
+    [selectedNatureRiskOverlay]
+  );
 
   useEffect(() => {
     window.localStorage.setItem("cquant:locale", appLocale);
@@ -2575,6 +2827,24 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem("cquant:market", marketId);
   }, [marketId]);
+
+  useEffect(() => {
+    if (!visibleDossiers.length) {
+      return;
+    }
+    if (!selectedDossier || !visibleDossiers.some((item) => item.id === selectedDossier.id)) {
+      setSelectedDossierId(visibleDossiers[0].id);
+    }
+  }, [selectedDossier, visibleDossiers]);
+
+  useEffect(() => {
+    if (!visibleNatureRiskOverlays.length) {
+      return;
+    }
+    if (!selectedNatureRiskOverlay || !visibleNatureRiskOverlays.some((item) => item.id === selectedNatureRiskOverlay.id)) {
+      setSelectedRiskOverlayId(visibleNatureRiskOverlays[0].id);
+    }
+  }, [selectedNatureRiskOverlay, visibleNatureRiskOverlays]);
 
   useEffect(() => {
     window.localStorage.setItem("cquant:quote-range", selectedQuoteRange);
@@ -2988,10 +3258,97 @@ export default function App() {
   );
 
   const selectedDecision = decisionsByMarket[marketId];
+  const decisionOverlay = useMemo(() => {
+    const supportingEvidence: DecisionReasonItem[] = [];
+    const counterEvidence: DecisionReasonItem[] = [];
+    const dataHealth: string[] = [];
+    const checkpoints: string[] = [];
+    const actions: string[] = [];
+    const risks: string[] = [];
+
+    if (selectedDossier) {
+      supportingEvidence.push({
+        title: t(appLocale, "크레딧 생애주기", "Credit lifecycle"),
+        detail:
+          `${selectedDossier.title}: ${selectedDossier.currentRead}`
+      });
+
+      const staleDocuments = selectedDossier.documents.filter((item) => item.status === "stale");
+      const watchDocuments = selectedDossier.documents.filter((item) => item.status === "watch");
+
+      dataHealth.push(
+        t(
+          appLocale,
+          `${selectedDossier.registry} 기준 자료 ${selectedDossier.documents.length}건을 연결했고, 최신 ${selectedDossier.documents.filter((item) => item.status === "fresh").length}건, 점검 ${watchDocuments.length}건, 오래됨 ${staleDocuments.length}건입니다.`,
+          `${selectedDossier.documents.length} registry documents are linked for ${selectedDossier.registry}: ${selectedDossier.documents.filter((item) => item.status === "fresh").length} fresh, ${watchDocuments.length} watch, ${staleDocuments.length} stale.`
+        )
+      );
+
+      if (staleDocuments.length > 0) {
+        counterEvidence.push({
+          title: t(appLocale, "오래된 증빙", "Stale evidence"),
+          detail: t(
+            appLocale,
+            `${staleDocuments[0].title} 자료가 오래되어 이 프로젝트 파일에 대한 신뢰도를 낮춥니다.`,
+            `${staleDocuments[0].title} is stale and lowers confidence in the dossier.`
+          )
+        });
+      }
+
+      checkpoints.push(
+        t(
+          appLocale,
+          `${selectedDossier.title}의 다음 갱신 문서와 retirement trail을 다시 확인하세요.`,
+          `Re-check the next document update and retirement trail for ${selectedDossier.title}.`
+        )
+      );
+      actions.push(
+        t(
+          appLocale,
+          `${selectedDossier.registry} 자료가 시장 해석보다 뒤처지지 않는지 먼저 확인`,
+          `Confirm that ${selectedDossier.registry} evidence is not lagging the market narrative`
+        )
+      );
+    }
+
+    if (selectedNatureRiskOverlay) {
+      const maxComponent =
+        selectedNatureRiskOverlay.components.reduce((top, item) =>
+          item.value > top.value ? item : top
+        );
+
+      supportingEvidence.push({
+        title: t(appLocale, "무결성 오버레이", "Integrity overlay"),
+        detail: `${selectedNatureRiskOverlay.title}: ${selectedNatureRiskOverlay.posture}`
+      });
+
+      risks.push(
+        t(
+          appLocale,
+          `${selectedNatureRiskOverlay.title}에서 ${maxComponent.label} 항목이 가장 높아 무결성 할인율을 더 보수적으로 볼 필요가 있습니다.`,
+          `${maxComponent.label} is the highest component in ${selectedNatureRiskOverlay.title}, so integrity haircuts should stay conservative.`
+        )
+      );
+      checkpoints.push(...selectedNatureRiskOverlay.watchItems.slice(0, 2));
+
+      if (maxComponent.value >= 60) {
+        counterEvidence.push({
+          title: t(appLocale, "무결성 리스크 상단", "Integrity risk elevated"),
+          detail: t(
+            appLocale,
+            `${maxComponent.label} 점수가 ${formatNumber(appLocale, maxComponent.value, 0)}로 높아, 가격이 싸도 바로 우호적으로 보기 어렵습니다.`,
+            `${maxComponent.label} scores ${formatNumber(appLocale, maxComponent.value, 0)}, which makes it hard to treat a cheap price as automatically attractive.`
+          )
+        });
+      }
+    }
+
+    return { supportingEvidence, counterEvidence, dataHealth, checkpoints, actions, risks };
+  }, [appLocale, selectedDossier, selectedNatureRiskOverlay]);
 
   const decisionView = useMemo(
-    () =>
-      assistantResponse
+    () => {
+      const base = assistantResponse
         ? {
             ...selectedDecision,
             ...assistantResponse,
@@ -3012,8 +3369,25 @@ export default function App() {
                 ? assistantResponse.checkpoints
                 : selectedDecision.checkpoints
           }
-        : selectedDecision,
-    [assistantResponse, selectedDecision]
+        : selectedDecision;
+
+      return {
+        ...base,
+        supportingEvidence: dedupeReasonItems(
+          [...base.supportingEvidence, ...decisionOverlay.supportingEvidence],
+          6
+        ),
+        counterEvidence: dedupeReasonItems(
+          [...base.counterEvidence, ...decisionOverlay.counterEvidence],
+          6
+        ),
+        dataHealth: dedupeStrings([...base.dataHealth, ...decisionOverlay.dataHealth], 8),
+        checkpoints: dedupeStrings([...base.checkpoints, ...decisionOverlay.checkpoints], 8),
+        actions: dedupeStrings([...base.actions, ...decisionOverlay.actions], 8),
+        risks: dedupeStrings([...base.risks, ...decisionOverlay.risks], 8)
+      };
+    },
+    [assistantResponse, decisionOverlay, selectedDecision]
   );
   const decisionReasonHeader = useMemo(
     () => ({
@@ -3446,6 +3820,10 @@ export default function App() {
           familyScores: familyScoresByMarket[marketId],
           alerts: selectedAlerts,
           catalysts: localizedCatalysts,
+          deskRole,
+          compareStats: selectedTapeCompareStats,
+          dossier: selectedDossier,
+          natureRisk: selectedNatureRiskOverlay,
           question: assistantQuestion
         })
       });
@@ -3501,6 +3879,26 @@ export default function App() {
     const row = selectedSourceHealthRows.find((item) => item.id === rowId);
     if (row) {
       setSpotlight(buildSourceSpotlight(appLocale, row));
+    }
+  }
+
+  function handleInspectDossier(dossierId: string) {
+    const dossier = visibleDossiers.find((item) => item.id === dossierId);
+    if (dossier) {
+      setSelectedDossierId(dossier.id);
+      const linkedRisk = visibleNatureRiskOverlays.find((item) => item.dossierId === dossier.id);
+      if (linkedRisk) {
+        setSelectedRiskOverlayId(linkedRisk.id);
+      }
+      setSpotlight(buildDossierSpotlight(appLocale, dossier));
+    }
+  }
+
+  function handleInspectRiskOverlay(riskId: string) {
+    const overlay = visibleNatureRiskOverlays.find((item) => item.id === riskId);
+    if (overlay) {
+      setSelectedRiskOverlayId(overlay.id);
+      setSpotlight(buildRiskSpotlight(appLocale, overlay));
     }
   }
 
@@ -4023,6 +4421,9 @@ export default function App() {
               driverRows={selectedRoleDriverRows}
               catalystRows={selectedRoleCatalystRows}
               sourceRows={selectedSourceHealthRows}
+              dossier={selectedDossier}
+              registryRows={registryFreshnessRows}
+              riskOverlay={selectedNatureRiskOverlay}
               focus={selectedDesk.focus}
               check={selectedDesk.check}
               priorityItems={selectedDesk.priorityItems}
@@ -4031,6 +4432,8 @@ export default function App() {
               onInspectDriver={handleInspectDriver}
               onInspectCatalyst={handleInspectCatalyst}
               onInspectSource={handleInspectSource}
+              onInspectDossier={handleInspectDossier}
+              onInspectRisk={handleInspectRiskOverlay}
             />
             </div>
           ) : null}
@@ -4545,6 +4948,136 @@ export default function App() {
                 </div>
               </section>
 
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "크레딧 생애주기 프로젝트 파일", "Credit lifecycle dossiers")}
+                    subtitle={t(
+                      appLocale,
+                      "발행, 검증, 문서, retirement trail을 읽기 전용으로 정리합니다.",
+                      "Read-only dossiers for issuance, verification, registry documents, and retirement trail."
+                    )}
+                  />
+                  <div className="benchmark-list">
+                    {visibleDossiers.map((item) => {
+                      const tone =
+                        item.documents.some((doc) => doc.status === "stale")
+                          ? "negative"
+                          : item.documents.some((doc) => doc.status === "watch")
+                            ? "neutral"
+                            : "positive";
+
+                      return (
+                        <button
+                          key={item.id}
+                          className={`benchmark-item benchmark-item-detailed ${selectedDossier?.id === item.id ? "active" : ""}`}
+                          onClick={() => handleInspectDossier(item.id)}
+                        >
+                          <strong>{item.title}</strong>
+                          <span>{`${item.registry} · ${item.projectType}`}</span>
+                          <p>{item.currentRead}</p>
+                          <div className="status-chip-row">
+                            {item.stages.map((stage) => (
+                              <span
+                                key={stage.id}
+                                className={`driver-chip ${lifecycleStatusTone(stage.status)} ${tone}`}
+                              >
+                                {stage.label} · {lifecycleStatusLabel(appLocale, stage.status)}
+                              </span>
+                            ))}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "레지스트리 문서 신선도", "Registry evidence freshness")}
+                    subtitle={selectedDossier?.title ?? t(appLocale, "선택된 프로젝트 파일 없음", "No dossier selected")}
+                  />
+                  <ColumnChart
+                    points={registryFreshnessPoints}
+                    color={marketColor(marketId)}
+                    valueFormatter={(value) => formatNumber(appLocale, value, 0)}
+                    height={170}
+                  />
+                  <div className="benchmark-list">
+                    {registryFreshnessRows.map((item) => (
+                      <button
+                        key={item.id}
+                        className="benchmark-item benchmark-item-detailed"
+                        onClick={() => void handleOpenExternal(item.sourceUrl)}
+                      >
+                        <strong>{item.title}</strong>
+                        <span>{`${item.docType} · ${formatDate(appLocale, item.publishedAt)}`}</span>
+                        <div className="status-chip-row">
+                          <span className={`driver-chip ${registryStatusTone(item.status)}`}>
+                            {registryStatusLabel(appLocale, item.status)}
+                          </span>
+                        </div>
+                        <p>{item.note}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="overview-grid secondary">
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "자연기반 리스크 오버레이", "Nature-based risk overlay")}
+                    subtitle={selectedNatureRiskOverlay?.title ?? t(appLocale, "선택된 리스크 없음", "No risk overlay selected")}
+                  />
+                  {selectedNatureRiskOverlay ? (
+                    <>
+                      <ColumnChart
+                        points={natureRiskPoints}
+                        color={NEGATIVE}
+                        valueFormatter={(value) => `${formatNumber(appLocale, value, 0)}`}
+                        height={190}
+                      />
+                      <div className="benchmark-list">
+                        {visibleNatureRiskOverlays.map((item) => (
+                          <button
+                            key={item.id}
+                            className={`benchmark-item benchmark-item-detailed ${selectedNatureRiskOverlay.id === item.id ? "active" : ""}`}
+                            onClick={() => handleInspectRiskOverlay(item.id)}
+                          >
+                            <strong>{item.title}</strong>
+                            <span>{item.region}</span>
+                            <p>{item.posture}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="empty-plot compact">
+                      {t(appLocale, "연결된 자연기반 리스크 데이터가 없습니다.", "No nature-based risk overlay is linked.")}
+                    </div>
+                  )}
+                </div>
+
+                <div className="panel">
+                  <SectionHeader
+                    title={t(appLocale, "리스크 해석 메모", "Risk interpretation")}
+                    subtitle={t(
+                      appLocale,
+                      "자연기반 크레딧은 ETS 공식 가격의 대체재가 아니라 무결성 측면의 보조 판단 레이어입니다.",
+                      "Nature-based credits are not substitutes for official ETS settlement; they are an integrity sidecar."
+                    )}
+                  />
+                  <div className="bullet-grid">
+                    {(selectedNatureRiskOverlay?.watchItems ?? []).map((item) => (
+                      <div key={item} className="bullet-card">
+                        <p>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
               <section className="overview-grid tertiary">
                 <div className="panel">
                   <SectionHeader
@@ -4624,6 +5157,9 @@ export default function App() {
             driverRows={selectedRoleDriverRows}
             catalystRows={selectedRoleCatalystRows}
             sourceRows={selectedSourceHealthRows}
+            dossier={selectedDossier}
+            registryRows={registryFreshnessRows}
+            riskOverlay={selectedNatureRiskOverlay}
             linkedRows={selectedLinkedScoreRows}
             selectedQuoteId={selectedInteractiveQuote?.id ?? ""}
             selectedRange={selectedQuoteRange}
@@ -4914,6 +5450,61 @@ function InspectorPanel({
           </div>
         </div>
       ) : null}
+
+      {spotlight.kind === "dossier" && dossier ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "생애주기 상태", "Lifecycle state")}</strong>
+            <div className="inspector-rail-list">
+              {dossier.stages.map((stage) => (
+                <div key={stage.id} className="inspector-rail-item active">
+                  <small>{lifecycleStatusLabel(locale, stage.status)}</small>
+                  <strong>{stage.label}</strong>
+                  <span>{stage.note}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "연결 문서", "Linked documents")}</strong>
+            <div className="inspector-rail-list">
+              {registryRows.map((row) => (
+                <button
+                  key={row.id}
+                  className="inspector-rail-item button-like"
+                  onClick={() => void onOpenSource(row.sourceUrl)}
+                >
+                  <small>{registryStatusLabel(locale, row.status)}</small>
+                  <strong>{row.title}</strong>
+                  <span>{`${formatDate(locale, row.publishedAt)} · ${row.note}`}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {spotlight.kind === "risk" && riskOverlay ? (
+        <div className="inspector-stack">
+          <div className="inspector-card">
+            <strong>{t(locale, "핵심 위험 축", "Primary risk axes")}</strong>
+            <ColumnChart
+              points={riskOverlay.components.map((item) => ({ label: item.label, value: item.value }))}
+              color={NEGATIVE}
+              valueFormatter={(value) => `${formatNumber(locale, value, 0)}`}
+              height={220}
+            />
+          </div>
+          <div className="inspector-card">
+            <strong>{t(locale, "운용 메모", "Operator notes")}</strong>
+            <ul className="inspector-list">
+              {[riskOverlay.posture, ...riskOverlay.watchItems].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -5140,6 +5731,9 @@ function InspectorWorkbenchPanel({
   driverRows,
   catalystRows,
   sourceRows,
+  dossier,
+  registryRows,
+  riskOverlay,
   linkedRows,
   selectedQuoteId,
   selectedRange,
@@ -5166,6 +5760,9 @@ function InspectorWorkbenchPanel({
   driverRows: DriverDecisionRow[];
   catalystRows: ReturnType<typeof localizeCatalystWindow>[];
   sourceRows: SourceHealthRow[];
+  dossier: CreditLifecycleDossier | null;
+  registryRows: RegistryFreshnessRow[];
+  riskOverlay: NatureRiskOverlay | null;
   linkedRows: LinkedTapeScoreRow[];
   selectedQuoteId: string;
   selectedRange: QuoteRangePreset;
@@ -6572,6 +7169,9 @@ function InstitutionDecisionSurface({
   driverRows,
   catalystRows,
   sourceRows,
+  dossier,
+  registryRows,
+  riskOverlay,
   focus,
   check,
   priorityItems,
@@ -6579,7 +7179,9 @@ function InstitutionDecisionSurface({
   onOpenSource,
   onInspectDriver,
   onInspectCatalyst,
-  onInspectSource
+  onInspectSource,
+  onInspectDossier,
+  onInspectRisk
 }: {
   locale: AppLocale;
   decision: DecisionAssistantResponse;
@@ -6592,6 +7194,9 @@ function InstitutionDecisionSurface({
   driverRows: DriverDecisionRow[];
   catalystRows: ReturnType<typeof localizeCatalystWindow>[];
   sourceRows: SourceHealthRow[];
+  dossier: CreditLifecycleDossier | null;
+  registryRows: RegistryFreshnessRow[];
+  riskOverlay: NatureRiskOverlay | null;
   focus: string;
   check: string;
   priorityItems: string[];
@@ -6600,6 +7205,8 @@ function InstitutionDecisionSurface({
   onInspectDriver: (rowId: string) => void;
   onInspectCatalyst: (rowId: string) => void;
   onInspectSource: (rowId: string) => void;
+  onInspectDossier: (dossierId: string) => void;
+  onInspectRisk: (riskId: string) => void;
 }) {
   return (
     <>
@@ -6690,6 +7297,95 @@ function InstitutionDecisionSurface({
             )}
           />
           <SourceHealthTable locale={locale} rows={sourceRows} onInspect={onInspectSource} />
+        </div>
+      </section>
+
+      <section className="overview-grid secondary">
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "프로젝트 인텔리전스", "Project intelligence sidecar")}
+            subtitle={t(
+              locale,
+              "거래 실행이 아니라 문서, 생애주기, retirement trail을 읽기 전용으로 봅니다.",
+              "Read registry documents, lifecycle status, and retirement trail without turning the product into a venue."
+            )}
+          />
+          {dossier ? (
+            <div className="project-dossier-panel">
+              <button className="subtle-button" onClick={() => onInspectDossier(dossier.id)}>
+                {t(locale, "프로젝트 파일 자세히 보기", "Inspect dossier")}
+              </button>
+              <div className="project-dossier-copy">
+                <strong>{dossier.title}</strong>
+                <span>{`${dossier.registry} · ${dossier.projectType} · ${dossier.region}`}</span>
+                <p>{dossier.currentRead}</p>
+              </div>
+              <div className="status-chip-row">
+                {dossier.stages.map((stage) => (
+                  <span key={stage.id} className={`driver-chip ${lifecycleStatusTone(stage.status)}`}>
+                    {stage.label} · {lifecycleStatusLabel(locale, stage.status)}
+                  </span>
+                ))}
+              </div>
+              <div className="project-document-list">
+                {registryRows.slice(0, 4).map((row) => (
+                  <button
+                    key={row.id}
+                    className="project-document-row"
+                    onClick={() => void onOpenSource(row.sourceUrl)}
+                  >
+                    <strong>{row.title}</strong>
+                    <span>{`${formatDate(locale, row.publishedAt)} · ${registryStatusLabel(locale, row.status)}`}</span>
+                    <small>{row.note}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="empty-plot compact">
+              {t(locale, "연결된 프로젝트 파일이 없습니다.", "No project dossier is linked.")}
+            </div>
+          )}
+        </div>
+
+        <div className="panel">
+          <SectionHeader
+            title={t(locale, "무결성 리스크 오버레이", "Integrity risk overlay")}
+            subtitle={t(
+              locale,
+              "ETS 공식 시세의 대체재가 아니라, 크레딧 품질을 따로 감시하는 보조 레이어입니다.",
+              "This is not a substitute for official ETS settlement. It is a sidecar for credit-quality monitoring."
+            )}
+          />
+          {riskOverlay ? (
+            <div className="project-risk-panel">
+              <div className="project-risk-head">
+                <div>
+                  <strong>{riskOverlay.title}</strong>
+                  <span>{riskOverlay.region}</span>
+                </div>
+                <button className="subtle-button" onClick={() => onInspectRisk(riskOverlay.id)}>
+                  {t(locale, "리스크 자세히 보기", "Inspect risk")}
+                </button>
+              </div>
+              <p>{riskOverlay.posture}</p>
+              <ColumnChart
+                points={riskOverlay.components.map((item) => ({ label: item.label, value: item.value }))}
+                color={NEGATIVE}
+                valueFormatter={(value) => `${formatNumber(locale, value, 0)}`}
+                height={180}
+              />
+              <ul className="project-risk-list">
+                {riskOverlay.watchItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="empty-plot compact">
+              {t(locale, "연결된 무결성 리스크 오버레이가 없습니다.", "No integrity risk overlay is linked.")}
+            </div>
+          )}
         </div>
       </section>
     </>

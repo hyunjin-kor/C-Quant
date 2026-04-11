@@ -98,6 +98,8 @@ The app now centers charts before text.
    - Scenario sliders for the most important drivers
    - Rule-based posture engine
    - Optional LLM brief
+   - Project intelligence sidecar with lifecycle dossier and registry freshness
+   - Integrity overlay for nature-based credit risk
    - Alert hub and quant-indicator list
 3. `Lab`
    - CSV upload
@@ -107,6 +109,9 @@ The app now centers charts before text.
 4. `Sources`
    - Source-method coverage chart
    - Source registry
+   - Credit lifecycle dossier shelf
+   - Registry evidence freshness monitor
+   - Nature-based risk overlays
    - Watchlists and proxy links
    - Trust principles and subscription value
 

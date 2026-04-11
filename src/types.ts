@@ -62,6 +62,60 @@ export type OpenSourceBenchmark = {
   source: SourceLink;
 };
 
+export type LifecycleStageStatus = "done" | "active" | "queued" | "warning";
+
+export type CreditLifecycleStage = {
+  id: string;
+  label: string;
+  status: LifecycleStageStatus;
+  note: string;
+};
+
+export type RegistryDocumentStatus = "fresh" | "watch" | "stale";
+
+export type RegistryDocument = {
+  id: string;
+  title: string;
+  docType: string;
+  publishedAt: string;
+  status: RegistryDocumentStatus;
+  note: string;
+  source: SourceLink;
+};
+
+export type CreditLifecycleDossier = {
+  id: string;
+  title: string;
+  markets: Array<MarketProfile["id"] | "shared">;
+  registry: string;
+  projectType: string;
+  region: string;
+  currentRead: string;
+  operatorUse: string;
+  source: SourceLink;
+  stages: CreditLifecycleStage[];
+  documents: RegistryDocument[];
+};
+
+export type NatureRiskComponent = {
+  label: string;
+  value: number;
+  note: string;
+};
+
+export type NatureRiskOverlay = {
+  id: string;
+  dossierId: string;
+  markets: Array<MarketProfile["id"] | "shared">;
+  title: string;
+  region: string;
+  posture: string;
+  summary: string;
+  source: SourceLink;
+  components: NatureRiskComponent[];
+  watchItems: string[];
+};
+
 export type DataColumnSpec = {
   name: string;
   required: boolean;

@@ -101,7 +101,7 @@ function normalizeResponse(payload, provider, model) {
 
 function buildPrompt(payload, locale) {
   const sharedInstruction =
-    "Use only the supplied data. Do not invent prices, history, or regulations. If the supplied data is stale or incomplete, say so clearly. The platform does not intermediate trades, so frame the answer as a decision-support overlay, not individualized advice.";
+    "Use only the supplied data. Do not invent prices, history, regulations, registry facts, retirement evidence, or integrity claims. If the supplied data is stale or incomplete, say so clearly. The platform does not intermediate trades, so frame the answer as a decision-support overlay, not individualized advice or execution language. Treat lifecycle dossiers, registry freshness, and integrity overlays as read-only evidence layers.";
 
   if (locale === "ko") {
     return {
@@ -118,19 +118,19 @@ function buildPrompt(payload, locale) {
 
   return {
     system:
-      "You are a carbon allowance decision-support analyst. " +
+      "You are a carbon-market copilot for institutional carbon decision workflows. " +
       sharedInstruction +
       ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."}',
     user:
       "Read the following JSON and explain in detail why the market currently leans buy, hold, or reduce. " +
-      "Separate supporting evidence, counter-evidence, data health, and next checkpoints.\n\n" +
+      "Separate supporting evidence, counter-evidence, data health, and next checkpoints. Include market structure, official-vs-linked tape agreement, lifecycle dossier evidence, registry freshness, and integrity-risk considerations when they are present.\n\n" +
       JSON.stringify(payload, null, 2)
   };
 }
 
 function buildExplainablePrompt(payload, locale) {
   const sharedInstruction =
-    "Use only the supplied data. Do not invent prices, history, regulations, or catalysts. If the supplied data is stale, missing, or weak, say that clearly. This product is a decision-support platform only, so do not present the output as individualized financial advice.";
+    "Use only the supplied data. Do not invent prices, history, regulations, catalysts, registry facts, retirement evidence, or integrity claims. If the supplied data is stale, missing, or weak, say that clearly. This product is a decision-support platform only, so do not present the output as individualized financial advice or execution instruction.";
 
   if (locale === "ko") {
     return {
@@ -148,13 +148,14 @@ function buildExplainablePrompt(payload, locale) {
 
   return {
     system:
-      "You are a carbon allowance decision-support analyst. " +
+      "You are a carbon-market copilot for institutional carbon decision workflows. " +
       sharedInstruction +
       ' Return JSON only using this schema: {"stance":"Buy Bias|Hold / Wait|Reduce Bias","confidence":0-1,"summary":"...","thesis":["..."],"risks":["..."],"actions":["..."],"supportingEvidence":[{"title":"...","detail":"..."}],"counterEvidence":[{"title":"...","detail":"..."}],"dataHealth":["..."],"checkpoints":["..."],"disclaimer":"..."}',
     user:
       "Read the following JSON and explain in detail why the market currently leans buy, hold, or reduce. " +
       "Use plain language. Separate supporting evidence, counter-evidence, data health, and next checkpoints. " +
-      "For each evidence item, explain which way it pushes the market, why it matters, and what could invalidate it.\n\n" +
+      "For each evidence item, explain which way it pushes the market, why it matters, and what could invalidate it. " +
+      "When lifecycle dossier, registry freshness, or integrity overlay fields are present, treat them as operator evidence and explicitly connect them to conviction, not execution.\n\n" +
       JSON.stringify(payload, null, 2)
   };
 }
