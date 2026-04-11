@@ -26,7 +26,9 @@ html,
 body,
 #root {
   margin: 0;
+  height: 100%;
   min-height: 100%;
+  overflow: hidden;
   background:
     radial-gradient(circle at top right, rgba(47, 123, 246, 0.12), transparent 28%),
     linear-gradient(180deg, #f7f9fd 0%, #edf2f9 100%);
@@ -67,9 +69,11 @@ textarea {
 }
 
 .terminal-shell {
+  height: 100vh;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .titlebar {
@@ -81,6 +85,7 @@ textarea {
   border-bottom: 1px solid rgba(130, 146, 182, 0.14);
   background: rgba(247, 249, 253, 0.88);
   backdrop-filter: blur(16px);
+  display: none;
 }
 
 .titlebar-brand {
@@ -155,12 +160,14 @@ textarea {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
 }
 
 .content-stage {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -172,6 +179,42 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-y: auto;
+}
+
+.sidebar-top {
+  display: grid;
+  gap: 0.9rem;
+  padding-bottom: 0.2rem;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.78rem;
+}
+
+.sidebar-brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+}
+
+.sidebar-brand strong {
+  display: block;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.sidebar-brand span {
+  display: block;
+  margin-top: 0.12rem;
+  color: rgba(222, 228, 246, 0.72);
+  font-size: 0.78rem;
+}
+
+.sidebar-locale {
+  justify-self: start;
 }
 
 .sidebar-section {
@@ -465,7 +508,7 @@ textarea {
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 0.15rem 0.25rem;
+  padding: 0.25rem 0.15rem 0.1rem;
 }
 
 .eyebrow {
@@ -484,9 +527,9 @@ textarea {
 }
 
 .hero-strip p {
-  max-width: 760px;
+  max-width: 620px;
   margin: 0.55rem 0 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-soft);
 }
 
@@ -605,13 +648,83 @@ textarea {
 .market-board-head.operational,
 .market-board-row.operational {
   grid-template-columns:
-    minmax(150px, 1fr)
-    minmax(140px, 0.95fr)
-    minmax(220px, 1.35fr)
-    minmax(180px, 1.15fr)
-    minmax(110px, 0.72fr)
-    minmax(92px, 0.62fr)
-    minmax(92px, 0.62fr);
+    minmax(132px, 0.88fr)
+    minmax(152px, 1fr)
+    minmax(164px, 1.02fr)
+    minmax(186px, 1.08fr)
+    minmax(248px, 1.45fr)
+    minmax(124px, 0.76fr);
+}
+
+.market-cell-compact {
+  gap: 0.35rem;
+}
+
+.market-metric-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.market-anchor-cell small,
+.market-position-cell small {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.market-tracking-cell {
+  padding-right: 0.15rem;
+}
+
+.tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.tracking-chip {
+  padding: 0.56rem 0.58rem;
+  border-radius: 14px;
+  background: rgba(243, 246, 251, 0.96);
+  border: 1px solid rgba(130, 146, 182, 0.12);
+}
+
+.tracking-chip small {
+  display: block;
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tracking-chip strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-strong);
+  font-size: 0.88rem;
+}
+
+.market-check-cell {
+  gap: 0.45rem;
+}
+
+.market-check-list {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.market-check-list span {
+  color: var(--text-soft);
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+.market-position-cell {
+  gap: 0.42rem;
+  align-items: start;
 }
 
 .market-quote-cell {

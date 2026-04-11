@@ -1,4 +1,4 @@
-import {
+﻿import {
   startTransition,
   useEffect,
   useMemo,
@@ -156,13 +156,16 @@ type MarketBoardRow = SnapshotCard & {
   updatedLabel: string;
   sourceName: string;
   topDriver: string;
+  benchmarkTicker: string;
   benchmarkTitle: string;
+  benchmarkRole: string;
   benchmarkValue: string;
   benchmarkMove: string;
   benchmarkNote: string;
   benchmarkDelay: string;
   benchmarkStatus: string;
   benchmarkSparkline: ChartPoint[];
+  trackingStats: TapeCompareStats;
   operationsFocus: string;
   operationsCheck: string;
 };
@@ -2882,6 +2885,7 @@ export default function App() {
         const decision = decisionsByMarket[profile.id];
         const desk = getOperatorDesk(appLocale, profile.id);
         const primaryQuote = liveQuotesById[desk.primaryQuoteId];
+        const trackingStats = buildTapeCompareStats(localizedCard?.series, primaryQuote?.series);
 
         return {
           ...snapshot,
@@ -2891,9 +2895,12 @@ export default function App() {
           topDriver:
             forecasts[profile.id].contributions[0]?.variable ??
             t(appLocale, "주요 인자 없음", "No primary driver"),
+          benchmarkTicker: primaryQuote?.symbol ?? "N/A",
           benchmarkTitle:
             primaryQuote?.title ??
             t(appLocale, "연결된 선물/프록시 없음", "No linked futures or proxy"),
+          benchmarkRole:
+            primaryQuote?.role ?? "No linked anchor",
           benchmarkValue: formatLiveQuotePrice(appLocale, primaryQuote),
           benchmarkMove: formatLiveQuoteMove(appLocale, primaryQuote),
           benchmarkNote:
@@ -2906,6 +2913,7 @@ export default function App() {
           benchmarkDelay: primaryQuote?.delayNote ?? getLiveQuoteStatusLabel(appLocale, primaryQuote),
           benchmarkStatus: getLiveQuoteStatusLabel(appLocale, primaryQuote),
           benchmarkSparkline: getSeriesPoints(primaryQuote?.series),
+          trackingStats,
           operationsFocus: desk.focus,
           operationsCheck: desk.check
         };
@@ -3364,6 +3372,26 @@ export default function App() {
 
       <div className="app-frame">
         <aside className="sidebar">
+          <div className="sidebar-top">
+            <div className="sidebar-brand">
+              <img src={appIconUrl} alt="C-Quant" className="brand-mark sidebar-brand-mark" />
+              <div>
+                <strong>C-Quant</strong>
+                <span>{t(appLocale, "탄소배출권 인텔리전스", "Carbon intelligence terminal")}</span>
+              </div>
+            </div>
+            <div className="locale-switch sidebar-locale">
+              {localeOptions.map((option) => (
+                <button
+                  key={option.id}
+                  className={option.id === appLocale ? "active" : ""}
+                  onClick={() => setAppLocale(option.id)}
+                >
+                  {option.id.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="sidebar-section">
             <div className="sidebar-label">{t(appLocale, "화면", "Screens")}</div>
             <nav className="surface-nav">
@@ -3440,8 +3468,8 @@ export default function App() {
               <p>
                 {t(
                   appLocale,
-                  "공식 가격, 주의 알림, 오늘 분위기를 한 화면에서 바로 볼 수 있게 만들었습니다.",
-                  "Read official prices, key alerts, and today's market tone on one screen."
+                  "공식값, 비교 기준, 오늘 바로 볼 체크포인트만 한 화면에 모았습니다.",
+                  "See the official tape, the hedge anchor, and today's check points on one screen."
                 )}
               </p>
             </div>
@@ -5308,7 +5336,7 @@ function MarketBoard({
   );
 }
 
-function OperationalMarketBoard({
+function LegacyOperationalMarketBoard({
   locale,
   rows,
   selectedMarketId,
@@ -5401,6 +5429,93 @@ function OperationalMarketBoard({
           <div className="market-cell market-time">
             <strong>{row.updatedLabel}</strong>
             <span>{t(locale, "공식 시각", "Official timestamp")}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function OperationalMarketBoard({
+  locale,
+  rows,
+  selectedMarketId,
+  onSelectMarket
+}: {
+  locale: AppLocale;
+  rows: MarketBoardRow[];
+  selectedMarketId: MarketProfile["id"];
+  onSelectMarket: (marketId: MarketProfile["id"]) => void;
+}) {
+  return (
+    <div className="market-board">
+      <div className="market-board-head operational">
+        <span>{t(locale, "시장", "Market")}</span>
+        <span>{t(locale, "공식값", "Official")}</span>
+        <span>{t(locale, "비교 기준", "Anchor")}</span>
+        <span>{t(locale, "추적 상태", "Tracking")}</span>
+        <span>{t(locale, "지금 볼 것", "Check now")}</span>
+        <span>{t(locale, "포지션", "Position")}</span>
+      </div>
+      {rows.map((row) => (
+        <button
+          key={row.marketId}
+          className={`market-board-row operational ${row.marketId === selectedMarketId ? "active" : ""}`}
+          onClick={() => onSelectMarket(row.marketId)}
+          style={{ "--market-accent": marketColor(row.marketId) } as CSSProperties}
+        >
+          <div className="market-main-cell">
+            <strong>{row.name}</strong>
+            <span>{row.sourceName}</span>
+            <small>{`${row.status} · ${row.updatedLabel}`}</small>
+          </div>
+
+          <div className="market-cell market-cell-compact">
+            <strong>{row.priceLabel}</strong>
+            <div className="market-metric-line">
+              <span>{`${t(locale, "변동", "Move")} ${row.changeLabel}`}</span>
+              <span>{`${t(locale, "거래량", "Vol")} ${row.volumeLabel}`}</span>
+            </div>
+          </div>
+
+          <div className="market-cell market-anchor-cell">
+            <strong>{row.benchmarkTicker}</strong>
+            <span>{row.benchmarkValue}</span>
+            <small>{row.benchmarkRole}</small>
+            <small>{`${row.benchmarkMove} · ${row.benchmarkDelay}`}</small>
+          </div>
+
+          <div className="market-cell market-tracking-cell">
+            <div className="tracking-grid">
+              <div className="tracking-chip">
+                <small>{t(locale, "괴리", "Gap")}</small>
+                <strong>{formatPercentStat(locale, row.trackingStats.normalizedGapPct, 1, true)}</strong>
+              </div>
+              <div className="tracking-chip">
+                <small>{t(locale, "방향 일치", "Match")}</small>
+                <strong>{formatPercentStat(locale, row.trackingStats.directionMatchPct, 0)}</strong>
+              </div>
+              <div className="tracking-chip">
+                <small>{t(locale, "상관", "Corr")}</small>
+                <strong>{formatPlainStat(locale, row.trackingStats.recentCorrelation, 2)}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="market-cell market-check-cell">
+            <strong>{row.operationsFocus}</strong>
+            <div className="market-check-list">
+              <span>{row.operationsCheck}</span>
+              <span>{`${t(locale, "주요 요인", "Top driver")} · ${row.topDriver}`}</span>
+            </div>
+          </div>
+
+          <div className="market-cell market-position-cell">
+            <span className={`stance-badge ${stanceBadgeClass(row.stance)}`}>
+              {stanceLabel(locale, row.stance)}
+            </span>
+            <strong>{formatNumber(locale, row.confidence * 100, 0)}%</strong>
+            <small>{`${t(locale, "점수", "Score")} ${formatNumber(locale, row.score, 2)}`}</small>
           </div>
         </button>
       ))}
