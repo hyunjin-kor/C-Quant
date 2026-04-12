@@ -2971,6 +2971,30 @@ export default function App() {
     () => marketWatchItems.map((item) => localizeMarketWatchItem(item, appLocale)),
     [appLocale]
   );
+  const activeWatchlist = useMemo(
+    () => localizedWatchlists.find((item) => item.id === watchlistId) ?? localizedWatchlists[0],
+    [localizedWatchlists, watchlistId]
+  );
+  const activeWatchView = useMemo(
+    () => localizedWatchViews.find((item) => item.id === watchViewId) ?? localizedWatchViews[0],
+    [localizedWatchViews, watchViewId]
+  );
+  const watchlistItems = useMemo(() => {
+    const ids = new Set(activeWatchlist.itemIds);
+    return localizedWatchItems.filter((item) => ids.has(item.id));
+  }, [activeWatchlist.itemIds, localizedWatchItems]);
+  const selectedSources = useMemo(
+    () =>
+      localizedSources.filter(
+        (item) => item.markets.includes(marketId) || item.markets.includes("shared")
+      ),
+    [localizedSources, marketId]
+  );
+  const visibleSources = useMemo(
+    () =>
+      selectedSources.filter((item) => !freeOnlySources || item.method !== "Commercial API"),
+    [freeOnlySources, selectedSources]
+  );
   const localizedAlerts = useMemo(
     () => alertTemplates.map((item) => localizeAlertTemplate(item, appLocale)),
     [appLocale]
@@ -3144,16 +3168,6 @@ export default function App() {
       setSelectedRiskOverlayId(visibleNatureRiskOverlays[0].id);
     }
   }, [selectedNatureRiskOverlay, visibleNatureRiskOverlays]);
-
-  useEffect(() => {
-    if (!referenceCenterItems.length) {
-      return;
-    }
-    if (!selectedReferenceId && !selectedReferenceUrl) {
-      setSelectedReferenceId(referenceCenterItems[0].id);
-      setSelectedReferenceUrl(referenceCenterItems[0].url);
-    }
-  }, [referenceCenterItems, selectedReferenceId, selectedReferenceUrl]);
 
   useEffect(() => {
     window.localStorage.setItem("cquant:quote-range", selectedQuoteRange);
@@ -3837,6 +3851,15 @@ export default function App() {
       ) ?? null
     );
   }, [allVisibleDocumentPreviews, selectedDossier?.id, selectedReferenceItem]);
+  useEffect(() => {
+    if (!referenceCenterItems.length) {
+      return;
+    }
+    if (!selectedReferenceId && !selectedReferenceUrl) {
+      setSelectedReferenceId(referenceCenterItems[0].id);
+      setSelectedReferenceUrl(referenceCenterItems[0].url);
+    }
+  }, [referenceCenterItems, selectedReferenceId, selectedReferenceUrl]);
   const selectedCatalystRows = useMemo(
     () =>
       localizedCatalysts.filter(
@@ -4291,34 +4314,6 @@ export default function App() {
         marketDatasetSchemas.find((item) => item.marketId === marketId) ?? marketDatasetSchemas[0]
       ),
     [appLocale, marketId]
-  );
-
-  const activeWatchlist = useMemo(
-    () => localizedWatchlists.find((item) => item.id === watchlistId) ?? localizedWatchlists[0],
-    [localizedWatchlists, watchlistId]
-  );
-  const activeWatchView = useMemo(
-    () => localizedWatchViews.find((item) => item.id === watchViewId) ?? localizedWatchViews[0],
-    [localizedWatchViews, watchViewId]
-  );
-
-  const watchlistItems = useMemo(() => {
-    const ids = new Set(activeWatchlist.itemIds);
-    return localizedWatchItems.filter((item) => ids.has(item.id));
-  }, [activeWatchlist.itemIds, localizedWatchItems]);
-
-  const selectedSources = useMemo(
-    () =>
-      localizedSources.filter(
-        (item) => item.markets.includes(marketId) || item.markets.includes("shared")
-      ),
-    [localizedSources, marketId]
-  );
-
-  const visibleSources = useMemo(
-    () =>
-      selectedSources.filter((item) => !freeOnlySources || item.method !== "Commercial API"),
-    [freeOnlySources, selectedSources]
   );
 
   const sourceMethodPoints = useMemo<ChartPoint[]>(
