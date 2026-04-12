@@ -14,7 +14,7 @@ It does not place trades.
 
 - Shows official market prices first when available
 - Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
-- Reloads linked tapes inside the desktop app through API calls and lets you switch chart windows from `5D` to `1Y`
+- Reloads linked tapes inside the desktop app through API calls, supports `1D` intraday through `1Y`, and shows interactive in-app charts instead of static images
 - Adds a click-driven spotlight stage so markets, tapes, drivers, events, and source rows can open a focused detail panel and jump to the next screen
 - Adds a right-side inspector rail with drill-down charts and focused notes for the currently selected market, tape, driver, event, or source
 - Lets the inspector rail switch comparison tapes and chart windows directly, and rewrites the drill-down notes for Compliance, Trading, and Risk roles
@@ -70,6 +70,7 @@ The app is built to work even if you do not want to pay for data.
 - `Linked live tapes in app`
   - public chart API pulls for ICE EUA benchmark futures, TTF gas, Brent, KRBN, KEUA, CO2.L, and KCCA
   - these are shown inside the desktop app as linked futures or proxy tapes, not as official local settlements
+  - the app refreshes linked tape charts on a short cycle and marks them as linked live or delayed feeds where exchange delay may apply
 
 ## Truth Boundary
 

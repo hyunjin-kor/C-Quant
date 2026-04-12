@@ -1,3 +1,5 @@
+import { useMemo, useState, type PointerEvent } from "react";
+
 type ValueFormatter = (value: number) => string;
 
 export type ChartPoint = {
@@ -30,9 +32,45 @@ export type WaterfallItem = {
 const WIDTH = 100;
 const HEIGHT = 100;
 const PADDING = 8;
+const DEFAULT_LOCALE = typeof navigator === "undefined" ? "en-US" : navigator.language;
+
+type PositionedPoint = ChartPoint & {
+  index: number;
+  x: number;
+  y: number;
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function getValueExtent(values: number[]) {
+  if (values.length === 0) {
+    return {
+      min: 0,
+      max: 1,
+      range: 1
+    };
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
+  if (min === max) {
+    const padding = Math.abs(min) > 0 ? Math.abs(min) * 0.04 : 1;
+    return {
+      min: min - padding,
+      max: max + padding,
+      range: padding * 2
+    };
+  }
+
+  const padding = (max - min) * 0.08;
+  return {
+    min: min - padding,
+    max: max + padding,
+    range: max - min + padding * 2
+  };
 }
 
 function buildPointPath(points: ChartPoint[], width: number, height: number) {
@@ -68,6 +106,68 @@ function buildAreaPath(points: ChartPoint[], width: number, height: number) {
   const baseline = height - PADDING;
   const endX = PADDING + innerWidth;
   return `${path} L ${endX.toFixed(2)} ${baseline.toFixed(2)} L ${PADDING} ${baseline.toFixed(2)} Z`;
+}
+
+function buildPlottedPoints(
+  points: Array<ChartPoint & { index?: number }>,
+  width: number,
+  height: number,
+  minValue: number,
+  maxValue: number
+): PositionedPoint[] {
+  const innerWidth = width - PADDING * 2;
+  const innerHeight = height - PADDING * 2;
+  const range = maxValue - minValue || 1;
+
+  return points.map((point, index) => {
+    const x =
+      PADDING +
+      (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth);
+    const y = PADDING + ((maxValue - point.value) / range) * innerHeight;
+
+    return {
+      ...point,
+      index: typeof point.index === "number" ? point.index : index,
+      x,
+      y
+    };
+  });
+}
+
+function buildPathFromPlotted(points: PositionedPoint[]) {
+  if (points.length === 0) {
+    return "";
+  }
+
+  return points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+}
+
+function buildAreaPathFromPlotted(points: PositionedPoint[], width: number, height: number) {
+  if (points.length === 0) {
+    return "";
+  }
+
+  const path = buildPathFromPlotted(points);
+  const baseline = height - PADDING;
+  const lastPoint = points[points.length - 1];
+  return `${path} L ${lastPoint.x.toFixed(2)} ${baseline.toFixed(2)} L ${points[0].x.toFixed(
+    2
+  )} ${baseline.toFixed(2)} Z`;
+}
+
+function resolvePointIndexFromPointer(
+  event: PointerEvent<HTMLDivElement>,
+  pointsLength: number
+) {
+  if (pointsLength <= 1) {
+    return 0;
+  }
+
+  const bounds = event.currentTarget.getBoundingClientRect();
+  const relativeX = clamp((event.clientX - bounds.left) / bounds.width, 0, 1);
+  return Math.round(relativeX * (pointsLength - 1));
 }
 
 function buildBars(points: ChartPoint[], height: number) {
@@ -112,16 +212,27 @@ function formatTrendDateLabel(locale: string, label: string) {
     return label;
   }
 
+  const hasTime = label.includes("T");
   return new Intl.DateTimeFormat(locale, {
     month: "numeric",
-    day: "numeric"
+    day: "numeric",
+    ...(hasTime
+      ? {
+          hour: "numeric",
+          minute: "2-digit"
+        }
+      : {})
   }).format(parsed);
+}
+
+function formatChartValue(valueFormatter: ValueFormatter | undefined, value: number) {
+  return valueFormatter ? valueFormatter(value) : value.toFixed(2);
 }
 
 export function MiniTrendChart({
   points,
   color,
-  locale = "en-US",
+  locale = DEFAULT_LOCALE,
   valueFormatter,
   lowLabel,
   highLabel,
@@ -207,7 +318,8 @@ export function LineChart({
   valueFormatter,
   height = 280,
   title,
-  subtitle
+  subtitle,
+  locale = DEFAULT_LOCALE
 }: {
   points: ChartPoint[];
   color: string;
@@ -215,12 +327,39 @@ export function LineChart({
   height?: number;
   title?: string;
   subtitle?: string;
+  locale?: string;
 }) {
   const values = points.map((point) => point.value);
-  const min = Math.min(...values, 0);
-  const max = Math.max(...values, 1);
+  const rawMin = values.length ? Math.min(...values) : 0;
+  const rawMax = values.length ? Math.max(...values) : 1;
+  const extent = useMemo(() => getValueExtent(values), [values]);
+  const plottedPoints = useMemo(
+    () => buildPlottedPoints(points, WIDTH, HEIGHT, extent.min, extent.max),
+    [extent.max, extent.min, points]
+  );
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const first = points[0];
   const last = points[points.length - 1];
+  const activePoint =
+    plottedPoints[hoveredIndex ?? Math.max(plottedPoints.length - 1, 0)] ?? null;
+
+  if (points.length === 0) {
+    return (
+      <div className="chart-panel">
+        {(title || subtitle) && (
+          <div className="chart-meta">
+            {title ? <strong>{title}</strong> : null}
+            {subtitle ? <span>{subtitle}</span> : null}
+          </div>
+        )}
+        <div className="chart-empty-state">No chart data</div>
+      </div>
+    );
+  }
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    setHoveredIndex(resolvePointIndexFromPointer(event, plottedPoints.length));
+  };
 
   return (
     <div className="chart-panel">
@@ -230,16 +369,68 @@ export function LineChart({
           {subtitle ? <span>{subtitle}</span> : null}
         </div>
       )}
-      <div className="line-chart-shell" style={{ height }}>
-        <Sparkline points={points} color={color} fill />
+      <div
+        className="line-chart-shell interactive"
+        style={{ height }}
+        onPointerMove={handlePointerMove}
+        onPointerDown={handlePointerMove}
+        onPointerLeave={() => setHoveredIndex(null)}
+      >
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={22} y2={22} className="chart-guide-line" />
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={50} y2={50} className="chart-guide-line" />
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={78} y2={78} className="chart-guide-line" />
+          <path d={buildAreaPathFromPlotted(plottedPoints, WIDTH, HEIGHT)} fill={`${color}16`} />
+          <path
+            d={buildPathFromPlotted(plottedPoints)}
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {activePoint ? (
+            <>
+              <line
+                x1={activePoint.x}
+                x2={activePoint.x}
+                y1={PADDING}
+                y2={HEIGHT - PADDING}
+                className="chart-cursor-line"
+              />
+              <circle cx={activePoint.x} cy={activePoint.y} r="4.2" fill={color} />
+              <circle
+                cx={activePoint.x}
+                cy={activePoint.y}
+                r="7.5"
+                fill={`${color}18`}
+                className="chart-cursor-ring"
+              />
+            </>
+          ) : null}
+        </svg>
         <div className="line-chart-axis">
-          <span>{valueFormatter ? valueFormatter(max) : max.toFixed(2)}</span>
-          <span>{valueFormatter ? valueFormatter(min) : min.toFixed(2)}</span>
+          <span>{formatChartValue(valueFormatter, rawMax)}</span>
+          <span>{formatChartValue(valueFormatter, rawMin)}</span>
         </div>
+        {activePoint ? (
+          <div
+            className={`chart-tooltip ${
+              activePoint.x / WIDTH > 0.72 ? "is-left" : ""
+            }`}
+            style={{
+              left: `${clamp((activePoint.x / WIDTH) * 100, 10, 90)}%`,
+              top: `${clamp((activePoint.y / HEIGHT) * 100, 18, 82)}%`
+            }}
+          >
+            <strong>{formatChartValue(valueFormatter, activePoint.value)}</strong>
+            <span>{formatTrendDateLabel(locale, activePoint.label)}</span>
+          </div>
+        ) : null}
       </div>
       <div className="chart-footnote">
-        <span>{first?.label ?? ""}</span>
-        <span>{last?.label ?? ""}</span>
+        <span>{first ? formatTrendDateLabel(locale, first.label) : ""}</span>
+        <span>{last ? formatTrendDateLabel(locale, last.label) : ""}</span>
       </div>
     </div>
   );
@@ -249,48 +440,96 @@ export function MultiLineChart({
   points,
   series,
   height = 260,
-  valueFormatter
+  valueFormatter,
+  locale = "en-US"
 }: {
   points: MultiLinePoint[];
   series: MultiLineSeries[];
   height?: number;
   valueFormatter?: ValueFormatter;
+  locale?: string;
 }) {
   const flattened = points.flatMap((point) =>
     series
       .map((item) => point.values[item.id])
       .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
   );
-  const min = Math.min(...flattened, 0);
-  const max = Math.max(...flattened, 1);
-  const range = max - min || 1;
-  const innerWidth = WIDTH - PADDING * 2;
-  const innerHeight = HEIGHT - PADDING * 2;
+  const rawMin = flattened.length ? Math.min(...flattened) : 0;
+  const rawMax = flattened.length ? Math.max(...flattened) : 1;
+  const extent = useMemo(() => getValueExtent(flattened), [flattened]);
+  const plottedBySeries = useMemo(() => {
+    return Object.fromEntries(
+      series.map((item) => {
+        const seriesPoints = points
+          .map((point) => point.values[item.id])
+          .map((value, index) => {
+            if (typeof value !== "number" || !Number.isFinite(value)) {
+              return null;
+            }
+            return {
+              label: points[index]?.label ?? "",
+              value,
+              index
+            } satisfies ChartPoint & { index: number };
+          })
+          .filter((point): point is ChartPoint & { index: number } => Boolean(point));
 
-  const pathForSeries = (seriesId: string) =>
-    points
-      .map((point, index) => {
-        const value = point.values[seriesId];
-        if (typeof value !== "number" || !Number.isFinite(value)) {
-          return "";
-        }
-        const x =
-          PADDING +
-          (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth);
-        const y = PADDING + ((max - value) / range) * innerHeight;
-        return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+        return [
+          item.id,
+          buildPlottedPoints(seriesPoints, WIDTH, HEIGHT, extent.min, extent.max)
+        ];
       })
-      .filter(Boolean)
-      .join(" ");
+    ) as Record<string, PositionedPoint[]>;
+  }, [extent.max, extent.min, points, series]);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const activeIndex = hoveredIndex ?? Math.max(points.length - 1, 0);
+  const activeLabel = points[activeIndex]?.label ?? "";
+  const activeSeriesPoints = series
+    .map((item) => {
+      const value = points[activeIndex]?.values[item.id];
+      const plottedPoint = plottedBySeries[item.id]?.find((point) => point.index === activeIndex) ?? null;
+
+      if (typeof value !== "number" || !Number.isFinite(value) || !plottedPoint) {
+        return null;
+      }
+
+      return {
+        series: item,
+        value,
+        point: plottedPoint
+      };
+    })
+    .filter(Boolean) as Array<{
+    series: MultiLineSeries;
+    value: number;
+    point: PositionedPoint;
+  }>;
+
+  if (points.length === 0 || flattened.length === 0) {
+    return <div className="chart-empty-state">No chart data</div>;
+  }
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    setHoveredIndex(resolvePointIndexFromPointer(event, points.length));
+  };
 
   return (
     <div className="chart-panel">
-      <div className="multi-line-shell" style={{ height }}>
+      <div
+        className="multi-line-shell interactive"
+        style={{ height }}
+        onPointerMove={handlePointerMove}
+        onPointerDown={handlePointerMove}
+        onPointerLeave={() => setHoveredIndex(null)}
+      >
         <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={22} y2={22} className="chart-guide-line" />
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={50} y2={50} className="chart-guide-line" />
+          <line x1={PADDING} x2={WIDTH - PADDING} y1={78} y2={78} className="chart-guide-line" />
           {series.map((item) => (
             <path
               key={item.id}
-              d={pathForSeries(item.id)}
+              d={buildPathFromPlotted(plottedBySeries[item.id] ?? [])}
               fill="none"
               stroke={item.color}
               strokeWidth="2.6"
@@ -298,11 +537,50 @@ export function MultiLineChart({
               strokeLinejoin="round"
             />
           ))}
+          {activeSeriesPoints[0] ? (
+            <line
+              x1={activeSeriesPoints[0].point.x}
+              x2={activeSeriesPoints[0].point.x}
+              y1={PADDING}
+              y2={HEIGHT - PADDING}
+              className="chart-cursor-line"
+            />
+          ) : null}
+          {activeSeriesPoints.map((entry) => (
+            <circle
+              key={`${entry.series.id}-${entry.point.index}`}
+              cx={entry.point.x}
+              cy={entry.point.y}
+              r="4"
+              fill={entry.series.color}
+            />
+          ))}
         </svg>
         <div className="line-chart-axis">
-          <span>{valueFormatter ? valueFormatter(max) : max.toFixed(2)}</span>
-          <span>{valueFormatter ? valueFormatter(min) : min.toFixed(2)}</span>
+          <span>{formatChartValue(valueFormatter, rawMax)}</span>
+          <span>{formatChartValue(valueFormatter, rawMin)}</span>
         </div>
+        {activeSeriesPoints.length > 0 ? (
+          <div
+            className={`chart-tooltip multi-value ${
+              activeSeriesPoints[0].point.x / WIDTH > 0.72 ? "is-left" : ""
+            }`}
+            style={{
+              left: `${clamp((activeSeriesPoints[0].point.x / WIDTH) * 100, 10, 90)}%`,
+              top: `${clamp((activeSeriesPoints[0].point.y / HEIGHT) * 100, 18, 82)}%`
+            }}
+          >
+            <strong>{formatTrendDateLabel(locale, activeLabel)}</strong>
+            <div className="chart-tooltip-list">
+              {activeSeriesPoints.map((entry) => (
+                <span key={entry.series.id}>
+                  <i style={{ backgroundColor: entry.series.color }} />
+                  {entry.series.label}: {formatChartValue(valueFormatter, entry.value)}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
       <div className="chart-legend">
         {series.map((item) => (
@@ -313,8 +591,12 @@ export function MultiLineChart({
         ))}
       </div>
       <div className="chart-footnote">
-        <span>{points[0]?.label ?? ""}</span>
-        <span>{points[points.length - 1]?.label ?? ""}</span>
+        <span>{points[0] ? formatTrendDateLabel(locale, points[0].label) : ""}</span>
+        <span>
+          {points[points.length - 1]
+            ? formatTrendDateLabel(locale, points[points.length - 1].label)
+            : ""}
+        </span>
       </div>
     </div>
   );

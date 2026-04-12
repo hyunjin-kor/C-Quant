@@ -16,11 +16,12 @@ const EU_CARD_CACHE_TTL_MS = 10 * 60 * 1000;
 const KRX_DAY_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 const KRX_CARD_CACHE_TTL_MS = 15 * 60 * 1000;
 const CN_CARD_CACHE_TTL_MS = 30 * 60 * 1000;
-const QUOTE_CACHE_TTL_MS = 60 * 1000;
+const QUOTE_CACHE_TTL_MS = 30 * 1000;
 const cacheStore = new Map();
 const QUOTE_RANGE_PRESETS = {
-  "5d": { range: "5d", interval: "1d", seriesLimit: 5 },
-  "1m": { range: "1mo", interval: "1d", seriesLimit: 22 },
+  "1d": { range: "1d", interval: "5m", seriesLimit: null },
+  "5d": { range: "5d", interval: "60m", seriesLimit: null },
+  "1m": { range: "1mo", interval: "1d", seriesLimit: null },
   "3m": { range: "3mo", interval: "1d", seriesLimit: null },
   "6m": { range: "6mo", interval: "1d", seriesLimit: null },
   "1y": { range: "1y", interval: "1wk", seriesLimit: null }
@@ -333,15 +334,22 @@ function lastFiniteValue(values) {
   return null;
 }
 
-function toDateLabelFromUnix(timestamp) {
+function toDateLabelFromUnix(timestamp, options = {}) {
   const numeric = Number(timestamp);
   if (!Number.isFinite(numeric)) {
     return "";
   }
-  return toIsoDate(new Date(numeric * 1000));
+  const date = new Date(numeric * 1000);
+  if (options.includeTime) {
+    return date.toISOString();
+  }
+  return toIsoDate(date);
 }
 
-function buildSeriesFromYahoo(timestamps, closes, seriesLimit = 22) {
+function buildSeriesFromYahoo(timestamps, closes, options = {}) {
+  const seriesLimit =
+    Object.prototype.hasOwnProperty.call(options, "seriesLimit") ? options.seriesLimit : 22;
+  const includeTime = Boolean(options.includeTime);
   const points = [];
 
   for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
@@ -350,7 +358,7 @@ function buildSeriesFromYahoo(timestamps, closes, seriesLimit = 22) {
       continue;
     }
 
-    const date = toDateLabelFromUnix(timestamps[index]);
+    const date = toDateLabelFromUnix(timestamps[index], { includeTime });
     if (!date) {
       continue;
     }
@@ -400,6 +408,9 @@ async function fetchLiveQuote(config, options = {}) {
   let result = null;
   const seriesLimit =
     Object.prototype.hasOwnProperty.call(options, "seriesLimit") ? options.seriesLimit : 22;
+  const usesIntradayRange =
+    typeof options.interval === "string" &&
+    (options.interval.endsWith("m") || options.interval.endsWith("h"));
 
   for (const candidate of config.symbolCandidates) {
     try {
@@ -420,7 +431,10 @@ async function fetchLiveQuote(config, options = {}) {
   const closes = Array.isArray(result?.indicators?.quote?.[0]?.close)
     ? result.indicators.quote[0].close
     : [];
-  const series = buildSeriesFromYahoo(timestamps, closes, seriesLimit);
+  const series = buildSeriesFromYahoo(timestamps, closes, {
+    seriesLimit,
+    includeTime: usesIntradayRange
+  });
   const priceCandidate = Number(meta.regularMarketPrice);
   const lastClose = lastFiniteValue(closes);
   const price = Number.isFinite(priceCandidate) ? priceCandidate : lastClose;

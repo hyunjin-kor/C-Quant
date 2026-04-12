@@ -100,7 +100,7 @@ declare global {
       refreshConnectedSources: () => Promise<ConnectedSourcePayload>;
       getLiveQuoteHistory: (options: {
         quoteId: string;
-        range: "5d" | "1m" | "3m" | "6m" | "1y";
+        range: "1d" | "5d" | "1m" | "3m" | "6m" | "1y";
       }) => Promise<MarketLiveQuote>;
       runWalkForwardModel: (options: {
         inputPath: string;
@@ -122,7 +122,7 @@ declare global {
 }
 
 type Surface = "overview" | "signals" | "lab" | "sources";
-type QuoteRangePreset = "5d" | "1m" | "3m" | "6m" | "1y";
+type QuoteRangePreset = "1d" | "5d" | "1m" | "3m" | "6m" | "1y";
 
 type AlertItem = {
   id: string;
@@ -275,7 +275,7 @@ const SURFACES: Array<{ id: Surface; ko: string; en: string }> = [
   { id: "lab", ko: "모델 실험", en: "Lab" },
   { id: "sources", ko: "출처", en: "Sources" }
 ];
-const LIVE_QUOTE_RANGE_OPTIONS: QuoteRangePreset[] = ["5d", "1m", "3m", "6m", "1y"];
+const LIVE_QUOTE_RANGE_OPTIONS: QuoteRangePreset[] = ["1d", "5d", "1m", "3m", "6m", "1y"];
 
 const DESK_ROLES: DeskRoleConfig[] = [
   {
@@ -546,9 +546,17 @@ function getSeriesPoints(series?: ConnectedSourceSeriesPoint[]): ChartPoint[] {
   return (series ?? [])
     .filter((point) => Number.isFinite(point.value))
     .map((point) => ({
-      label: point.date,
+      label: point.label ?? point.date,
       value: point.value
     }));
+}
+
+function getSeriesDayKey(label: string) {
+  const parsed = new Date(label);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+  return label.slice(0, 10);
 }
 
 function getPriceMomentum(card?: ConnectedSourceCard) {
@@ -1424,13 +1432,22 @@ function buildTapeOverlap(
     return [];
   }
 
-  const quoteByLabel = new Map(quotePoints.map((point) => [point.label, point.value]));
-  return officialPoints
-    .filter((point) => quoteByLabel.has(point.label))
-    .map((point) => ({
-      label: point.label,
-      official: point.value,
-      quote: quoteByLabel.get(point.label) ?? 0
+  const officialByDay = new Map<string, number>();
+  officialPoints.forEach((point) => {
+    officialByDay.set(getSeriesDayKey(point.label), point.value);
+  });
+
+  const quoteByDay = new Map<string, number>();
+  quotePoints.forEach((point) => {
+    quoteByDay.set(getSeriesDayKey(point.label), point.value);
+  });
+
+  return Array.from(officialByDay.entries())
+    .filter(([day]) => quoteByDay.has(day))
+    .map(([day, official]) => ({
+      label: day,
+      official,
+      quote: quoteByDay.get(day) ?? 0
     }));
 }
 
@@ -2823,7 +2840,7 @@ export default function App() {
   );
   const [selectedLiveQuoteId, setSelectedLiveQuoteId] = useState<string>("");
   const [selectedQuoteRange, setSelectedQuoteRange] = useState<QuoteRangePreset>(() =>
-    readStoredChoice("cquant:quote-range", LIVE_QUOTE_RANGE_OPTIONS, "3m")
+    readStoredChoice("cquant:quote-range", LIVE_QUOTE_RANGE_OPTIONS, "5d")
   );
   const [interactiveQuote, setInteractiveQuote] = useState<MarketLiveQuote | null>(null);
   const [interactiveQuoteLoading, setInteractiveQuoteLoading] = useState(false);
@@ -4528,6 +4545,7 @@ export default function App() {
                     <LineChart
                       points={selectedSeries}
                       color={marketColor(marketId)}
+                      locale={appLocale === "ko" ? "ko-KR" : "en-US"}
                       title={localizedSelectedCard?.sourceName}
                       subtitle={`${t(appLocale, "업데이트", "Updated")} ${formatDate(appLocale, localizedSelectedCard?.asOf)}`}
                     />
@@ -4581,6 +4599,7 @@ export default function App() {
                     <MultiLineChart
                       points={crossMarketPoints}
                       series={crossMarketSeries}
+                      locale={appLocale === "ko" ? "ko-KR" : "en-US"}
                       valueFormatter={(value) => formatNumber(appLocale, value, 0)}
                     />
                   ) : (
@@ -4997,6 +5016,7 @@ export default function App() {
                     <LineChart
                       points={backtestChartPoints}
                       color={marketColor(marketId)}
+                      locale={appLocale === "ko" ? "ko-KR" : "en-US"}
                       title={t(appLocale, "누적 자본곡선", "Equity curve")}
                       subtitle={t(appLocale, "CSV 입력 기준", "From uploaded CSV")}
                     />
@@ -5733,6 +5753,7 @@ function InspectorPanel({
                 points={officialPoints}
                 color={marketColor(officialCard?.marketId ?? "eu-ets")}
                 height={220}
+                locale={locale === "ko" ? "ko-KR" : "en-US"}
                 title={officialCard?.sourceName}
                 subtitle={officialCard?.summary}
               />
@@ -5764,6 +5785,7 @@ function InspectorPanel({
                 points={comparePoints}
                 series={compareSeries}
                 height={220}
+                locale={locale === "ko" ? "ko-KR" : "en-US"}
                 valueFormatter={(value) => formatNumber(locale, value, 0)}
               />
             ) : quote?.series?.length ? (
@@ -5771,6 +5793,7 @@ function InspectorPanel({
                 points={getSeriesPoints(quote.series)}
                 color="#2f7bf6"
                 height={220}
+                locale={locale === "ko" ? "ko-KR" : "en-US"}
                 title={quote.title}
                 subtitle={quote.delayNote}
               />
@@ -6343,6 +6366,7 @@ function InspectorWorkbenchPanel({
                 points={officialPoints}
                 color={marketColor(officialCard?.marketId ?? "eu-ets")}
                 height={220}
+                locale={locale === "ko" ? "ko-KR" : "en-US"}
                 title={officialCard?.sourceName}
                 subtitle={officialCard?.summary}
               />
@@ -6375,6 +6399,7 @@ function InspectorWorkbenchPanel({
                 points={comparePoints}
                 series={compareSeries}
                 height={220}
+                locale={locale === "ko" ? "ko-KR" : "en-US"}
                 valueFormatter={(value) => formatNumber(locale, value, 0)}
               />
             ) : quote?.series?.length ? (
@@ -6382,6 +6407,7 @@ function InspectorWorkbenchPanel({
                 points={getSeriesPoints(quote.series)}
                 color="#2f7bf6"
                 height={220}
+                locale={locale === "ko" ? "ko-KR" : "en-US"}
                 title={quote.title}
                 subtitle={quote.delayNote}
               />
@@ -8075,7 +8101,7 @@ function LiveTapeWorkbench({
           ))}
         </div>
         <div className="api-status-row">
-          <span>{t(locale, "앱 내부 API 차트", "In-app API chart")}</span>
+          <span>{t(locale, "앱 내부 라이브·지연 API 차트", "In-app live / delayed API chart")}</span>
           <span>{quote.provider}</span>
           <span>{t(locale, "기준 시각", "As of")} {formatDate(locale, quote.asOf)}</span>
         </div>
@@ -8139,6 +8165,7 @@ function LiveTapeWorkbench({
             <LineChart
               points={quotePoints}
               color="#2f7bf6"
+              locale={locale === "ko" ? "ko-KR" : "en-US"}
               valueFormatter={(value) => formatNumber(locale, value, value >= 10 ? 2 : 3)}
               title={t(locale, "선택한 테이프 차트", "Selected tape chart")}
               subtitle={quote.delayNote}
@@ -8154,6 +8181,7 @@ function LiveTapeWorkbench({
             <MultiLineChart
               points={comparePoints}
               series={compareSeries}
+              locale={locale === "ko" ? "ko-KR" : "en-US"}
               valueFormatter={(value) => formatNumber(locale, value, 0)}
             />
           ) : (
