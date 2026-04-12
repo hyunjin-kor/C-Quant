@@ -268,6 +268,11 @@ type ReferenceCenterItem = {
   kind: "market-watch" | "source-registry" | "benchmark" | "open-source" | "registry" | "dossier" | "document" | "risk" | "live-source";
 };
 
+type ReferenceContextMetric = {
+  label: string;
+  value: string;
+};
+
 type DeskRoleConfig = {
   id: DeskRole;
   ko: string;
@@ -3694,6 +3699,94 @@ export default function App() {
         : referenceCenterItems.slice(0, 12),
     [referenceCenterItems, selectedReferenceItem]
   );
+  const selectedReferenceContext = useMemo(() => {
+    if (!selectedReferenceItem) {
+      return null;
+    }
+
+    const normalizedSelectedUrl = normalizeReferenceUrl(selectedReferenceItem.url);
+    const hostLabel = getReferenceHostLabel(selectedReferenceItem.url);
+    const relatedItemsByHost = referenceCenterItems.filter(
+      (item) =>
+        item.id !== selectedReferenceItem.id &&
+        getReferenceHostLabel(item.url) === hostLabel
+    );
+    const relatedItems =
+      relatedItemsByHost.length > 0
+        ? relatedItemsByHost.slice(0, 6)
+        : referenceCenterItems
+            .filter(
+              (item) =>
+                item.id !== selectedReferenceItem.id && item.kind === selectedReferenceItem.kind
+            )
+            .slice(0, 6);
+    const relatedDocuments = (
+      ["registry", "dossier", "document", "risk"].includes(selectedReferenceItem.kind)
+        ? registryFreshnessRows
+        : registryFreshnessRows.filter(
+            (item) => getReferenceHostLabel(item.sourceUrl) === hostLabel
+          )
+    ).slice(0, 4);
+    const relatedQuotes = selectedDeskQuotes
+      .filter((quote) => normalizeReferenceUrl(quote.sourceUrl) !== normalizedSelectedUrl)
+      .slice(0, 3);
+    const metrics: ReferenceContextMetric[] = [
+      {
+        label: t(appLocale, "현재 시장", "Current market"),
+        value: getMarketDisplayName(appLocale, marketId)
+      },
+      {
+        label: t(appLocale, "호스트", "Host"),
+        value: hostLabel
+      },
+      {
+        label: t(appLocale, "관련 참고", "Related refs"),
+        value: formatNumber(appLocale, relatedItems.length + 1, 0)
+      },
+      {
+        label: t(appLocale, "연결 테이프", "Linked tapes"),
+        value: formatNumber(appLocale, relatedQuotes.length, 0)
+      }
+    ];
+    const workflowHeadline = selectedRegistryTrack
+      ? `${selectedRegistryTrack.registry} · ${registryHealthLabel(
+          appLocale,
+          selectedRegistryTrack.status
+        )}`
+      : t(appLocale, "연결된 운영 흐름 없음", "No linked workflow");
+    const workflowBullets = selectedRegistryTrack
+      ? [
+          `${t(appLocale, "검토 주기", "Refresh cadence")}: ${selectedRegistryTrack.refreshCadence}`,
+          `${t(appLocale, "신선도 기준", "Freshness SLA")}: ${selectedRegistryTrack.freshnessSla}`,
+          ...selectedRegistryTrack.watchItems.slice(0, 1),
+          ...selectedRegistryTrack.blockers.slice(0, 1)
+        ]
+      : [];
+    const operationalNotes = [
+      selectedDesk.focus,
+      selectedDesk.check,
+      selectedDesk.executionNote
+    ].filter(Boolean);
+
+    return {
+      metrics,
+      relatedItems,
+      relatedDocuments,
+      relatedQuotes,
+      workflowHeadline,
+      workflowBullets,
+      operationalNotes
+    };
+  }, [
+    appLocale,
+    marketId,
+    referenceCenterItems,
+    registryFreshnessRows,
+    selectedDesk,
+    selectedDeskQuotes,
+    selectedReferenceItem,
+    selectedRegistryTrack
+  ]);
   const selectedCatalystRows = useMemo(
     () =>
       localizedCatalysts.filter(
@@ -4439,6 +4532,15 @@ export default function App() {
     setAssistantResponse(null);
   }
 
+  function handleOpenCurrentMarketReference() {
+    const nextUrl = localizedSelectedCard?.sourceUrl ?? selectedInteractiveQuote?.sourceUrl ?? "";
+    if (nextUrl) {
+      handleOpenExternal(nextUrl);
+      return;
+    }
+    setSurface("sources");
+  }
+
   function handleSelectQuote(quoteId: string) {
     setSelectedLiveQuoteId(quoteId);
     const selectedRow = selectedLinkedScoreRows.find((row) => row.quote.id === quoteId);
@@ -4683,6 +4785,7 @@ export default function App() {
             <div className="surface-stage" key={`overview-${marketId}-${spotlight?.id ?? "default"}`}>
             <InstitutionDeskSurface
               locale={appLocale}
+              marketBoardRow={selectedMarketBoardRow}
               marketLabel={getMarketDisplayName(appLocale, marketId)}
               officialCard={localizedSelectedCard}
               selectedSeries={selectedSeries}
@@ -4714,6 +4817,8 @@ export default function App() {
               catalystRows={selectedRoleCatalystRows}
               sourceRows={selectedSourceHealthRows}
               feedItems={feedItems.slice(0, 6)}
+              onOpenDecision={() => handleSurfaceChange("signals")}
+              onOpenSources={handleOpenCurrentMarketReference}
               onOpenSource={handleOpenExternal}
               onInspectDriver={handleInspectDriver}
               onInspectCatalyst={handleInspectCatalyst}
@@ -5437,26 +5542,128 @@ export default function App() {
                           <li key={item}>{item}</li>
                         ))}
                       </ul>
+
+                      {selectedReferenceContext ? (
+                        <>
+                          <div className="reference-context-metrics">
+                            {selectedReferenceContext.metrics.map((item) => (
+                              <MetricPill key={item.label} label={item.label} value={item.value} />
+                            ))}
+                          </div>
+
+                          <div className="reference-context-grid">
+                            <div className="reference-context-card">
+                              <strong>{t(appLocale, "앱 안에서 같이 볼 것", "Cross-check inside the app")}</strong>
+                              <span className="reference-context-headline">
+                                {t(
+                                  appLocale,
+                                  "지금 시장을 읽을 때 같이 눌러봐야 하는 비교 테이프와 운영 메모입니다.",
+                                  "These are the linked tapes and operating notes that should be read together."
+                                )}
+                              </span>
+                              <div className="reference-mini-list">
+                                {selectedReferenceContext.relatedQuotes.map((quote) => (
+                                  <button
+                                    key={quote.id}
+                                    className="reference-mini-row"
+                                    onClick={() => {
+                                      handleSelectQuote(quote.id);
+                                      setSurface("overview");
+                                    }}
+                                  >
+                                    <div>
+                                      <strong>{quote.title}</strong>
+                                      <span>{quote.role}</span>
+                                    </div>
+                                    <small>{formatLiveQuotePrice(appLocale, quote)}</small>
+                                  </button>
+                                ))}
+                                {selectedReferenceContext.operationalNotes.map((item) => (
+                                  <div key={item} className="reference-inline-note">
+                                    {item}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="reference-context-card">
+                              <strong>{t(appLocale, "운영 흐름 맥락", "Workflow context")}</strong>
+                              <span className="reference-context-headline">
+                                {selectedReferenceContext.workflowHeadline}
+                              </span>
+                              {selectedReferenceContext.workflowBullets.length > 0 ? (
+                                <ul className="reference-inline-list">
+                                  {selectedReferenceContext.workflowBullets.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <div className="reference-inline-note">
+                                  {t(
+                                    appLocale,
+                                    "이 레퍼런스에 연결된 별도 운영 흐름이 아직 없습니다.",
+                                    "No dedicated workflow is linked to this reference yet."
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
                     </div>
 
                     <div className="reference-center-side">
-                      <strong>{t(appLocale, "최근 클릭한 레퍼런스 성격", "Current reference context")}</strong>
-                      <div className="reference-center-list">
-                        {referenceQuickList.map((item) => (
-                          <button
-                            key={item.id}
-                            className={`reference-center-row ${
-                              selectedReferenceItem.id === item.id ? "active" : ""
-                            }`}
-                            onClick={() => setSelectedReferenceUrl(item.url)}
-                          >
-                            <div>
-                              <strong>{item.title}</strong>
-                              <span>{item.subtitle}</span>
+                      <div className="reference-side-block">
+                        <strong>{t(appLocale, "관련 문서", "Related documents")}</strong>
+                        <div className="reference-center-list compact">
+                          {selectedReferenceContext?.relatedDocuments.length ? (
+                            selectedReferenceContext.relatedDocuments.map((item) => (
+                              <button
+                                key={item.id}
+                                className="reference-center-row"
+                                onClick={() => setSelectedReferenceUrl(item.sourceUrl)}
+                              >
+                                <div>
+                                  <strong>{item.title}</strong>
+                                  <span>{`${item.docType} · ${formatDate(appLocale, item.publishedAt)}`}</span>
+                                </div>
+                                <small>{registryStatusLabel(appLocale, item.status)}</small>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="reference-inline-note">
+                              {t(
+                                appLocale,
+                                "같이 묶을 문서가 아직 없습니다.",
+                                "There are no linked documents to group here yet."
+                              )}
                             </div>
-                            <small>{getReferenceHostLabel(item.url)}</small>
-                          </button>
-                        ))}
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="reference-side-block">
+                        <strong>{t(appLocale, "같은 맥락의 레퍼런스", "Nearby references")}</strong>
+                        <div className="reference-center-list">
+                          {(selectedReferenceContext?.relatedItems.length
+                            ? selectedReferenceContext.relatedItems
+                            : referenceQuickList
+                          ).map((item) => (
+                            <button
+                              key={item.id}
+                              className={`reference-center-row ${
+                                selectedReferenceItem.id === item.id ? "active" : ""
+                              }`}
+                              onClick={() => setSelectedReferenceUrl(item.url)}
+                            >
+                              <div>
+                                <strong>{item.title}</strong>
+                                <span>{item.subtitle}</span>
+                              </div>
+                              <small>{getReferenceHostLabel(item.url)}</small>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -7239,6 +7446,138 @@ function OperationalMarketBoard({
   );
 }
 
+function SelectedMarketDrilldownPanel({
+  locale,
+  row,
+  decision,
+  selectedSeries,
+  selectedQuote,
+  compareStats,
+  alertCount,
+  onOpenDecision,
+  onOpenSources
+}: {
+  locale: AppLocale;
+  row: MarketBoardRow | null;
+  decision: DecisionAssistantResponse;
+  selectedSeries: ChartPoint[];
+  selectedQuote: MarketLiveQuote | undefined;
+  compareStats: TapeCompareStats;
+  alertCount: number;
+  onOpenDecision: () => void;
+  onOpenSources: () => void;
+}) {
+  if (!row) {
+    return null;
+  }
+
+  return (
+    <section className="market-drilldown">
+      <div className="market-drilldown-head">
+        <div className="market-drilldown-copy">
+          <span className="eyebrow">{t(locale, "선택한 시장 작업면", "Selected market workspace")}</span>
+          <strong>{row.name}</strong>
+          <p>
+            {t(
+              locale,
+              "시장 보드에서 고른 시장을 중앙 작업면에 고정했습니다. 아래 숫자와 체크리스트만 따라가면 됩니다.",
+              "The selected market is now pinned to the central workspace. Work from the numbers and checks below."
+            )}
+          </p>
+        </div>
+        <div className="market-drilldown-actions">
+          <button className="primary-button" onClick={onOpenDecision}>
+            {t(locale, "판단 화면 열기", "Open decision")}
+          </button>
+          <button className="secondary-button" onClick={onOpenSources}>
+            {t(locale, "관련 출처 보기", "Review sources")}
+          </button>
+        </div>
+      </div>
+
+      <div className="market-drilldown-metrics">
+        <MetricPill label={t(locale, "공식값", "Official")} value={row.priceLabel} />
+        <MetricPill
+          label={t(locale, "주요 비교 기준", "Primary anchor")}
+          value={`${row.benchmarkTicker} · ${row.benchmarkValue}`}
+        />
+        <MetricPill
+          label={t(locale, "괴리", "Gap")}
+          value={formatPercentStat(locale, compareStats.normalizedGapPct, 1, true)}
+        />
+        <MetricPill
+          label={t(locale, "방향 일치", "Direction match")}
+          value={formatPercentStat(locale, compareStats.directionMatchPct, 0)}
+        />
+        <MetricPill
+          label={t(locale, "상관", "Correlation")}
+          value={formatPlainStat(locale, compareStats.recentCorrelation, 2)}
+        />
+        <MetricPill
+          label={t(locale, "열린 알림", "Open alerts")}
+          value={formatNumber(locale, alertCount, 0)}
+        />
+      </div>
+
+      <div className="market-drilldown-grid">
+        <div className="market-drilldown-chart">
+          {selectedSeries.length > 1 ? (
+            <LineChart
+              points={selectedSeries}
+              color={marketColor(row.marketId)}
+              locale={locale === "ko" ? "ko-KR" : "en-US"}
+              valueFormatter={(value) => formatNumber(locale, value, value >= 10 ? 2 : 3)}
+              title={t(locale, "공식 추세", "Official trend")}
+              subtitle={`${row.sourceName} · ${row.updatedLabel}`}
+            />
+          ) : (
+            <div className="empty-plot compact">
+              {t(
+                locale,
+                "이 시장은 아직 공식 연속 시계열이 약합니다. 아래 비교 차트와 일정 표를 같이 보세요.",
+                "Official continuous history is limited here. Use the live comparison and event table below together."
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="market-drilldown-stack">
+          <div className="market-drilldown-card">
+            <strong>{t(locale, "지금 먼저 볼 것", "What matters now")}</strong>
+            <p>{row.operationsFocus}</p>
+            <small>{row.operationsCheck}</small>
+          </div>
+          <div className="market-drilldown-card">
+            <strong>{t(locale, "현재 판단 근거", "Why the read leans here")}</strong>
+            <ul>
+              {decision.supportingEvidence.slice(0, 3).map((item) => (
+                <li key={item.title}>{item.title}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="market-drilldown-card caution">
+            <strong>{t(locale, "판단이 약해지는 조건", "What weakens the call")}</strong>
+            <ul>
+              {decision.counterEvidence.slice(0, 3).map((item) => (
+                <li key={item.title}>{item.title}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="market-drilldown-card">
+            <strong>{t(locale, "현재 연결된 비교 테이프", "Current linked tape")}</strong>
+            <p>
+              {selectedQuote
+                ? `${selectedQuote.title} · ${formatLiveQuotePrice(locale, selectedQuote)}`
+                : t(locale, "연결된 비교 테이프 없음", "No linked tape")}
+            </p>
+            <small>{selectedQuote?.delayNote ?? row.benchmarkDelay}</small>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function LinkedTapePanel({
   locale,
   quotes,
@@ -7703,6 +8042,7 @@ function ForecastConfidenceBand({
 
 function InstitutionDeskSurface({
   locale,
+  marketBoardRow,
   marketLabel,
   officialCard,
   selectedSeries,
@@ -7731,12 +8071,15 @@ function InstitutionDeskSurface({
   catalystRows,
   sourceRows,
   feedItems,
+  onOpenDecision,
+  onOpenSources,
   onOpenSource,
   onInspectDriver,
   onInspectCatalyst,
   onInspectSource
 }: {
   locale: AppLocale;
+  marketBoardRow: MarketBoardRow | null;
   marketLabel: string;
   officialCard: ConnectedSourceCard | undefined;
   selectedSeries: ChartPoint[];
@@ -7765,6 +8108,8 @@ function InstitutionDeskSurface({
   catalystRows: ReturnType<typeof localizeCatalystWindow>[];
   sourceRows: SourceHealthRow[];
   feedItems: FeedItem[];
+  onOpenDecision: () => void;
+  onOpenSources: () => void;
   onOpenSource: (url: string) => void;
   onInspectDriver: (rowId: string) => void;
   onInspectCatalyst: (rowId: string) => void;
@@ -7772,6 +8117,20 @@ function InstitutionDeskSurface({
 }) {
   return (
     <>
+      <section className="panel panel-emphasis">
+        <SelectedMarketDrilldownPanel
+          locale={locale}
+          row={marketBoardRow}
+          decision={decision}
+          selectedSeries={selectedSeries}
+          selectedQuote={selectedInteractiveQuote}
+          compareStats={compareStats}
+          alertCount={alertCount}
+          onOpenDecision={onOpenDecision}
+          onOpenSources={onOpenSources}
+        />
+      </section>
+
       <section className="overview-grid desk-core-grid">
         <div className="panel panel-emphasis">
           <DeskCommandPanel

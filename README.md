@@ -16,6 +16,7 @@ It does not place trades.
 - Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
 - Reloads linked tapes inside the desktop app through API calls, supports `1D` intraday through `1Y`, and shows interactive in-app charts instead of static images
 - Adds a click-driven spotlight stage so markets, tapes, drivers, events, and source rows can open a focused detail panel and jump to the next screen
+- Turns the selected market into a pinned central workspace with a dedicated drill-down panel, official trend, risk checks, and direct jumps to decision and sources
 - Adds a right-side inspector rail with drill-down charts and focused notes for the currently selected market, tape, driver, event, or source
 - Lets the inspector rail switch comparison tapes and chart windows directly, and rewrites the drill-down notes for Compliance, Trading, and Risk roles
 - Compares EU ETS, K-ETS, and China ETS on one screen
@@ -30,6 +31,7 @@ It does not place trades.
 - Lets you run local backtests and walk-forward model checks
 - Keeps the main workflow inside the desktop app and leaves external pages as secondary source references only
 - Sends clicked source links into an in-app `Reference Center` first, with opening the original page kept as an explicit secondary action
+- Expands the in-app `Reference Center` so every selected source can be read with linked documents, workflow context, and nearby references before opening the original page
 
 ## Open-Source Benchmark Map
 
