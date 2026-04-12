@@ -1,39 +1,31 @@
 # C-Quant
 
-C-Quant is a desktop carbon market monitoring tool for:
+C-Quant is a desktop decision desk for global carbon allowance markets:
 
 - EU ETS
 - K-ETS
 - China ETS
 
-It is made for checking prices, market drivers, alerts, and research signals in one place.
+The app is built around one operating workflow:
 
-It does not place trades.
+1. read the official anchor
+2. compare it against a listed hedge benchmark or proxy
+3. check the main drivers and source freshness
+4. decide whether the desk should lean buy, hold, or reduce
+
+It does not execute trades or intermediate transactions.
 
 ## What The App Does
 
-- Shows official market prices first when available
-- Pulls linked futures and listed proxy tapes such as ICE EUA benchmark futures, TTF gas, and KRBN
-- Reloads linked tapes inside the desktop app through API calls, supports `1D` intraday through `1Y`, and shows interactive in-app charts instead of static images
-- Adds a click-driven spotlight stage so markets, tapes, drivers, events, and source rows can open a focused detail panel and jump to the next screen
-- Turns the selected market into a pinned central workspace with a dedicated drill-down panel, official trend, risk checks, and direct jumps to decision and sources
-- Adds market-specific operator playbooks so EU ETS, K-ETS, and China ETS do not share the same reading order
-- Adds a right-side inspector rail with drill-down charts and focused notes for the currently selected market, tape, driver, event, or source
-- Lets the inspector rail switch comparison tapes and chart windows directly, and rewrites the drill-down notes for Compliance, Trading, and Risk roles
-- Compares EU ETS, K-ETS, and China ETS on one screen
-- Shows overlap stats between the official tape and linked tapes, including gap, recent move, correlation, and direction match
-- Ranks linked tapes on a scoreboard so you can see which futures or proxies are tracking the official market best
-- Adds an institution-style checklist for what to confirm before leaning buy, reduce, or hold
-- Adds read-only credit lifecycle dossiers, registry document freshness tracking, and nature-based integrity overlays
-- Adds a registry operations board so evidence workflow, refresh cadence, and blockers are visible
-- Explains what is moving carbon prices
-- Summarizes the current market tone with a rule-based decision layer
-- Turns the decision memo into a structured operator brief for real desk use
-- Lets you run local backtests and walk-forward model checks
-- Keeps the main workflow inside the desktop app and leaves external pages as secondary source references only
-- Sends clicked source links into an in-app `Reference Center` first, with opening the original page kept as an explicit secondary action
-- Expands the in-app `Reference Center` so every selected source can be read with linked documents, workflow context, and nearby references before opening the original page
-- Adds in-app document preview so registry evidence can be reviewed with dossier notes and stage context before leaving the desktop app
+- Shows the official market anchor first for each ETS
+- Brings listed hedge benchmarks and proxies into the app through API-backed charts
+- Supports interactive `1D` to `1Y` chart windows inside the desktop app
+- Compares the official anchor and listed benchmark on one normalized chart
+- Calculates gap, recent co-movement, and direction match between the two tapes
+- Builds a simple desk posture from official move, listed move, tape agreement, and source freshness
+- Keeps the driver map, source method, and trust boundary visible
+- Includes a local scenario lab, CSV backtest, and walk-forward model runner
+- Keeps external pages as explicit source buttons instead of default navigation
 
 ## Open-Source Benchmark Map
 
@@ -85,34 +77,24 @@ The app is built to work even if you do not want to pay for data.
 
 ## Main Screens
 
-- `Overview`
-  - institution desk header for the selected market
-  - official tape versus hedge-anchor comparison
-  - linked tape scoreboard to pick the best tracking future or proxy
-  - driver monitor table with source-backed rationale
-  - catalyst calendar and source freshness tables
-  - short market notes for fast scanning
-- `Decision`
-  - structured operator brief with support and counter-evidence
-  - pre-trade risk gates
-  - driver table behind the current call
-  - project intelligence sidecar and integrity-risk overlay
-  - registry operations board
-  - next catalysts and data-status checks
-  - optional AI follow-up explanation
+- `Desk`
+  - cross-market board for EU ETS, K-ETS, and China ETS
+  - official anchor panel
+  - listed benchmark panel
+  - normalized comparison chart
+  - posture, score build, and decision memo
+- `Drivers`
+  - cross-market factor heatmap
+  - market-specific driver table
+  - quant indicators worth running
+- `Sources`
+  - official source method, freshness, and notes
+  - in-app benchmark catalogue
+  - dataset schema and CSV template export
 - `Lab`
+  - scenario sliders for top drivers
   - CSV backtest
   - walk-forward model runner
-  - dataset templates
-- `Sources`
-  - source coverage
-  - free-only filtering
-  - source registry
-  - credit lifecycle dossiers
-  - registry evidence freshness
-  - registry operations board
-  - nature-based risk overlays
-  - watchlists
 
 ## Important Notes
 
