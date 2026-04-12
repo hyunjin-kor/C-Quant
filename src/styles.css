@@ -510,6 +510,90 @@ textarea {
   line-height: 1.48;
 }
 
+.reference-document-preview {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.95rem 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(130, 146, 182, 0.12);
+  background: rgba(244, 248, 255, 0.92);
+}
+
+.reference-document-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.reference-document-head div:first-child {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.reference-document-head strong {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+}
+
+.reference-document-head span {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.reference-document-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.reference-document-card {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.82rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid rgba(130, 146, 182, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.reference-document-card strong {
+  color: var(--text-strong);
+  font-size: 0.84rem;
+}
+
+.reference-document-card p,
+.reference-document-card small {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.reference-stage-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.reference-stage-row {
+  display: grid;
+  gap: 0.16rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(130, 146, 182, 0.12);
+}
+
+.reference-stage-row strong {
+  color: var(--text-strong);
+  font-size: 0.8rem;
+}
+
+.reference-stage-row span {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
 .workspace-modules {
   margin-top: 0.8rem;
   display: flex;
@@ -3082,6 +3166,44 @@ textarea {
   line-height: 1.5;
 }
 
+.market-playbook-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.market-playbook-card {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.88rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(130, 146, 182, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.market-playbook-card strong {
+  color: var(--text-strong);
+  font-size: 0.84rem;
+}
+
+.market-playbook-card p,
+.market-playbook-card small {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.market-playbook-card ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.28rem;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  line-height: 1.48;
+}
+
 .desk-command {
   display: grid;
   gap: 1rem;
@@ -3464,6 +3586,11 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .reference-document-grid,
+  .market-playbook-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .operator-brief-grid,
   .registry-track-columns {
     grid-template-columns: 1fr;
@@ -3527,5 +3654,15 @@ textarea {
   .gate-columns,
   .memo-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reference-document-head,
+  .market-drilldown-head {
+    flex-direction: column;
+  }
+
+  .reference-document-grid,
+  .market-playbook-grid {
+    grid-template-columns: 1fr;
   }
 }

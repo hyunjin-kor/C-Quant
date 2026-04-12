@@ -2905,6 +2905,7 @@ export default function App() {
   const [selectedDossierId, setSelectedDossierId] = useState<string>("");
   const [selectedRegistryTrackId, setSelectedRegistryTrackId] = useState<string>("");
   const [selectedRiskOverlayId, setSelectedRiskOverlayId] = useState<string>("");
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string>("");
   const [selectedReferenceUrl, setSelectedReferenceUrl] = useState<string>("");
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(emptySources);
   const [refreshingSources, setRefreshingSources] = useState(false);
@@ -3148,10 +3149,11 @@ export default function App() {
     if (!referenceCenterItems.length) {
       return;
     }
-    if (!selectedReferenceUrl) {
+    if (!selectedReferenceId && !selectedReferenceUrl) {
+      setSelectedReferenceId(referenceCenterItems[0].id);
       setSelectedReferenceUrl(referenceCenterItems[0].url);
     }
-  }, [referenceCenterItems, selectedReferenceUrl]);
+  }, [referenceCenterItems, selectedReferenceId, selectedReferenceUrl]);
 
   useEffect(() => {
     window.localStorage.setItem("cquant:quote-range", selectedQuoteRange);
@@ -3660,6 +3662,13 @@ export default function App() {
       return null;
     }
 
+    const matchedById = selectedReferenceId
+      ? referenceCenterItems.find((item) => item.id === selectedReferenceId) ?? null
+      : null;
+    if (matchedById) {
+      return matchedById;
+    }
+
     const normalizedUrl = normalizeReferenceUrl(selectedReferenceUrl);
     const matched =
       normalizedUrl.length > 0
@@ -3691,7 +3700,7 @@ export default function App() {
     }
 
     return referenceCenterItems[0];
-  }, [appLocale, referenceCenterItems, selectedReferenceUrl]);
+  }, [appLocale, referenceCenterItems, selectedReferenceId, selectedReferenceUrl]);
   const referenceQuickList = useMemo(
     () =>
       selectedReferenceItem
@@ -3787,6 +3796,47 @@ export default function App() {
     selectedReferenceItem,
     selectedRegistryTrack
   ]);
+  const allVisibleDocumentPreviews = useMemo(
+    () =>
+      visibleDossiers.flatMap((dossier) =>
+        dossier.documents.map((document) => ({
+          dossier,
+          document
+        }))
+      ),
+    [visibleDossiers]
+  );
+  const selectedReferenceDocumentPreview = useMemo(() => {
+    if (!selectedReferenceItem) {
+      return null;
+    }
+
+    const documentId =
+      selectedReferenceItem.kind === "document"
+        ? selectedReferenceItem.id.replace(/^document-/, "")
+        : null;
+    const directMatch = documentId
+      ? allVisibleDocumentPreviews.find((item) => item.document.id === documentId) ?? null
+      : null;
+    if (directMatch) {
+      return directMatch;
+    }
+
+    if (selectedReferenceItem.kind === "dossier") {
+      return (
+        allVisibleDocumentPreviews.find((item) => `dossier-${item.dossier.id}` === selectedReferenceItem.id) ??
+        allVisibleDocumentPreviews.find((item) => item.dossier.id === selectedDossier?.id) ??
+        null
+      );
+    }
+
+    const normalizedSelectedUrl = normalizeReferenceUrl(selectedReferenceItem.url);
+    return (
+      allVisibleDocumentPreviews.find(
+        (item) => normalizeReferenceUrl(item.document.source.url) === normalizedSelectedUrl
+      ) ?? null
+    );
+  }, [allVisibleDocumentPreviews, selectedDossier?.id, selectedReferenceItem]);
   const selectedCatalystRows = useMemo(
     () =>
       localizedCatalysts.filter(
@@ -4517,7 +4567,13 @@ export default function App() {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  function handleSelectReference(reference: Pick<ReferenceCenterItem, "id" | "url">) {
+    setSelectedReferenceId(reference.id);
+    setSelectedReferenceUrl(reference.url);
+  }
+
   function handleOpenExternal(url: string) {
+    setSelectedReferenceId("");
     setSelectedReferenceUrl(url);
     setSurface("sources");
   }
@@ -4786,6 +4842,9 @@ export default function App() {
             <InstitutionDeskSurface
               locale={appLocale}
               marketBoardRow={selectedMarketBoardRow}
+              marketId={marketId}
+              deskRole={deskRole}
+              marketProfile={selectedMarket}
               marketLabel={getMarketDisplayName(appLocale, marketId)}
               officialCard={localizedSelectedCard}
               selectedSeries={selectedSeries}
@@ -5610,6 +5669,72 @@ export default function App() {
                           </div>
                         </>
                       ) : null}
+
+                      {selectedReferenceDocumentPreview ? (
+                        <div className="reference-document-preview">
+                          <div className="reference-document-head">
+                            <div>
+                              <strong>{t(appLocale, "문서 미리보기", "Document preview")}</strong>
+                              <span>
+                                {`${selectedReferenceDocumentPreview.document.docType} · ${formatDate(
+                                  appLocale,
+                                  selectedReferenceDocumentPreview.document.publishedAt
+                                )}`}
+                              </span>
+                            </div>
+                            <div className="status-chip-row">
+                              <span
+                                className={`driver-chip ${registryHealthTone(
+                                  selectedReferenceDocumentPreview.document.status === "fresh"
+                                    ? "healthy"
+                                    : selectedReferenceDocumentPreview.document.status === "watch"
+                                      ? "watch"
+                                      : "blocked"
+                                )}`}
+                              >
+                                {registryStatusLabel(
+                                  appLocale,
+                                  selectedReferenceDocumentPreview.document.status
+                                )}
+                              </span>
+                              <span className="driver-chip neutral">
+                                {selectedReferenceDocumentPreview.dossier.registry}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="reference-document-grid">
+                            <div className="reference-document-card">
+                              <strong>{selectedReferenceDocumentPreview.document.title}</strong>
+                              <p>{selectedReferenceDocumentPreview.document.note}</p>
+                              <small>{selectedReferenceDocumentPreview.dossier.currentRead}</small>
+                            </div>
+                            <div className="reference-document-card">
+                              <strong>{t(appLocale, "운용 연결", "Operator linkage")}</strong>
+                              <ul className="reference-inline-list">
+                                <li>{selectedReferenceDocumentPreview.dossier.operatorUse}</li>
+                                <li>
+                                  {selectedRegistryTrack?.operatorRead ??
+                                    t(
+                                      appLocale,
+                                      "연결된 레지스트리 운영 메모가 아직 없습니다.",
+                                      "There is no linked registry workflow note yet."
+                                    )}
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="reference-stage-list">
+                            {selectedReferenceDocumentPreview.dossier.stages.map((item) => (
+                              <div key={item.id} className="reference-stage-row">
+                                <strong>{item.label}</strong>
+                                <span>{item.note}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="reference-center-side">
@@ -5621,7 +5746,12 @@ export default function App() {
                               <button
                                 key={item.id}
                                 className="reference-center-row"
-                                onClick={() => setSelectedReferenceUrl(item.sourceUrl)}
+                                onClick={() =>
+                                  handleSelectReference({
+                                    id: `document-${item.id}`,
+                                    url: item.sourceUrl
+                                  })
+                                }
                               >
                                 <div>
                                   <strong>{item.title}</strong>
@@ -5654,7 +5784,7 @@ export default function App() {
                               className={`reference-center-row ${
                                 selectedReferenceItem.id === item.id ? "active" : ""
                               }`}
-                              onClick={() => setSelectedReferenceUrl(item.url)}
+                              onClick={() => handleSelectReference(item)}
                             >
                               <div>
                                 <strong>{item.title}</strong>
@@ -7448,28 +7578,77 @@ function OperationalMarketBoard({
 
 function SelectedMarketDrilldownPanel({
   locale,
+  marketId,
+  deskRole,
+  marketProfile,
   row,
   decision,
   selectedSeries,
   selectedQuote,
   compareStats,
   alertCount,
+  catalystRows,
+  sourceRows,
   onOpenDecision,
   onOpenSources
 }: {
   locale: AppLocale;
+  marketId: MarketProfile["id"];
+  deskRole: DeskRole;
+  marketProfile: MarketProfile;
   row: MarketBoardRow | null;
   decision: DecisionAssistantResponse;
   selectedSeries: ChartPoint[];
   selectedQuote: MarketLiveQuote | undefined;
   compareStats: TapeCompareStats;
   alertCount: number;
+  catalystRows: ReturnType<typeof localizeCatalystWindow>[];
+  sourceRows: SourceHealthRow[];
   onOpenDecision: () => void;
   onOpenSources: () => void;
 }) {
   if (!row) {
     return null;
   }
+
+  const marketSpecificRead =
+    marketId === "eu-ets"
+      ? t(
+          locale,
+          "공식 경매와 ICE EUA, 가스·전력 스프레드를 같이 보면서 정책 공급 변화가 선물 쪽에 먼저 반영되는지 확인합니다.",
+          "Read official auctions with ICE EUA and gas-power spreads, and check whether supply policy changes are hitting futures first."
+        )
+      : marketId === "k-ets"
+        ? t(
+            locale,
+            "KRX 공식 시세를 기준으로 두고, 이행 시즌과 거래량 회복 여부가 프록시보다 먼저 바뀌는지 확인합니다.",
+            "Anchor to the KRX tape and check whether compliance-season flow and local volume recovery move before the proxy does."
+          )
+        : t(
+            locale,
+            "정책 공시와 시장 확대 신호를 먼저 읽고, 연결 프록시는 보조 설명용으로만 씁니다.",
+            "Read policy bulletins and market-expansion signals first, and keep the linked proxy as secondary context."
+          );
+  const roleSpecificRead =
+    deskRole === "compliance"
+      ? t(
+          locale,
+          "이행 일정과 공식 공시가 가격보다 우선입니다.",
+          "Compliance dates and official notices outrank short-term price moves."
+        )
+      : deskRole === "risk"
+        ? t(
+            locale,
+            "데이터 신선도와 무효화 조건이 먼저 충족돼야 합니다.",
+            "Data freshness and invalidation checks must clear before conviction rises."
+          )
+        : t(
+            locale,
+            "괴리와 거래량이 같이 움직일 때만 포지션 해석 강도를 높입니다.",
+            "Only lean harder when gap and volume confirm in the same direction."
+          );
+  const freshSource = sourceRows[0];
+  const nextCatalysts = catalystRows.slice(0, 3);
 
   return (
     <section className="market-drilldown">
@@ -7572,6 +7751,36 @@ function SelectedMarketDrilldownPanel({
             </p>
             <small>{selectedQuote?.delayNote ?? row.benchmarkDelay}</small>
           </div>
+        </div>
+      </div>
+
+      <div className="market-playbook-grid">
+        <div className="market-playbook-card">
+          <strong>{t(locale, "시장 구조", "Market structure")}</strong>
+          <p>{marketProfile.stageNote}</p>
+          <small>{marketProfile.scopeNote}</small>
+        </div>
+        <div className="market-playbook-card">
+          <strong>{t(locale, "운용 해석", "Desk read")}</strong>
+          <p>{marketSpecificRead}</p>
+          <small>{roleSpecificRead}</small>
+        </div>
+        <div className="market-playbook-card">
+          <strong>{t(locale, "이번에 다시 볼 일정", "Dates to re-check")}</strong>
+          <ul>
+            {nextCatalysts.map((item) => (
+              <li key={item.id}>{`${item.title} · ${item.date}`}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="market-playbook-card">
+          <strong>{t(locale, "데이터 경계", "Truth boundary")}</strong>
+          <p>{marketProfile.sourceNote}</p>
+          <small>
+            {freshSource
+              ? `${freshSource.name} · ${freshSource.freshness}`
+              : t(locale, "표시할 데이터 상태 없음", "No source health status available")}
+          </small>
         </div>
       </div>
     </section>
@@ -8043,6 +8252,9 @@ function ForecastConfidenceBand({
 function InstitutionDeskSurface({
   locale,
   marketBoardRow,
+  marketId,
+  deskRole,
+  marketProfile,
   marketLabel,
   officialCard,
   selectedSeries,
@@ -8080,6 +8292,9 @@ function InstitutionDeskSurface({
 }: {
   locale: AppLocale;
   marketBoardRow: MarketBoardRow | null;
+  marketId: MarketProfile["id"];
+  deskRole: DeskRole;
+  marketProfile: MarketProfile;
   marketLabel: string;
   officialCard: ConnectedSourceCard | undefined;
   selectedSeries: ChartPoint[];
@@ -8120,12 +8335,17 @@ function InstitutionDeskSurface({
       <section className="panel panel-emphasis">
         <SelectedMarketDrilldownPanel
           locale={locale}
+          marketId={marketId}
+          deskRole={deskRole}
+          marketProfile={marketProfile}
           row={marketBoardRow}
           decision={decision}
           selectedSeries={selectedSeries}
           selectedQuote={selectedInteractiveQuote}
           compareStats={compareStats}
           alertCount={alertCount}
+          catalystRows={catalystRows}
+          sourceRows={sourceRows}
           onOpenDecision={onOpenDecision}
           onOpenSources={onOpenSources}
         />
