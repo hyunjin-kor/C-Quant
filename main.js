@@ -11,6 +11,7 @@ const {
 const isDev = !app.isPackaged;
 const SETTINGS_FILENAME = "settings.json";
 let mainWindow = null;
+let startupWatchdog = null;
 
 function showFallbackPage(window, title, detail) {
   if (!window || window.isDestroyed()) {
@@ -84,7 +85,54 @@ function revealWindow(window) {
     window.show();
   }
 
+  if (typeof window.moveTop === "function") {
+    window.moveTop();
+  }
+
   window.focus();
+}
+
+function fitWindowToVisibleArea(window) {
+  if (!window || window.isDestroyed()) {
+    return;
+  }
+
+  const display = screen.getDisplayMatching(window.getBounds());
+  const area = display.workArea;
+  const bounds = window.getBounds();
+  const width = Math.min(bounds.width, area.width);
+  const height = Math.min(bounds.height, area.height);
+  const x = Math.max(area.x, Math.min(bounds.x, area.x + area.width - width));
+  const y = Math.max(area.y, Math.min(bounds.y, area.y + area.height - height));
+
+  if (
+    bounds.x !== x ||
+    bounds.y !== y ||
+    bounds.width !== width ||
+    bounds.height !== height
+  ) {
+    window.setBounds({ x, y, width, height }, true);
+  }
+}
+
+function clearStartupWatchdog() {
+  if (startupWatchdog) {
+    clearTimeout(startupWatchdog);
+    startupWatchdog = null;
+  }
+}
+
+function armStartupWatchdog(window) {
+  clearStartupWatchdog();
+  startupWatchdog = setTimeout(() => {
+    if (!window || window.isDestroyed()) {
+      createWindow();
+      return;
+    }
+
+    fitWindowToVisibleArea(window);
+    revealWindow(window);
+  }, isDev ? 7000 : 4000);
 }
 
 function getWindowIconPath() {
@@ -134,6 +182,7 @@ function createWindow() {
 
   const reveal = () => revealWindow(window);
   const fallbackTimer = setTimeout(reveal, isDev ? 5000 : 2500);
+  armStartupWatchdog(window);
 
   window.once("ready-to-show", reveal);
   window.webContents.once("did-finish-load", reveal);
@@ -146,9 +195,13 @@ function createWindow() {
       }
     }, 600);
   });
-  window.on("show", () => clearTimeout(fallbackTimer));
+  window.on("show", () => {
+    clearTimeout(fallbackTimer);
+    fitWindowToVisibleArea(window);
+  });
   window.on("closed", () => {
     clearTimeout(fallbackTimer);
+    clearStartupWatchdog();
     if (mainWindow === window) {
       mainWindow = null;
     }
@@ -156,6 +209,7 @@ function createWindow() {
 
   window.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
     clearTimeout(fallbackTimer);
+    clearStartupWatchdog();
     dialog.showErrorBox(
       "C-Quant failed to load",
       `The desktop window could not load its UI.\n\nCode: ${errorCode}\nMessage: ${errorDescription}`
@@ -169,11 +223,21 @@ function createWindow() {
 
   window.webContents.on("render-process-gone", (_event, details) => {
     clearTimeout(fallbackTimer);
+    clearStartupWatchdog();
     dialog.showErrorBox(
       "C-Quant renderer stopped",
       `The app window stopped unexpectedly.\n\nReason: ${details.reason}`
     );
     showFallbackPage(window, "C-Quant renderer stopped", `Reason: ${details.reason}`);
+  });
+
+  window.on("unresponsive", () => {
+    clearStartupWatchdog();
+    showFallbackPage(
+      window,
+      "C-Quant stopped responding",
+      "The app window became unresponsive during startup."
+    );
   });
 
   if (isDev) {
@@ -388,31 +452,19 @@ ipcMain.handle("run-decision-assistant", async (_event, payload) => {
   });
 });
 
-const hasSingleInstanceLock = app.requestSingleInstanceLock();
+app.whenReady().then(() => {
+  app.setAppUserModelId("C-Quant");
+  createWindow();
 
-if (!hasSingleInstanceLock) {
-  app.quit();
-} else {
-  app.on("second-instance", () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      revealWindow(mainWindow);
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
       return;
     }
-    createWindow();
+    fitWindowToVisibleArea(mainWindow);
+    revealWindow(mainWindow);
   });
-
-  app.whenReady().then(() => {
-    createWindow();
-
-    app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-        return;
-      }
-      revealWindow(mainWindow);
-    });
-  });
-}
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
