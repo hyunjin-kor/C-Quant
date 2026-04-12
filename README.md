@@ -29,6 +29,7 @@ It does not place trades.
 - Turns the decision memo into a structured operator brief for real desk use
 - Lets you run local backtests and walk-forward model checks
 - Keeps the main workflow inside the desktop app and leaves external pages as secondary source references only
+- Sends clicked source links into an in-app `Reference Center` first, with opening the original page kept as an explicit secondary action
 
 ## Open-Source Benchmark Map
 

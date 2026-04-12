@@ -258,6 +258,16 @@ type InteractionSpotlight = {
 
 type DeskRole = "compliance" | "trading" | "risk";
 
+type ReferenceCenterItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  summary: string;
+  bullets: string[];
+  url: string;
+  kind: "market-watch" | "source-registry" | "benchmark" | "open-source" | "registry" | "dossier" | "document" | "risk" | "live-source";
+};
+
 type DeskRoleConfig = {
   id: DeskRole;
   ko: string;
@@ -895,6 +905,35 @@ function getSpotlightEntityId(spotlight: InteractionSpotlight | null) {
 
   const divider = spotlight.id.indexOf("-");
   return divider >= 0 ? spotlight.id.slice(divider + 1) : spotlight.id;
+}
+
+function normalizeReferenceUrl(url: string) {
+  return url.trim().replace(/\/+$/, "").toLowerCase();
+}
+
+function getReferenceHostLabel(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function localizeReferenceKind(locale: AppLocale, kind: ReferenceCenterItem["kind"]) {
+  const labels: Record<ReferenceCenterItem["kind"], { ko: string; en: string }> = {
+    "market-watch": { ko: "시장 참고", en: "Market watch" },
+    "source-registry": { ko: "출처 카드", en: "Source card" },
+    benchmark: { ko: "벤치마크", en: "Benchmark" },
+    "open-source": { ko: "오픈소스", en: "Open source" },
+    registry: { ko: "레지스트리 운영", en: "Registry ops" },
+    dossier: { ko: "프로젝트 파일", en: "Dossier" },
+    document: { ko: "문서", en: "Document" },
+    risk: { ko: "리스크", en: "Risk" },
+    "live-source": { ko: "실시간 참고", en: "Live source" }
+  };
+
+  return locale === "ko" ? labels[kind].ko : labels[kind].en;
 }
 
 function getAccessTier(
@@ -2861,6 +2900,7 @@ export default function App() {
   const [selectedDossierId, setSelectedDossierId] = useState<string>("");
   const [selectedRegistryTrackId, setSelectedRegistryTrackId] = useState<string>("");
   const [selectedRiskOverlayId, setSelectedRiskOverlayId] = useState<string>("");
+  const [selectedReferenceUrl, setSelectedReferenceUrl] = useState<string>("");
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(emptySources);
   const [refreshingSources, setRefreshingSources] = useState(false);
   const [windowMaximized, setWindowMaximized] = useState(false);
@@ -3098,6 +3138,15 @@ export default function App() {
       setSelectedRiskOverlayId(visibleNatureRiskOverlays[0].id);
     }
   }, [selectedNatureRiskOverlay, visibleNatureRiskOverlays]);
+
+  useEffect(() => {
+    if (!referenceCenterItems.length) {
+      return;
+    }
+    if (!selectedReferenceUrl) {
+      setSelectedReferenceUrl(referenceCenterItems[0].url);
+    }
+  }, [referenceCenterItems, selectedReferenceUrl]);
 
   useEffect(() => {
     window.localStorage.setItem("cquant:quote-range", selectedQuoteRange);
@@ -3441,6 +3490,210 @@ export default function App() {
 
     return rows;
   }, [appLocale, localizedSelectedCard, selectedDeskQuotes]);
+  const referenceCenterItems = useMemo<ReferenceCenterItem[]>(() => {
+    const items: ReferenceCenterItem[] = [];
+    const pushUnique = (item: ReferenceCenterItem) => {
+      const nextKey = `${item.kind}:${normalizeReferenceUrl(item.url)}`;
+      const exists = items.some(
+        (existing) => `${existing.kind}:${normalizeReferenceUrl(existing.url)}` === nextKey
+      );
+      if (!exists) {
+        items.push(item);
+      }
+    };
+
+    if (localizedSelectedCard) {
+      pushUnique({
+        id: `live-source-${localizedSelectedCard.id}`,
+        kind: "live-source",
+        title: localizedSelectedCard.sourceName,
+        subtitle: `${t(appLocale, "공식 기준값", "Official anchor")} · ${formatDate(appLocale, localizedSelectedCard.asOf)}`,
+        summary: localizedSelectedCard.summary,
+        bullets: [
+          localizedSelectedCard.coverage,
+          ...localizedSelectedCard.notes.slice(0, 2)
+        ],
+        url: localizedSelectedCard.sourceUrl
+      });
+    }
+
+    selectedDeskQuotes.forEach((quote, index) => {
+      pushUnique({
+        id: `live-source-${quote.id}`,
+        kind: "live-source",
+        title: quote.title,
+        subtitle: `${index === 0 ? t(appLocale, "주요 헤지 앵커", "Primary hedge anchor") : t(appLocale, "보조 비교 테이프", "Support tape")} · ${formatDate(appLocale, quote.asOf)}`,
+        summary: quote.role,
+        bullets: [quote.note, quote.delayNote].filter(Boolean),
+        url: quote.sourceUrl
+      });
+    });
+
+    watchlistItems.forEach((item) => {
+      pushUnique({
+        id: `watch-${item.id}`,
+        kind: "market-watch",
+        title: item.title,
+        subtitle: `${localizeLabel(appLocale, item.category, CATEGORY_LABELS_KO)} · ${item.role}`,
+        summary: item.note,
+        bullets: [
+          t(appLocale, "현재 워치리스트에서 빠르게 확인하는 참고 항목입니다.", "This is a quick reference item inside the current watchlist."),
+          item.url
+        ],
+        url: item.url
+      });
+    });
+
+    visibleSources.forEach((item) => {
+      pushUnique({
+        id: `source-${item.id}`,
+        kind: "source-registry",
+        title: item.title,
+        subtitle: `${getAccessTier(appLocale, item.method).label} · ${localizeLabel(appLocale, item.method, METHOD_LABELS_KO)}`,
+        summary: item.appUse,
+        bullets: [item.whyItMatters, ...item.notes.slice(0, 2)],
+        url: item.url
+      });
+    });
+
+    localizedBenchmarks.forEach((item) => {
+      pushUnique({
+        id: `benchmark-${item.id}`,
+        kind: "benchmark",
+        title: item.name,
+        subtitle: localizeLabel(appLocale, item.category, CATEGORY_LABELS_KO),
+        summary: item.strength,
+        bullets: item.featuresToBorrow.slice(0, 3),
+        url: item.source.url
+      });
+    });
+
+    localizedOpenSourceBenchmarks.forEach((item) => {
+      pushUnique({
+        id: `oss-${item.id}`,
+        kind: "open-source",
+        title: item.name,
+        subtitle: item.category,
+        summary: item.verifiedCapability,
+        bullets: [item.adaptForCQuant, item.boundaryNote, item.llmUse],
+        url: item.source.url
+      });
+    });
+
+    visibleRegistryTracks.forEach((item) => {
+      pushUnique({
+        id: `registry-${item.id}`,
+        kind: "registry",
+        title: item.registry,
+        subtitle: `${item.accessMethod} · ${registryHealthLabel(appLocale, item.status)}`,
+        summary: item.operatorRead,
+        bullets: [
+          `${t(appLocale, "검토 주기", "Refresh cadence")}: ${item.refreshCadence}`,
+          `${t(appLocale, "신선도 기준", "Freshness SLA")}: ${item.freshnessSla}`,
+          ...item.watchItems.slice(0, 1),
+          ...item.blockers.slice(0, 1)
+        ],
+        url: item.source.url
+      });
+    });
+
+    visibleDossiers.forEach((item) => {
+      pushUnique({
+        id: `dossier-${item.id}`,
+        kind: "dossier",
+        title: item.title,
+        subtitle: `${item.registry} · ${item.projectType}`,
+        summary: item.currentRead,
+        bullets: item.documents.slice(0, 3).map((doc) => `${doc.docType}: ${doc.title}`),
+        url: item.source.url
+      });
+    });
+
+    registryFreshnessRows.forEach((item) => {
+      pushUnique({
+        id: `document-${item.id}`,
+        kind: "document",
+        title: item.title,
+        subtitle: `${item.docType} · ${formatDate(appLocale, item.publishedAt)}`,
+        summary: item.note,
+        bullets: [
+          `${t(appLocale, "상태", "Status")}: ${registryStatusLabel(appLocale, item.status)}`,
+          `${t(appLocale, "발행일", "Published")}: ${formatDate(appLocale, item.publishedAt)}`
+        ],
+        url: item.sourceUrl
+      });
+    });
+
+    visibleNatureRiskOverlays.forEach((item) => {
+      pushUnique({
+        id: `risk-${item.id}`,
+        kind: "risk",
+        title: item.title,
+        subtitle: item.creditType,
+        summary: item.currentRead,
+        bullets: item.components.slice(0, 3).map((component) => component.label),
+        url: item.source.url
+      });
+    });
+
+    return items;
+  }, [
+    appLocale,
+    localizedSelectedCard,
+    selectedDeskQuotes,
+    watchlistItems,
+    visibleSources,
+    localizedBenchmarks,
+    localizedOpenSourceBenchmarks,
+    visibleRegistryTracks,
+    visibleDossiers,
+    registryFreshnessRows,
+    visibleNatureRiskOverlays
+  ]);
+  const selectedReferenceItem = useMemo<ReferenceCenterItem | null>(() => {
+    if (referenceCenterItems.length === 0) {
+      return null;
+    }
+
+    const normalizedUrl = normalizeReferenceUrl(selectedReferenceUrl);
+    const matched =
+      normalizedUrl.length > 0
+        ? referenceCenterItems.find((item) => normalizeReferenceUrl(item.url) === normalizedUrl) ?? null
+        : null;
+
+    if (matched) {
+      return matched;
+    }
+
+    if (selectedReferenceUrl.trim()) {
+      return {
+        id: `adhoc-${selectedReferenceUrl}`,
+        kind: "source-registry",
+        title: t(appLocale, "선택한 참고자료", "Selected reference"),
+        subtitle: getReferenceHostLabel(selectedReferenceUrl),
+        summary: t(
+          appLocale,
+          "이 링크는 아직 구조화된 출처 카드로 정리되어 있지 않습니다. 우선 앱 안에서 주소와 맥락을 확인하고, 정말 필요할 때만 원문을 여세요.",
+          "This link does not have a structured in-app card yet. Review the address and context here first, then open the original page only if needed."
+        ),
+        bullets: [
+          selectedReferenceUrl,
+          t(appLocale, "기본 동작은 앱 내부 확인입니다.", "The default action stays inside the app."),
+          t(appLocale, "원문 열기는 보조 동작입니다.", "Opening the original page is a secondary action.")
+        ],
+        url: selectedReferenceUrl
+      };
+    }
+
+    return referenceCenterItems[0];
+  }, [appLocale, referenceCenterItems, selectedReferenceUrl]);
+  const referenceQuickList = useMemo(
+    () =>
+      selectedReferenceItem
+        ? [selectedReferenceItem, ...referenceCenterItems.filter((item) => item.id !== selectedReferenceItem.id)].slice(0, 12)
+        : referenceCenterItems.slice(0, 12),
+    [referenceCenterItems, selectedReferenceItem]
+  );
   const selectedCatalystRows = useMemo(
     () =>
       localizedCatalysts.filter(
@@ -4163,12 +4416,17 @@ export default function App() {
     }
   }
 
-  async function handleOpenExternal(url: string) {
+  async function handleLaunchExternal(url: string) {
     if (window.desktopBridge) {
       await window.desktopBridge.openExternal(url);
       return;
     }
     window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function handleOpenExternal(url: string) {
+    setSelectedReferenceUrl(url);
+    setSurface("sources");
   }
 
   function handleSurfaceChange(nextSurface: Surface) {
@@ -5137,6 +5395,82 @@ export default function App() {
                 </button>
               </section>
 
+              <section className="panel reference-center-panel">
+                <div className="reference-center-head">
+                  <div className="toolbar-copy">
+                    <strong>{t(appLocale, "Reference Center", "Reference Center")}</strong>
+                    <span>
+                      {t(
+                        appLocale,
+                        "클릭한 모든 출처와 참고 링크를 먼저 앱 안에서 읽고 정리하는 공간입니다.",
+                        "This is the in-app layer for reading and organizing every clicked source before leaving the app."
+                      )}
+                    </span>
+                  </div>
+                  {selectedReferenceItem ? (
+                    <button
+                      className="subtle-button"
+                      onClick={() => void handleLaunchExternal(selectedReferenceItem.url)}
+                    >
+                      {t(appLocale, "원문 열기", "Open original")}
+                    </button>
+                  ) : null}
+                </div>
+
+                {selectedReferenceItem ? (
+                  <div className="reference-center-grid">
+                    <div className="reference-center-detail">
+                      <div className="reference-center-meta">
+                        <span className="eyebrow">
+                          {localizeReferenceKind(appLocale, selectedReferenceItem.kind)}
+                        </span>
+                        <strong>{selectedReferenceItem.title}</strong>
+                        <span>{selectedReferenceItem.subtitle}</span>
+                      </div>
+                      <p>{selectedReferenceItem.summary}</p>
+                      <div className="status-chip-row">
+                        <span className="driver-chip neutral">{getReferenceHostLabel(selectedReferenceItem.url)}</span>
+                        <span className="driver-chip neutral">{t(appLocale, "앱 내부 보기 우선", "Stay in app first")}</span>
+                      </div>
+                      <ul className="project-risk-list">
+                        {selectedReferenceItem.bullets.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="reference-center-side">
+                      <strong>{t(appLocale, "최근 클릭한 레퍼런스 성격", "Current reference context")}</strong>
+                      <div className="reference-center-list">
+                        {referenceQuickList.map((item) => (
+                          <button
+                            key={item.id}
+                            className={`reference-center-row ${
+                              selectedReferenceItem.id === item.id ? "active" : ""
+                            }`}
+                            onClick={() => setSelectedReferenceUrl(item.url)}
+                          >
+                            <div>
+                              <strong>{item.title}</strong>
+                              <span>{item.subtitle}</span>
+                            </div>
+                            <small>{getReferenceHostLabel(item.url)}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="empty-plot compact">
+                    {t(
+                      appLocale,
+                      "선택된 레퍼런스가 아직 없습니다.",
+                      "No reference is selected yet."
+                    )}
+                  </div>
+                )}
+              </section>
+
               <section className="overview-grid">
                 <div className="panel">
                   <SectionHeader
@@ -5301,8 +5635,8 @@ export default function App() {
                           <strong>{selectedRegistryTrack.registry}</strong>
                           <span>{`${selectedRegistryTrack.accessMethod} · ${formatDate(appLocale, selectedRegistryTrack.lastReviewed)}`}</span>
                         </div>
-                        <button className="subtle-button" onClick={() => void handleOpenExternal(selectedRegistryTrack.source.url)}>
-                          {t(appLocale, "출처 열기", "Open source")}
+                        <button className="subtle-button" onClick={() => void handleLaunchExternal(selectedRegistryTrack.source.url)}>
+                          {t(appLocale, "원문 열기", "Open original")}
                         </button>
                       </div>
                       <p>{selectedRegistryTrack.operatorRead}</p>

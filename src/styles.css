@@ -334,6 +334,88 @@ textarea {
   box-shadow: 0 14px 28px rgba(47, 123, 246, 0.2);
 }
 
+.reference-center-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.reference-center-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.reference-center-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+}
+
+.reference-center-detail,
+.reference-center-side {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.reference-center-meta {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.reference-center-meta strong {
+  color: var(--text-strong);
+  font-size: 1rem;
+}
+
+.reference-center-meta span:not(.eyebrow) {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.reference-center-list {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.reference-center-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(130, 146, 182, 0.12);
+  background: rgba(247, 250, 255, 0.88);
+  text-align: left;
+}
+
+.reference-center-row.active {
+  border-color: rgba(47, 123, 246, 0.22);
+  background: rgba(47, 123, 246, 0.08);
+  box-shadow: 0 16px 30px rgba(47, 123, 246, 0.08);
+}
+
+.reference-center-row div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.reference-center-row strong {
+  color: var(--text-strong);
+  font-size: 0.85rem;
+}
+
+.reference-center-row span,
+.reference-center-row small {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+}
+
 .workspace-modules {
   margin-top: 0.8rem;
   display: flex;
@@ -3174,6 +3256,14 @@ textarea {
 }
 
 @media (max-width: 1180px) {
+  .reference-center-head {
+    flex-direction: column;
+  }
+
+  .reference-center-grid {
+    grid-template-columns: 1fr;
+  }
+
   .operator-brief-grid,
   .registry-track-columns {
     grid-template-columns: 1fr;
