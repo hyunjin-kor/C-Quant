@@ -389,7 +389,7 @@ export type DecisionReasonItem = {
 };
 
 export type DecisionAssistantResponse = {
-  provider: "rule" | "openai";
+  provider: "rule" | "openai" | "ollama";
   model?: string;
   stance: DecisionAssistantStance;
   confidence: number;
@@ -413,4 +413,23 @@ export type DecisionAssistantResponse = {
 export type AppSettings = {
   hasOpenAIApiKey: boolean;
   llmModel: string;
+};
+
+export type LocalLlmModel = {
+  name: string;
+  model: string;
+  modifiedAt: string;
+  size: number;
+  digest: string;
+  family: string;
+  parameterSize: string;
+  quantizationLevel: string;
+};
+
+export type LocalLlmState = {
+  available: boolean;
+  baseUrl: string;
+  selectedModel: string;
+  models: LocalLlmModel[];
+  error?: string;
 };

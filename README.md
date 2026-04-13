@@ -80,7 +80,7 @@ The app is built to work even if you do not want to pay for data.
 - `Desk`
   - cross-market board for EU ETS, K-ETS, and China ETS
   - official anchor panel
-  - listed benchmark panel
+  - live comparison tape panel
   - normalized comparison chart
   - posture, score build, and decision memo
 - `Drivers`
@@ -101,7 +101,8 @@ The app is built to work even if you do not want to pay for data.
 - This is a research and monitoring tool, not a broker.
 - Yahoo Finance data can be delayed depending on the exchange, so it is shown as a reference source only.
 - Local ETS futures are not added unless a verified free feed is available; where needed, the app labels listed proxies explicitly as proxies.
-- The AI layer is a carbon-market copilot and runs only when an OpenAI API key is saved in the desktop app.
+- The AI layer is a carbon-market copilot and can run on a local free Ollama model inside the desktop app.
+- OpenAI can still be wired separately, but the default desktop copilot flow is local-model-first.
 - The copilot is designed to explain posture, contrary evidence, missing data, and next checks. It is not allowed to fabricate official facts or behave like an execution assistant.
 - The walk-forward model uses local Python and requires `pandas`, `numpy`, and `scikit-learn`.
 

@@ -10,8 +10,13 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     ipcRenderer.invoke("run-walk-forward-model", options),
   getAppSettings: () => ipcRenderer.invoke("get-app-settings"),
   saveAppSettings: (options) => ipcRenderer.invoke("save-app-settings", options),
+  getLocalLlmState: () => ipcRenderer.invoke("get-local-llm-state"),
+  saveLocalLlmSettings: (options) =>
+    ipcRenderer.invoke("save-local-llm-settings", options),
   runDecisionAssistant: (payload) =>
     ipcRenderer.invoke("run-decision-assistant", payload),
+  runLocalDecisionAssistant: (payload) =>
+    ipcRenderer.invoke("run-local-decision-assistant", payload),
   saveTextFile: (options) => ipcRenderer.invoke("save-text-file", options),
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   minimizeWindow: () => ipcRenderer.invoke("window-minimize"),

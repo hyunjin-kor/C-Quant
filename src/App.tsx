@@ -23,6 +23,8 @@ import type {
   ConnectedSourceCard,
   ConnectedSourcePayload,
   ConnectedSourceSeriesPoint,
+  DecisionAssistantResponse,
+  LocalLlmState,
   MarketDriver,
   MarketLiveQuote,
   MarketProfile,
@@ -35,6 +37,7 @@ type MarketId = MarketProfile["id"];
 type AppLocale = "ko" | "en";
 type Surface = "desk" | "drivers" | "sources" | "lab";
 type QuoteRangePreset = "1d" | "5d" | "1m" | "3m" | "6m" | "1y";
+type CopilotTask = "why-posture" | "what-changed" | "breakers" | "verify-now";
 
 type CompareStats = {
   overlapCount: number;
@@ -80,6 +83,17 @@ declare global {
         quoteId: string;
         range: QuoteRangePreset;
       }) => Promise<MarketLiveQuote>;
+      getLocalLlmState: () => Promise<LocalLlmState>;
+      saveLocalLlmSettings: (options: {
+        ollamaBaseUrl?: string;
+        ollamaModel?: string;
+      }) => Promise<LocalLlmState>;
+      runLocalDecisionAssistant: (options: {
+        locale: AppLocale;
+        baseUrl?: string;
+        model?: string;
+        payload: Record<string, unknown>;
+      }) => Promise<DecisionAssistantResponse>;
       runWalkForwardModel: (options: {
         inputPath: string;
         marketId: MarketId;
@@ -97,9 +111,22 @@ const EMPTY_SOURCES: ConnectedSourcePayload = {
   warnings: []
 };
 
+const EMPTY_LOCAL_LLM: LocalLlmState = {
+  available: false,
+  baseUrl: "http://127.0.0.1:11434",
+  selectedModel: "",
+  models: []
+};
+
 const SURFACES: Surface[] = ["desk", "drivers", "sources", "lab"];
 const MARKET_ORDER: MarketId[] = ["eu-ets", "k-ets", "cn-ets"];
 const RANGE_OPTIONS: QuoteRangePreset[] = ["1d", "5d", "1m", "3m", "6m", "1y"];
+const COPILOT_TASKS: CopilotTask[] = [
+  "why-posture",
+  "what-changed",
+  "breakers",
+  "verify-now"
+];
 const DEFAULT_COMPARE_QUOTE: Record<MarketId, string> = {
   "eu-ets": "co2-l-proxy",
   "k-ets": "krbn-proxy",
@@ -170,6 +197,65 @@ function t(locale: AppLocale, ko: string, en: string) {
   return locale === "ko" ? ko : en;
 }
 
+function getCopilotTaskLabel(locale: AppLocale, task: CopilotTask) {
+  switch (task) {
+    case "why-posture":
+      return t(locale, "왜 지금 이런 판단인가", "Why this posture");
+    case "what-changed":
+      return t(locale, "오늘 바뀐 것만 요약", "What changed today");
+    case "breakers":
+      return t(locale, "이 판단이 깨지는 조건", "What breaks this view");
+    case "verify-now":
+      return t(locale, "지금 더 확인할 공식 근거", "What to verify now");
+    default:
+      return task;
+  }
+}
+
+function getCopilotTaskPrompt(locale: AppLocale, task: CopilotTask) {
+  switch (task) {
+    case "why-posture":
+      return t(
+        locale,
+        "현재 포지션이 왜 매수 우위, 관망, 비중 축소 중 하나로 읽히는지 근거 중심으로 설명하세요.",
+        "Explain why the current posture leans buy, hold, or reduce using only the provided evidence."
+      );
+    case "what-changed":
+      return t(
+        locale,
+        "오늘 데이터 기준으로 무엇이 바뀌었는지, 기존 판단에서 무엇이 달라졌는지 요약하세요.",
+        "Summarize what changed in the latest data and what moved the desk read today."
+      );
+    case "breakers":
+      return t(
+        locale,
+        "현재 판단을 약하게 만들거나 뒤집을 조건을 명확히 정리하세요.",
+        "List the specific conditions that would weaken or reverse the current posture."
+      );
+    case "verify-now":
+      return t(
+        locale,
+        "지금 추가로 확인해야 할 공식 문서, 일정, 데이터 상태를 우선순위대로 정리하세요.",
+        "Prioritize the official documents, calendar items, and data checks that should be verified now."
+      );
+    default:
+      return "";
+  }
+}
+
+function getAssistantProviderLabel(locale: AppLocale, provider?: DecisionAssistantResponse["provider"]) {
+  switch (provider) {
+    case "ollama":
+      return t(locale, "로컬 Ollama", "Local Ollama");
+    case "openai":
+      return "OpenAI";
+    case "rule":
+      return t(locale, "규칙 엔진", "Rule engine");
+    default:
+      return t(locale, "미연결", "Not connected");
+  }
+}
+
 function readStoredString(key: string, fallback: string) {
   if (typeof window === "undefined") {
     return fallback;
@@ -203,10 +289,18 @@ function formatDate(locale: AppLocale, value: string) {
     return value || t(locale, "일자 미확인", "Date unavailable");
   }
 
+  const includeTime = String(value).includes("T");
+
   return new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-US", {
     year: "numeric",
     month: "short",
-    day: "numeric"
+    day: "numeric",
+    ...(includeTime
+      ? {
+          hour: "numeric",
+          minute: "2-digit"
+        }
+      : {})
   }).format(parsed);
 }
 
@@ -375,11 +469,55 @@ function correlation(left: number[], right: number[]) {
   return numerator / Math.sqrt(leftVariance * rightVariance);
 }
 
+function normalizeSeriesBucket(label: string) {
+  const parsed = new Date(label);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  return label.includes("T") ? label.slice(0, 10) : label;
+}
+
+function collapseSeriesByBucket(points: ChartPoint[]) {
+  const buckets = new Map<string, ChartPoint>();
+
+  for (const point of points) {
+    const bucket = normalizeSeriesBucket(point.label);
+    buckets.set(bucket, {
+      label: bucket,
+      value: point.value
+    });
+  }
+
+  return Array.from(buckets.values()).sort((left, right) => left.label.localeCompare(right.label));
+}
+
 function compareSeries(
   officialPoints: ChartPoint[],
   benchmarkPoints: ChartPoint[]
 ): { points: MultiLinePoint[]; stats: CompareStats } {
-  const overlap = Math.min(officialPoints.length, benchmarkPoints.length);
+  const officialCollapsed = collapseSeriesByBucket(officialPoints);
+  const benchmarkByBucket = new Map(
+    collapseSeriesByBucket(benchmarkPoints).map((point) => [normalizeSeriesBucket(point.label), point])
+  );
+  const alignedPairs = officialCollapsed
+    .map((point) => {
+      const benchmark = benchmarkByBucket.get(normalizeSeriesBucket(point.label));
+      return benchmark
+        ? {
+            label: normalizeSeriesBucket(point.label),
+            official: point,
+            benchmark
+          }
+        : null;
+    })
+    .filter(Boolean) as Array<{
+    label: string;
+    official: ChartPoint;
+    benchmark: ChartPoint;
+  }>;
+  const overlap = alignedPairs.length;
+
   if (overlap < 2) {
     return {
       points: [],
@@ -394,15 +532,15 @@ function compareSeries(
     };
   }
 
-  const officialSlice = officialPoints.slice(-overlap);
-  const benchmarkSlice = benchmarkPoints.slice(-overlap);
+  const officialSlice = alignedPairs.map((pair) => pair.official);
+  const benchmarkSlice = alignedPairs.map((pair) => pair.benchmark);
   const officialBase = officialSlice[0].value || 1;
   const benchmarkBase = benchmarkSlice[0].value || 1;
 
-  const points: MultiLinePoint[] = officialSlice.map((point, index) => ({
-    label: point.label,
+  const points: MultiLinePoint[] = alignedPairs.map((pair, index) => ({
+    label: pair.label,
     values: {
-      official: (point.value / officialBase) * 100,
+      official: (officialSlice[index].value / officialBase) * 100,
       benchmark: (benchmarkSlice[index].value / benchmarkBase) * 100
     }
   }));
@@ -654,9 +792,16 @@ export default function App() {
   const [surface, setSurface] = useState<Surface>(readStoredSurface);
   const [marketId, setMarketId] = useState<MarketId>(readStoredMarket);
   const [quoteRange, setQuoteRange] = useState<QuoteRangePreset>("3m");
+  const [quoteRefreshTick, setQuoteRefreshTick] = useState(0);
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(EMPTY_SOURCES);
   const [sourcesLoading, setSourcesLoading] = useState(true);
   const [sourcesError, setSourcesError] = useState<string | null>(null);
+  const [localLlmState, setLocalLlmState] = useState<LocalLlmState>(EMPTY_LOCAL_LLM);
+  const [localLlmLoading, setLocalLlmLoading] = useState(false);
+  const [localLlmSaving, setLocalLlmSaving] = useState(false);
+  const [localLlmError, setLocalLlmError] = useState<string | null>(null);
+  const [copilotTask, setCopilotTask] = useState<CopilotTask>("why-posture");
+  const [copilotResponse, setCopilotResponse] = useState<DecisionAssistantResponse | null>(null);
   const [compareQuoteByMarket, setCompareQuoteByMarket] = useState<Record<MarketId, string>>({
     "eu-ets": readStoredString("cquant:quote:eu-ets", DEFAULT_COMPARE_QUOTE["eu-ets"]),
     "k-ets": readStoredString("cquant:quote:k-ets", DEFAULT_COMPARE_QUOTE["k-ets"]),
@@ -747,6 +892,88 @@ export default function App() {
         compareOutput.stats
       ),
     [compareOutput.stats, hedgeAnchorQuote, locale, selectedMarket, selectedOfficialCard]
+  );
+  const copilotPayload = useMemo(
+    () => ({
+      market: {
+        id: selectedMarket.id,
+        name: selectedMarket.name,
+        region: selectedMarket.region,
+        stageNote: selectedMarket.stageNote,
+        scopeNote: selectedMarket.scopeNote,
+        sourceNote: selectedMarket.sourceNote
+      },
+      officialAnchor: selectedOfficialCard
+        ? {
+            sourceName: selectedOfficialCard.sourceName,
+            coverage: selectedOfficialCard.coverage,
+            status: selectedOfficialCard.status,
+            asOf: selectedOfficialCard.asOf,
+            headline: selectedOfficialCard.headline,
+            summary: selectedOfficialCard.summary,
+            metrics: selectedOfficialCard.metrics,
+            notes: selectedOfficialCard.notes
+          }
+        : null,
+      liveTape: selectedCompareQuote
+        ? {
+            id: selectedCompareQuote.id,
+            title: selectedCompareQuote.title,
+            symbol: selectedCompareQuote.symbol,
+            category: selectedCompareQuote.category,
+            provider: selectedCompareQuote.provider,
+            exchange: selectedCompareQuote.exchange,
+            status: selectedCompareQuote.status,
+            asOf: selectedCompareQuote.asOf,
+            price: selectedCompareQuote.price,
+            change: selectedCompareQuote.change,
+            changePct: selectedCompareQuote.changePct,
+            currency: selectedCompareQuote.currency,
+            role: selectedCompareQuote.role,
+            note: selectedCompareQuote.note,
+            delayNote: selectedCompareQuote.delayNote
+          }
+        : null,
+      compareStats: compareOutput.stats,
+      deskRead: {
+        stance: getStanceLabel(locale, selectedDecision.stance),
+        score: selectedDecision.score,
+        confidence: selectedDecision.confidence,
+        summary: selectedDecision.summary,
+        support: selectedDecision.support,
+        risks: selectedDecision.risks,
+        checks: selectedDecision.checks,
+        waterfall: selectedDecision.waterfall
+      },
+      topDrivers: selectedMarket.drivers
+        .slice()
+        .sort((left, right) => right.weight - left.weight)
+        .slice(0, 6)
+        .map((driver) => ({
+          category: driver.category,
+          variable: driver.variable,
+          weight: driver.weight,
+          direction: driver.direction,
+          importance: driver.importance,
+          note: driver.note
+        })),
+      sourceFreshness: {
+        officialStatus: selectedOfficialCard?.status ?? "error",
+        officialAsOf: selectedOfficialCard?.asOf ?? "",
+        liveTapeStatus: selectedCompareQuote?.status ?? "error",
+        liveTapeAsOf: selectedCompareQuote?.asOf ?? "",
+        appFetchedAt: connectedSources.fetchedAt
+      }
+    }),
+    [
+      compareOutput.stats,
+      connectedSources.fetchedAt,
+      locale,
+      selectedCompareQuote,
+      selectedDecision,
+      selectedMarket,
+      selectedOfficialCard
+    ]
   );
   const marketBoardRows = useMemo<MarketBoardRow[]>(
     () =>
@@ -945,7 +1172,52 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [quoteRange, selectedCompareQuoteId]);
+  }, [quoteRange, quoteRefreshTick, selectedCompareQuoteId]);
+
+  useEffect(() => {
+    if (!selectedCompareQuoteId) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setQuoteRefreshTick((current) => current + 1);
+    }, 30000);
+
+    return () => window.clearInterval(timer);
+  }, [selectedCompareQuoteId]);
+
+  useEffect(() => {
+    setCopilotResponse(null);
+    setLocalLlmError(null);
+  }, [marketId, selectedCompareQuoteId]);
+
+  useEffect(() => {
+    const bridge = window.desktopBridge;
+    if (!bridge?.getLocalLlmState) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadLocalLlmState() {
+      try {
+        const payload = await bridge.getLocalLlmState();
+        if (!cancelled) {
+          setLocalLlmState(payload);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLocalLlmError(error instanceof Error ? error.message : String(error));
+        }
+      }
+    }
+
+    void loadLocalLlmState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleRefresh() {
     const bridge = window.desktopBridge;
@@ -964,13 +1236,63 @@ export default function App() {
     }
   }
 
-  async function handleSaveSummary() {
+  async function handleSaveLocalLlmSettings() {
     const bridge = window.desktopBridge;
-    if (!bridge) return;
-    await bridge.saveTextFile({
-      defaultPath: `${selectedMarket.name.replace(/\s+/g, "_").toLowerCase()}-desk-summary.txt`,
-      content: buildSummaryText(locale, selectedMarket, selectedOfficialCard, hedgeAnchorQuote, selectedDecision)
-    });
+    if (!bridge?.saveLocalLlmSettings) {
+      return;
+    }
+
+    setLocalLlmSaving(true);
+    setLocalLlmError(null);
+
+    try {
+      const payload = await bridge.saveLocalLlmSettings({
+        ollamaBaseUrl: localLlmState.baseUrl,
+        ollamaModel: localLlmState.selectedModel
+      });
+      setLocalLlmState(payload);
+    } catch (error) {
+      setLocalLlmError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLocalLlmSaving(false);
+    }
+  }
+
+  async function handleRunLocalCopilot(task: CopilotTask) {
+    const bridge = window.desktopBridge;
+    if (!bridge?.runLocalDecisionAssistant) {
+      return;
+    }
+
+    setCopilotTask(task);
+    setLocalLlmLoading(true);
+    setLocalLlmError(null);
+
+    try {
+      const response = await bridge.runLocalDecisionAssistant({
+        locale,
+        baseUrl: localLlmState.baseUrl,
+        model: localLlmState.selectedModel,
+        payload: {
+          requestedBrief: getCopilotTaskPrompt(locale, task),
+          task,
+          ...copilotPayload
+        }
+      });
+
+      setCopilotResponse(response);
+
+      if (response.model && response.model !== localLlmState.selectedModel) {
+        setLocalLlmState((current) => ({
+          ...current,
+          selectedModel: response.model || current.selectedModel
+        }));
+      }
+    } catch (error) {
+      setLocalLlmError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLocalLlmLoading(false);
+    }
   }
 
   async function handleDownloadTemplate() {
@@ -1052,8 +1374,8 @@ export default function App() {
             <p>
               {t(
                 locale,
-                "공식값, 상장 기준, 괴리, 포지션을 한 줄씩 비교합니다.",
-                "Compare official anchor, listed benchmark, tape gap, and current posture row by row."
+                "공식값, 실시간 비교 테이프, 괴리, 포지션을 한 줄씩 비교합니다.",
+                "Compare official anchor, live tape, gap, and posture row by row."
               )}
             </p>
           </div>
@@ -1062,7 +1384,7 @@ export default function App() {
             <div className="board-head">
               <span>{t(locale, "시장", "Market")}</span>
               <span>{t(locale, "공식값", "Official")}</span>
-              <span>{t(locale, "상장 기준", "Listed benchmark")}</span>
+              <span>{t(locale, "실시간 테이프", "Live tape")}</span>
               <span>{t(locale, "괴리", "Gap")}</span>
               <span>{t(locale, "상관", "Correlation")}</span>
               <span>{t(locale, "포지션", "Stance")}</span>
@@ -1074,6 +1396,7 @@ export default function App() {
                 type="button"
                 className={`board-row ${marketId === row.market.id ? "active" : ""}`}
                 onClick={() => setMarketId(row.market.id)}
+                title={`${row.market.name} · ${getOfficialPriceLabel(row.officialCard)} · ${getStanceLabel(locale, row.decision.stance)}`}
               >
                 <div className="board-cell market">
                   <strong>{row.market.name}</strong>
@@ -1084,7 +1407,9 @@ export default function App() {
                   <span>{getOfficialChangeLabel(row.officialCard)}</span>
                 </div>
                 <div className="board-cell">
-                  <strong>{row.hedgeQuote?.symbol ?? "n/a"}</strong>
+                  <strong title={row.hedgeQuote?.title ?? row.hedgeQuote?.symbol ?? "n/a"}>
+                    {row.hedgeQuote?.symbol ?? "n/a"}
+                  </strong>
                   <span>
                     {row.hedgeQuote?.price !== null && row.hedgeQuote?.price !== undefined
                       ? `${row.hedgeQuote.currency} ${formatNumber(locale, row.hedgeQuote.price, 2)}`
@@ -1158,12 +1483,12 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "상장 기준", "Listed benchmark")}</span>
-                <h2>{selectedCompareQuote?.title ?? t(locale, "비교 기준 없음", "No benchmark selected")}</h2>
+                <span className="section-kicker">{t(locale, "실시간 비교 테이프", "Live comparison tape")}</span>
+                <h2>{selectedCompareQuote?.title ?? t(locale, "비교 테이프 없음", "No live tape selected")}</h2>
               </div>
               <p>
                 {quoteLoading
-                  ? t(locale, "시계열 갱신 중", "Updating series")
+                  ? t(locale, "앱 안에서 시계열 갱신 중", "Refreshing in-app series")
                   : selectedCompareQuote?.delayNote ?? t(locale, "지연 정보 없음", "No delay note")}
               </p>
             </div>
@@ -1202,7 +1527,7 @@ export default function App() {
 
             <div className="metric-strip">
               <div className="metric-tile">
-                <span>{t(locale, "상장 가격", "Listed price")}</span>
+                <span>{t(locale, "실시간 테이프 가격", "Live tape price")}</span>
                 <strong>
                   {selectedCompareQuote?.price !== null && selectedCompareQuote?.price !== undefined
                     ? `${selectedCompareQuote.currency} ${formatNumber(locale, selectedCompareQuote.price, 2)}`
@@ -1223,10 +1548,23 @@ export default function App() {
               </div>
             </div>
 
+            <div className="feed-inline">
+              <span className={`feed-pill tone-${getSourceTone(selectedCompareQuote?.status ?? "error")}`}>
+                {selectedCompareQuote?.status === "connected"
+                  ? t(locale, "연결됨", "Connected")
+                  : selectedCompareQuote?.status === "limited"
+                    ? t(locale, "제한", "Limited")
+                    : t(locale, "오류", "Error")}
+              </span>
+              <span>{selectedCompareQuote?.provider ?? "n/a"}</span>
+              <span>{selectedCompareQuote?.exchange || t(locale, "거래소 정보 없음", "No exchange")}</span>
+              <span>{formatDate(locale, selectedCompareQuote?.asOf ?? "")}</span>
+            </div>
+
             <LineChart
               points={comparePoints}
               color="#111827"
-              title={selectedCompareQuote?.symbol ?? t(locale, "상장 기준", "Listed benchmark")}
+              title={selectedCompareQuote?.symbol ?? t(locale, "실시간 테이프", "Live tape")}
               subtitle={selectedCompareQuote?.role}
               locale={locale === "ko" ? "ko-KR" : "en-US"}
             />
@@ -1723,6 +2061,153 @@ export default function App() {
         </div>
 
         <div className="inspector-section">
+          <span className="section-kicker">{t(locale, "로컬 코파일럿", "Local copilot")}</span>
+          <p>
+            {t(
+              locale,
+              "로컬 무료 모델로 근거를 정리합니다. 가격 진실은 공식값과 실시간 테이프가 기준입니다.",
+              "A local free model summarizes the evidence. The source of truth remains the official anchor and live tape."
+            )}
+          </p>
+
+          <div className="field-grid">
+            <label>
+              <span>{t(locale, "Ollama 주소", "Ollama base URL")}</span>
+              <input
+                value={localLlmState.baseUrl}
+                onChange={(event) =>
+                  setLocalLlmState((current) => ({
+                    ...current,
+                    baseUrl: event.target.value
+                  }))
+                }
+                placeholder="http://127.0.0.1:11434"
+              />
+            </label>
+            <label>
+              <span>{t(locale, "모델", "Model")}</span>
+              <select
+                value={localLlmState.selectedModel}
+                onChange={(event) =>
+                  setLocalLlmState((current) => ({
+                    ...current,
+                    selectedModel: event.target.value
+                  }))
+                }
+              >
+                <option value="">
+                  {localLlmState.models.length > 0
+                    ? t(locale, "모델 선택", "Choose a model")
+                    : t(locale, "설치된 모델 없음", "No model installed")}
+                </option>
+                {localLlmState.models.map((model) => (
+                  <option key={model.model} value={model.model}>
+                    {model.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="inline-actions">
+            <button
+              type="button"
+              className="button ghost small"
+              onClick={handleSaveLocalLlmSettings}
+              disabled={localLlmSaving}
+            >
+              {localLlmSaving ? t(locale, "연결 확인 중", "Checking") : t(locale, "연결 확인", "Check connection")}
+            </button>
+            <span className={`feed-pill tone-${localLlmState.available ? "connected" : "error"}`}>
+              {localLlmState.available
+                ? `${getAssistantProviderLabel(locale, "ollama")} · ${
+                    localLlmState.selectedModel || t(locale, "모델 선택 필요", "Select a model")
+                  }`
+                : t(locale, "로컬 모델 미연결", "Local model unavailable")}
+            </span>
+          </div>
+
+          <div className="chip-group">
+            {COPILOT_TASKS.map((task) => (
+              <button
+                key={task}
+                type="button"
+                className={`chip ${copilotTask === task ? "active" : ""}`}
+                onClick={() => void handleRunLocalCopilot(task)}
+                disabled={localLlmLoading}
+              >
+                {getCopilotTaskLabel(locale, task)}
+              </button>
+            ))}
+          </div>
+
+          {localLlmError ? (
+            <div className="status-card error">
+              <strong>{t(locale, "로컬 코파일럿 오류", "Local copilot error")}</strong>
+              <p>{localLlmError}</p>
+            </div>
+          ) : null}
+
+          {!localLlmError && localLlmState.error ? (
+            <div className="status-card warning">
+              <strong>{t(locale, "연결 상태", "Connection status")}</strong>
+              <p>{localLlmState.error}</p>
+            </div>
+          ) : null}
+
+          {localLlmLoading ? (
+            <div className="status-card">
+              <strong>{getCopilotTaskLabel(locale, copilotTask)}</strong>
+              <p>{t(locale, "로컬 모델이 근거를 정리하는 중입니다.", "The local model is summarizing the evidence.")}</p>
+            </div>
+          ) : null}
+
+          {copilotResponse ? (
+            <div className="copilot-response">
+              <div className="metric-strip inspector-strip">
+                <div className="metric-tile">
+                  <span>{t(locale, "모델 판단", "Model stance")}</span>
+                  <strong>{copilotResponse.stance}</strong>
+                </div>
+                <div className="metric-tile">
+                  <span>{t(locale, "모델 신뢰도", "Model confidence")}</span>
+                  <strong>{Math.round(copilotResponse.confidence * 100)}%</strong>
+                </div>
+              </div>
+
+              <div className="status-card">
+                <strong>{getCopilotTaskLabel(locale, copilotTask)}</strong>
+                <p>{copilotResponse.summary}</p>
+                <span className="meta-line">
+                  {`${getAssistantProviderLabel(locale, copilotResponse.provider)} · ${
+                    copilotResponse.model ?? "n/a"
+                  } · ${formatDate(locale, copilotResponse.generatedAt)}`}
+                </span>
+              </div>
+
+              <div className="note-list">
+                <div className="note-item">
+                  <strong>{t(locale, "근거", "Support")}</strong>
+                  <p>{copilotResponse.supportingEvidence[0]?.detail ?? copilotResponse.thesis[0] ?? "n/a"}</p>
+                </div>
+                <div className="note-item">
+                  <strong>{t(locale, "반대 근거", "Counterpoint")}</strong>
+                  <p>{copilotResponse.counterEvidence[0]?.detail ?? copilotResponse.risks[0] ?? "n/a"}</p>
+                </div>
+              </div>
+
+              <ul className="bullet-list compact">
+                {copilotResponse.checkpoints.slice(0, 3).map((item) => (
+                  <li key={item}>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="inspector-section">
           <span className="section-kicker">{t(locale, "비교 통계", "Tape agreement")}</span>
           <div className="field-list">
             <div>
@@ -1843,9 +2328,7 @@ export default function App() {
           </div>
 
           <div className="head-actions">
-            <button type="button" className="button ghost" onClick={handleSaveSummary}>
-              {t(locale, "요약 저장", "Save summary")}
-            </button>
+            <div className="live-chip">{t(locale, "라이브 차트 30초 갱신", "Live chart refreshes every 30s")}</div>
             <button type="button" className="button primary" onClick={handleRefresh}>
               {sourcesLoading ? t(locale, "새로고침 중", "Refreshing") : t(locale, "데이터 새로고침", "Refresh data")}
             </button>

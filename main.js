@@ -5,6 +5,9 @@ const { execFile } = require("node:child_process");
 const { getConnectedSources, getLiveQuoteHistory } = require("./electron/liveSources");
 const {
   DEFAULT_MODEL,
+  DEFAULT_OLLAMA_BASE_URL,
+  listOllamaModels,
+  runOllamaDecisionAssistant,
   runOpenAIDecisionAssistant
 } = require("./electron/decisionAssistant");
 
@@ -328,12 +331,20 @@ async function loadSettings() {
       llmModel:
         typeof parsed.llmModel === "string" && parsed.llmModel.trim()
           ? parsed.llmModel.trim()
-          : DEFAULT_MODEL
+          : DEFAULT_MODEL,
+      ollamaBaseUrl:
+        typeof parsed.ollamaBaseUrl === "string" && parsed.ollamaBaseUrl.trim()
+          ? parsed.ollamaBaseUrl.trim()
+          : DEFAULT_OLLAMA_BASE_URL,
+      ollamaModel:
+        typeof parsed.ollamaModel === "string" ? parsed.ollamaModel.trim() : ""
     };
   } catch {
     return {
       openAIApiKey: "",
-      llmModel: DEFAULT_MODEL
+      llmModel: DEFAULT_MODEL,
+      ollamaBaseUrl: DEFAULT_OLLAMA_BASE_URL,
+      ollamaModel: ""
     };
   }
 }
@@ -347,6 +358,15 @@ async function saveSettings(partial) {
       : {}),
     ...(Object.prototype.hasOwnProperty.call(partial, "llmModel")
       ? { llmModel: String(partial.llmModel ?? "").trim() || DEFAULT_MODEL }
+      : {}),
+    ...(Object.prototype.hasOwnProperty.call(partial, "ollamaBaseUrl")
+      ? {
+          ollamaBaseUrl:
+            String(partial.ollamaBaseUrl ?? "").trim() || DEFAULT_OLLAMA_BASE_URL
+        }
+      : {}),
+    ...(Object.prototype.hasOwnProperty.call(partial, "ollamaModel")
+      ? { ollamaModel: String(partial.ollamaModel ?? "").trim() }
       : {})
   };
 
@@ -361,6 +381,34 @@ function getPublicSettings(settings) {
     hasOpenAIApiKey: Boolean(settings.openAIApiKey || process.env.OPENAI_API_KEY),
     llmModel: settings.llmModel || DEFAULT_MODEL
   };
+}
+
+async function getLocalLlmState(settings) {
+  const baseUrl = settings?.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
+  const savedModel = settings?.ollamaModel || "";
+
+  try {
+    const models = await listOllamaModels(baseUrl);
+    const selectedModel =
+      (savedModel && models.some((entry) => entry.model === savedModel || entry.name === savedModel)
+        ? savedModel
+        : models[0]?.model) || "";
+
+    return {
+      available: true,
+      baseUrl,
+      selectedModel,
+      models
+    };
+  } catch (error) {
+    return {
+      available: false,
+      baseUrl,
+      selectedModel: savedModel,
+      models: [],
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
 
 ipcMain.handle("pick-csv-file", async () => {
@@ -436,6 +484,13 @@ ipcMain.handle("get-app-settings", async () => getPublicSettings(await loadSetti
 ipcMain.handle("save-app-settings", async (_event, payload) =>
   getPublicSettings(await saveSettings(payload ?? {}))
 );
+ipcMain.handle("get-local-llm-state", async () =>
+  getLocalLlmState(await loadSettings())
+);
+ipcMain.handle("save-local-llm-settings", async (_event, payload) => {
+  const next = await saveSettings(payload ?? {});
+  return getLocalLlmState(next);
+});
 ipcMain.handle("run-decision-assistant", async (_event, payload) => {
   const settings = await loadSettings();
   const apiKey = settings.openAIApiKey || process.env.OPENAI_API_KEY;
@@ -447,6 +502,40 @@ ipcMain.handle("run-decision-assistant", async (_event, payload) => {
   return runOpenAIDecisionAssistant({
     apiKey,
     model: settings.llmModel || DEFAULT_MODEL,
+    locale: payload?.locale === "en" ? "en" : "ko",
+    payload: payload?.payload ?? payload
+  });
+});
+ipcMain.handle("run-local-decision-assistant", async (_event, payload) => {
+  const settings = await loadSettings();
+  const baseUrl =
+    typeof payload?.baseUrl === "string" && payload.baseUrl.trim()
+      ? payload.baseUrl.trim()
+      : settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
+  const models = await listOllamaModels(baseUrl);
+  const requestedModel =
+    typeof payload?.model === "string" && payload.model.trim()
+      ? payload.model.trim()
+      : settings.ollamaModel;
+  const resolvedModel =
+    requestedModel && models.some((entry) => entry.model === requestedModel || entry.name === requestedModel)
+      ? requestedModel
+      : models[0]?.model;
+
+  if (!resolvedModel) {
+    throw new Error("No local Ollama model is available. Pull a model first, then retry.");
+  }
+
+  if (resolvedModel !== settings.ollamaModel || baseUrl !== settings.ollamaBaseUrl) {
+    await saveSettings({
+      ollamaBaseUrl: baseUrl,
+      ollamaModel: resolvedModel
+    });
+  }
+
+  return runOllamaDecisionAssistant({
+    baseUrl,
+    model: resolvedModel,
     locale: payload?.locale === "en" ? "en" : "ko",
     payload: payload?.payload ?? payload
   });

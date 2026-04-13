@@ -1,5 +1,6 @@
 const DEFAULT_MODEL = "gpt-4.1-mini";
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
+const DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434";
 
 function extractText(response) {
   if (typeof response?.output_text === "string" && response.output_text.trim()) {
@@ -123,6 +124,74 @@ function normalizeResponse(payload, provider, model) {
   };
 }
 
+function buildJsonSchema() {
+  return {
+    type: "object",
+    properties: {
+      stance: {
+        type: "string",
+        enum: ["Buy Bias", "Hold / Wait", "Reduce Bias"]
+      },
+      confidence: { type: "number" },
+      summary: { type: "string" },
+      thesis: { type: "array", items: { type: "string" } },
+      risks: { type: "array", items: { type: "string" } },
+      actions: { type: "array", items: { type: "string" } },
+      supportingEvidence: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            detail: { type: "string" }
+          },
+          required: ["title", "detail"]
+        }
+      },
+      counterEvidence: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            detail: { type: "string" }
+          },
+          required: ["title", "detail"]
+        }
+      },
+      dataHealth: { type: "array", items: { type: "string" } },
+      checkpoints: { type: "array", items: { type: "string" } },
+      operatorBrief: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            summary: { type: "string" },
+            bullets: { type: "array", items: { type: "string" } }
+          },
+          required: ["title", "summary", "bullets"]
+        }
+      },
+      disclaimer: { type: "string" }
+    },
+    required: [
+      "stance",
+      "confidence",
+      "summary",
+      "thesis",
+      "risks",
+      "actions",
+      "supportingEvidence",
+      "counterEvidence",
+      "dataHealth",
+      "checkpoints",
+      "operatorBrief",
+      "disclaimer"
+    ]
+  };
+}
+
 function buildPrompt(payload, locale) {
   const sharedInstruction =
     "Use only the supplied data. Do not invent prices, history, regulations, registry facts, retirement evidence, or integrity claims. If the supplied data is stale or incomplete, say so clearly. The platform does not intermediate trades, so frame the answer as a decision-support overlay, not individualized advice or execution language. Treat lifecycle dossiers, registry freshness, registry operations, and integrity overlays as read-only evidence layers.";
@@ -224,7 +293,85 @@ async function runOpenAIDecisionAssistant({
   return normalizeResponse(parsed, "openai", model);
 }
 
+function normalizeBaseUrl(baseUrl) {
+  const trimmed = String(baseUrl ?? "").trim();
+  return trimmed ? trimmed.replace(/\/+$/, "") : DEFAULT_OLLAMA_BASE_URL;
+}
+
+async function fetchOllamaJson(baseUrl, pathname, init = {}) {
+  const url = `${normalizeBaseUrl(baseUrl)}${pathname}`;
+  const response = await fetch(url, init);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Ollama request failed with HTTP ${response.status}: ${errorText}`);
+  }
+
+  return response.json();
+}
+
+async function listOllamaModels(baseUrl = DEFAULT_OLLAMA_BASE_URL) {
+  const payload = await fetchOllamaJson(baseUrl, "/api/tags");
+  const models = Array.isArray(payload?.models) ? payload.models : [];
+
+  return models.map((entry) => ({
+    name: String(entry?.name ?? entry?.model ?? "").trim(),
+    model: String(entry?.model ?? entry?.name ?? "").trim(),
+    modifiedAt: String(entry?.modified_at ?? ""),
+    size: Number(entry?.size ?? 0),
+    digest: String(entry?.digest ?? ""),
+    family: String(entry?.details?.family ?? ""),
+    parameterSize: String(entry?.details?.parameter_size ?? ""),
+    quantizationLevel: String(entry?.details?.quantization_level ?? "")
+  })).filter((entry) => entry.name);
+}
+
+async function runOllamaDecisionAssistant({
+  baseUrl = DEFAULT_OLLAMA_BASE_URL,
+  model,
+  locale,
+  payload
+}) {
+  const prompt = buildExplainablePrompt(payload, locale);
+  const response = await fetchOllamaJson(normalizeBaseUrl(baseUrl), "/api/chat", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      model,
+      stream: false,
+      format: buildJsonSchema(),
+      messages: [
+        {
+          role: "system",
+          content: prompt.system
+        },
+        {
+          role: "user",
+          content: prompt.user
+        }
+      ],
+      options: {
+        temperature: 0.2
+      },
+      keep_alive: "10m"
+    })
+  });
+
+  const text = String(response?.message?.content ?? "").trim();
+  if (!text) {
+    throw new Error("Ollama returned an empty response.");
+  }
+
+  const parsed = extractJson(text);
+  return normalizeResponse(parsed, "ollama", model);
+}
+
 module.exports = {
   DEFAULT_MODEL,
+  DEFAULT_OLLAMA_BASE_URL,
+  listOllamaModels,
+  runOllamaDecisionAssistant,
   runOpenAIDecisionAssistant
 };

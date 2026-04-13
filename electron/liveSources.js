@@ -446,7 +446,12 @@ async function fetchLiveQuote(config, options = {}) {
     Number.isFinite(change) && Number.isFinite(previousClose) && previousClose !== 0
       ? (change / previousClose) * 100
       : null;
-  const asOf = timestamps.length > 0 ? toDateLabelFromUnix(timestamps[timestamps.length - 1]) : "";
+  const asOf =
+    timestamps.length > 0
+      ? toDateLabelFromUnix(timestamps[timestamps.length - 1], {
+          includeTime: usesIntradayRange
+        })
+      : "";
 
   return {
     id: config.id,
