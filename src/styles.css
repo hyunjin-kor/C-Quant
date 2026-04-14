@@ -370,12 +370,15 @@ textarea {
   gap: 1rem;
   min-height: 0;
   flex: 1;
-  align-items: start;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .workspace-scroll,
 .app-inspector {
   min-height: 0;
+  height: 100%;
+  max-height: 100%;
   overflow-y: auto;
   padding-right: 0.2rem;
   scrollbar-gutter: stable;

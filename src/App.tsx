@@ -802,6 +802,7 @@ export default function App() {
   const [localLlmError, setLocalLlmError] = useState<string | null>(null);
   const [copilotTask, setCopilotTask] = useState<CopilotTask>("why-posture");
   const [copilotResponse, setCopilotResponse] = useState<DecisionAssistantResponse | null>(null);
+  const [autoBriefKey, setAutoBriefKey] = useState("");
   const [compareQuoteByMarket, setCompareQuoteByMarket] = useState<Record<MarketId, string>>({
     "eu-ets": readStoredString("cquant:quote:eu-ets", DEFAULT_COMPARE_QUOTE["eu-ets"]),
     "k-ets": readStoredString("cquant:quote:k-ets", DEFAULT_COMPARE_QUOTE["k-ets"]),
@@ -1079,6 +1080,12 @@ export default function App() {
     [backtestRun]
   );
   const selectedTheme = MARKET_THEMES[marketId];
+  const sourceRefreshLabel = connectedSources.fetchedAt
+    ? `${t(locale, "소스 갱신", "Sources")} ${formatDate(locale, connectedSources.fetchedAt)}`
+    : t(locale, "소스 갱신 대기", "Sources not loaded");
+  const localCopilotBadge = localLlmState.available
+    ? `${t(locale, "로컬 모델", "Local model")} ${localLlmState.selectedModel || "n/a"}`
+    : t(locale, "로컬 모델 미연결", "Local model unavailable");
 
   useEffect(() => {
     try {
@@ -1189,6 +1196,7 @@ export default function App() {
   useEffect(() => {
     setCopilotResponse(null);
     setLocalLlmError(null);
+    setAutoBriefKey("");
   }, [marketId, selectedCompareQuoteId]);
 
   useEffect(() => {
@@ -1294,6 +1302,69 @@ export default function App() {
       setLocalLlmLoading(false);
     }
   }
+
+  useEffect(() => {
+    const bridge = window.desktopBridge;
+    if (!bridge) {
+      return;
+    }
+
+    let disposed = false;
+
+    async function refreshQuietly() {
+      try {
+        const payload = await bridge.refreshConnectedSources();
+        if (!disposed) {
+          startTransition(() => {
+            setConnectedSources(payload);
+          });
+          setSourcesError(null);
+        }
+      } catch {}
+    }
+
+    const timer = window.setInterval(() => {
+      void refreshQuietly();
+    }, 5 * 60 * 1000);
+
+    const onFocus = () => {
+      void refreshQuietly();
+    };
+
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentKey = `${marketId}:${selectedCompareQuoteId}:${locale}:${surface}`;
+    if (surface !== "desk") {
+      return;
+    }
+    if (!localLlmState.available || !localLlmState.selectedModel) {
+      return;
+    }
+    if (!selectedCompareQuoteId || localLlmLoading || copilotResponse || autoBriefKey === currentKey) {
+      return;
+    }
+
+    setAutoBriefKey(currentKey);
+    void handleRunLocalCopilot("why-posture");
+  }, [
+    autoBriefKey,
+    copilotResponse,
+    locale,
+    localLlmLoading,
+    localLlmState.available,
+    localLlmState.selectedModel,
+    marketId,
+    selectedCompareQuoteId,
+    surface
+  ]);
 
   async function handleDownloadTemplate() {
     const bridge = window.desktopBridge;
@@ -2329,6 +2400,10 @@ export default function App() {
 
           <div className="head-actions">
             <div className="live-chip">{t(locale, "라이브 차트 30초 갱신", "Live chart refreshes every 30s")}</div>
+            <div className="feed-pill">{sourceRefreshLabel}</div>
+            <div className={`feed-pill tone-${localLlmState.available ? "positive" : "negative"}`}>
+              {localCopilotBadge}
+            </div>
             <button type="button" className="button primary" onClick={handleRefresh}>
               {sourcesLoading ? t(locale, "새로고침 중", "Refreshing") : t(locale, "데이터 새로고침", "Refresh data")}
             </button>
