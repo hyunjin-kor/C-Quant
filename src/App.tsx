@@ -59,12 +59,16 @@ type DecisionSummary = {
   waterfall: Array<{ label: string; value: number }>;
 };
 
+type FreshnessLevel = "fresh" | "watch" | "stale" | "unknown";
+
 type MarketBoardRow = {
   market: MarketProfile;
   officialCard: ConnectedSourceCard | null;
   hedgeQuote: MarketLiveQuote | null;
   compareStats: CompareStats;
   decision: DecisionSummary;
+  freshnessDays: number | null;
+  freshnessLevel: FreshnessLevel;
 };
 
 declare global {
@@ -317,6 +321,57 @@ function formatRelativeDays(locale: AppLocale, value: string) {
   if (days <= 0) return t(locale, "오늘 갱신", "Updated today");
   if (days === 1) return t(locale, "1일 경과", "1 day old");
   return t(locale, `${days}일 경과`, `${days} days old`);
+}
+
+function getFreshnessDays(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return Math.max(0, Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+function getFreshnessLevel(days: number | null): FreshnessLevel {
+  if (days === null) return "unknown";
+  if (days <= 3) return "fresh";
+  if (days <= 10) return "watch";
+  return "stale";
+}
+
+function getFreshnessLevelLabel(locale: AppLocale, level: FreshnessLevel) {
+  switch (level) {
+    case "fresh":
+      return t(locale, "최신", "Fresh");
+    case "watch":
+      return t(locale, "재확인", "Watch");
+    case "stale":
+      return t(locale, "오래됨", "Stale");
+    default:
+      return t(locale, "미확인", "Unknown");
+  }
+}
+
+function getFreshnessSummary(locale: AppLocale, value?: string | null) {
+  const days = getFreshnessDays(value);
+  const level = getFreshnessLevel(days);
+
+  if (level === "unknown") {
+    return t(locale, "갱신 일자 미확인", "Refresh date unavailable");
+  }
+
+  const relative = formatRelativeDays(locale, value ?? "");
+  if (level === "fresh") {
+    return relative;
+  }
+  if (level === "watch") {
+    return t(locale, `${relative} · 재확인 필요`, `${relative} · recheck soon`);
+  }
+  return t(locale, `${relative} · 공식값 재검토 필요`, `${relative} · official anchor needs recheck`);
 }
 
 function formatNumber(locale: AppLocale, value: number, digits = 2) {
@@ -624,9 +679,7 @@ function buildDecisionSummary(
 ): DecisionSummary {
   const officialMove = getOfficialChangePct(card);
   const benchmarkMove = benchmark?.changePct ?? stats.benchmarkReturnPct;
-  const freshnessDays = card?.asOf
-    ? Math.max(0, Math.floor((Date.now() - new Date(card.asOf).getTime()) / (1000 * 60 * 60 * 24)))
-    : 99;
+  const freshnessDays = getFreshnessDays(card?.asOf) ?? 99;
 
   const officialScore =
     officialMove === null ? 0 : officialMove > 0.3 ? 0.24 : officialMove < -0.3 ? -0.24 : 0;
@@ -735,6 +788,69 @@ function getStanceLabel(locale: AppLocale, stance: DecisionSummary["stance"]) {
   if (stance === "buy") return t(locale, "매수 우위", "Buy bias");
   if (stance === "reduce") return t(locale, "비중 축소", "Reduce");
   return t(locale, "관망", "Hold / wait");
+}
+
+function getAssistantStanceLabel(
+  locale: AppLocale,
+  stance: DecisionAssistantResponse["stance"]
+) {
+  if (stance === "Buy Bias") return t(locale, "매수 우위", "Buy bias");
+  if (stance === "Reduce Bias") return t(locale, "비중 축소", "Reduce");
+  return t(locale, "관망", "Hold / wait");
+}
+
+function buildCopilotBriefCards(
+  locale: AppLocale,
+  response: DecisionAssistantResponse
+) {
+  if (response.operatorBrief.length > 0) {
+    return response.operatorBrief.slice(0, 4);
+  }
+
+  return [
+    {
+      title: t(locale, "기본 판단", "Base case"),
+      summary: response.summary,
+      bullets: response.thesis.slice(0, 3)
+    },
+    {
+      title: t(locale, "찬성 근거", "Support"),
+      summary:
+        response.supportingEvidence[0]?.detail ??
+        response.thesis[0] ??
+        t(locale, "추가 찬성 근거가 아직 정리되지 않았습니다.", "No supporting detail yet."),
+      bullets:
+        response.supportingEvidence.length > 0
+          ? response.supportingEvidence
+              .slice(0, 3)
+              .map((item) => `${item.title}: ${item.detail}`)
+          : response.thesis.slice(0, 3)
+    },
+    {
+      title: t(locale, "반대 근거", "Counter-evidence"),
+      summary:
+        response.counterEvidence[0]?.detail ??
+        response.risks[0] ??
+        t(locale, "즉시 보이는 반대 근거는 제한적입니다.", "Immediate counter-evidence is limited."),
+      bullets:
+        response.counterEvidence.length > 0
+          ? response.counterEvidence
+              .slice(0, 3)
+              .map((item) => `${item.title}: ${item.detail}`)
+          : response.risks.slice(0, 3)
+    },
+    {
+      title: t(locale, "지금 확인", "Verify now"),
+      summary:
+        response.checkpoints[0] ??
+        response.actions[0] ??
+        t(locale, "다음 확인 항목이 아직 없습니다.", "No next check is available yet."),
+      bullets:
+        response.checkpoints.length > 0
+          ? response.checkpoints.slice(0, 4)
+          : response.actions.slice(0, 4)
+    }
+  ];
 }
 
 function getSurfaceLabel(locale: AppLocale, surface: Surface) {
@@ -894,6 +1010,10 @@ export default function App() {
       ),
     [compareOutput.stats, hedgeAnchorQuote, locale, selectedMarket, selectedOfficialCard]
   );
+  const selectedOfficialFreshnessDays = getFreshnessDays(selectedOfficialCard?.asOf);
+  const selectedOfficialFreshnessLevel = getFreshnessLevel(selectedOfficialFreshnessDays);
+  const selectedLiveFreshnessDays = getFreshnessDays(selectedCompareQuote?.asOf);
+  const selectedLiveFreshnessLevel = getFreshnessLevel(selectedLiveFreshnessDays);
   const copilotPayload = useMemo(
     () => ({
       market: {
@@ -993,15 +1113,22 @@ export default function App() {
           toChartPoints(officialCard?.series),
           toChartPoints(hedgeQuote?.series)
         ).stats;
+        const freshnessDays = getFreshnessDays(officialCard?.asOf);
         return {
           market,
           officialCard,
           hedgeQuote,
           compareStats: stats,
-          decision: buildDecisionSummary(locale, market, officialCard, hedgeQuote, stats)
+          decision: buildDecisionSummary(locale, market, officialCard, hedgeQuote, stats),
+          freshnessDays,
+          freshnessLevel: getFreshnessLevel(freshnessDays)
         };
       }),
     [connectedSources.liveQuotes, locale, officialCardsByMarket]
+  );
+  const copilotBriefCards = useMemo(
+    () => (copilotResponse ? buildCopilotBriefCards(locale, copilotResponse) : []),
+    [copilotResponse, locale]
   );
   const familyHeatmapRows = useMemo<HeatmapRow[]>(
     () =>
@@ -1465,7 +1592,13 @@ export default function App() {
               <button
                 key={row.market.id}
                 type="button"
-                className={`board-row ${marketId === row.market.id ? "active" : ""}`}
+                className={`board-row ${marketId === row.market.id ? "active" : ""} ${
+                  row.freshnessLevel === "stale"
+                    ? "stale-source"
+                    : row.freshnessLevel === "watch"
+                      ? "watch-source"
+                      : ""
+                }`}
                 onClick={() => setMarketId(row.market.id)}
                 title={`${row.market.name} · ${getOfficialPriceLabel(row.officialCard)} · ${getStanceLabel(locale, row.decision.stance)}`}
               >
@@ -1476,6 +1609,14 @@ export default function App() {
                 <div className="board-cell">
                   <strong>{getOfficialPriceLabel(row.officialCard)}</strong>
                   <span>{getOfficialChangeLabel(row.officialCard)}</span>
+                  <div className="board-meta-row">
+                    <span className={`freshness-badge ${row.freshnessLevel}`}>
+                      {getFreshnessLevelLabel(locale, row.freshnessLevel)}
+                    </span>
+                    <span className="board-inline-meta">
+                      {getFreshnessSummary(locale, row.officialCard?.asOf)}
+                    </span>
+                  </div>
                 </div>
                 <div className="board-cell">
                   <strong title={row.hedgeQuote?.title ?? row.hedgeQuote?.symbol ?? "n/a"}>
@@ -2131,6 +2272,25 @@ export default function App() {
           </ul>
         </div>
 
+        {selectedOfficialFreshnessLevel !== "fresh" ? (
+          <div className="inspector-section">
+            <div className="status-card warning">
+              <strong>
+                {selectedOfficialFreshnessLevel === "stale"
+                  ? t(locale, "공식값 재확인 필요", "Official anchor needs refresh")
+                  : t(locale, "공식값 확인 임박", "Official anchor needs a recheck")}
+              </strong>
+              <p>
+                {t(
+                  locale,
+                  `${selectedMarket.name} 공식 기준값은 ${getFreshnessSummary(locale, selectedOfficialCard?.asOf)} 상태입니다. 현재 포지션 해석은 최신 공식 업데이트가 들어오면 달라질 수 있습니다.`,
+                  `${selectedMarket.name} official anchor is ${getFreshnessSummary(locale, selectedOfficialCard?.asOf)}. Conviction can change when the next official update lands.`
+                )}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="inspector-section">
           <span className="section-kicker">{t(locale, "로컬 코파일럿", "Local copilot")}</span>
           <p>
@@ -2238,11 +2398,15 @@ export default function App() {
               <div className="metric-strip inspector-strip">
                 <div className="metric-tile">
                   <span>{t(locale, "모델 판단", "Model stance")}</span>
-                  <strong>{copilotResponse.stance}</strong>
+                  <strong>{getAssistantStanceLabel(locale, copilotResponse.stance)}</strong>
                 </div>
                 <div className="metric-tile">
                   <span>{t(locale, "모델 신뢰도", "Model confidence")}</span>
                   <strong>{Math.round(copilotResponse.confidence * 100)}%</strong>
+                </div>
+                <div className="metric-tile">
+                  <span>{t(locale, "응답 소스", "Response source")}</span>
+                  <strong>{getAssistantProviderLabel(locale, copilotResponse.provider)}</strong>
                 </div>
               </div>
 
@@ -2256,24 +2420,72 @@ export default function App() {
                 </span>
               </div>
 
-              <div className="note-list">
-                <div className="note-item">
-                  <strong>{t(locale, "근거", "Support")}</strong>
-                  <p>{copilotResponse.supportingEvidence[0]?.detail ?? copilotResponse.thesis[0] ?? "n/a"}</p>
+              <div className="brief-grid">
+                {copilotBriefCards.map((card) => (
+                  <div key={`${card.title}-${card.summary}`} className="brief-card">
+                    <h3>{card.title}</h3>
+                    <p>{card.summary}</p>
+                    {card.bullets.length > 0 ? (
+                      <ul>
+                        {card.bullets.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+
+              <div className="brief-grid">
+                <div className="brief-card compact">
+                  <h3>{t(locale, "찬성 근거", "Supporting evidence")}</h3>
+                  <ul>
+                    {(copilotResponse.supportingEvidence.length > 0
+                      ? copilotResponse.supportingEvidence
+                          .slice(0, 3)
+                          .map((item) => `${item.title}: ${item.detail}`)
+                      : copilotResponse.thesis.slice(0, 3)
+                    ).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="note-item">
-                  <strong>{t(locale, "반대 근거", "Counterpoint")}</strong>
-                  <p>{copilotResponse.counterEvidence[0]?.detail ?? copilotResponse.risks[0] ?? "n/a"}</p>
+                <div className="brief-card compact">
+                  <h3>{t(locale, "반대 근거", "Counter-evidence")}</h3>
+                  <ul>
+                    {(copilotResponse.counterEvidence.length > 0
+                      ? copilotResponse.counterEvidence
+                          .slice(0, 3)
+                          .map((item) => `${item.title}: ${item.detail}`)
+                      : copilotResponse.risks.slice(0, 3)
+                    ).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
-              <ul className="bullet-list compact">
-                {copilotResponse.checkpoints.slice(0, 3).map((item) => (
-                  <li key={item}>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="brief-grid">
+                <div className="brief-card compact">
+                  <h3>{t(locale, "지금 확인", "Verify now")}</h3>
+                  <ul>
+                    {copilotResponse.checkpoints.slice(0, 4).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="brief-card compact">
+                  <h3>{t(locale, "데이터 상태", "Data health")}</h3>
+                  <ul>
+                    {(copilotResponse.dataHealth.length > 0
+                      ? copilotResponse.dataHealth.slice(0, 4)
+                      : [copilotResponse.disclaimer]
+                    ).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           ) : null}
         </div>
@@ -2308,20 +2520,24 @@ export default function App() {
               <strong className={`tone-${getSourceTone(selectedOfficialCard?.status ?? "error")}`}>
                 {selectedOfficialCard?.status ?? "error"}
               </strong>
+              <p className="field-note">{getOfficialMethod(selectedOfficialCard, locale)}</p>
             </div>
             <div>
               <span>{t(locale, "상장 기준", "Listed")}</span>
               <strong className={`tone-${getSourceTone(selectedCompareQuote?.status ?? "error")}`}>
                 {selectedCompareQuote?.status ?? "error"}
               </strong>
+              <p className="field-note">{selectedCompareQuote?.provider ?? "n/a"}</p>
             </div>
             <div>
-              <span>{t(locale, "공식 갱신", "Official as of")}</span>
-              <strong>{formatDate(locale, selectedOfficialCard?.asOf ?? "")}</strong>
+              <span>{t(locale, "공식 신선도", "Official freshness")}</span>
+              <strong>{getFreshnessLevelLabel(locale, selectedOfficialFreshnessLevel)}</strong>
+              <p className="field-note">{getFreshnessSummary(locale, selectedOfficialCard?.asOf ?? "")}</p>
             </div>
             <div>
-              <span>{t(locale, "상장 갱신", "Listed as of")}</span>
-              <strong>{formatDate(locale, selectedCompareQuote?.asOf ?? "")}</strong>
+              <span>{t(locale, "상장 신선도", "Listed freshness")}</span>
+              <strong>{getFreshnessLevelLabel(locale, selectedLiveFreshnessLevel)}</strong>
+              <p className="field-note">{getFreshnessSummary(locale, selectedCompareQuote?.asOf ?? "")}</p>
             </div>
           </div>
         </div>

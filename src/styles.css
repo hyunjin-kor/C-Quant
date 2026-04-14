@@ -439,6 +439,10 @@ textarea {
   margin-bottom: 1rem;
 }
 
+.metric-strip.inspector-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .metric-tile,
 .source-block {
   display: grid;
@@ -525,6 +529,14 @@ textarea {
   background: #fff;
 }
 
+.board-row.watch-source {
+  box-shadow: inset 3px 0 0 rgba(212, 161, 29, 0.95);
+}
+
+.board-row.stale-source {
+  box-shadow: inset 3px 0 0 rgba(227, 93, 82, 0.95);
+}
+
 .board-row:hover {
   background: #f9fbff;
 }
@@ -557,6 +569,55 @@ textarea {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.board-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.board-inline-meta {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.freshness-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+}
+
+.freshness-badge.fresh {
+  background: #e7f8f0;
+  color: #0c7a52;
+  border-color: rgba(14, 168, 107, 0.18);
+}
+
+.freshness-badge.watch {
+  background: #fff8e8;
+  color: #9a6a00;
+  border-color: rgba(212, 161, 29, 0.22);
+}
+
+.freshness-badge.stale {
+  background: #fff1ef;
+  color: #b34035;
+  border-color: rgba(227, 93, 82, 0.2);
+}
+
+.freshness-badge.unknown {
+  background: #eef2f7;
+  color: var(--text-soft);
+  border-color: var(--line);
 }
 
 .board-cell.stance {
@@ -740,6 +801,57 @@ textarea {
 .copilot-response {
   display: grid;
   gap: 0.75rem;
+}
+
+.brief-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.brief-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel-muted);
+}
+
+.brief-card h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 0.98rem;
+  letter-spacing: -0.02em;
+}
+
+.brief-card p {
+  margin: 0;
+  color: var(--text-base);
+  line-height: 1.55;
+}
+
+.brief-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-soft);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.brief-card li {
+  line-height: 1.5;
+}
+
+.brief-card.compact {
+  gap: 0.45rem;
+}
+
+.field-note {
+  margin: 0.24rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .meta-line {
@@ -1224,7 +1336,8 @@ textarea {
   .field-grid,
   .field-list,
   .note-list,
-  .source-grid {
+  .source-grid,
+  .brief-grid {
     grid-template-columns: 1fr;
   }
 
