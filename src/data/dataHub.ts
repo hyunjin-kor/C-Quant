@@ -1,80 +1,262 @@
-import type { MarketDatasetSchema } from "../types";
+import type { MarketInputBlock } from "../types";
 
-function buildTemplate(schema: MarketDatasetSchema): string {
-  return `${schema.columns.map((column) => column.name).join(",")}\n`;
-}
-
-export const marketDatasetSchemas: MarketDatasetSchema[] = [
+export const marketInputBlocks: MarketInputBlock[] = [
   {
-    id: "eu-ets-daily",
+    id: "eu-official-anchor",
     marketId: "eu-ets",
-    name: "EU ETS Daily Feature Store",
-    filename: "eu_ets_daily_template.csv",
-    cadence: "Daily",
-    description:
-      "Canonical daily training table for EU allowances, fuel switching, auction supply, and macro stress.",
-    columns: [
-      { name: "date", required: true, description: "Trading date", sourceHint: "Exchange calendar" },
-      { name: "close", required: true, description: "EUA close price", sourceHint: "ICE / EEX" },
-      { name: "volume", required: true, description: "Daily traded volume", sourceHint: "ICE / broker feed" },
-      { name: "auction_cover", required: false, description: "Auction cover ratio", sourceHint: "EEX auctions" },
-      { name: "ttf_gas", required: true, description: "TTF gas front-month or prompt proxy", sourceHint: "Gas data vendor" },
-      { name: "power_price", required: true, description: "Power day-ahead or front contract", sourceHint: "EPEX / power vendor" },
-      { name: "coal_price", required: true, description: "Rotterdam coal proxy", sourceHint: "Coal vendor" },
-      { name: "brent", required: false, description: "Brent crude", sourceHint: "Commodity vendor" },
-      { name: "industrial_output", required: false, description: "Industrial activity index", sourceHint: "Eurostat / macro vendor" },
-      { name: "weather_index", required: false, description: "Temperature or residual load proxy", sourceHint: "Weather provider" },
-      { name: "open_interest", required: false, description: "Futures open interest", sourceHint: "ICE" },
-      { name: "policy_flag", required: false, description: "1 on major policy supply event dates", sourceHint: "Manual event calendar" }
+    title: "EU official anchor",
+    accessMethod: "Official file",
+    refreshCadence: "Auction day / official release",
+    purpose: "Anchor the desk to the latest official EEX primary market print before reading listed futures and proxies.",
+    fields: [
+      {
+        name: "auction_date",
+        priority: "Core",
+        description: "Latest auction date used by the official EU primary market card.",
+        sourceHint: "EEX EU ETS Auctions"
+      },
+      {
+        name: "auction_clear_price",
+        priority: "Core",
+        description: "Latest official auction clearing price for the EU allowance primary market.",
+        sourceHint: "EEX auction workbook"
+      },
+      {
+        name: "auction_volume",
+        priority: "Core",
+        description: "Auction volume and primary market depth used to frame the official anchor.",
+        sourceHint: "EEX auction workbook"
+      },
+      {
+        name: "auction_cover",
+        priority: "Support",
+        description: "Auction cover and bid interest used as a short-horizon microstructure check.",
+        sourceHint: "EEX auction report"
+      }
     ]
   },
   {
-    id: "k-ets-daily",
+    id: "eu-official-context",
+    marketId: "eu-ets",
+    title: "EU official context",
+    accessMethod: "Official web flow / public API",
+    refreshCadence: "Policy event / scheduled statistical refresh",
+    purpose: "Keep structural policy and power-system context visible next to the price anchor.",
+    fields: [
+      {
+        name: "msr_tnac_notice",
+        priority: "Core",
+        description: "Official MSR and TNAC notices that shift forward scarcity expectations.",
+        sourceHint: "European Commission climate pages"
+      },
+      {
+        name: "auction_calendar",
+        priority: "Core",
+        description: "Primary auction schedule used to frame near-term supply cadence.",
+        sourceHint: "EEX auction calendar"
+      },
+      {
+        name: "power_system_context",
+        priority: "Support",
+        description: "Power and gas-system context pulled from official European transparency platforms.",
+        sourceHint: "ENTSO-E / ENTSOG"
+      }
+    ]
+  },
+  {
+    id: "eu-listed-comparison",
+    marketId: "eu-ets",
+    title: "EU listed comparison",
+    accessMethod: "Listed benchmark / public chart API",
+    refreshCadence: "Intraday",
+    purpose: "Compare the official anchor with the live hedge tape and energy drivers without mistaking the proxy for settlement.",
+    fields: [
+      {
+        name: "ice_eua_december",
+        priority: "Core",
+        description: "Primary listed hedge tape used to compare against the official anchor.",
+        sourceHint: "ICE EUA futures"
+      },
+      {
+        name: "ttf_gas",
+        priority: "Support",
+        description: "Fuel-switching context that helps explain short-term carbon repricing.",
+        sourceHint: "Listed gas comparison tape"
+      },
+      {
+        name: "rotterdam_coal",
+        priority: "Support",
+        description: "Coal leg used to read dark-spread and fuel-switch pressure.",
+        sourceHint: "Listed coal comparison tape"
+      }
+    ]
+  },
+  {
+    id: "k-official-anchor",
     marketId: "k-ets",
-    name: "K-ETS Daily Feature Store",
-    filename: "k_ets_daily_template.csv",
-    cadence: "Daily",
-    description:
-      "Canonical daily training table for KAU pricing, offset markets, compliance seasonality, and liquidity regime.",
-    columns: [
-      { name: "date", required: true, description: "Trading date", sourceHint: "KRX calendar" },
-      { name: "close", required: true, description: "KAU close price", sourceHint: "KRX ETS" },
-      { name: "volume", required: true, description: "Daily traded volume", sourceHint: "KRX ETS" },
-      { name: "kcu_close", required: false, description: "KCU close", sourceHint: "KRX ETS" },
-      { name: "koc_close", required: false, description: "KOC close", sourceHint: "KRX ETS / registry bridge" },
-      { name: "auction_cover", required: false, description: "Auction bid ratio", sourceHint: "MOE / KRX auction release" },
-      { name: "wti", required: false, description: "WTI crude proxy", sourceHint: "Commodity vendor" },
-      { name: "usdkrw", required: false, description: "USD/KRW exchange rate", sourceHint: "FX vendor" },
-      { name: "call_rate", required: false, description: "Korean call rate", sourceHint: "BoK" },
-      { name: "kospi", required: false, description: "Domestic equity proxy", sourceHint: "KRX" },
-      { name: "compliance_flag", required: false, description: "1 in compliance-reporting window", sourceHint: "Manual calendar" },
-      { name: "policy_flag", required: false, description: "1 on market reform event dates", sourceHint: "MOE event calendar" }
+    title: "K-ETS official anchor",
+    accessMethod: "Official web / official API sample",
+    refreshCadence: "Daily official tape",
+    purpose: "Anchor domestic carbon read to the official KRX market tape before using any global listed proxy.",
+    fields: [
+      {
+        name: "kau_close",
+        priority: "Core",
+        description: "Latest official close for the active KAU allowance line.",
+        sourceHint: "KRX ETS information platform / open API sample"
+      },
+      {
+        name: "kau_volume",
+        priority: "Core",
+        description: "Official traded volume used to read market depth and conviction.",
+        sourceHint: "KRX ETS information platform / open API sample"
+      },
+      {
+        name: "active_instrument",
+        priority: "Core",
+        description: "KRX active allowance instrument used for the daily anchor.",
+        sourceHint: "KRX ETS market tape"
+      }
     ]
   },
   {
-    id: "cn-ets-daily",
+    id: "k-official-context",
+    marketId: "k-ets",
+    title: "K-ETS official context",
+    accessMethod: "Official web flow / official file",
+    refreshCadence: "Policy event / auction notice",
+    purpose: "Track domestic compliance timing, auction notices, and market reform events in the same surface.",
+    fields: [
+      {
+        name: "auction_notice",
+        priority: "Core",
+        description: "Auction and market-operation notices that shift domestic supply expectations.",
+        sourceHint: "KRX / MOE official notice flow"
+      },
+      {
+        name: "compliance_window",
+        priority: "Core",
+        description: "Compliance seasonality layer for short-term liquidity and timing risk.",
+        sourceHint: "K-ETS compliance calendar"
+      },
+      {
+        name: "policy_reform_watch",
+        priority: "Support",
+        description: "Domestic reform and allocation changes that can alter structure beyond daily price action.",
+        sourceHint: "MOE official releases"
+      }
+    ]
+  },
+  {
+    id: "k-listed-comparison",
+    marketId: "k-ets",
+    title: "K-ETS listed comparison",
+    accessMethod: "Listed proxy / public chart API",
+    refreshCadence: "Intraday",
+    purpose: "Use listed and macro comparison only as reference, never as a replacement for the official KRX close.",
+    fields: [
+      {
+        name: "krbn_proxy",
+        priority: "Core",
+        description: "Global listed carbon proxy used when comparing domestic read with offshore listed risk appetite.",
+        sourceHint: "KRBN"
+      },
+      {
+        name: "usdkrw_context",
+        priority: "Support",
+        description: "Macro context used to watch domestic risk transfer and imported energy stress.",
+        sourceHint: "Domestic macro layer"
+      },
+      {
+        name: "energy_macro_context",
+        priority: "Support",
+        description: "Energy and macro overlay used to contextualize domestic price moves.",
+        sourceHint: "Public comparison tape"
+      }
+    ]
+  },
+  {
+    id: "cn-official-anchor",
     marketId: "cn-ets",
-    name: "China National ETS Daily Feature Store",
-    filename: "cn_ets_daily_template.csv",
-    cadence: "Daily",
-    description:
-      "Canonical daily training table for national ETS pricing, coal-power linkage, and policy expansion events.",
-    columns: [
-      { name: "date", required: true, description: "Trading date", sourceHint: "National market calendar" },
-      { name: "close", required: true, description: "National carbon close", sourceHint: "National market data feed" },
-      { name: "volume", required: true, description: "Daily traded volume", sourceHint: "National market data feed" },
-      { name: "coal_price", required: true, description: "Coal benchmark", sourceHint: "Commodity vendor" },
-      { name: "lng_price", required: false, description: "LNG / gas proxy", sourceHint: "Commodity vendor" },
-      { name: "power_price", required: false, description: "Electricity spot proxy", sourceHint: "Power market feed" },
-      { name: "aqi", required: false, description: "Air quality index proxy", sourceHint: "Environmental data provider" },
-      { name: "industrial_index", required: false, description: "Industrial activity proxy", sourceHint: "Exchange / macro vendor" },
-      { name: "allocation_intensity", required: false, description: "Allowance intensity or rule proxy", sourceHint: "Policy normalization layer" },
-      { name: "sector_expansion_flag", required: false, description: "1 around expansion milestones", sourceHint: "MEE event calendar" },
-      { name: "policy_flag", required: false, description: "1 on major implementation event dates", sourceHint: "MEE event calendar" }
+    title: "CN ETS official anchor",
+    accessMethod: "Official web flow",
+    refreshCadence: "Daily bulletin",
+    purpose: "Read the national carbon market from the official daily exchange bulletin rather than from offshore proxy action alone.",
+    fields: [
+      {
+        name: "cea_close",
+        priority: "Core",
+        description: "Official daily closing price from the national carbon market bulletin.",
+        sourceHint: "Shanghai Environment and Energy Exchange daily overview"
+      },
+      {
+        name: "cea_volume",
+        priority: "Core",
+        description: "Daily total turnover published in the official exchange bulletin.",
+        sourceHint: "Shanghai Environment and Energy Exchange daily overview"
+      },
+      {
+        name: "cumulative_turnover",
+        priority: "Support",
+        description: "Cumulative turnover figures used to frame market scale and regime context.",
+        sourceHint: "Shanghai Environment and Energy Exchange daily overview"
+      }
+    ]
+  },
+  {
+    id: "cn-official-context",
+    marketId: "cn-ets",
+    title: "CN ETS official context",
+    accessMethod: "Official web flow / official file",
+    refreshCadence: "Policy bulletin / development report",
+    purpose: "Separate policy and operating context from the limited official daily tape.",
+    fields: [
+      {
+        name: "mee_release_feed",
+        priority: "Core",
+        description: "Latest MEE release used to detect changes in national market operations and expansion.",
+        sourceHint: "MEE carbon-market release feed"
+      },
+      {
+        name: "development_report",
+        priority: "Core",
+        description: "National market development report used to frame structure, institutions, and expansion.",
+        sourceHint: "MEE development report"
+      },
+      {
+        name: "sector_expansion_watch",
+        priority: "Support",
+        description: "Expansion and implementation milestones that can change market interpretation without intraday trading.",
+        sourceHint: "MEE official notices"
+      }
+    ]
+  },
+  {
+    id: "cn-listed-comparison",
+    marketId: "cn-ets",
+    title: "CN ETS listed comparison",
+    accessMethod: "Listed proxy / public chart API",
+    refreshCadence: "Intraday",
+    purpose: "Keep global listed carbon proxies visible, but explicitly below the official Chinese policy and bulletin flow.",
+    fields: [
+      {
+        name: "krbn_proxy",
+        priority: "Core",
+        description: "Global listed carbon comparison sleeve used only as a reference tape.",
+        sourceHint: "KRBN"
+      },
+      {
+        name: "coal_context",
+        priority: "Support",
+        description: "Coal and power context used to interpret macro energy sensitivity.",
+        sourceHint: "Public comparison tape"
+      },
+      {
+        name: "policy_signal_overlay",
+        priority: "Support",
+        description: "Internal policy timing overlay that keeps the operator focused on official releases.",
+        sourceHint: "C-Quant decision layer"
+      }
     ]
   }
 ];
-
-export const datasetTemplates = Object.fromEntries(
-  marketDatasetSchemas.map((schema) => [schema.id, buildTemplate(schema)])
-) as Record<string, string>;

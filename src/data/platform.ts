@@ -10,27 +10,27 @@ const accessed = "2026-04-09";
 export const trustPrinciples: TrustPrinciple[] = [
   {
     id: "official-first",
-    title: "공식 출처 우선",
+    title: "Official first",
     description:
-      "가격, 정책, 시장 구조 패널은 거래소·정부·통계기관의 공식 발표를 우선 사용합니다."
+      "Price anchors, market-structure notices, and exchange or ministry disclosures start from official publications."
   },
   {
     id: "freshness",
-    title: "갱신 시점 상시 표시",
+    title: "Show freshness",
     description:
-      "모든 시장 카드에 최신 출처 시각을 표시해, 실시간성에 가까운 데이터와 이벤트성 업데이트를 구분할 수 있게 합니다."
+      "Every market card surfaces source freshness and access method so scheduled releases stay separate from intraday listed feeds."
   },
   {
     id: "boundary",
-    title: "거래 중개 없음",
+    title: "No brokerage",
     description:
-      "이 서비스는 리서치, 모니터링, 알림을 지원하며 주문 접수나 배출권 거래 중개를 하지 않습니다."
+      "This desktop supports research, monitoring, and briefing. It does not route orders or intermediate carbon trades."
   },
   {
     id: "explainability",
-    title: "신호보다 설명 우선",
+    title: "Explain, then signal",
     description:
-      "신호는 필요한 입력값과 모델 경고를 함께 보여줘서, 화면의 숫자가 왜 나타났는지 이해할 수 있게 합니다."
+      "Drivers, source trust, and model warnings stay visible so operators can understand why the desk leans a certain way."
   }
 ];
 
@@ -42,10 +42,10 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Primary price source",
     method: "Official File",
     url: "https://www.eex.com/en/markets/environmental-markets/eu-ets-auctions",
-    appUse: "EU 1차 경매 가격, 거래량, 커버율, 경매 캘린더",
+    appUse: "Primary EU carbon auction anchor, cover ratio, and auction calendar.",
     whyItMatters:
-      "EU 배출권 가격과 공급 리듬을 읽는 데 가장 신뢰도가 높은 공개 소스입니다.",
-    notes: [`${accessed} 확인. EEX가 공개 워크북과 경매 페이지를 제공합니다.`]
+      "This is the cleanest official read on EU primary market pricing and near-term supply cadence.",
+    notes: [`${accessed} confirmed. EEX publishes auction files and a dedicated auction page.`]
   },
   {
     id: "eex-datasource",
@@ -54,10 +54,10 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Premium market data",
     method: "Commercial API",
     url: "https://www.eex.com/fileadmin/EEX/Downloads/Market_Data/EEX_Group_DataSource/API/EEX_Group_DataSource_REST_API__v2__User_Guide_v004.pdf",
-    appUse: "더 넓은 탄소시장 데이터를 위한 향후 프리미엄 연동 경로",
+    appUse: "Future premium route for deeper exchange-grade market data integration.",
     whyItMatters:
-      "워크북 수집을 넘어 체계적인 거래소 데이터 공급이 필요해질 때 유용한 상업용 경로입니다.",
-    notes: [`${accessed} 확인. 공식 EEX REST API 사용자 가이드 PDF에 접근 가능합니다.`]
+      "If the product later needs a commercial exchange feed, this is the official EEX API path rather than a scraped workflow.",
+    notes: [`${accessed} confirmed from the official EEX REST API user guide PDF.`]
   },
   {
     id: "entso-e",
@@ -66,10 +66,10 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Power fundamentals",
     method: "Public API",
     url: "https://www.entsoe.eu/data/transparency-platform/mop/",
-    appUse: "EU 전력 수급, 발전량, 밸런싱, 전력시장 영향 변수",
+    appUse: "EU power demand, generation mix, and system context for carbon demand interpretation.",
     whyItMatters:
-      "EU 탄소가격은 전력 디스패치와 화력 발전 여건과 강하게 연결돼 있습니다.",
-    notes: [`${accessed} 확인. ENTSO-E 절차 문서에서 추출 및 사용 흐름을 확인했습니다.`]
+      "EU carbon repricing is tightly linked to power-system conditions and thermal dispatch economics.",
+    notes: [`${accessed} confirmed from ENTSO-E transparency documentation.`]
   },
   {
     id: "entsog",
@@ -78,10 +78,10 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Gas fundamentals",
     method: "Public API",
     url: "https://transparency.entsog.eu/pdf/TP_REG715_Documentation_TP_API_v1.4.pdf",
-    appUse: "EUA 연료 전환 모니터링용 유럽 가스 흐름·인프라 데이터",
+    appUse: "Gas-system context for fuel-switching and clean spark spread monitoring.",
     whyItMatters:
-      "가스 공급 여건은 클린 스파크 스프레드와 탄소 수요 기대를 크게 바꿉니다.",
-    notes: [`${accessed} 확인. 공식 문서에서 JSON, XML, CSV, XLSX 엔드포인트를 확인했습니다.`]
+      "Gas fundamentals change marginal power economics and therefore short-term carbon demand signals.",
+    notes: [`${accessed} confirmed from the official API documentation.`]
   },
   {
     id: "eurostat-api",
@@ -90,10 +90,23 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Macro statistics",
     method: "Public API",
     url: "https://ec.europa.eu/eurostat/web/user-guides/data-browser/api-data-access/api-getting-started/api",
-    appUse: "EU 산업생산과 거시지표 오버레이",
+    appUse: "Macro and industrial statistics for broader demand and growth context.",
     whyItMatters:
-      "산업활동은 배출권 이행 수요를 설명하는 핵심 변수군입니다.",
-    notes: [`${accessed} 확인. 공식 API 가이드에서 질의 구조와 필터링 방식을 확인했습니다.`]
+      "Industrial activity remains a relevant explanatory layer for compliance demand outside the power sector.",
+    notes: [`${accessed} confirmed from the official Eurostat API getting started guide.`]
+  },
+  {
+    id: "ghg-protocol-corporate",
+    title: "GHG Protocol Corporate Standard",
+    markets: ["shared"],
+    category: "Accounting standard",
+    method: "Official File",
+    url: "https://ghgprotocol.org/corporate-standard",
+    appUse:
+      "Scope 1, 2, and 3 accounting boundary, inventory logic, and disclosure framing for the accounting sidecar.",
+    whyItMatters:
+      "Any all-in-one carbon decision platform that touches accounting needs a trusted emissions-accounting standard before dashboards or memos start to imply precision.",
+    notes: [`${accessed} confirmed from the official GHG Protocol corporate standard page.`]
   },
   {
     id: "krx-ets",
@@ -102,12 +115,12 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Primary price source",
     method: "Official Web",
     url: "https://ets.krx.co.kr/contents/ETS/03/03010000/ETS03010000.jsp",
-    appUse: "K-ETS 종가, 등락률, 거래량, 종목 정보, 규정 참고",
+    appUse: "Official K-ETS close, volume, active line, and market notices.",
     whyItMatters:
-      "한국 배출권 가격과 시장 구조를 확인하는 공식 진입점입니다.",
+      "This is the primary official entry point for domestic carbon pricing and market-structure checks.",
     notes: [
-      `${accessed} 확인. 현재 앱은 공식 웹 흐름과 폼 엔드포인트를 사용합니다.`,
-      "공식 문서에서 안정적인 공개 API는 별도로 확인되지 않았습니다."
+      `${accessed} confirmed. The current product uses the official web flow and sample endpoints only.`,
+      "Official documentation does not confirm an unrestricted public production API for broad commercial use."
     ]
   },
   {
@@ -117,10 +130,10 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Macro statistics",
     method: "Public API",
     url: "https://kosis.kr/openapi/file/UseGuideV2_0.pdf",
-    appUse: "한국 거시·산업 통계 오버레이",
+    appUse: "Domestic macro and industrial statistics for the Korean factor layer.",
     whyItMatters:
-      "국내 산업·제조업·에너지 통계는 K-ETS 수요 해석에 유용합니다.",
-    notes: [`${accessed} 확인. 공식 KOSIS Open API 가이드 PDF를 확인했습니다.`]
+      "K-ETS demand interpretation benefits from official industrial and macro series rather than offshore proxy signals alone.",
+    notes: [`${accessed} confirmed from the official KOSIS Open API guide PDF.`]
   },
   {
     id: "kma-openmet",
@@ -129,10 +142,10 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Weather and climate",
     method: "Public API",
     url: "https://data.kma.go.kr/resources/html/en/aowdp.html",
-    appUse: "한국 수요·계절성 분석용 날씨·기후 오버레이",
+    appUse: "Weather context for demand swings, power burn, and seasonal risk.",
     whyItMatters:
-      "날씨는 냉난방과 전력 수요를 바꿔 배출권 수요에도 영향을 줄 수 있습니다.",
-    notes: [`${accessed} 확인. 기상청이 다운로드 데이터와 Open API 제공을 명시합니다.`]
+      "Weather shifts electricity demand and can materially change allowance demand through thermal generation.",
+    notes: [`${accessed} confirmed from the KMA Open MET data portal documentation.`]
   },
   {
     id: "mee-report",
@@ -141,10 +154,10 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Policy and infrastructure",
     method: "Official File",
     url: "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/202509/W020250927515319387445.pdf",
-    appUse: "중국 시장 구조, 데이터 품질, 인프라, 공시 체계 파악",
+    appUse: "National market structure, policy context, and reporting workflow for China ETS.",
     whyItMatters:
-      "전국 시장의 운영 구조와 정보 공개 체계를 이해하는 데 핵심적인 공식 문서입니다.",
-    notes: [`${accessed} 확인. MEE가 정보망, 거래 시스템, 공시 인프라를 설명합니다.`]
+      "China ETS needs a policy and infrastructure layer because the official daily tape is more limited than EU or Korea.",
+    notes: [`${accessed} confirmed from the official MEE report PDF.`]
   },
   {
     id: "cneeex-daily",
@@ -153,44 +166,70 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Primary price source",
     method: "Official Web",
     url: "https://overview.cneeex.com/c/2025-12-24/496960.shtml",
-    appUse: "중국 전국 탄소시장 일일 종가, 거래대금, 누적 거래 통계",
+    appUse: "Daily official close, turnover, and bulletin-style market overview for the national ETS.",
     whyItMatters:
-      "공식 공개 API가 뚜렷하지 않은 상황에서 거래기관이 제공하는 핵심 일일 수치입니다.",
+      "When there is no confirmed public production API, the official exchange bulletin remains the most defensible primary price read.",
     notes: [
-      `${accessed} 확인. 해당 페이지는 거래기관이 전국 탄소시장 거래 정보를 공시·관리한다고 밝힙니다.`,
-      "출처 표시 없는 무단 재배포 제한 문구가 있어 앱에서는 반드시 출처와 함께 사용해야 합니다."
+      `${accessed} confirmed. The exchange publishes daily market-overview pages for the national carbon market.`,
+      "Because reuse language is restrictive, the app should show source attribution clearly and avoid implying a public API."
     ]
+  },
+  {
+    id: "verra-registry",
+    title: "Verra Registry Overview",
+    markets: ["shared"],
+    category: "Registry verification",
+    method: "Official Web",
+    url: "https://verra.org/registry/overview/",
+    appUse:
+      "Project status, issuance, retirement, and document checks for voluntary-credit diligence and retirement-proof review.",
+    whyItMatters:
+      "Registry state and retirement trace are core verification rails when the desk moves from market monitoring into integrity-aware procurement support.",
+    notes: [`${accessed} confirmed from the official Verra registry overview page.`]
+  },
+  {
+    id: "gold-standard-impact-registry",
+    title: "Gold Standard Impact Registry",
+    markets: ["shared"],
+    category: "Registry verification",
+    method: "Official Web",
+    url: "https://www.goldstandard.org/impact-registry",
+    appUse:
+      "Track project status, issuance, transfer, retirement, and Article 6 labeling on Gold Standard credits.",
+    whyItMatters:
+      "The registry gives a public lifecycle record for issued credits and supports diligence, retirement trace, and disclosure checks.",
+    notes: [`${accessed} confirmed from the official Gold Standard registry page.`]
   }
 ];
 
 export const subscriptionFeatures: SubscriptionFeature[] = [
   {
     id: "daily-brief",
-    title: "일일 탄소 브리프",
-    audience: "구독자",
+    title: "Daily carbon brief",
+    audience: "Subscriber",
     description:
-      "아침마다 공식 피드 변화, 영향 요인 이동, 지역별 핵심 변화를 간단히 요약해 제공합니다."
+      "A concise daily read on official anchor moves, comparison tape shifts, and confidence changes."
   },
   {
     id: "driver-alerts",
-    title: "영향 요인 알림",
-    audience: "구독자",
+    title: "Driver alerts",
+    audience: "Subscriber",
     description:
-      "경매 결과, 정책 발표, 시장 구조 지표가 평소 범위를 벗어나면 바로 알립니다."
+      "Alerts when auctions, policy notices, market-structure events, or core drivers move outside the expected range."
   },
   {
     id: "watchlists",
-    title: "저장된 관심 목록",
-    audience: "구독자",
+    title: "Custom watchlists",
+    audience: "Subscriber",
     description:
-      "시장, 요인군, 브리핑 레이아웃을 저장해 개인화된 모니터링 화면을 유지할 수 있습니다."
+      "Persistent watch surfaces for markets, drivers, and briefs tailored to the operator's decision flow."
   },
   {
     id: "weekly-memo",
-    title: "주간 전략 메모",
-    audience: "구독자",
+    title: "Weekly desk memo",
+    audience: "Subscriber",
     description:
-      "한 주 동안 정책, 에너지, 유동성 환경이 어떻게 바뀌었는지 더 깊게 설명하는 리서치 메모입니다."
+      "A research memo that explains how policy, energy, liquidity, and source trust changed over the week."
   }
 ];
 
@@ -199,88 +238,88 @@ export const marketWatchItems: MarketWatchItem[] = [
     id: "ice-eua-official",
     title: "ICE EUA Futures",
     category: "Official futures venue",
-    role: "핵심 선물 계약 기준",
+    role: "Primary listed hedge for EU carbon",
     url: "https://www.ice.com/products/197",
-    note: "유럽 배출권 선물 계약의 공식 상품 페이지입니다."
+    note: "Official futures product page for the benchmark European carbon contract."
   },
   {
     id: "eex-eu-auctions",
     title: "EEX EU ETS Auctions",
     category: "Official exchange page",
-    role: "핵심 경매·공급 모니터",
+    role: "Primary auction and supply monitoring",
     url: "https://www.eex.com/en/markets/environmental-markets/eu-ets-auctions",
-    note: "경매 낙찰 결과, 커버율, 일정 확인에 사용합니다."
+    note: "Use for official auction results, cover, and calendar checks."
   },
   {
     id: "krx-ets-watch",
     title: "KRX ETS Platform",
     category: "Official exchange page",
-    role: "K-ETS 시세·시장 규칙",
+    role: "K-ETS tape and market rules",
     url: "https://ets.krx.co.kr/contents/ETS/03/03010000/ETS03010000.jsp",
-    note: "한국 배출권 시장의 공식 시세 화면이자 정보 플랫폼입니다."
+    note: "Official K-ETS market-information page for price, volume, and notice review."
   },
   {
     id: "cneeex-overview",
     title: "Shanghai Environment and Energy Exchange",
     category: "Official exchange page",
-    role: "중국 일일 시장 개황",
+    role: "China ETS daily bulletin",
     url: "https://overview.cneeex.com/c/2025-12-24/496960.shtml",
-    note: "중국 전국 탄소시장 일일 개황을 제공하는 공식 페이지입니다."
+    note: "Official daily market-overview page for the national China carbon market."
   },
   {
     id: "krbn-official",
     title: "KRBN",
     category: "Official issuer page",
-    role: "글로벌 탄소 ETF 기준 상품",
+    role: "Global carbon ETF reference",
     url: "https://kraneshares.com/krbn/",
-    note: "KraneShares 글로벌 탄소 전략 ETF 공식 페이지입니다."
+    note: "Issuer page for the global carbon ETF used as a listed comparison proxy."
   },
   {
     id: "kcca-official",
     title: "KCCA",
     category: "Official issuer page",
-    role: "캘리포니아 탄소 ETF",
+    role: "California carbon ETF reference",
     url: "https://kraneshares.com/etf/kcca/",
-    note: "KraneShares 캘리포니아 탄소 전략 ETF 공식 페이지입니다."
+    note: "Issuer page for the California carbon ETF."
   },
   {
     id: "keua-official",
     title: "KEUA",
     category: "Official issuer page",
-    role: "유럽 탄소 ETF",
+    role: "Europe carbon ETF reference",
     url: "https://kraneshares.com/etf/keua/",
-    note: "KraneShares 유럽 탄소 전략 ETF 공식 페이지입니다."
+    note: "Issuer page for the Europe carbon ETF."
   },
   {
     id: "yahoo-krbn",
     title: "Yahoo KRBN",
     category: "External market watch",
-    role: "빠른 차트 참고",
-    url: "https://de.finance.yahoo.com/quote/KRBN/",
-    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
+    role: "Fast comparison chart",
+    url: "https://finance.yahoo.com/quote/KRBN/",
+    note: "Use only as a free comparison chart, not as an official carbon source."
   },
   {
     id: "yahoo-keua",
     title: "Yahoo KEUA",
     category: "External market watch",
-    role: "빠른 차트 참고",
-    url: "https://de.finance.yahoo.com/quote/KEUA/",
-    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
+    role: "Fast comparison chart",
+    url: "https://finance.yahoo.com/quote/KEUA/",
+    note: "Use only as a free comparison chart, not as an official carbon source."
   },
   {
     id: "yahoo-co2",
     title: "Yahoo CO2.L",
     category: "External market watch",
-    role: "빠른 차트 참고",
-    url: "https://uk.finance.yahoo.com/quote/CO2.L/",
-    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
+    role: "Fast comparison chart",
+    url: "https://finance.yahoo.com/quote/CO2.L/",
+    note: "Use only as a free comparison chart, not as an official carbon source."
   },
   {
     id: "yahoo-iceeua",
     title: "Yahoo ^ICEEUA",
     category: "External market watch",
-    role: "빠른 차트 참고",
-    url: "https://uk.finance.yahoo.com/quote/%5EICEEUA/",
-    note: "야후는 종목과 거래소에 따라 지연 시세가 보일 수 있어 참고용으로만 사용합니다."
+    role: "Fast comparison chart",
+    url: "https://finance.yahoo.com/quote/%5EICEEUA/",
+    note: "Use only as a free comparison chart, not as an official carbon source."
   }
 ];

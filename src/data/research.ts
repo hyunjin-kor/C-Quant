@@ -739,6 +739,148 @@ export const quantIndicators: QuantIndicator[] = [
 
 export const benchmarkPlatforms: BenchmarkPlatform[] = [
   {
+    id: "tradingview-lightweight-charts",
+    name: "TradingView Lightweight Charts",
+    category: "Open-source Chart Engine",
+    strength: "Interactive financial charts with zoom, pan, crosshair, and multi-series overlays in a lightweight client bundle",
+    differentiator: "Best reference for turning static trend panes into operator-grade interactive market charts",
+    source: {
+      label: "Lightweight Charts docs",
+      url: "https://tradingview.github.io/lightweight-charts/",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Crosshair and price readout",
+      "Zoom and pan interaction",
+      "Multi-series comparison on one chart"
+    ]
+  },
+  {
+    id: "yahoo-finance-advanced-chart",
+    name: "Yahoo Finance Advanced Chart",
+    category: "Free Retail Chart UX",
+    strength: "Fast date-range switching, chart scaling, and compare-symbol workflow on free market pages",
+    differentiator: "Best reference for what a free comparison tape should feel like before adding paid data",
+    source: {
+      label: "Yahoo Finance chart help",
+      url: "https://help.yahoo.com/kb/period-scale-screen-charts-yahoo-finance-web-sln28287.html",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "1D to multi-month range toggles",
+      "Wheel and pinch scale control",
+      "Advanced chart behavior for free comparison feeds"
+    ]
+  },
+  {
+    id: "claude-desktop-cowork",
+    name: "Claude Desktop / Cowork",
+    category: "Desktop AI Workspace",
+    strength: "Conversation-first assistant workspace with model selection near the composer, grouped styles and tools, and persistent threads",
+    differentiator: "Best reference for making the local copilot feel like a primary work surface instead of a settings sidebar",
+    source: {
+      label: "Anthropic release notes",
+      url: "https://support.claude.com/en/articles/12138966-release-notes",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Conversation-first workspace",
+      "Model selector close to the composer",
+      "Grouped styles, tools, and persistent context"
+    ]
+  },
+  {
+    id: "openbb-workspace",
+    name: "OpenBB Workspace",
+    category: "Open-source Research Workspace",
+    strength: "Dashboard canvas with multiple widgets, automatic refresh, sharing, and multi-window analytical layouts",
+    differentiator: "Best reference for combining live widgets, AI workflows, and operator dashboards in one workspace",
+    source: {
+      label: "OpenBB Workspace dashboards",
+      url: "https://docs.openbb.co/workspace/analysts/dashboards",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Widget canvas with refresh actions",
+      "Shareable multi-panel dashboards",
+      "AI and chart workflow on one surface"
+    ]
+  },
+  {
+    id: "clearblue-vantage",
+    name: "ClearBlue Vantage",
+    category: "Carbon Intelligence Platform",
+    strength: "Aggregates, interprets, and visualizes carbon market and user data across pricing, supply-demand, policy, news, and scenario modules",
+    differentiator: "Best reference for carbon-specific decision modules instead of generic equity-style dashboards",
+    source: {
+      label: "ClearBlue Vantage",
+      url: "https://www.clearbluemarkets.com/vantage",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Current and historic pricing with policy context",
+      "Scenario planning modules",
+      "Carbon portfolio and position readout"
+    ]
+  },
+  {
+    id: "persefoni-accounting",
+    name: "Persefoni",
+    category: "Carbon accounting platform",
+    strength:
+      "Scope 1-3 emissions coverage, audit-grade accounting workflow, and disclosure-ready reporting tied to the GHG Protocol.",
+    differentiator:
+      "Best reference for turning fragmented activity data into one auditable emissions inventory and reporting spine.",
+    source: {
+      label: "Persefoni carbon accounting platform",
+      url: "https://www.persefoni.com/business/carbon-footprint-measurement-analytics",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Scope 1-3 inventory framing",
+      "Audit-trail mindset for calculations",
+      "Disclosure-ready reporting flow"
+    ]
+  },
+  {
+    id: "watershed-platform",
+    name: "Watershed",
+    category: "Enterprise sustainability platform",
+    strength:
+      "Supply-chain engagement, emissions measurement, reporting automation, and reduction planning in one sustainability workspace.",
+    differentiator:
+      "Best benchmark for connecting enterprise carbon accounting with supply-chain action and reporting speed.",
+    source: {
+      label: "Watershed platform",
+      url: "https://watershed.com/",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Supply-chain engagement workflow",
+      "Reporting automation across frameworks",
+      "Reduction-planning lens beside the inventory"
+    ]
+  },
+  {
+    id: "patch-procurement",
+    name: "Patch",
+    category: "Carbon credit procurement platform",
+    strength:
+      "Project screening, portfolio sourcing, purchase records, retirement certificates, and disclosure support around carbon credits.",
+    differentiator:
+      "Best benchmark for procurement and retirement intelligence without needing to copy a broker or exchange workflow.",
+    source: {
+      label: "Patch purchase workflow",
+      url: "https://www.patch.io/purchase",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Project screening and portfolio sourcing",
+      "Disclosure-ready purchase records",
+      "Retirement and fulfillment tracking"
+    ]
+  },
+  {
     id: "eu-commission",
     name: "EU Commission Carbon Market Pages",
     category: "Official Market Structure",
@@ -824,6 +966,25 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     ]
   },
   {
+    id: "bezero-carbon",
+    name: "BeZero Carbon",
+    category: "Ratings and portfolio risk",
+    strength:
+      "Independent project ratings, public methodologies, portfolio-risk framing, and information-availability controls for carbon credits.",
+    differentiator:
+      "Best benchmark for a transparent integrity layer that shows rating logic, watch state, and portfolio consequences together.",
+    source: {
+      label: "BeZero Carbon ratings",
+      url: "https://bezerocarbon.com/products/ratings",
+      accessed: today
+    },
+    featuresToBorrow: [
+      "Rating summary with evidence boundaries",
+      "Portfolio-level risk framing",
+      "Information-availability watch logic"
+    ]
+  },
+  {
     id: "allied-offsets",
     name: "AlliedOffsets",
     category: "Portfolio Analytics",
@@ -861,8 +1022,11 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
 
 export const productRequirements = [
   "Market intelligence workspace covering EU ETS, K-ETS, and China ETS on one operating surface.",
-  "Forecast studio combining structural drivers, scenario controls, and uncertainty-aware outputs.",
-  "Quant lab with CSV uploads, transaction-cost assumptions, and core performance metrics.",
+  "Carbon accounting sidecar that keeps Scope 1-3 logic, factor provenance, and disclosure framing visible next to market views.",
+  "Verification layer that connects registry status, document freshness, ratings context, and retirement trace before a user leans on a credit.",
+  "Procurement intelligence that supports screening and retirement planning without executing trades or intermediating orders.",
+  "Conversation-first copilot with local model, grounded evidence, and configurable response style.",
+  "Signal layer combining structural drivers, scenario controls, and uncertainty-aware outputs.",
   "Risk layer for policy events, liquidity deterioration, missing data, and market-structure breaks.",
-  "Desktop-first workflow with local files, offline research access, and future API connectivity."
+  "Desktop-first workflow with local research access, source freshness, and future connector support without implying execution."
 ];

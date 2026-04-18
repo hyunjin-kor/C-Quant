@@ -5,6 +5,11 @@ type ValueFormatter = (value: number) => string;
 export type ChartPoint = {
   label: string;
   value: number;
+  volume?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
 };
 
 export type MultiLinePoint = {
@@ -613,6 +618,14 @@ export function ColumnChart({
   valueFormatter?: ValueFormatter;
   height?: number;
 }) {
+  if (points.length === 0) {
+    return (
+      <div className="column-chart empty" style={{ height }}>
+        <div className="chart-empty-state">No chart data</div>
+      </div>
+    );
+  }
+
   const bars = buildBars(points, height - 36);
 
   return (

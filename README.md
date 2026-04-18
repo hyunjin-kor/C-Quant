@@ -24,7 +24,7 @@ It does not execute trades or intermediate transactions.
 - Calculates gap, recent co-movement, and direction match between the two tapes
 - Builds a simple desk posture from official move, listed move, tape agreement, and source freshness
 - Keeps the driver map, source method, and trust boundary visible
-- Includes a local scenario lab, CSV backtest, and walk-forward model runner
+- Includes a grounded local copilot, signal workspace, and source-trust workflow
 - Keeps external pages as explicit source buttons instead of default navigation
 
 ## Open-Source Benchmark Map
@@ -90,11 +90,14 @@ The app is built to work even if you do not want to pay for data.
 - `Sources`
   - official source method, freshness, and notes
   - in-app benchmark catalogue
-  - dataset schema and CSV template export
-- `Lab`
-  - scenario sliders for top drivers
-  - CSV backtest
-  - walk-forward model runner
+  - input coverage and source-trust registry
+- `Signals`
+  - integrated decision pack
+  - operator checklist
+  - scenario-oriented decision support
+- `Copilot`
+  - conversation-first local model workspace
+  - grounded context, evidence chips, and runtime controls
 
 ## Important Notes
 
@@ -104,7 +107,55 @@ The app is built to work even if you do not want to pay for data.
 - The AI layer is a carbon-market copilot and can run on a local free Ollama model inside the desktop app.
 - OpenAI can still be wired separately, but the default desktop copilot flow is local-model-first.
 - The copilot is designed to explain posture, contrary evidence, missing data, and next checks. It is not allowed to fabricate official facts or behave like an execution assistant.
-- The walk-forward model uses local Python and requires `pandas`, `numpy`, and `scikit-learn`.
+
+## Autonomous Loop
+
+The repo now includes a persistent autonomy framework so repeated development rounds do not have to rediscover context.
+
+It now also borrows several OpenHands-inspired harness patterns:
+
+- split `base-state.json` and append-only `.autonomy/events/*.json`
+- explicit `stuck_detection` and loop budget fields
+- session continuity through `session_id`
+- monitor-visible event feed for control and cycle progress
+
+- `docs/autonomy-state.md`
+  - mission, current risks, active queue, and latest verified cycle
+- `.autonomy/latest-cycle.md`
+  - most recent generated verification report
+- `.autonomy/control.json`
+  - start, pause, resume, and stop state for the autonomous loop
+- `.autonomy/base-state.json`
+  - stable session snapshot for monitor and recovery
+- `.autonomy/events/*.json`
+  - structured control and cycle events
+- `npm.cmd run autonomy:cycle`
+  - runs the standard build loop and updates the state ledger
+- `npm.cmd run autonomy:release`
+  - runs build plus packaging checks and updates the state ledger
+- `npm.cmd run autonomy:start`
+  - marks the autonomous loop as running with `stop_on_user_return=true`
+- `npm.cmd run autonomy:pause`
+  - pauses the loop immediately
+- `npm.cmd run autonomy:resume`
+  - resumes the loop and keeps pause-on-user-return enabled
+- `npm.cmd run autonomy:idle`
+  - returns the loop to an inactive waiting state
+- `npm.cmd run autonomy:status`
+  - prints the current control state
+- `npm.cmd run autonomy:monitor`
+  - starts a separate local monitor server at `http://127.0.0.1:4781`
+- `npm.cmd run autonomy:monitor:open`
+  - opens the separate monitor dashboard in the browser and starts the server if needed
+
+The separate monitor is intentionally outside the product app. It shows:
+
+- loop mode: `running / paused / idle / stopped`
+- execution state: active cycle vs armed-and-waiting
+- scheduler state: background loop connected or manual-trigger only
+- stuck detector state and loop budget
+- current task, open backlog, latest cycle snapshot, and recent run logs
+- recent structured autonomy events
 
 ## Run
 
@@ -130,11 +181,12 @@ npm.cmd run package:portable
 
 - `src/App.tsx`
 - `src/components/charts.tsx`
+- `src/components/InteractiveMarketChart.tsx`
 - `src/styles.css`
 - `src/data/platform.ts`
 - `src/data/research.ts`
-- `src/lib/forecast.ts`
-- `src/lib/backtest.ts`
+- `src/data/dataHub.ts`
+- `src/lib/localization.ts`
 - `electron/liveSources.js`
 - `main.js`
 - `preload.js`
@@ -143,3 +195,4 @@ npm.cmd run package:portable
 
 - `docs/pdf-reference-audit.md`
 - `docs/harness-engineering.md`
+- `docs/autonomy-state.md`

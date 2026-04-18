@@ -135,21 +135,23 @@ export type RegistryOperationsTrack = {
   source: SourceLink;
 };
 
-export type DataColumnSpec = {
+export type MarketInputFieldPriority = "Core" | "Support";
+
+export type MarketInputField = {
   name: string;
-  required: boolean;
+  priority: MarketInputFieldPriority;
   description: string;
   sourceHint: string;
 };
 
-export type MarketDatasetSchema = {
+export type MarketInputBlock = {
   id: string;
   marketId: MarketProfile["id"];
-  name: string;
-  filename: string;
-  cadence: string;
-  description: string;
-  columns: DataColumnSpec[];
+  title: string;
+  accessMethod: string;
+  refreshCadence: string;
+  purpose: string;
+  fields: MarketInputField[];
 };
 
 export type ConnectedSourceStatus = "connected" | "limited" | "error";
@@ -164,6 +166,10 @@ export type ConnectedSourceSeriesPoint = {
   value: number;
   volume?: number;
   label?: string;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
 };
 
 export type ConnectedSourceCard = {
@@ -311,32 +317,6 @@ export type AutonomousPlanStep = {
   outputs: string[];
 };
 
-export type WalkForwardSummary = {
-  rows: number;
-  trainWindow: number;
-  horizon: number;
-  mae: number;
-  rmse: number;
-  mapePct: number;
-  directionalAccuracyPct: number;
-  latestClose: number;
-  nextPrediction: number;
-  lowerBand: number;
-  upperBand: number;
-};
-
-export type FeatureImportance = {
-  feature: string;
-  importance: number;
-};
-
-export type WalkForwardResult = {
-  summary: WalkForwardSummary;
-  selectedFeatures: string[];
-  topFeatures: FeatureImportance[];
-  warnings: string[];
-};
-
 export type ForecastResult = {
   score: number;
   direction: "Bullish" | "Neutral" | "Bearish";
@@ -346,36 +326,6 @@ export type ForecastResult = {
     variable: string;
     contribution: number;
   }>;
-};
-
-export type BacktestStrategy =
-  | "trend"
-  | "meanReversion"
-  | "spreadRegime"
-  | "policyMomentum";
-
-export type ParsedSeriesPoint = {
-  date: string;
-  close: number;
-  [key: string]: number | string;
-};
-
-export type BacktestMetrics = {
-  totalReturnPct: number;
-  annualizedReturnPct: number;
-  annualizedVolPct: number;
-  sharpe: number;
-  maxDrawdownPct: number;
-  winRatePct: number;
-  exposurePct: number;
-  tradeCount: number;
-};
-
-export type BacktestRun = {
-  metrics: BacktestMetrics;
-  equityCurve: number[];
-  signals: number[];
-  warnings: string[];
 };
 
 export type DecisionAssistantStance =
@@ -428,8 +378,54 @@ export type LocalLlmModel = {
 
 export type LocalLlmState = {
   available: boolean;
+  installed?: boolean;
+  reachable?: boolean;
+  cliVersion?: string;
   baseUrl: string;
   selectedModel: string;
   models: LocalLlmModel[];
   error?: string;
+};
+
+export type LocalChatRole = "user" | "assistant";
+
+export type ChatGroundingKind =
+  | "Official anchor"
+  | "Official context"
+  | "Listed comparison"
+  | "Source freshness"
+  | "Key driver";
+
+export type ChatGroundingItem = {
+  id: string;
+  kind: ChatGroundingKind;
+  label: string;
+  detail: string;
+  asOf?: string;
+  url?: string;
+};
+
+export type LocalChatMessage = {
+  id: string;
+  role: LocalChatRole;
+  content: string;
+  createdAt: string;
+  model?: string;
+  status?: "pending" | "done" | "error";
+  grounding?: ChatGroundingItem[];
+  boundaryNote?: string;
+};
+
+export type LocalChatResponse = {
+  provider: "ollama";
+  model: string;
+  content: string;
+  generatedAt: string;
+  grounding: ChatGroundingItem[];
+  boundaryNote: string;
+  doneReason?: string;
+  totalDurationMs?: number;
+  loadDurationMs?: number;
+  promptEvalCount?: number;
+  evalCount?: number;
 };

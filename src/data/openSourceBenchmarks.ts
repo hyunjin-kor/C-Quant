@@ -22,6 +22,42 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     }
   },
   {
+    id: "os-climate",
+    name: "OS-Climate",
+    category: "Climate data commons",
+    verifiedCapability:
+      "Verified from the official project site and community hub: an open-source initiative building climate data, extraction, and analytics infrastructure for financial decision-making.",
+    adaptForCQuant:
+      "Borrow the modular data-commons pattern for source normalization, document extraction, and climate-data interoperability across accounting, verification, and market views.",
+    boundaryNote:
+      "Do not try to replicate the full OS-Climate stack inside C-Quant. Use it as the architectural benchmark for ingestion and normalization boundaries.",
+    llmUse:
+      "Let the copilot explain where a read comes from, which dataset family backs it, and what still requires manual verification.",
+    source: {
+      label: "OS-Climate",
+      url: "https://os-climate.org/",
+      accessed
+    }
+  },
+  {
+    id: "openghg",
+    name: "OpenGHG",
+    category: "Open emissions data foundation",
+    verifiedCapability:
+      "Verified from the official site: a local-first open platform for standardizing, storing, retrieving, and plotting greenhouse-gas datasets with a flexible data store.",
+    adaptForCQuant:
+      "Borrow the standardization and store pattern for emissions evidence, factor provenance, and reproducible data retrieval across accounting and verification modules.",
+    boundaryNote:
+      "Do not turn C-Quant into a scientific atmospheric data workbench. Keep the pattern focused on provenance, retrieval, and reproducibility.",
+    llmUse:
+      "Use the copilot to summarize which datasets are standardized, which remain raw, and where provenance breaks the confidence chain.",
+    source: {
+      label: "OpenGHG",
+      url: "https://openghg.org/",
+      accessed
+    }
+  },
+  {
     id: "carbon-scribe",
     name: "CarbonScribe/carbon-scribe",
     category: "Credit lifecycle platform",

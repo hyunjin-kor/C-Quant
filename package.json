@@ -10,8 +10,21 @@
     "dev:electron": "wait-on tcp:5173 && electron .",
     "build": "vite build",
     "preview": "vite preview",
-    "package:dir": "npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win dir",
-    "package:portable": "npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win portable"
+    "autonomy:cycle": "powershell -ExecutionPolicy Bypass -File scripts/run-autonomous-cycle.ps1",
+    "autonomy:release": "powershell -ExecutionPolicy Bypass -File scripts/run-autonomous-cycle.ps1 -WithPackaging",
+    "autonomy:start": "powershell -ExecutionPolicy Bypass -File scripts/autonomy-control.ps1 -Action start",
+    "autonomy:resume": "powershell -ExecutionPolicy Bypass -File scripts/autonomy-control.ps1 -Action resume",
+    "autonomy:pause": "powershell -ExecutionPolicy Bypass -File scripts/autonomy-control.ps1 -Action pause",
+    "autonomy:stop": "powershell -ExecutionPolicy Bypass -File scripts/autonomy-control.ps1 -Action stop",
+    "autonomy:idle": "powershell -ExecutionPolicy Bypass -File scripts/autonomy-control.ps1 -Action idle",
+    "autonomy:status": "powershell -ExecutionPolicy Bypass -File scripts/autonomy-control.ps1 -Action status",
+    "autonomy:monitor": "node tools/autonomy-monitor/server.mjs",
+    "autonomy:monitor:open": "powershell -ExecutionPolicy Bypass -File scripts/open-autonomy-monitor.ps1",
+    "smoke:dir": "powershell -ExecutionPolicy Bypass -File scripts/smoke-cquant.ps1 -Mode dir",
+    "smoke:portable": "powershell -ExecutionPolicy Bypass -File scripts/smoke-cquant.ps1 -Mode portable",
+    "smoke:release": "powershell -ExecutionPolicy Bypass -File scripts/smoke-cquant.ps1 -Mode all",
+    "package:dir": "powershell -ExecutionPolicy Bypass -File scripts/stop-running-cquant.ps1 && npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win dir",
+    "package:portable": "powershell -ExecutionPolicy Bypass -File scripts/stop-running-cquant.ps1 && npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win portable"
   },
   "engines": {
     "node": ">=24"
@@ -19,6 +32,7 @@
   "author": "Codex",
   "dependencies": {
     "exceljs": "^4.4.0",
+    "lightweight-charts": "^5.1.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
@@ -31,7 +45,7 @@
     "electron-builder": "^26.0.12",
     "typescript": "^6.0.2",
     "vite": "^8.0.7",
-    "wait-on": "^9.0.4"
+    "wait-on": "^9.0.5"
   },
   "build": {
     "appId": "com.cquant.desktop",
@@ -46,12 +60,6 @@
       "main.js",
       "preload.js",
       "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "python",
-        "to": "python"
-      }
     ],
     "win": {
       "signAndEditExecutable": false,

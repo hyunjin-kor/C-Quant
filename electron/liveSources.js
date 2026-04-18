@@ -12,6 +12,10 @@ const KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
 const KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
 const MEE_LIST_URL = "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
+const YAHOO_PROVIDER_LABEL = "Yahoo Finance web chart feed";
+const YAHOO_DELAY_NOTE = "Reference web chart feed. Exchange delay may apply.";
+const YAHOO_PROXY_DELAY_NOTE =
+  "Reference web chart feed. Use as a listed proxy, not as the official carbon price.";
 const EU_CARD_CACHE_TTL_MS = 10 * 60 * 1000;
 const KRX_DAY_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 const KRX_CARD_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -93,13 +97,12 @@ function getLiveQuoteConfigs() {
       symbolCandidates: [`ECFZ${currentSuffix}.NYM`, `ECFZ${nextSuffix}.NYM`, `ECFZ${previousSuffix}.NYM`],
       category: "Benchmark futures",
       markets: ["eu-ets", "shared"],
-      provider: "Public chart API",
+      provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://www.ice.com/products/197",
       role: "Primary listed hedge tape for EU carbon risk",
       note:
         "December benchmark contract used as the main listed EUA reference. Some free chart feeds expose the live price faster than the full historical curve.",
-      delayNote:
-        "Reference chart API feed. Exchange delay may apply."
+      delayNote: YAHOO_DELAY_NOTE
     },
     {
       id: "ttf-gas-future",
@@ -107,12 +110,11 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["TTF=F"],
       category: "Driver future",
       markets: ["eu-ets", "shared"],
-      provider: "Public chart API",
+      provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://www.ice.com/products/27996665/Dutch-TTF-Gas-Futures",
       role: "Fuel-switching driver for EU carbon",
       note: "Gas remains one of the key inputs behind short-term carbon repricing.",
-      delayNote:
-        "Reference chart API feed. Exchange delay may apply."
+      delayNote: YAHOO_DELAY_NOTE
     },
     {
       id: "brent-future",
@@ -120,12 +122,11 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["BZ=F"],
       category: "Driver future",
       markets: ["shared"],
-      provider: "Public chart API",
+      provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://www.ice.com/products/219/Brent-Crude-Futures",
       role: "Macro energy proxy",
       note: "Useful for broad energy risk context when carbon trades with the wider commodity complex.",
-      delayNote:
-        "Reference chart API feed. Exchange delay may apply."
+      delayNote: YAHOO_DELAY_NOTE
     },
     {
       id: "co2-l-proxy",
@@ -133,12 +134,11 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["CO2.L"],
       category: "Listed proxy",
       markets: ["eu-ets", "shared"],
-      provider: "Public chart API",
+      provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://www.wisdomtree.eu/en-gb/etps/alternative/wisdomtree-carbon",
       role: "Exchange-traded EU carbon proxy",
       note: "Useful as a listed carbon proxy alongside the benchmark EUA future.",
-      delayNote:
-        "Reference chart API feed. Exchange delay may apply."
+      delayNote: YAHOO_DELAY_NOTE
     },
     {
       id: "krbn-proxy",
@@ -146,12 +146,11 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["KRBN"],
       category: "Listed proxy",
       markets: ["k-ets", "cn-ets", "shared"],
-      provider: "Public chart API",
+      provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://kraneshares.com/etf/krbn/",
       role: "Listed carbon proxy when local ETS futures are not available",
       note: "Proxy only. Do not treat this as an official local ETS settlement.",
-      delayNote:
-        "Reference chart API feed. Use as a listed proxy, not as the official carbon price."
+      delayNote: YAHOO_PROXY_DELAY_NOTE
     },
     {
       id: "keua-proxy",
@@ -159,12 +158,11 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["KEUA"],
       category: "Listed proxy",
       markets: ["eu-ets", "shared"],
-      provider: "Public chart API",
+      provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://kraneshares.com/etf/keua/",
       role: "Listed proxy for EU carbon exposure",
       note: "Proxy only. The official listed hedge anchor remains the ICE EUA future.",
-      delayNote:
-        "Reference chart API feed. Use as a listed proxy, not as the official carbon price."
+      delayNote: YAHOO_PROXY_DELAY_NOTE
     },
     {
       id: "kcca-proxy",
@@ -172,12 +170,11 @@ function getLiveQuoteConfigs() {
       symbolCandidates: ["KCCA"],
       category: "Listed proxy",
       markets: ["shared"],
-      provider: "Public chart API",
+      provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://kraneshares.com/etf/kcca/",
       role: "Listed North American carbon proxy for cross-market risk appetite",
       note: "Proxy only. Useful as an additional listed carbon sleeve, not as a local ETS settlement.",
-      delayNote:
-        "Reference chart API feed. Use as a listed proxy, not as an official carbon price."
+      delayNote: YAHOO_PROXY_DELAY_NOTE
     }
   ];
 }
@@ -346,15 +343,19 @@ function toDateLabelFromUnix(timestamp, options = {}) {
   return toIsoDate(date);
 }
 
-function buildSeriesFromYahoo(timestamps, closes, options = {}) {
+function buildSeriesFromYahoo(timestamps, quote, options = {}) {
   const seriesLimit =
     Object.prototype.hasOwnProperty.call(options, "seriesLimit") ? options.seriesLimit : 22;
   const includeTime = Boolean(options.includeTime);
+  const opens = Array.isArray(quote?.open) ? quote.open : [];
+  const highs = Array.isArray(quote?.high) ? quote.high : [];
+  const lows = Array.isArray(quote?.low) ? quote.low : [];
+  const closes = Array.isArray(quote?.close) ? quote.close : [];
   const points = [];
 
   for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
-    const value = Number(closes[index]);
-    if (!Number.isFinite(value)) {
+    const close = Number(closes[index]);
+    if (!Number.isFinite(close)) {
       continue;
     }
 
@@ -363,10 +364,27 @@ function buildSeriesFromYahoo(timestamps, closes, options = {}) {
       continue;
     }
 
-    points.push({
+    const point = {
       date,
-      value
-    });
+      value: close
+    };
+    const open = Number(opens[index]);
+    const high = Number(highs[index]);
+    const low = Number(lows[index]);
+
+    if (
+      Number.isFinite(open) &&
+      Number.isFinite(high) &&
+      Number.isFinite(low) &&
+      Number.isFinite(close)
+    ) {
+      point.open = open;
+      point.high = high;
+      point.low = low;
+      point.close = close;
+    }
+
+    points.push(point);
   }
 
   return seriesLimit === null ? points : points.slice(-seriesLimit);
@@ -428,10 +446,9 @@ async function fetchLiveQuote(config, options = {}) {
 
   const meta = result.meta ?? {};
   const timestamps = Array.isArray(result.timestamp) ? result.timestamp : [];
-  const closes = Array.isArray(result?.indicators?.quote?.[0]?.close)
-    ? result.indicators.quote[0].close
-    : [];
-  const series = buildSeriesFromYahoo(timestamps, closes, {
+  const quoteSeries = result?.indicators?.quote?.[0] ?? {};
+  const closes = Array.isArray(quoteSeries?.close) ? quoteSeries.close : [];
+  const series = buildSeriesFromYahoo(timestamps, quoteSeries, {
     seriesLimit,
     includeTime: usesIntradayRange
   });

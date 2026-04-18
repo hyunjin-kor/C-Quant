@@ -2,31 +2,155 @@ const { app, BrowserWindow, dialog, ipcMain, shell, screen } = require("electron
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { execFile } = require("node:child_process");
+const { fileURLToPath } = require("node:url");
 const { getConnectedSources, getLiveQuoteHistory } = require("./electron/liveSources");
 const {
-  DEFAULT_MODEL,
   DEFAULT_OLLAMA_BASE_URL,
   listOllamaModels,
-  runOllamaDecisionAssistant,
-  runOpenAIDecisionAssistant
+  runOllamaChat
 } = require("./electron/decisionAssistant");
 
 const isDev = !app.isPackaged;
 const SETTINGS_FILENAME = "settings.json";
+const DEFAULT_LOCAL_OLLAMA_MODEL = "granite3-dense:2b";
+const TRUSTED_DEV_SERVER_ORIGINS = new Set([
+  "http://localhost:5173",
+  "http://127.0.0.1:5173"
+]);
+const ALLOWED_EXTERNAL_PROTOCOLS = new Set(["http:", "https:"]);
+const ALLOWED_LOCAL_SERVICE_PROTOCOLS = new Set(["http:", "https:"]);
+const ALLOWED_LOCAL_SERVICE_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+const ALLOWED_QUOTE_RANGE_IDS = new Set(["1d", "5d", "1m", "3m", "6m", "1y"]);
 let mainWindow = null;
 let startupWatchdog = null;
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[character] || character
+  );
+}
+
+function getRendererEntryPath() {
+  return path.resolve(path.join(__dirname, "dist", "index.html"));
+}
+
+function isTrustedAppUrl(value) {
+  const candidate = String(value ?? "").trim();
+  if (!candidate) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === "file:") {
+      if (isDev) {
+        return false;
+      }
+      return path.resolve(fileURLToPath(parsed)) === getRendererEntryPath();
+    }
+
+    return TRUSTED_DEV_SERVER_ORIGINS.has(parsed.origin);
+  } catch {
+    return false;
+  }
+}
+
+function assertTrustedSender(event) {
+  const senderUrl = event?.senderFrame?.url || event?.sender?.getURL?.() || "";
+  if (!isTrustedAppUrl(senderUrl)) {
+    throw new Error(`Blocked IPC from untrusted renderer: ${senderUrl || "unknown"}`);
+  }
+}
+
+function parseUrl(value, label) {
+  const candidate = String(value ?? "").trim();
+
+  try {
+    return new URL(candidate);
+  } catch {
+    throw new Error(`${label} must be a valid URL.`);
+  }
+}
+
+function normalizeExternalUrl(value) {
+  const parsed = parseUrl(value, "External URL");
+  if (!ALLOWED_EXTERNAL_PROTOCOLS.has(parsed.protocol)) {
+    throw new Error("Only http and https links can be opened from C-Quant.");
+  }
+  return parsed.toString();
+}
+
+function normalizeLocalServiceUrl(value, label = "Local service URL") {
+  const parsed = parseUrl(value || DEFAULT_OLLAMA_BASE_URL, label);
+  const host = parsed.hostname.toLowerCase();
+
+  if (!ALLOWED_LOCAL_SERVICE_PROTOCOLS.has(parsed.protocol)) {
+    throw new Error(`${label} must use http or https.`);
+  }
+
+  if (!ALLOWED_LOCAL_SERVICE_HOSTS.has(host)) {
+    throw new Error(`${label} must stay on the local machine.`);
+  }
+
+  if ((parsed.pathname && parsed.pathname !== "/") || parsed.search || parsed.hash) {
+    throw new Error(`${label} must point to a bare local origin without a path.`);
+  }
+
+  parsed.pathname = "/";
+  parsed.search = "";
+  parsed.hash = "";
+  return parsed.toString().replace(/\/$/, "");
+}
+
+function normalizeOllamaModel(value) {
+  const candidate = String(value ?? "").trim();
+  if (!candidate) {
+    return "";
+  }
+
+  if (candidate.length > 120 || /[\r\n\t]/.test(candidate)) {
+    throw new Error("Local model name is invalid.");
+  }
+
+  return candidate;
+}
+
+function sanitizeQuoteHistoryPayload(payload) {
+  const quoteId = String(payload?.quoteId ?? "").trim();
+  const range = String(payload?.range ?? "3m").trim();
+
+  if (!/^[a-z0-9-]{1,64}$/i.test(quoteId)) {
+    throw new Error("Quote history request contains an invalid quote id.");
+  }
+
+  if (!ALLOWED_QUOTE_RANGE_IDS.has(range)) {
+    throw new Error("Quote history request contains an invalid range id.");
+  }
+
+  return { quoteId, range };
+}
 
 function showFallbackPage(window, title, detail) {
   if (!window || window.isDestroyed()) {
     return;
   }
 
+  const safeTitle = escapeHtml(title);
+  const safeDetail = escapeHtml(detail);
   const html = `
     <!doctype html>
     <html>
       <head>
         <meta charset="utf-8" />
-        <title>${title}</title>
+        <title>${safeTitle}</title>
         <style>
           body {
             margin: 0;
@@ -62,10 +186,10 @@ function showFallbackPage(window, title, detail) {
       <body>
         <div class="wrap">
           <div class="card">
-            <h1>${title}</h1>
+            <h1>${safeTitle}</h1>
             <p>C-Quant desktop could not render its main screen.</p>
             <p>Restart the app. If the problem repeats, share the message below.</p>
-            <pre>${detail}</pre>
+            <pre>${safeDetail}</pre>
           </div>
         </div>
       </body>
@@ -142,6 +266,38 @@ function getWindowIconPath() {
   return path.join(__dirname, "assets", "app-icon.png");
 }
 
+function hardenWindow(window) {
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      void shell.openExternal(normalizeExternalUrl(url));
+    } catch {}
+
+    return { action: "deny" };
+  });
+
+  window.webContents.on("will-navigate", (event, navigationUrl) => {
+    if (isTrustedAppUrl(navigationUrl)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    try {
+      void shell.openExternal(normalizeExternalUrl(navigationUrl));
+    } catch {}
+  });
+
+  window.webContents.on("will-attach-webview", (event) => {
+    event.preventDefault();
+  });
+
+  const { session } = window.webContents;
+  session.setPermissionCheckHandler(() => false);
+  session.setPermissionRequestHandler((_webContents, _permission, callback) => {
+    callback(false);
+  });
+}
+
 function createWindow() {
   if (mainWindow && !mainWindow.isDestroyed()) {
     revealWindow(mainWindow);
@@ -177,11 +333,17 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      sandbox: true,
+      webviewTag: false,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      navigateOnDragDrop: false
     }
   });
 
   mainWindow = window;
+  hardenWindow(window);
 
   const reveal = () => revealWindow(window);
   const fallbackTimer = setTimeout(reveal, isDev ? 5000 : 2500);
@@ -245,7 +407,9 @@ function createWindow() {
 
   if (isDev) {
     window.loadURL("http://localhost:5173");
-    window.webContents.openDevTools({ mode: "detach" });
+    if (process.env.CQUANT_OPEN_DEVTOOLS === "1") {
+      window.webContents.openDevTools({ mode: "detach" });
+    }
     return window;
   }
 
@@ -274,47 +438,6 @@ function execFileAsync(command, args) {
   });
 }
 
-function getPythonScriptPath() {
-  if (isDev) {
-    return path.join(__dirname, "python", "walk_forward_model.py");
-  }
-
-  return path.join(process.resourcesPath, "python", "walk_forward_model.py");
-}
-
-async function runWalkForwardModel({ inputPath, marketId, trainWindow, horizon }) {
-  const scriptPath = getPythonScriptPath();
-  const candidates = [
-    { command: "python", args: [] },
-    { command: "py", args: ["-3"] }
-  ];
-
-  let lastError = "Python runner is not available.";
-
-  for (const candidate of candidates) {
-    try {
-      const stdout = await execFileAsync(candidate.command, [
-        ...candidate.args,
-        scriptPath,
-        "--input",
-        inputPath,
-        "--market",
-        marketId,
-        "--train-window",
-        String(trainWindow),
-        "--horizon",
-        String(horizon)
-      ]);
-
-      return JSON.parse(stdout);
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
-    }
-  }
-
-  throw new Error(lastError);
-}
-
 async function getSettingsPath() {
   return path.join(app.getPath("userData"), SETTINGS_FILENAME);
 }
@@ -326,23 +449,11 @@ async function loadSettings() {
     const raw = await fs.readFile(settingsPath, "utf8");
     const parsed = JSON.parse(raw);
     return {
-      openAIApiKey:
-        typeof parsed.openAIApiKey === "string" ? parsed.openAIApiKey : "",
-      llmModel:
-        typeof parsed.llmModel === "string" && parsed.llmModel.trim()
-          ? parsed.llmModel.trim()
-          : DEFAULT_MODEL,
-      ollamaBaseUrl:
-        typeof parsed.ollamaBaseUrl === "string" && parsed.ollamaBaseUrl.trim()
-          ? parsed.ollamaBaseUrl.trim()
-          : DEFAULT_OLLAMA_BASE_URL,
-      ollamaModel:
-        typeof parsed.ollamaModel === "string" ? parsed.ollamaModel.trim() : ""
+      ollamaBaseUrl: normalizeLocalServiceUrl(parsed.ollamaBaseUrl, "Ollama base URL"),
+      ollamaModel: normalizeOllamaModel(parsed.ollamaModel)
     };
   } catch {
     return {
-      openAIApiKey: "",
-      llmModel: DEFAULT_MODEL,
       ollamaBaseUrl: DEFAULT_OLLAMA_BASE_URL,
       ollamaModel: ""
     };
@@ -353,20 +464,16 @@ async function saveSettings(partial) {
   const current = await loadSettings();
   const next = {
     ...current,
-    ...(Object.prototype.hasOwnProperty.call(partial, "openAIApiKey")
-      ? { openAIApiKey: String(partial.openAIApiKey ?? "").trim() }
-      : {}),
-    ...(Object.prototype.hasOwnProperty.call(partial, "llmModel")
-      ? { llmModel: String(partial.llmModel ?? "").trim() || DEFAULT_MODEL }
-      : {}),
     ...(Object.prototype.hasOwnProperty.call(partial, "ollamaBaseUrl")
       ? {
-          ollamaBaseUrl:
-            String(partial.ollamaBaseUrl ?? "").trim() || DEFAULT_OLLAMA_BASE_URL
+          ollamaBaseUrl: normalizeLocalServiceUrl(
+            partial.ollamaBaseUrl,
+            "Ollama base URL"
+          )
         }
       : {}),
     ...(Object.prototype.hasOwnProperty.call(partial, "ollamaModel")
-      ? { ollamaModel: String(partial.ollamaModel ?? "").trim() }
+      ? { ollamaModel: normalizeOllamaModel(partial.ollamaModel) }
       : {})
   };
 
@@ -376,65 +483,185 @@ async function saveSettings(partial) {
   return next;
 }
 
-function getPublicSettings(settings) {
-  return {
-    hasOpenAIApiKey: Boolean(settings.openAIApiKey || process.env.OPENAI_API_KEY),
-    llmModel: settings.llmModel || DEFAULT_MODEL
-  };
+async function findFirstExistingPath(candidates) {
+  for (const candidate of candidates) {
+    if (!candidate || candidate === "ollama") {
+      continue;
+    }
+
+    try {
+      await fs.access(candidate);
+      return candidate;
+    } catch {}
+  }
+
+  return "";
+}
+
+function getOllamaCliCandidates() {
+  return [
+    "ollama",
+    path.join(process.env.LOCALAPPDATA || "", "Programs", "Ollama", "ollama.exe"),
+    path.join(process.env.ProgramFiles || "", "Ollama", "ollama.exe")
+  ].filter((candidate, index, items) => candidate && items.indexOf(candidate) === index);
+}
+
+function getOllamaAppCandidates() {
+  return [
+    path.join(process.env.LOCALAPPDATA || "", "Programs", "Ollama", "ollama app.exe"),
+    path.join(process.env.ProgramFiles || "", "Ollama", "ollama app.exe")
+  ].filter((candidate, index, items) => candidate && items.indexOf(candidate) === index);
+}
+
+async function getOllamaCliVersion() {
+  for (const candidate of getOllamaCliCandidates()) {
+    try {
+      const stdout = await execFileAsync(candidate, ["--version"]);
+      return String(stdout).trim();
+    } catch {}
+  }
+
+  return "";
+}
+
+async function launchLocalOllama() {
+  const appPath = await findFirstExistingPath(getOllamaAppCandidates());
+
+  if (appPath) {
+    const error = await shell.openPath(appPath);
+    if (error) {
+      throw new Error(error);
+    }
+
+    return {
+      started: true,
+      mode: "desktop-app",
+      path: appPath
+    };
+  }
+
+  const cliPath = await findFirstExistingPath(getOllamaCliCandidates());
+  if (cliPath) {
+    const child = execFile(cliPath, ["serve"], {
+      cwd: app.getAppPath(),
+      detached: true,
+      windowsHide: true
+    });
+    child.unref();
+
+    return {
+      started: true,
+      mode: "cli-serve",
+      path: cliPath
+    };
+  }
+
+  throw new Error("Ollama is not installed on this PC yet.");
 }
 
 async function getLocalLlmState(settings) {
-  const baseUrl = settings?.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
-  const savedModel = settings?.ollamaModel || "";
+  const baseUrl = normalizeLocalServiceUrl(
+    settings?.ollamaBaseUrl,
+    "Ollama base URL"
+  );
+  const savedModel = normalizeOllamaModel(settings?.ollamaModel);
+  const cliVersion = await getOllamaCliVersion();
+  const installed = Boolean(cliVersion);
 
   try {
     const models = await listOllamaModels(baseUrl);
+    const recommendedModel = models.find(
+      (entry) =>
+        entry.model === DEFAULT_LOCAL_OLLAMA_MODEL ||
+        entry.name === DEFAULT_LOCAL_OLLAMA_MODEL
+    )?.model;
     const selectedModel =
       (savedModel && models.some((entry) => entry.model === savedModel || entry.name === savedModel)
         ? savedModel
-        : models[0]?.model) || "";
+        : recommendedModel || models[0]?.model) || "";
 
     return {
-      available: true,
+      available: models.length > 0,
+      installed,
+      reachable: true,
+      cliVersion,
       baseUrl,
       selectedModel,
-      models
+      models,
+      ...(models.length === 0
+        ? {
+            error:
+              "Ollama API is reachable but no local model is installed yet. Pull a model, then recheck."
+          }
+        : {})
     };
   } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
     return {
       available: false,
+      installed,
+      reachable: false,
+      cliVersion,
       baseUrl,
       selectedModel: savedModel,
       models: [],
-      error: error instanceof Error ? error.message : String(error)
+      error: installed
+        ? `Ollama is installed but the local API at ${baseUrl} is not responding. Start Ollama and retry. Details: ${reason}`
+        : "Ollama is not installed on this PC yet. Install Ollama for Windows, pull a local model, then retry."
     };
   }
 }
 
-ipcMain.handle("pick-csv-file", async () => {
-  const result = await dialog.showOpenDialog({
-    title: "Choose a market CSV file",
-    filters: [{ name: "CSV files", extensions: ["csv"] }],
-    properties: ["openFile"]
-  });
+async function resolveLocalOllamaTarget(payload) {
+  const settings = await loadSettings();
+  const baseUrl = normalizeLocalServiceUrl(
+    typeof payload?.baseUrl === "string" && payload.baseUrl.trim()
+      ? payload.baseUrl
+      : settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL,
+    "Ollama base URL"
+  );
+  const models = await listOllamaModels(baseUrl);
+  const requestedModel = normalizeOllamaModel(
+    typeof payload?.model === "string" && payload.model.trim()
+      ? payload.model
+      : settings.ollamaModel
+  );
+  const recommendedModel = models.find(
+    (entry) =>
+      entry.model === DEFAULT_LOCAL_OLLAMA_MODEL ||
+      entry.name === DEFAULT_LOCAL_OLLAMA_MODEL
+  )?.model;
+  const resolvedModel =
+    requestedModel &&
+    models.some((entry) => entry.model === requestedModel || entry.name === requestedModel)
+      ? requestedModel
+      : recommendedModel || models[0]?.model;
 
-  if (result.canceled || result.filePaths.length === 0) {
-    return null;
+  if (!resolvedModel) {
+    throw new Error("No local Ollama model is available. Pull a model first, then retry.");
   }
 
-  return result.filePaths[0];
-});
+  if (resolvedModel !== settings.ollamaModel || baseUrl !== settings.ollamaBaseUrl) {
+    await saveSettings({
+      ollamaBaseUrl: baseUrl,
+      ollamaModel: resolvedModel
+    });
+  }
 
-ipcMain.handle("read-text-file", async (_event, filePath) =>
-  fs.readFile(filePath, "utf8")
-);
+  return {
+    baseUrl,
+    model: resolvedModel
+  };
+}
 
 ipcMain.handle("window-minimize", (event) => {
+  assertTrustedSender(event);
   const window = BrowserWindow.fromWebContents(event.sender);
   window?.minimize();
 });
 
 ipcMain.handle("window-toggle-maximize", (event) => {
+  assertTrustedSender(event);
   const window = BrowserWindow.fromWebContents(event.sender);
   if (!window) {
     return false;
@@ -448,96 +675,53 @@ ipcMain.handle("window-toggle-maximize", (event) => {
 });
 
 ipcMain.handle("window-close", (event) => {
+  assertTrustedSender(event);
   const window = BrowserWindow.fromWebContents(event.sender);
   window?.close();
 });
 
 ipcMain.handle("window-is-maximized", (event) => {
+  assertTrustedSender(event);
   const window = BrowserWindow.fromWebContents(event.sender);
   return window?.isMaximized() ?? false;
 });
 
-ipcMain.handle("open-external", async (_event, url) => shell.openExternal(url));
-
-ipcMain.handle("save-text-file", async (_event, { defaultPath, content }) => {
-  const result = await dialog.showSaveDialog({
-    title: "Save template",
-    defaultPath
-  });
-
-  if (result.canceled || !result.filePath) {
-    return null;
-  }
-
-  await fs.writeFile(result.filePath, content, "utf8");
-  return result.filePath;
+ipcMain.handle("open-external", async (event, url) => {
+  assertTrustedSender(event);
+  return shell.openExternal(normalizeExternalUrl(url));
 });
-
-ipcMain.handle("run-walk-forward-model", async (_event, payload) =>
-  runWalkForwardModel(payload)
-);
-ipcMain.handle("refresh-connected-sources", async () => getConnectedSources());
-ipcMain.handle("get-live-quote-history", async (_event, payload) =>
-  getLiveQuoteHistory(payload?.quoteId, payload?.range)
-);
-ipcMain.handle("get-app-settings", async () => getPublicSettings(await loadSettings()));
-ipcMain.handle("save-app-settings", async (_event, payload) =>
-  getPublicSettings(await saveSettings(payload ?? {}))
-);
-ipcMain.handle("get-local-llm-state", async () =>
-  getLocalLlmState(await loadSettings())
-);
-ipcMain.handle("save-local-llm-settings", async (_event, payload) => {
+ipcMain.handle("refresh-connected-sources", async (event) => {
+  assertTrustedSender(event);
+  return getConnectedSources();
+});
+ipcMain.handle("get-live-quote-history", async (event, payload) => {
+  assertTrustedSender(event);
+  const request = sanitizeQuoteHistoryPayload(payload);
+  return getLiveQuoteHistory(request.quoteId, request.range);
+});
+ipcMain.handle("get-local-llm-state", async (event) => {
+  assertTrustedSender(event);
+  return getLocalLlmState(await loadSettings());
+});
+ipcMain.handle("save-local-llm-settings", async (event, payload) => {
+  assertTrustedSender(event);
   const next = await saveSettings(payload ?? {});
   return getLocalLlmState(next);
 });
-ipcMain.handle("run-decision-assistant", async (_event, payload) => {
-  const settings = await loadSettings();
-  const apiKey = settings.openAIApiKey || process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("No OpenAI API key is configured for the desktop app.");
-  }
-
-  return runOpenAIDecisionAssistant({
-    apiKey,
-    model: settings.llmModel || DEFAULT_MODEL,
-    locale: payload?.locale === "en" ? "en" : "ko",
-    payload: payload?.payload ?? payload
-  });
+ipcMain.handle("launch-local-llm", async (event) => {
+  assertTrustedSender(event);
+  return launchLocalOllama();
 });
-ipcMain.handle("run-local-decision-assistant", async (_event, payload) => {
-  const settings = await loadSettings();
-  const baseUrl =
-    typeof payload?.baseUrl === "string" && payload.baseUrl.trim()
-      ? payload.baseUrl.trim()
-      : settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
-  const models = await listOllamaModels(baseUrl);
-  const requestedModel =
-    typeof payload?.model === "string" && payload.model.trim()
-      ? payload.model.trim()
-      : settings.ollamaModel;
-  const resolvedModel =
-    requestedModel && models.some((entry) => entry.model === requestedModel || entry.name === requestedModel)
-      ? requestedModel
-      : models[0]?.model;
+ipcMain.handle("run-local-chat", async (event, payload) => {
+  assertTrustedSender(event);
+  const target = await resolveLocalOllamaTarget(payload);
 
-  if (!resolvedModel) {
-    throw new Error("No local Ollama model is available. Pull a model first, then retry.");
-  }
-
-  if (resolvedModel !== settings.ollamaModel || baseUrl !== settings.ollamaBaseUrl) {
-    await saveSettings({
-      ollamaBaseUrl: baseUrl,
-      ollamaModel: resolvedModel
-    });
-  }
-
-  return runOllamaDecisionAssistant({
-    baseUrl,
-    model: resolvedModel,
+  return runOllamaChat({
+    baseUrl: target.baseUrl,
+    model: target.model,
     locale: payload?.locale === "en" ? "en" : "ko",
-    payload: payload?.payload ?? payload
+    context: payload?.context ?? {},
+    messages: Array.isArray(payload?.messages) ? payload.messages : []
   });
 });
 
