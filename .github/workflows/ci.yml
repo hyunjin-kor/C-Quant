@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Verify (Node ${{ matrix.node }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        node: [24]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Format check
+        run: npm run format:check
+        continue-on-error: true
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Localization tests (node:test)
+        run: npm run test:node
+
+      - name: Syntax check (Electron entrypoints)
+        run: npm run ci:verify
+
+      - name: Build renderer
+        run: npm run build
+
+      - name: Bundle size budget
+        run: node tools/check-bundle-size.mjs

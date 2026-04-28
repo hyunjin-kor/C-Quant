@@ -1,0 +1,11 @@
+node_modules
+dist
+release
+.autonomy
+coverage
+package-lock.json
+*.min.*
+assets
+templates
+docs
+tools/autonomy-monitor/index.html

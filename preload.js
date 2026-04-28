@@ -11,5 +11,7 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   minimizeWindow: () => ipcRenderer.invoke("window-minimize"),
   toggleMaximizeWindow: () => ipcRenderer.invoke("window-toggle-maximize"),
   closeWindow: () => ipcRenderer.invoke("window-close"),
-  isWindowMaximized: () => ipcRenderer.invoke("window-is-maximized")
+  isWindowMaximized: () => ipcRenderer.invoke("window-is-maximized"),
+  getAppSettings: () => ipcRenderer.invoke("get-app-settings"),
+  saveAppSettings: (partial) => ipcRenderer.invoke("save-app-settings", partial)
 });
