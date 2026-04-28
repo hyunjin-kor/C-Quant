@@ -1,0 +1,41 @@
+version: 2.1
+
+jobs:
+  verify_build:
+    machine:
+      image: "windows-server-2022-gui:current"
+      resource_class: windows.medium
+      shell: powershell.exe -ExecutionPolicy Bypass
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm.cmd ci
+      - run:
+          name: Build renderer and validate Electron entrypoints
+          command: npm.cmd run ci:verify
+
+  package_desktop:
+    machine:
+      image: "windows-server-2022-gui:current"
+      resource_class: windows.medium
+      shell: powershell.exe -ExecutionPolicy Bypass
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm.cmd ci
+      - run:
+          name: Package unpacked desktop build
+          command: npm.cmd run package:dir
+      - run:
+          name: Package portable desktop build
+          command: npm.cmd run package:portable
+
+workflows:
+  desktop_release_gate:
+    jobs:
+      - verify_build
+      - package_desktop:
+          requires:
+            - verify_build

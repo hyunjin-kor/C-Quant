@@ -80,6 +80,26 @@ function Assert-StableProcess {
     }
 }
 
+function Assert-HealthyWindowTitle {
+    param(
+        [string]$WindowTitle
+    )
+
+    $failurePatterns = @(
+        "failed to load",
+        "renderer stopped",
+        "stopped responding",
+        "startup timed out",
+        "startup failed"
+    )
+
+    foreach ($pattern in $failurePatterns) {
+        if ($WindowTitle -match $pattern) {
+            throw "Detected fallback startup window title: $WindowTitle"
+        }
+    }
+}
+
 function Test-CQuantExecutable {
     param(
         [string]$Label,
@@ -109,6 +129,7 @@ function Test-CQuantExecutable {
         }
 
         Assert-StableProcess -Process $stableProcess -StableSeconds $StableSeconds
+        Assert-HealthyWindowTitle -WindowTitle $windowTitle
 
         [pscustomobject]@{
             label = $Label

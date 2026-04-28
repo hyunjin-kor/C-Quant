@@ -5,6 +5,7 @@ import type {
 } from "../types";
 
 const today = "2026-04-08";
+const latestReview = "2026-04-18";
 
 export const marketProfiles: MarketProfile[] = [
   {
@@ -777,7 +778,7 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     name: "Claude Desktop / Cowork",
     category: "Desktop AI Workspace",
     strength: "Conversation-first assistant workspace with model selection near the composer, grouped styles and tools, and persistent threads",
-    differentiator: "Best reference for making the local copilot feel like a primary work surface instead of a settings sidebar",
+    differentiator: "Best reference for making evidence briefings feel like a primary work surface instead of a settings sidebar",
     source: {
       label: "Anthropic release notes",
       url: "https://support.claude.com/en/articles/12138966-release-notes",
@@ -859,6 +860,101 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       "Supply-chain engagement workflow",
       "Reporting automation across frameworks",
       "Reduction-planning lens beside the inventory"
+    ]
+  },
+  {
+    id: "normative-platform",
+    name: "Normative",
+    category: "Transparent accounting engine",
+    strength:
+      "High-granularity accounting engine with 349,000 emission factors, 100% calculation transparency, supplier engagement, and built-in Inbox and Tasks.",
+    differentiator:
+      "Best benchmark for turning factor transparency and team task management into a product surface rather than leaving them buried in spreadsheets.",
+    source: {
+      label: "Normative platform",
+      url: "https://normative.io/platform/",
+      accessed: latestReview
+    },
+    featuresToBorrow: [
+      "Methodology and factor transparency",
+      "Inbox and tasks for data collection",
+      "Supplier engagement inside the reporting workflow"
+    ]
+  },
+  {
+    id: "greenly-platform",
+    name: "Greenly",
+    category: "All-in-one climate suite",
+    strength:
+      "Carbon accounting, product carbon footprint, ESG compliance, and AI-guided reporting in a user-friendly all-in-one sustainability suite.",
+    differentiator:
+      "Best benchmark for a faster, friendlier operator experience that still reaches disclosure and product-footprint workflows.",
+    source: {
+      label: "Greenly platform",
+      url: "https://greenly.earth/en-us",
+      accessed: latestReview
+    },
+    featuresToBorrow: [
+      "User-friendly setup for non-specialists",
+      "PCF and ESG workflows adjacent to carbon accounting",
+      "Briefing-style guidance layered on operational tasks"
+    ]
+  },
+  {
+    id: "sweep-platform",
+    name: "Sweep",
+    category: "Enterprise carbon data platform",
+    strength:
+      "One data layer reused across frameworks, validation and governance controls, supplier-risk workflows, and ROI-oriented sustainability analytics.",
+    differentiator:
+      "Best benchmark for eliminating duplicate reporting work while keeping supplier workflows and business-performance framing visible.",
+    source: {
+      label: "Sweep platform",
+      url: "https://www.sweep.net/",
+      accessed: latestReview
+    },
+    featuresToBorrow: [
+      "Upload once and reuse across frameworks",
+      "Supplier-risk workflow",
+      "Validation and governance controls"
+    ]
+  },
+  {
+    id: "plan-a-platform",
+    name: "Plan A",
+    category: "Certified carbon management platform",
+    strength:
+      "Certified measure-report-reduce workflow with reporting support, decarbonization actions, and forecasted emissions and cost views.",
+    differentiator:
+      "Best benchmark for connecting reporting readiness with decarbonization economics and future cost framing.",
+    source: {
+      label: "Plan A platform",
+      url: "https://plana.earth/product",
+      accessed: latestReview
+    },
+    featuresToBorrow: [
+      "Certified reporting spine",
+      "Decarbonization action and target framing",
+      "Future cost and emissions scenario framing"
+    ]
+  },
+  {
+    id: "sinai-platform",
+    name: "SINAI",
+    category: "Industrial decarbonization platform",
+    strength:
+      "Equipment-level to enterprise-wide emissions tracking, collaborative data workflows, AI-enabled bulk inputs, and heavy-industry-ready granularity.",
+    differentiator:
+      "Best benchmark for the moment a carbon product has to move from high-level reporting into plant, asset, or procurement-level operational detail.",
+    source: {
+      label: "SINAI platform",
+      url: "https://www.sinai.com/",
+      accessed: latestReview
+    },
+    featuresToBorrow: [
+      "Equipment-level granularity",
+      "Collaborative data intake",
+      "Industrial decision support"
     ]
   },
   {
@@ -1020,12 +1116,71 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
   }
 ];
 
+export const communitySignals = [
+  {
+    id: "guided-onboarding-support",
+    lens: "Community buying signal",
+    title: "Teams reward simple onboarding and fast support",
+    summary:
+      "Public reviews consistently praise user-friendly setup, clear support, and ERP or finance-system integrations more than exotic analytics.",
+    cQuantMove:
+      "Keep the first-run path lightweight, surface the next required input clearly, and treat briefing guidance like operational support instead of a hidden chatbot.",
+    source: {
+      label: "G2 - Greenly reviews",
+      url: "https://www.g2.com/products/greenly/reviews",
+      accessed: latestReview
+    }
+  },
+  {
+    id: "price-must-replace-manual-work",
+    lens: "Community willingness to pay",
+    title: "Buyers tolerate spend only when the tool replaces spreadsheet labor",
+    summary:
+      "Public buyer commentary shows price sensitivity rises quickly when teams still have to manually interpret modules, fix mappings, or chase the same data outside the product.",
+    cQuantMove:
+      "Make subscription value legible through workflow compression: one evidence pack, one source refresh chain, one briefing path, and one audit trail instead of duplicated work.",
+    source: {
+      label: "Capterra - Greenly reviews",
+      url: "https://www.capterra.com/p/219931/Greenly-Climate-Dashboard/reviews/",
+      accessed: latestReview
+    }
+  },
+  {
+    id: "scope3-proxy-distrust",
+    lens: "Community trust risk",
+    title: "Opaque spend-based Scope 3 estimates are distrusted",
+    summary:
+      "Practitioner discussions repeatedly warn that revenue-based Scope 3 estimates are weak when suppliers or physical-quantity data should exist, and that comparison across tools becomes unreliable.",
+    cQuantMove:
+      "Show whether a number is official, supplier-reported, activity-based, or proxy-estimated. Never blur primary evidence and proxy factors into one confidence read.",
+    source: {
+      label: "Reddit - Scope 3 Reporting Issues & Concerns",
+      url: "https://www.reddit.com/r/lifecycleassessment/comments/18dnkt3/scope_3_reporting_issues_concerns/",
+      accessed: latestReview
+    }
+  },
+  {
+    id: "data-collection-bottleneck",
+    lens: "Operator pain point",
+    title: "Data collection is still the real bottleneck",
+    summary:
+      "Community feedback keeps pointing to Scope 3 collection, supplier follow-up, and fragmented source systems as the hardest part of carbon software adoption.",
+    cQuantMove:
+      "Keep input readiness, missing fields, supplier follow-up, and factor provenance visible next to the market desk so the operator sees what is decision-grade and what is not.",
+    source: {
+      label: "Reddit - Carbon Accounting Pain Points",
+      url: "https://www.reddit.com/r/carbonaccounting/comments/1h8x0ng/carbon_accounting_pain_points/",
+      accessed: latestReview
+    }
+  }
+];
+
 export const productRequirements = [
   "Market intelligence workspace covering EU ETS, K-ETS, and China ETS on one operating surface.",
   "Carbon accounting sidecar that keeps Scope 1-3 logic, factor provenance, and disclosure framing visible next to market views.",
   "Verification layer that connects registry status, document freshness, ratings context, and retirement trace before a user leans on a credit.",
   "Procurement intelligence that supports screening and retirement planning without executing trades or intermediating orders.",
-  "Conversation-first copilot with local model, grounded evidence, and configurable response style.",
+  "Evidence briefing layer that turns official anchors, comparison tapes, and driver checks into bounded research notes.",
   "Signal layer combining structural drivers, scenario controls, and uncertainty-aware outputs.",
   "Risk layer for policy events, liquidity deterioration, missing data, and market-structure breaks.",
   "Desktop-first workflow with local research access, source freshness, and future connector support without implying execution."

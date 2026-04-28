@@ -14,7 +14,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not ship token issuance, DAO voting, or settlement rails inside C-Quant. Keep it as observability and evidence software.",
     llmUse:
-      "Let the copilot explain missing verification steps, inconsistent project evidence, and unresolved provenance gaps.",
+      "Let the briefing layer explain missing verification steps, inconsistent project evidence, and unresolved provenance gaps.",
     source: {
       label: "GitHub README",
       url: "https://github.com/hyperledger-labs/blockchain-carbon-accounting",
@@ -32,7 +32,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not try to replicate the full OS-Climate stack inside C-Quant. Use it as the architectural benchmark for ingestion and normalization boundaries.",
     llmUse:
-      "Let the copilot explain where a read comes from, which dataset family backs it, and what still requires manual verification.",
+      "Let the briefing layer explain where a read comes from, which dataset family backs it, and what still requires manual verification.",
     source: {
       label: "OS-Climate",
       url: "https://os-climate.org/",
@@ -50,7 +50,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not turn C-Quant into a scientific atmospheric data workbench. Keep the pattern focused on provenance, retrieval, and reproducibility.",
     llmUse:
-      "Use the copilot to summarize which datasets are standardized, which remain raw, and where provenance breaks the confidence chain.",
+      "Use the briefing layer to summarize which datasets are standardized, which remain raw, and where provenance breaks the confidence chain.",
     source: {
       label: "OpenGHG",
       url: "https://openghg.org/",
@@ -68,7 +68,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not copy purchase or retirement execution flows. I did not verify the claimed pricing AI from the repo materials reviewed, so that feature should not be assumed.",
     llmUse:
-      "Use the copilot to summarize lifecycle evidence and explain whether a credit looks operationally clean or documentation-light.",
+      "Use the briefing layer to summarize lifecycle evidence and explain whether a credit looks operationally clean or documentation-light.",
     source: {
       label: "GitHub README",
       url: "https://github.com/CarbonScribe/carbon-scribe",
@@ -86,7 +86,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not implement the AMM, DEX, ERC-20 issuance, NFT issuance, or any trade execution workflow inside C-Quant.",
     llmUse:
-      "Use the copilot to explain liquidity-state risk, retirement bottlenecks, and how token lifecycle events may affect market confidence.",
+      "Use the briefing layer to explain liquidity-state risk, retirement bottlenecks, and how token lifecycle events may affect market confidence.",
     source: {
       label: "GitHub README",
       url: "https://github.com/CarbonCreditProject/Carbon-Project",
@@ -104,7 +104,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not present the repo's research output as a live calibrated target. Keep it as a factor-selection and research-validation benchmark.",
     llmUse:
-      "Use the copilot to translate factor rankings into plain-language reasoning, counterarguments, and monitoring priorities.",
+      "Use the briefing layer to translate factor rankings into plain-language reasoning, counterarguments, and monitoring priorities.",
     source: {
       label: "GitHub README",
       url: "https://github.com/SaveChris/Inf-Imb-for-EUA23",
@@ -122,7 +122,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Keep registry scraping bounded to document retrieval and metadata normalization. Do not imply project endorsement or token issuance.",
     llmUse:
-      "Use the copilot to summarize project documents, flag stale evidence, and highlight missing disclosures before a user leans on a credit.",
+      "Use the briefing layer to summarize project documents, flag stale evidence, and highlight missing disclosures before a user leans on a credit.",
     source: {
       label: "GitHub README",
       url: "https://github.com/yc-wang00/verra-scaper",
@@ -140,7 +140,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not over-generalize its U.S.-focused gridded layers to every voluntary credit. Keep geography and coverage explicit.",
     llmUse:
-      "Use the copilot to turn hazard layers into readable project risk briefs and explain why integrity risk may override a cheap price.",
+      "Use the briefing layer to turn hazard layers into readable project risk briefs and explain why integrity risk may override a cheap price.",
     source: {
       label: "GitHub README",
       url: "https://github.com/carbonplan/forest-risks",
@@ -158,7 +158,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not make quantum hardware or quantum branding a product requirement. The product should implement a practical classical optimizer first.",
     llmUse:
-      "Use the copilot to explain why a portfolio frontier changes when the user shifts weights across carbon, integrity, and liquidity.",
+      "Use the briefing layer to explain why a portfolio frontier changes when the user shifts weights across carbon, integrity, and liquidity.",
     source: {
       label: "GitHub README",
       url: "https://github.com/hgribeirogeo/qaoa-carbon-cerrado",
@@ -176,7 +176,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
     boundaryNote:
       "Do not pretend GCAM-like outputs are short-horizon trade signals. Keep them in the scenario and policy-stress layer.",
     llmUse:
-      "Use the copilot to connect long-horizon scenario changes back to nearer-term market watchpoints and decision checklists.",
+      "Use the briefing layer to connect long-horizon scenario changes back to nearer-term market watchpoints and decision checklists.",
     source: {
       label: "GitHub README",
       url: "https://github.com/JGCRI/gcam-core",

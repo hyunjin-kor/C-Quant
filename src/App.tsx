@@ -34,14 +34,9 @@ import {
 import { buildForecast } from "./lib/forecast";
 import { localizeText, localizeTextWithFallback } from "./lib/localization";
 import type {
-  ChatGroundingItem,
   ConnectedSourceCard,
   ConnectedSourcePayload,
   ConnectedSourceSeriesPoint,
-  DecisionAssistantResponse,
-  LocalChatMessage,
-  LocalChatResponse,
-  LocalLlmState,
   MarketDriver,
   MarketLiveQuote,
   MarketProfile
@@ -51,10 +46,8 @@ const appIconUrl = new URL("../assets/app-icon.png", import.meta.url).href;
 
 type MarketId = MarketProfile["id"];
 type AppLocale = "ko" | "en";
-type Surface = "command" | "desk" | "drivers" | "sources" | "copilot";
+type Surface = "command" | "desk" | "drivers" | "sources";
 type QuoteRangePreset = "1d" | "5d" | "1m" | "3m" | "6m" | "1y";
-type CopilotTask = "why-posture" | "what-changed" | "breakers" | "verify-now";
-type CopilotResponseStyle = "brief" | "evidence" | "risk";
 
 type CompareStats = {
   overlapCount: number;
@@ -98,26 +91,6 @@ declare global {
         quoteId: string;
         range: QuoteRangePreset;
       }) => Promise<MarketLiveQuote>;
-      getLocalLlmState: () => Promise<LocalLlmState>;
-      saveLocalLlmSettings: (options: {
-        ollamaBaseUrl?: string;
-        ollamaModel?: string;
-      }) => Promise<LocalLlmState>;
-      launchLocalLlm: () => Promise<{
-        started: boolean;
-        mode: string;
-        path: string;
-      }>;
-      runLocalChat: (options: {
-        locale: AppLocale;
-        baseUrl?: string;
-        model?: string;
-        context: Record<string, unknown>;
-        messages: Array<{
-          role: "user" | "assistant";
-          content: string;
-        }>;
-      }) => Promise<LocalChatResponse>;
     };
   }
 }
@@ -128,33 +101,9 @@ const EMPTY_SOURCES: ConnectedSourcePayload = {
   liveQuotes: [],
   warnings: []
 };
-
-const EMPTY_LOCAL_LLM: LocalLlmState = {
-  available: false,
-  installed: false,
-  reachable: false,
-  baseUrl: "http://127.0.0.1:11434",
-  selectedModel: "",
-  models: []
-};
-
-const LOCAL_MODEL_RECOMMENDED = "granite3-dense:2b";
-const EMPTY_CHAT_SESSIONS: Record<MarketId, LocalChatMessage[]> = {
-  "eu-ets": [],
-  "k-ets": [],
-  "cn-ets": []
-};
-
-const SURFACES: Surface[] = ["command", "desk", "drivers", "sources", "copilot"];
+const SURFACES: Surface[] = ["command", "desk", "drivers", "sources"];
 const MARKET_ORDER: MarketId[] = ["eu-ets", "k-ets", "cn-ets"];
 const RANGE_OPTIONS: QuoteRangePreset[] = ["1d", "5d", "1m", "3m", "6m", "1y"];
-const COPILOT_TASKS: CopilotTask[] = [
-  "why-posture",
-  "what-changed",
-  "breakers",
-  "verify-now"
-];
-const COPILOT_RESPONSE_STYLES: CopilotResponseStyle[] = ["brief", "evidence", "risk"];
 const DEFAULT_COMPARE_QUOTE: Record<MarketId, string> = {
   "eu-ets": "co2-l-proxy",
   "k-ets": "krbn-proxy",
@@ -250,134 +199,6 @@ function getSystemLocale(): AppLocale {
   return String(navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en";
 }
 
-function getCopilotTaskLabel(locale: AppLocale, task: CopilotTask) {
-  switch (task) {
-    case "why-posture":
-      return t(locale, "??吏湲??대윴 ?먮떒?멸?", "Why this posture");
-    case "what-changed":
-      return t(locale, "?ㅻ뒛 諛붾?寃껊쭔 ?붿빟", "What changed today");
-    case "breakers":
-      return t(locale, "???먮떒??源⑥???議곌굔", "What breaks this view");
-    case "verify-now":
-      return t(locale, "吏湲????뺤씤??怨듭떇 洹쇨굅", "What to verify now");
-    default:
-      return task;
-  }
-}
-
-function getCopilotTaskPrompt(locale: AppLocale, task: CopilotTask) {
-  switch (task) {
-    case "why-posture":
-      return t(
-        locale,
-        "?꾩옱 ?ъ??섏씠 ??留ㅼ닔 ?곗쐞, 愿留? 鍮꾩쨷 異뺤냼 以??섎굹濡??쏀엳?붿? 洹쇨굅 以묒떖?쇰줈 ?ㅻ챸?섏꽭??",
-        "Explain why the current posture leans buy, hold, or reduce using only the provided evidence."
-      );
-    case "what-changed":
-      return t(
-        locale,
-        "?ㅻ뒛 ?곗씠??湲곗??쇰줈 臾댁뾿??諛붾뚯뿀?붿?, 湲곗〈 ?먮떒?먯꽌 臾댁뾿???щ씪議뚮뒗吏 ?붿빟?섏꽭??",
-        "Summarize what changed in the latest data and what moved the desk read today."
-      );
-    case "breakers":
-      return t(
-        locale,
-        "?꾩옱 ?먮떒???쏀븯寃?留뚮뱾嫄곕굹 ?ㅼ쭛??議곌굔??紐낇솗???뺣━?섏꽭??",
-        "List the specific conditions that would weaken or reverse the current posture."
-      );
-    case "verify-now":
-      return t(
-        locale,
-        "吏湲?異붽?濡??뺤씤?댁빞 ??怨듭떇 臾몄꽌, ?쇱젙, ?곗씠???곹깭瑜??곗꽑?쒖쐞?濡??뺣━?섏꽭??",
-        "Prioritize the official documents, calendar items, and data checks that should be verified now."
-      );
-    default:
-      return "";
-  }
-}
-
-function getCopilotTaskSummary(locale: AppLocale, task: CopilotTask) {
-  switch (task) {
-    case "why-posture":
-      return t(
-        locale,
-        "?꾩옱 ?ㅽ깲?ㅺ? ??buy, hold, reduce 履쎌쑝濡?湲곗슦?붿? 洹쇨굅 以묒떖?쇰줈 ?ㅻ챸?⑸땲??",
-        "Explain why the current stance leans buy, hold, or reduce."
-      );
-    case "what-changed":
-      return t(
-        locale,
-        "媛??理쒓렐 ?낅뜲?댄듃?먯꽌 諛붾??먭낵 ?ㅻ뒛???쎄린瑜??吏곸씤 ??ぉ???붿빟?⑸땲??",
-        "Summarize what changed in the latest update and what moved the read."
-      );
-    case "breakers":
-      return t(
-        locale,
-        "?꾩옱 ?먮떒???쏀솕?쒗궎嫄곕굹 ?ㅼ쭛??議곌굔留?遺꾨━?댁꽌 蹂댁뿬以띾땲??",
-        "Separate the conditions that would weaken or reverse the current read."
-      );
-    case "verify-now":
-      return t(
-        locale,
-        "吏湲??ㅼ떆 ?뺤씤?댁빞 ?섎뒗 怨듭떇 臾몄꽌, ?쇱젙, ?곗씠?곕쭔 ?곗꽑?쒖쐞濡??뺣━?⑸땲??",
-        "Prioritize the official documents, calendar items, and checks to verify now."
-      );
-    default:
-      return task;
-  }
-}
-
-function getCopilotResponseStyleLabel(locale: AppLocale, style: CopilotResponseStyle) {
-  switch (style) {
-    case "brief":
-      return t(locale, "媛꾧껐", "Brief");
-    case "evidence":
-      return t(locale, "洹쇨굅 ?곗꽑", "Evidence-first");
-    case "risk":
-      return t(locale, "由ъ뒪???곗꽑", "Risk-first");
-    default:
-      return style;
-  }
-}
-
-function getCopilotResponseStyleSummary(locale: AppLocale, style: CopilotResponseStyle) {
-  switch (style) {
-    case "brief":
-      return t(
-        locale,
-        "?듭떖 ?ъ떎怨??ㅼ쓬 ?뺤씤 ??ぉ留?吏㏐쾶 ?뺣━?⑸땲??",
-        "Keep replies short and focus on the core facts and next checks."
-      );
-    case "evidence":
-      return t(
-        locale,
-        "怨듭떇 ?듭빱, 鍮꾧탳 ?뚯씠?? ?쒕씪?대쾭瑜?洹쇨굅 ?쒖꽌?濡??ㅻ챸?⑸땲??",
-        "Order the reply around the official anchor, comparison tape, and supporting drivers."
-      );
-    case "risk":
-      return t(
-        locale,
-        "諛섎? 洹쇨굅, ?좎꽑????? 釉뚮젅?댁빱 議곌굔??癒쇱? ?쎌뒿?덈떎.",
-        "Lead with counter-evidence, freshness limits, and breaker conditions."
-      );
-    default:
-      return style;
-  }
-}
-
-function getAssistantProviderLabel(locale: AppLocale, provider?: "ollama" | "openai" | "rule") {
-  switch (provider) {
-    case "ollama":
-      return t(locale, "濡쒖뺄 Ollama", "Local Ollama");
-    case "openai":
-      return "OpenAI";
-    case "rule":
-      return t(locale, "洹쒖튃 ?붿쭊", "Rule engine");
-    default:
-      return t(locale, "Not connected", "Not connected");
-  }
-}
-
 function readStoredString(key: string, fallback: string) {
   if (typeof window === "undefined") {
     return fallback;
@@ -399,7 +220,7 @@ function readStoredLocale() {
 function readStoredSurface() {
   const value = readStoredString("cquant:surface", "command");
   if (value === "lab" || value === "signals") {
-    return "copilot";
+    return "command";
   }
   return SURFACES.includes(value as Surface) ? (value as Surface) : "command";
 }
@@ -407,51 +228,6 @@ function readStoredSurface() {
 function readStoredMarket() {
   const value = readStoredString("cquant:market", "k-ets");
   return MARKET_ORDER.includes(value as MarketId) ? (value as MarketId) : "k-ets";
-}
-
-function readStoredChatSessions() {
-  try {
-    const raw = window.localStorage.getItem("cquant:local-chat");
-    if (!raw) {
-      return EMPTY_CHAT_SESSIONS;
-    }
-
-    const parsed = JSON.parse(raw) as Partial<Record<MarketId, LocalChatMessage[]>>;
-    return MARKET_ORDER.reduce<Record<MarketId, LocalChatMessage[]>>((sessions, id) => {
-      const messages = Array.isArray(parsed?.[id]) ? parsed[id] : [];
-      sessions[id] = messages
-        .filter(
-          (message) =>
-            message &&
-            typeof message === "object" &&
-            typeof message.id === "string" &&
-            (message.role === "user" || message.role === "assistant") &&
-            typeof message.content === "string" &&
-            typeof message.createdAt === "string"
-        )
-        .slice(-24)
-        .map((message) => ({
-          id: message.id,
-          role: message.role,
-          content: message.content,
-          createdAt: message.createdAt,
-          model: message.model,
-          status: message.status,
-          grounding: Array.isArray(message.grounding) ? message.grounding : [],
-          boundaryNote: message.boundaryNote
-        }));
-      return sessions;
-    }, { ...EMPTY_CHAT_SESSIONS });
-  } catch {
-    return EMPTY_CHAT_SESSIONS;
-  }
-}
-
-function readStoredCopilotResponseStyle() {
-  const value = readStoredString("cquant:copilot-response-style", "evidence");
-  return COPILOT_RESPONSE_STYLES.includes(value as CopilotResponseStyle)
-    ? (value as CopilotResponseStyle)
-    : "evidence";
 }
 
 function formatDate(locale: AppLocale, value: string) {
@@ -1193,135 +969,18 @@ function getSourceStatusLabel(
   return t(locale, "?ㅻ쪟", "Error");
 }
 
-function createChatMessage(role: LocalChatMessage["role"], content: string, model?: string): LocalChatMessage {
-  return {
-    id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    role,
-    content,
-    createdAt: new Date().toISOString(),
-    model,
-    status: "done"
-  };
-}
-
-function getLocalLlmStatusLabel(locale: AppLocale, state: LocalLlmState) {
-  if (state.available) {
-    return joinReadoutParts(
-      getAssistantProviderLabel(locale, "ollama"),
-      state.selectedModel || t(locale, "紐⑤뜽 ?좏깮 ?꾩슂", "Select a model")
-    );
-  }
-  if (!state.installed) {
-    return t(locale, "Ollama not installed", "Ollama not installed");
-  }
-  if (!state.reachable) {
-    return t(locale, "Ollama ?쒖옉 ?꾩슂", "Start Ollama");
-  }
-  return t(locale, "紐⑤뜽 ?ㅼ튂 ?꾩슂", "Install a model");
-}
-
-function getLocalLlmSetupSteps(locale: AppLocale, state: LocalLlmState) {
-  if (!state.installed) {
-    return [
-      "winget install --id Ollama.Ollama -e",
-      `ollama pull ${LOCAL_MODEL_RECOMMENDED}`,
-      t(locale, "?깆뿉???ㅼ떆 ?곌껐 ?뺤씤", "Recheck connection in the app")
-    ];
-  }
-
-  if (!state.reachable) {
-    return [
-      t(locale, "Ollama ???ㅽ뻾 ?먮뒗 諛깃렇?쇱슫???쒕퉬???쒖옉", "Launch the Ollama app or start its background service"),
-      `ollama pull ${LOCAL_MODEL_RECOMMENDED}`,
-      t(locale, "?깆뿉???ㅼ떆 ?곌껐 ?뺤씤", "Recheck connection in the app")
-    ];
-  }
-
-  if (state.models.length === 0) {
-    return [
-      `ollama pull ${LOCAL_MODEL_RECOMMENDED}`,
-      t(locale, "紐⑤뜽???대젮諛쏆븘吏硫??깆뿉???ㅼ떆 ?곌껐 ?뺤씤", "Recheck connection after the model finishes downloading")
-    ];
-  }
-
-  return [];
-}
-
 function getStanceLabel(locale: AppLocale, stance: DecisionSummary["stance"]) {
   if (stance === "buy") return t(locale, "留ㅼ닔 ?곗쐞", "Buy bias");
   if (stance === "reduce") return t(locale, "鍮꾩쨷 異뺤냼", "Reduce");
   return t(locale, "Hold / wait", "Hold / wait");
 }
 
-function getAssistantStanceLabel(
-  locale: AppLocale,
-  stance: DecisionAssistantResponse["stance"]
-) {
-  if (stance === "Buy Bias") return t(locale, "留ㅼ닔 ?곗쐞", "Buy bias");
-  if (stance === "Reduce Bias") return t(locale, "鍮꾩쨷 異뺤냼", "Reduce");
-  return t(locale, "Hold / wait", "Hold / wait");
-}
-
-function buildCopilotBriefCards(
-  locale: AppLocale,
-  response: DecisionAssistantResponse
-) {
-  if (response.operatorBrief.length > 0) {
-    return response.operatorBrief.slice(0, 4);
-  }
-
-  return [
-    {
-      title: t(locale, "湲곕낯 ?먮떒", "Base case"),
-      summary: response.summary,
-      bullets: response.thesis.slice(0, 3)
-    },
-    {
-      title: t(locale, "李ъ꽦 洹쇨굅", "Support"),
-      summary:
-        response.supportingEvidence[0]?.detail ??
-        response.thesis[0] ??
-        t(locale, "異붽? 李ъ꽦 洹쇨굅媛 ?꾩쭅 ?뺣━?섏? ?딆븯?듬땲??", "No supporting detail yet."),
-      bullets:
-        response.supportingEvidence.length > 0
-          ? response.supportingEvidence
-              .slice(0, 3)
-              .map((item) => `${item.title}: ${item.detail}`)
-          : response.thesis.slice(0, 3)
-    },
-    {
-      title: t(locale, "諛섎? 洹쇨굅", "Counter-evidence"),
-      summary:
-        response.counterEvidence[0]?.detail ??
-        response.risks[0] ??
-        t(locale, "利됱떆 蹂댁씠??諛섎? 洹쇨굅???쒗븳?곸엯?덈떎.", "Immediate counter-evidence is limited."),
-      bullets:
-        response.counterEvidence.length > 0
-          ? response.counterEvidence
-              .slice(0, 3)
-              .map((item) => `${item.title}: ${item.detail}`)
-          : response.risks.slice(0, 3)
-    },
-    {
-      title: t(locale, "吏湲??뺤씤", "Verify now"),
-      summary:
-        response.checkpoints[0] ??
-        response.actions[0] ??
-        t(locale, "?ㅼ쓬 ?뺤씤 ??ぉ???꾩쭅 ?놁뒿?덈떎.", "No next check is available yet."),
-      bullets:
-        response.checkpoints.length > 0
-          ? response.checkpoints.slice(0, 4)
-          : response.actions.slice(0, 4)
-    }
-  ];
-}
-
 function getSurfaceLabel(locale: AppLocale, surface: Surface) {
   if (surface === "command") return t(locale, "Command", "Command");
   if (surface === "desk") return t(locale, "Desk", "Desk");
-  if (surface === "drivers") return t(locale, "?쒕씪?대쾭", "Drivers");
-  if (surface === "sources") return t(locale, "?뚯뒪", "Sources");
-  return t(locale, "肄뷀뙆?쇰읉", "Copilot");
+  if (surface === "drivers") return t(locale, "드라이버", "Drivers");
+  if (surface === "sources") return t(locale, "소스", "Sources");
+  return t(locale, "Command", "Command");
 }
 
 function getMarketHeadline(locale: AppLocale, marketId: MarketId) {
@@ -1596,78 +1255,6 @@ function buildSummaryText(
   ].join("\n");
 }
 
-function buildChatGrounding(
-  locale: AppLocale,
-  market: MarketProfile,
-  card: ConnectedSourceCard | null,
-  benchmark: MarketLiveQuote | null,
-  registryItems: typeof sourceRegistry
-): ChatGroundingItem[] {
-  const grounding: ChatGroundingItem[] = [];
-
-  if (card) {
-    grounding.push({
-      id: `${market.id}-official-anchor`,
-      kind: "Official anchor",
-      label: getOfficialSourceName(locale, card),
-      detail: `${getOfficialHeadlineLabel(locale, card)}. ${getOfficialSummaryLabel(locale, card)}`,
-      asOf: card.asOf,
-      url: card.sourceUrl
-    });
-  }
-
-  if (benchmark) {
-    grounding.push({
-      id: `${market.id}-listed-comparison`,
-      kind: "Listed comparison",
-      label: benchmark.title,
-      detail: `${getQuoteRoleLabel(locale, benchmark)}. ${getQuoteNoteLabel(locale, benchmark)}`,
-      asOf: benchmark.asOf,
-      url: benchmark.sourceUrl
-    });
-  }
-
-  const contextSource = registryItems[0];
-  if (contextSource) {
-    grounding.push({
-      id: `${market.id}-official-context`,
-      kind: "Official context",
-      label: localizeText(getUiLocale(locale), contextSource.title),
-      detail: `${localizeText(getUiLocale(locale), contextSource.method)}. ${localizeText(
-        getUiLocale(locale),
-        contextSource.whyItMatters
-      )}`,
-      url: contextSource.url
-    });
-  }
-
-  grounding.push({
-    id: `${market.id}-freshness`,
-    kind: "Source freshness",
-    label: t(locale, "Source freshness", "Source freshness"),
-    detail: t(
-      locale,
-      `${market.name} 怨듭떇 湲곗?媛믪? ${getFreshnessSummary(locale, card?.asOf)} ?곹깭?낅땲??`,
-      `${market.name} official anchor is ${getFreshnessSummary(locale, card?.asOf)}.`
-    ),
-    asOf: card?.asOf ?? benchmark?.asOf
-  });
-
-  const topDriver = market.drivers
-    .slice()
-    .sort((left, right) => right.weight - left.weight)[0];
-  if (topDriver) {
-    grounding.push({
-      id: `${market.id}-key-driver`,
-      kind: "Key driver",
-      label: topDriver.variable,
-      detail: localizeText(getUiLocale(locale), topDriver.note)
-    });
-  }
-
-  return grounding;
-}
-
 export default function App() {
   const [locale, setLocale] = useState<AppLocale>(readStoredLocale);
   const [surface, setSurface] = useState<Surface>(readStoredSurface);
@@ -1677,17 +1264,6 @@ export default function App() {
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(EMPTY_SOURCES);
   const [sourcesLoading, setSourcesLoading] = useState(true);
   const [sourcesError, setSourcesError] = useState<string | null>(null);
-  const [localLlmState, setLocalLlmState] = useState<LocalLlmState>(EMPTY_LOCAL_LLM);
-  const [chatSessionsByMarket, setChatSessionsByMarket] =
-    useState<Record<MarketId, LocalChatMessage[]>>(readStoredChatSessions);
-  const [chatInput, setChatInput] = useState("");
-  const [copilotResponseStyle, setCopilotResponseStyle] =
-    useState<CopilotResponseStyle>(readStoredCopilotResponseStyle);
-  const [localChatLoading, setLocalChatLoading] = useState(false);
-  const [localChatError, setLocalChatError] = useState<string | null>(null);
-  const [localLlmLaunching, setLocalLlmLaunching] = useState(false);
-  const [localLlmSaving, setLocalLlmSaving] = useState(false);
-  const [localLlmError, setLocalLlmError] = useState<string | null>(null);
   const [compareQuoteByMarket, setCompareQuoteByMarket] = useState<Record<MarketId, string>>({
     "eu-ets": readStoredString("cquant:quote:eu-ets", DEFAULT_COMPARE_QUOTE["eu-ets"]),
     "k-ets": readStoredString("cquant:quote:k-ets", DEFAULT_COMPARE_QUOTE["k-ets"]),
@@ -1709,9 +1285,6 @@ export default function App() {
   const l = (text?: string) => localizeText(getUiLocale(locale), text);
   const workspaceScrollRef = useRef<HTMLElement | null>(null);
   const inspectorScrollRef = useRef<HTMLElement | null>(null);
-  const chatThreadRef = useRef<HTMLDivElement | null>(null);
-  const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const currentChatMessages = chatSessionsByMarket[marketId] ?? [];
   const officialCardsByMarket = useMemo(
     () =>
       Object.fromEntries(
@@ -1806,110 +1379,6 @@ export default function App() {
   const selectedOfficialFreshnessLevel = getFreshnessLevel(selectedOfficialFreshnessDays);
   const selectedLiveFreshnessDays = getFreshnessDays(selectedCompareQuote?.asOf);
   const selectedLiveFreshnessLevel = getFreshnessLevel(selectedLiveFreshnessDays);
-  const copilotPayload = useMemo(
-    () => ({
-      market: {
-        id: selectedMarket.id,
-        name: selectedMarket.name,
-        region: selectedMarket.region,
-        stageNote: getMarketStageNote(locale, selectedMarket.id),
-        scopeNote: getMarketScopeNote(locale, selectedMarket.id),
-        sourceNote: getMarketSourceNote(locale, selectedMarket.id)
-      },
-      copilotPreferences: {
-        responseStyle: getCopilotResponseStyleLabel(locale, copilotResponseStyle),
-        responseSummary: getCopilotResponseStyleSummary(locale, copilotResponseStyle)
-      },
-      officialAnchor: selectedOfficialCard
-        ? {
-            sourceName: getOfficialSourceName(locale, selectedOfficialCard),
-            coverage: getOfficialCoverageLabel(locale, selectedOfficialCard),
-            status: selectedOfficialCard.status,
-            asOf: selectedOfficialCard.asOf,
-            headline: getOfficialHeadlineLabel(locale, selectedOfficialCard),
-            summary: getOfficialSummaryLabel(locale, selectedOfficialCard),
-            metrics: selectedOfficialCard.metrics,
-            notes: getOfficialNotes(locale, selectedOfficialCard)
-          }
-        : null,
-      liveTape: selectedCompareQuote
-        ? {
-            id: selectedCompareQuote.id,
-            title: selectedCompareQuote.title,
-            symbol: selectedCompareQuote.symbol,
-            category: selectedCompareQuote.category,
-            provider: getQuoteProviderLabel(locale, selectedCompareQuote.provider),
-            exchange: selectedCompareQuote.exchange,
-            status: selectedCompareQuote.status,
-            asOf: selectedCompareQuote.asOf,
-            price: selectedCompareQuote.price,
-            change: selectedCompareQuote.change,
-            changePct: selectedCompareQuote.changePct,
-            currency: selectedCompareQuote.currency,
-            role: getQuoteRoleLabel(locale, selectedCompareQuote),
-            note: getQuoteNoteLabel(locale, selectedCompareQuote),
-            delayNote: getQuoteDelayNoteLabel(locale, selectedCompareQuote)
-          }
-        : null,
-      compareStats: compareOutput.stats,
-      deskRead: {
-        stance: getStanceLabel(locale, selectedDecision.stance),
-        score: selectedDecision.score,
-        confidence: selectedDecision.confidence,
-        summary: selectedDecision.summary,
-        support: selectedDecision.support,
-        risks: selectedDecision.risks,
-        checks: selectedDecision.checks,
-        waterfall: selectedDecision.waterfall
-      },
-      topDrivers: selectedMarket.drivers
-        .slice()
-        .sort((left, right) => right.weight - left.weight)
-        .slice(0, 6)
-        .map((driver) => ({
-          category: driver.category,
-          variable: driver.variable,
-          weight: driver.weight,
-          direction: driver.direction,
-          importance: driver.importance,
-          note: driver.note
-        })),
-      sourceFreshness: {
-        officialStatus: selectedOfficialCard?.status ?? "error",
-        officialAsOf: selectedOfficialCard?.asOf ?? "",
-        liveTapeStatus: selectedCompareQuote?.status ?? "error",
-        liveTapeAsOf: selectedCompareQuote?.asOf ?? "",
-        appFetchedAt: connectedSources.fetchedAt
-      },
-      inputCoverage: selectedInputBlocks.map((block) => ({
-        title: block.title,
-        accessMethod: block.accessMethod,
-        refreshCadence: block.refreshCadence,
-        purpose: block.purpose,
-        fields: block.fields.slice(0, 4)
-      })),
-      grounding: buildChatGrounding(
-        locale,
-        selectedMarket,
-        selectedOfficialCard,
-        selectedCompareQuote,
-        sourceRegistry.filter(
-          (item) => item.markets.includes(selectedMarket.id) || item.markets.includes("shared")
-        )
-      )
-    }),
-    [
-      compareOutput.stats,
-      connectedSources.fetchedAt,
-      copilotResponseStyle,
-      locale,
-      selectedInputBlocks,
-      selectedCompareQuote,
-      selectedDecision,
-      selectedMarket,
-      selectedOfficialCard
-    ]
-  );
   const marketBoardRows = useMemo<MarketBoardRow[]>(
     () =>
       MARKET_ORDER.map((id) => {
@@ -1947,14 +1416,6 @@ export default function App() {
       ),
     [marketId]
   );
-  const selectedLocalModelMeta = useMemo(
-    () =>
-      localLlmState.models.find((model) => model.model === localLlmState.selectedModel) ??
-      localLlmState.models[0] ??
-      null,
-    [localLlmState.models, localLlmState.selectedModel]
-  );
-  const latestChatMessage = currentChatMessages[currentChatMessages.length - 1] ?? null;
   const deskHealthSummary = useMemo(
     () => ({
       officialConnected: connectedSources.cards.filter((card) => card.status !== "error").length,
@@ -2235,44 +1696,6 @@ export default function App() {
     ],
     [locale, selectedCompareQuote?.symbol, selectedMarket.name]
   );
-  const copilotClaudeBenchmarks = useMemo(
-    () => [
-      {
-        id: "projects",
-        kicker: t(locale, "프로젝트", "Projects"),
-        title: t(locale, "우측 컨텍스트를 프로젝트처럼 고정", "Keep context scoped like a project"),
-        detail: t(
-          locale,
-          "선택한 시장 읽기와 비교 테이프를 오른쪽에 고정해 같은 작업 배경을 유지합니다.",
-          "Pin the market read and comparison tape on the right so the thread keeps the same operating backdrop."
-        ),
-        url: "https://support.claude.com/en/articles/9519177-how-can-i-create-and-manage-projects"
-      },
-      {
-        id: "styles",
-        kicker: t(locale, "스타일", "Styles"),
-        title: t(locale, "컴포저 옆에서 응답 방식을 바로 전환", "Switch response style beside the composer"),
-        detail: t(
-          locale,
-          "대화창을 벗어나지 않고 응답 밀도와 우선순위를 바꿀 수 있게 둡니다.",
-          "Keep response density and priorities adjustable without leaving the active thread."
-        ),
-        url: "https://support.claude.com/en/articles/10181068-configure-and-use-styles"
-      },
-      {
-        id: "artifacts",
-        kicker: t(locale, "아티팩트", "Artifacts"),
-        title: t(locale, "근거는 대화와 분리된 사이드카로 노출", "Expose evidence as a sidecar, not another bubble"),
-        detail: t(
-          locale,
-          "근거 카드는 별도 영역에서 미리 읽고 필요할 때만 열도록 정리합니다.",
-          "Keep grounding cards in a dedicated sidecar so operators can scan and open them only when needed."
-        ),
-        url: "https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them"
-      }
-    ],
-    [locale]
-  );
   const familyHeatmapRows = useMemo<HeatmapRow[]>(
     () =>
       DRIVER_FAMILIES.map((family) => ({
@@ -2410,9 +1833,6 @@ export default function App() {
   const sourceRefreshLabel = connectedSources.fetchedAt
     ? `${t(locale, "?뚯뒪 媛깆떊", "Sources")} ${formatDate(locale, connectedSources.fetchedAt)}`
     : t(locale, "Sources not loaded", "Sources not loaded");
-  const localCopilotBadge = localLlmState.available
-    ? `${t(locale, "濡쒖뺄 紐⑤뜽", "Local model")} ${localLlmState.selectedModel || "n/a"}`
-    : t(locale, "Local model unavailable", "Local model unavailable");
 
   useEffect(() => {
     try {
@@ -2420,15 +1840,8 @@ export default function App() {
       window.localStorage.setItem("cquant:surface", surface);
       window.localStorage.setItem("cquant:market", marketId);
       window.localStorage.setItem(`cquant:quote:${marketId}`, selectedCompareQuoteId || "");
-      window.localStorage.setItem("cquant:copilot-response-style", copilotResponseStyle);
     } catch {}
-  }, [copilotResponseStyle, locale, surface, marketId, selectedCompareQuoteId]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("cquant:local-chat", JSON.stringify(chatSessionsByMarket));
-    } catch {}
-  }, [chatSessionsByMarket]);
+  }, [locale, surface, marketId, selectedCompareQuoteId]);
 
   useEffect(() => {
     if (workspaceScrollRef.current) {
@@ -2470,7 +1883,7 @@ export default function App() {
       setSourcesLoading(true);
       setSourcesError(null);
       try {
-        const payload = await bridge.refreshConnectedSources();
+        const payload = await bridge!.refreshConnectedSources();
         if (!cancelled) {
           setConnectedSources(payload);
         }
@@ -2501,7 +1914,7 @@ export default function App() {
       setQuoteLoading(true);
       setQuoteError(null);
       try {
-        const payload = await bridge.getLiveQuoteHistory({
+        const payload = await bridge!.getLiveQuoteHistory({
           quoteId: selectedCompareQuoteId,
           range: quoteRange
         });
@@ -2536,34 +1949,6 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [selectedCompareQuoteId]);
 
-  useEffect(() => {
-    const bridge = window.desktopBridge;
-    if (!bridge?.getLocalLlmState) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadLocalLlmState() {
-      try {
-        const payload = await bridge.getLocalLlmState();
-        if (!cancelled) {
-          setLocalLlmState(payload);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setLocalLlmError(error instanceof Error ? error.message : String(error));
-        }
-      }
-    }
-
-    void loadLocalLlmState();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   async function handleRefresh() {
     const bridge = window.desktopBridge;
     if (!bridge) return;
@@ -2580,185 +1965,6 @@ export default function App() {
       setSourcesLoading(false);
     }
   }
-
-  async function handleSaveLocalLlmSettings() {
-    const bridge = window.desktopBridge;
-    if (!bridge?.saveLocalLlmSettings) {
-      return;
-    }
-
-    setLocalLlmSaving(true);
-    setLocalLlmError(null);
-
-    try {
-      const payload = await bridge.saveLocalLlmSettings({
-        ollamaBaseUrl: localLlmState.baseUrl,
-        ollamaModel: localLlmState.selectedModel
-      });
-      setLocalLlmState(payload);
-    } catch (error) {
-      setLocalLlmError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setLocalLlmSaving(false);
-    }
-  }
-
-  async function handleLaunchLocalLlm() {
-    const bridge = window.desktopBridge;
-    if (!bridge?.launchLocalLlm || !bridge.getLocalLlmState) {
-      return;
-    }
-
-    setLocalLlmLaunching(true);
-    setLocalLlmError(null);
-
-    try {
-      await bridge.launchLocalLlm();
-
-      for (let attempt = 0; attempt < 6; attempt += 1) {
-        const nextState = await bridge.getLocalLlmState();
-        setLocalLlmState(nextState);
-        if (nextState.reachable) {
-          break;
-        }
-
-        await new Promise((resolve) => window.setTimeout(resolve, 1000));
-      }
-    } catch (error) {
-      setLocalLlmError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setLocalLlmLaunching(false);
-    }
-  }
-
-  useEffect(() => {
-    const element = chatThreadRef.current;
-    if (!element) {
-      return;
-    }
-
-    element.scrollTop = element.scrollHeight;
-  }, [currentChatMessages, localChatLoading, marketId]);
-
-  useEffect(() => {
-    setLocalChatError(null);
-  }, [marketId]);
-
-  async function handleSendLocalChat(seedText?: string) {
-    const bridge = window.desktopBridge;
-    const content = (seedText ?? chatInput).trim();
-
-    if (!bridge?.runLocalChat || !content) {
-      return;
-    }
-
-    const userMessage = createChatMessage("user", content);
-    const historyForSend = [...currentChatMessages, userMessage].map((message) => ({
-      role: message.role,
-      content: message.content
-    }));
-
-    setChatSessionsByMarket((current) => ({
-      ...current,
-      [marketId]: [...(current[marketId] ?? []), userMessage].slice(-24)
-    }));
-    setChatInput("");
-    setLocalChatLoading(true);
-    setLocalChatError(null);
-
-    try {
-      const response = await bridge.runLocalChat({
-        locale,
-        baseUrl: localLlmState.baseUrl,
-        model: localLlmState.selectedModel,
-        context: copilotPayload,
-        messages: historyForSend
-      });
-      const assistantMessage = createChatMessage(
-        "assistant",
-        response.content,
-        response.model
-      );
-      assistantMessage.createdAt = response.generatedAt;
-      assistantMessage.grounding = response.grounding;
-      assistantMessage.boundaryNote = response.boundaryNote;
-
-      setChatSessionsByMarket((current) => ({
-        ...current,
-        [marketId]: [...(current[marketId] ?? []), assistantMessage].slice(-24)
-      }));
-
-      if (response.model && response.model !== localLlmState.selectedModel) {
-        setLocalLlmState((current) => ({
-          ...current,
-          selectedModel: response.model || current.selectedModel,
-          available: true
-        }));
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setLocalChatError(message);
-      setChatSessionsByMarket((current) => ({
-        ...current,
-        [marketId]: [
-          ...(current[marketId] ?? []),
-          {
-            ...createChatMessage(
-              "assistant",
-              t(
-                locale,
-                `濡쒖뺄 紐⑤뜽 ?묐떟 ?ㅽ뙣: ${message}`,
-                `Local model request failed: ${message}`
-              )
-            ),
-            status: "error",
-            boundaryNote: t(
-              locale,
-              "?ㅽ뙣???붿껌?낅땲?? 怨듭떇 ?듭빱? 鍮꾧탳 ?뚯씠?꾨? 癒쇱? ?ㅼ떆 ?뺤씤?섏꽭??",
-              "This request failed. Recheck the official anchor and comparison tape first."
-            )
-          }
-        ].slice(-24)
-      }));
-    } finally {
-      setLocalChatLoading(false);
-    }
-  }
-
-  function handleSendQuickPrompt(task: CopilotTask) {
-    void handleSendLocalChat(getCopilotTaskPrompt(locale, task));
-  }
-
-  function handleClearLocalChat() {
-    setChatSessionsByMarket((current) => ({
-      ...current,
-      [marketId]: []
-    }));
-    setLocalChatError(null);
-  }
-
-  function focusCopilotComposer() {
-    window.setTimeout(() => {
-      const element = chatInputRef.current;
-      if (!element) {
-        return;
-      }
-
-      element.focus();
-      const nextPosition = element.value.length;
-      element.setSelectionRange(nextPosition, nextPosition);
-    }, 120);
-  }
-
-  function openCopilotWorkspace(seedText?: string) {
-    if (typeof seedText === "string") {
-      setChatInput(seedText);
-    }
-
-    startTransition(() => setSurface("copilot"));
-    focusCopilotComposer();
-  }
-
   useEffect(() => {
     const bridge = window.desktopBridge;
     if (!bridge) {
@@ -2769,7 +1975,7 @@ export default function App() {
 
     async function refreshQuietly() {
       try {
-        const payload = await bridge.refreshConnectedSources();
+        const payload = await bridge!.refreshConnectedSources();
         if (!disposed) {
           startTransition(() => {
             setConnectedSources(payload);
@@ -4091,255 +3297,7 @@ export default function App() {
   }
 
   /*
-  function renderLab() {
-    return (
-      <section className="lab-grid">
-        <div className="panel">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">{t(locale, "?쒕굹由ъ삤", "Scenario")}</span>
-              <h2>{t(locale, "Move the top drivers and read the scenario", "Move the top drivers and read the scenario")}</h2>
-            </div>
-          </div>
-
-          <div className="scenario-list">
-            {scenarioDrivers.map((driver) => (
-              <label key={driver.id} className="slider-row">
-                <div>
-                  <strong>{driver.variable}</strong>
-                  <span>{driver.importance}</span>
-                </div>
-                <input
-                  type="range"
-                  min={-1}
-                  max={1}
-                  step={0.05}
-                  value={scenarioState[driver.id] ?? 0}
-                  onChange={(event) => handleScenarioChange(driver.id, Number(event.target.value))}
-                />
-                <strong>{formatSigned(locale, scenarioState[driver.id] ?? 0, "")}</strong>
-              </label>
-            ))}
-          </div>
-
-          <div className="metric-strip">
-            <div className="metric-tile">
-              <span>{t(locale, "諛⑺뼢", "Direction")}</span>
-              <strong>{getForecastDirectionLabel(locale, scenarioForecast.direction)}</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "?먯닔", "Score")}</span>
-              <strong>{formatSigned(locale, scenarioForecast.score, "")}</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "Confidence", "Confidence")}</span>
-              <strong>{Math.round(scenarioForecast.confidence * 100)}%</strong>
-            </div>
-          </div>
-
-          <WaterfallChart
-            items={scenarioWaterfall}
-            positiveColor={selectedTheme.positive}
-            negativeColor={selectedTheme.negative}
-          />
-        </div>
-
-        <div className="panel">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">{t(locale, "Integrated decision pack", "Integrated decision pack")}</span>
-              <h2>{t(locale, "Operating read with no upload required", "Operating read with no upload required")}</h2>
-            </div>
-            <p>
-              {t(
-                locale,
-                "怨듭떇 湲곗?媛? 鍮꾧탳 ?뚯씠?? ?쒕씪?대쾭, ?뚯뒪 ?좎꽑?꾨? ???덉뿉??諛붾줈 ?⑹퀜 ?쎌뒿?덈떎.",
-                "Read the official anchor, comparison tape, drivers, and source freshness together inside the app."
-              )}
-            </p>
-          </div>
-
-          <div className="metric-strip">
-            <div className="metric-tile">
-              <span>{t(locale, "Current stance", "Current stance")}</span>
-              <strong>{getStanceLabel(locale, selectedDecision.stance)}</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "Confidence", "Confidence")}</span>
-              <strong>{Math.round(selectedDecision.confidence * 100)}%</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "Official anchor", "Official anchor")}</span>
-              <strong>{getOfficialPriceLabel(selectedOfficialCard)}</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "Freshness", "Freshness")}</span>
-              <strong>{getFreshnessSummary(locale, selectedOfficialCard?.asOf)}</strong>
-            </div>
-          </div>
-
-          <div className="note-list">
-            <div className="note-item">
-              <strong>{t(locale, "?곗뒪??由щ뱶", "Desk read")}</strong>
-              <p>{l(selectedDecision.summary)}</p>
-            </div>
-            <div className="note-item">
-              <strong>{t(locale, "Comparison tape", "Comparison tape")}</strong>
-              <p>
-                {selectedCompareQuote
-                  ? joinReadoutParts(
-                      selectedCompareQuote.symbol,
-                      formatPercent(locale, selectedCompareQuote.changePct, 2),
-                      getSourceStatusLabel(locale, selectedCompareQuote.status)
-                    )
-                  : t(locale, "?꾩옱 ?좏깮??鍮꾧탳 ?뚯씠?꾧? ?놁뒿?덈떎.", "No comparison tape is selected.")}
-              </p>
-            </div>
-          </div>
-
-          <ul className="bullet-list">
-            {selectedDecision.support.slice(0, 3).map((item) => (
-              <li key={item.title}>
-                <strong>{l(item.title)}</strong>
-                <span>{l(item.detail)}</span>
-              </li>
-            ))}
-            {selectedDecision.checks.slice(0, 3).map((item) => (
-              <li key={item}>
-                <strong>{t(locale, "吏湲??뺤씤", "Verify now")}</strong>
-                <span>{l(item)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="panel">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">{t(locale, "Validation", "Validation")}</span>
-              <h2>{t(locale, "Backtest and walk-forward on your CSV", "Backtest and walk-forward on your CSV")}</h2>
-            </div>
-            <div className="head-actions">
-              <button type="button" className="button ghost" onClick={handleLoadCsv}>
-                {t(locale, "CSV 遺덈윭?ㅺ린", "Load CSV")}
-              </button>
-              <button type="button" className="button primary" onClick={handleRunBacktest}>
-                {t(locale, "諛깊뀒?ㅽ듃", "Run backtest")}
-              </button>
-            </div>
-          </div>
-
-          <p className="meta-line">
-            {t(
-              locale,
-              "?듭떖 ?곗뒪?щ뒗 ?낅줈???놁씠 ?숈옉?⑸땲?? ?꾨옒 CSV 寃利앹? ?щ궡 ?덉뒪?좊━???먯껜 ?쇱쿂 ?ㅽ넗?대? 遺숈씪 ?뚮쭔 ?곕뒗 ?좏깮 湲곕뒫?낅땲??",
-              "The core desk works without uploads. The CSV workflow below is optional and only for proprietary history or your own feature store."
-            )}
-          </p>
-
-          <div className="field-grid">
-            <label>
-              <span>{t(locale, "?꾨왂", "Strategy")}</span>
-              <select value={strategy} onChange={(event) => setStrategy(event.target.value as BacktestStrategy)}>
-                <option value="trend">Trend</option>
-                <option value="meanReversion">Mean reversion</option>
-                <option value="spreadRegime">Spread regime</option>
-                <option value="policyMomentum">Policy momentum</option>
-              </select>
-            </label>
-            <label>
-              <span>{t(locale, "鍮꾩슜 (bps)", "Fee (bps)")}</span>
-              <input type="number" min={0} value={feeBps} onChange={(event) => setFeeBps(Number(event.target.value))} />
-            </label>
-            <label>
-              <span>{t(locale, "?숈뒿 援ш컙", "Train window")}</span>
-              <input type="number" min={30} value={trainWindow} onChange={(event) => setTrainWindow(Number(event.target.value))} />
-            </label>
-            <label>
-              <span>{t(locale, "?덉륫 ?섑룊", "Horizon")}</span>
-              <input type="number" min={1} value={horizon} onChange={(event) => setHorizon(Number(event.target.value))} />
-            </label>
-          </div>
-
-          <div className="lab-actions">
-            <span className="path-readout">{csvPath ?? t(locale, "?꾩쭅 遺덈윭??CSV ?놁쓬", "No CSV loaded yet")}</span>
-            <button type="button" className="button ghost" onClick={handleRunWalkForward} disabled={walkForwardLoading}>
-              {walkForwardLoading ? t(locale, "?ㅽ뻾 以?, "Running") : t(locale, "?뚰겕?ъ썙??, "Walk-forward")}
-            </button>
-          </div>
-
-          {backtestError ? <div className="status-banner error">{backtestError}</div> : null}
-          {walkForwardError ? <div className="status-banner error">{walkForwardError}</div> : null}
-
-          {backtestRun ? (
-            <>
-              <div className="metric-strip">
-                <div className="metric-tile">
-                  <span>Total return</span>
-                  <strong>{formatPercent(locale, backtestRun.metrics.totalReturnPct, 1)}</strong>
-                </div>
-                <div className="metric-tile">
-                  <span>Sharpe</span>
-                  <strong>{formatNumber(locale, backtestRun.metrics.sharpe, 2)}</strong>
-                </div>
-                <div className="metric-tile">
-                  <span>Max drawdown</span>
-                  <strong>{formatPercent(locale, backtestRun.metrics.maxDrawdownPct, 1)}</strong>
-                </div>
-                <div className="metric-tile">
-                  <span>Trades</span>
-                  <strong>{backtestRun.metrics.tradeCount}</strong>
-                </div>
-              </div>
-
-              <LineChart
-                points={backtestCurve}
-                color={selectedTheme.accent}
-                title={t(locale, "諛깊뀒?ㅽ듃 怨≪꽑", "Backtest equity")}
-                subtitle={csvPath ?? ""}
-                locale={getIntlLocale(locale)}
-              />
-            </>
-          ) : null}
-
-          {walkForwardRun ? (
-            <div className="walkforward-summary">
-              <div className="metric-strip">
-                <div className="metric-tile">
-                  <span>MAE</span>
-                  <strong>{formatNumber(locale, walkForwardRun.summary.mae, 3)}</strong>
-                </div>
-                <div className="metric-tile">
-                  <span>RMSE</span>
-                  <strong>{formatNumber(locale, walkForwardRun.summary.rmse, 3)}</strong>
-                </div>
-                <div className="metric-tile">
-                  <span>MAPE</span>
-                  <strong>{formatPercent(locale, walkForwardRun.summary.mapePct, 2)}</strong>
-                </div>
-              </div>
-
-              <ul className="bullet-list">
-                {walkForwardRun.topFeatures.slice(0, 5).map((feature) => (
-                  <li key={feature.name}>
-                    <strong>{feature.name}</strong>
-                    <span>{formatNumber(locale, feature.importance, 3)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      </section>
-    );
-  }
-
   */
-
-  function renderLab() {
-    return renderCopilot();
-  }
-
   function renderSignals() {
     return (
       <>
@@ -4537,540 +3495,6 @@ export default function App() {
       </>
     );
   }
-
-  function renderCopilot() {
-    return (
-      <section className="copilot-shell">
-        <div className="panel copilot-chat-panel">
-          <div className="copilot-thread-header">
-            <div>
-              <span className="section-kicker">{t(locale, "코파일럿 스레드", "Copilot thread")}</span>
-              <h2>
-                {t(
-                  locale,
-                  "시장 컨텍스트를 유지하는 로컬 연구 스레드",
-                  "Local research thread with persistent market context"
-                )}
-              </h2>
-              <p>
-                {t(
-                  locale,
-                  "Claude 공식 Projects, Styles, Artifacts 흐름을 참고해 채팅 우선 구조와 우측 사이드카를 다시 잡았습니다.",
-                  "Benchmarked on Claude's official Projects, Styles, and Artifacts patterns: chat first, controls near the composer, and a sidecar for evidence instead of another settings page."
-                )}
-              </p>
-            </div>
-            <div className="inline-actions">
-              <span className={`feed-pill tone-${localLlmState.available ? "positive" : localLlmState.installed ? "neutral" : "negative"}`}>
-                {getLocalLlmStatusLabel(locale, localLlmState)}
-              </span>
-              <button
-                type="button"
-                className="button ghost small"
-                onClick={handleClearLocalChat}
-                disabled={currentChatMessages.length === 0 && !localChatLoading}
-              >
-                {t(locale, "새 채팅", "New chat")}
-              </button>
-            </div>
-          </div>
-
-          <div className="copilot-presence-strip">
-            <span className="copilot-surface-pill">{selectedMarket.name}</span>
-            <span className="copilot-surface-pill subtle">{getStanceLabel(locale, selectedDecision.stance)}</span>
-            <span className="copilot-surface-pill subtle">{`${Math.round(selectedDecision.confidence * 100)}% ${t(locale, "신뢰도", "confidence")}`}</span>
-            <span className="copilot-surface-pill subtle">{selectedCompareQuote?.symbol ?? t(locale, "없음", "n/a")}</span>
-            <span className="copilot-surface-pill subtle">
-              {latestChatMessage ? formatDate(locale, latestChatMessage.createdAt) : t(locale, "아직 응답 없음", "No reply yet")}
-            </span>
-          </div>
-
-          <div className="copilot-benchmark-band">
-            {copilotClaudeBenchmarks.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="copilot-benchmark-link"
-                onClick={() => window.desktopBridge?.openExternal(item.url)}
-              >
-                <span>{item.kicker}</span>
-                <strong>{item.title}</strong>
-                <p>{item.detail}</p>
-              </button>
-            ))}
-          </div>
-
-          {localChatError ? (
-            <div className="status-card error">
-              <strong>{t(locale, "채팅 요청 오류", "Chat request error")}</strong>
-              <p>{localChatError}</p>
-            </div>
-          ) : null}
-
-          <div className="chat-shell copilot-chat-shell">
-            <div className="chat-thread copilot-chat-thread" ref={chatThreadRef}>
-              {currentChatMessages.length === 0 ? (
-                <div className="chat-empty copilot-chat-empty">
-                  <div className="copilot-empty-copy">
-                    <strong>{t(locale, "로컬 채팅 준비 완료", "Local chat ready")}</strong>
-                    <p>
-                      {localLlmState.available
-                        ? t(
-                            locale,
-                            "예시: 현재 K-ETS 읽기를 3문장으로 요약 / 공식 앵커와 비교 테이프 간 갭을 설명",
-                            "Try: summarize the current K-ETS read in 3 sentences / explain the gap between the official anchor and the comparison tape"
-                          )
-                        : t(
-                            locale,
-                            "이 스레드를 시작하려면 Ollama와 최소 하나의 모델을 먼저 준비하세요.",
-                            "Get Ollama and at least one model ready before starting this thread."
-                          )}
-                    </p>
-                  </div>
-                  <div className="copilot-starter-list">
-                    {COPILOT_TASKS.map((task) => (
-                      <button
-                        key={task}
-                        type="button"
-                        className="copilot-suggestion-button"
-                        onClick={() => handleSendQuickPrompt(task)}
-                        disabled={localChatLoading || !localLlmState.available}
-                      >
-                        <strong>{getCopilotTaskLabel(locale, task)}</strong>
-                        <span>{getCopilotTaskSummary(locale, task)}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {currentChatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`chat-message ${message.role} ${message.status === "error" ? "error" : ""}`}
-                >
-                  <div className="chat-bubble">
-                    <span className="chat-role">
-                      {message.role === "user"
-                        ? t(locale, "사용자", "You")
-                        : message.model || t(locale, "로컬 모델", "Local model")}
-                    </span>
-                    <p className="chat-content">{message.content}</p>
-                    {message.grounding && message.grounding.length > 0 ? (
-                      <div className="chat-grounding">
-                        {message.grounding.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className="chat-grounding-chip"
-                            onClick={() => {
-                              if (item.url) {
-                                void window.desktopBridge?.openExternal(item.url);
-                              }
-                            }}
-                            disabled={!item.url}
-                            title={`${item.kind} / ${item.detail}`}
-                          >
-                            <strong>{l(item.label)}</strong>
-                            <span>{l(item.kind)}</span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                    {message.boundaryNote ? <p className="chat-boundary-note">{l(message.boundaryNote)}</p> : null}
-                    <span className="chat-meta">{formatDate(locale, message.createdAt)}</span>
-                  </div>
-                </div>
-              ))}
-
-              {localChatLoading ? (
-                <div className="chat-message assistant">
-                  <div className="chat-bubble pending">
-                    <span className="chat-role">{t(locale, "로컬 모델", "Local model")}</span>
-                    <p>{t(locale, "응답 생성 중...", "Generating response...")}</p>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="chat-composer copilot-composer prominent">
-            <div className="copilot-composer-head">
-              <div>
-                <strong>{t(locale, "이 스레드에서 바로 작성", "Compose directly in this thread")}</strong>
-                <p>
-                  {t(
-                    locale,
-                    "모델과 응답 스타일은 입력창 가까이에 두고, 시장 컨텍스트와 근거는 우측에 고정합니다.",
-                    "Keep model and response style next to the prompt, while context and evidence stay pinned on the right."
-                  )}
-                </p>
-              </div>
-              <span className="meta-line">{getCopilotResponseStyleSummary(locale, copilotResponseStyle)}</span>
-            </div>
-
-            <textarea
-              ref={chatInputRef}
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-              placeholder={
-                localLlmState.available
-                  ? t(locale, `${selectedMarket.name}에 대해 질문하세요`, `Ask about ${selectedMarket.name}`)
-                  : t(locale, "먼저 Ollama를 확인하세요", "Check Ollama first")
-              }
-              rows={4}
-              disabled={!localLlmState.available || localChatLoading}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  void handleSendLocalChat();
-                }
-              }}
-            />
-
-            <div className="copilot-compose-footer">
-              <div className="copilot-config-row">
-                <label className="copilot-inline-field">
-                  <span>{t(locale, "모델", "Model")}</span>
-                  <select
-                    value={localLlmState.selectedModel}
-                    onChange={(event) =>
-                      setLocalLlmState((current) => ({
-                        ...current,
-                        selectedModel: event.target.value
-                      }))
-                    }
-                  >
-                    <option value="">
-                      {localLlmState.models.length > 0
-                        ? t(locale, "모델 선택", "Choose a model")
-                        : t(locale, "설치된 모델 없음", "No model installed")}
-                    </option>
-                    {localLlmState.models.map((model) => (
-                      <option key={model.model} value={model.model}>
-                        {model.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div className="copilot-style-toggle" role="group" aria-label={t(locale, "응답 스타일", "Response style")}>
-                  {COPILOT_RESPONSE_STYLES.map((style) => (
-                    <button
-                      key={style}
-                      type="button"
-                      className={copilotResponseStyle === style ? "active" : ""}
-                      onClick={() => setCopilotResponseStyle(style)}
-                    >
-                      {getCopilotResponseStyleLabel(locale, style)}
-                    </button>
-                  ))}
-                </div>
-
-                <span className={`feed-pill tone-${localLlmState.available ? "positive" : localLlmState.installed ? "neutral" : "negative"}`}>
-                  {getLocalLlmStatusLabel(locale, localLlmState)}
-                </span>
-              </div>
-
-              <div className="inline-actions">
-                <span className="meta-line">
-                  {t(
-                    locale,
-                    "선택한 시장 컨텍스트와 근거 카드가 매 프롬프트에 함께 실립니다.",
-                    "The selected market context and grounding cards are sent with each prompt."
-                  )}
-                </span>
-                <div className="inline-actions">
-                  {localLlmState.installed && !localLlmState.reachable ? (
-                    <button
-                      type="button"
-                      className="button ghost small"
-                      onClick={handleLaunchLocalLlm}
-                      disabled={localLlmLaunching}
-                    >
-                      {localLlmLaunching
-                        ? t(locale, "Ollama 시작 중", "Starting Ollama")
-                        : t(locale, "Ollama 시작", "Start Ollama")}
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="button primary"
-                    onClick={() => void handleSendLocalChat()}
-                    disabled={!localLlmState.available || localChatLoading || !chatInput.trim()}
-                  >
-                    {localChatLoading ? t(locale, "전송 중", "Sending") : t(locale, "보내기", "Send")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="copilot-side-column">
-          <div className="panel copilot-context-panel">
-            <div className="section-header slim">
-              <div>
-                <span className="section-kicker">{t(locale, "프로젝트 컨텍스트", "Project context")}</span>
-                <h2>{t(locale, "현재 읽기와 비교 테이프를 스레드 옆에 고정", "Pin the current read and tape beside the thread")}</h2>
-              </div>
-            </div>
-
-            <div className="metric-strip copilot-context-strip">
-              <div className="metric-tile">
-                <span>{t(locale, "현재 스탠스", "Current stance")}</span>
-                <strong>{getStanceLabel(locale, selectedDecision.stance)}</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "신뢰도", "Confidence")}</span>
-                <strong>{Math.round(selectedDecision.confidence * 100)}%</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "공식 앵커", "Official anchor")}</span>
-                <strong>{getOfficialPriceLabel(selectedOfficialCard)}</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "비교 테이프", "Comparison tape")}</span>
-                <strong>{selectedCompareQuote?.symbol ?? t(locale, "없음", "n/a")}</strong>
-              </div>
-            </div>
-
-            <div className="note-list">
-              <div className="note-item">
-                <strong>{t(locale, "데스크 읽기", "Desk read")}</strong>
-                <p>{l(selectedDecision.summary)}</p>
-              </div>
-              <div className="note-item">
-                <strong>{t(locale, "비교 피드 상태", "Comparison feed status")}</strong>
-                <p>
-                  {selectedCompareQuote
-                    ? `${getQuoteProviderLabel(locale, selectedCompareQuote.provider)} / ${getQuoteDelayNoteLabel(locale, selectedCompareQuote)}`
-                    : t(locale, "아직 비교 테이프가 선택되지 않았습니다.", "No comparison tape is selected yet.")}
-                </p>
-              </div>
-            </div>
-
-            <div className="field-list">
-              <div>
-                <span>{t(locale, "갭", "Gap")}</span>
-                <strong>{formatPercent(locale, compareOutput.stats.gapPct, 2)}</strong>
-              </div>
-              <div>
-                <span>{t(locale, "상관", "Correlation")}</span>
-                <strong>{formatSigned(locale, compareOutput.stats.correlation, "")}</strong>
-              </div>
-              <div>
-                <span>{t(locale, "방향 일치", "Direction match")}</span>
-                <strong>{formatPercent(locale, compareOutput.stats.directionMatchPct, 0)}</strong>
-              </div>
-              <div>
-                <span>{t(locale, "신선도", "Freshness")}</span>
-                <strong>{getFreshnessSummary(locale, selectedOfficialCard?.asOf)}</strong>
-              </div>
-            </div>
-
-            <div className="copilot-check-grid">
-              <div className="status-card">
-                <strong>{t(locale, "현재 스타일", "Current style")}</strong>
-                <p>{getCopilotResponseStyleSummary(locale, copilotResponseStyle)}</p>
-              </div>
-              <div className="status-card">
-                <strong>{t(locale, "스레드 메모리", "Thread memory")}</strong>
-                <p>
-                  {t(
-                    locale,
-                    `${currentChatMessages.length}개 메시지와 현재 ${selectedMarket.name} 컨텍스트를 유지합니다.`,
-                    `Keeping ${currentChatMessages.length} messages plus the current ${selectedMarket.name} context.`
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="panel copilot-evidence-panel">
-            <div className="section-header slim">
-              <div>
-                <span className="section-kicker">{t(locale, "근거 사이드카", "Evidence sidecar")}</span>
-                <h2>{t(locale, "각 답변에 실리는 근거를 별도 영역에서 확인", "Inspect grounding in a dedicated sidecar")}</h2>
-              </div>
-            </div>
-
-            <div className="copilot-grounding-list">
-              {copilotPayload.grounding.map((item) => (
-                <div key={item.id} className="copilot-grounding-card">
-                  <div>
-                    <span className="section-kicker">{l(item.kind)}</span>
-                    <strong>{l(item.label)}</strong>
-                  </div>
-                  <p>{l(item.detail)}</p>
-                  <div className="registry-meta">
-                    {item.asOf ? <span>{formatDate(locale, item.asOf)}</span> : null}
-                    {item.url ? (
-                      <button
-                        type="button"
-                        className="button ghost small"
-                        onClick={() => window.desktopBridge?.openExternal(item.url ?? "")}
-                      >
-                        {t(locale, "열기", "Open")}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="copilot-check-grid">
-              <div className="status-card">
-                <strong>{t(locale, "지금 확인", "Verify now")}</strong>
-                <ul className="plain-list">
-                  {selectedDecision.checks.slice(0, 4).map((item) => (
-                    <li key={item}>{l(item)}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="status-card warning">
-                <strong>{t(locale, "리스크와 브레이커", "Risks and breakers")}</strong>
-                <ul className="plain-list">
-                  {(selectedDecision.risks.length > 0
-                    ? selectedDecision.risks.slice(0, 4)
-                    : [
-                        t(
-                          locale,
-                          "즉시 보이는 구조적 브레이커는 없지만 다음 공식 업데이트는 여전히 중요합니다.",
-                          "No immediate structural breaker is visible, but the next official update still matters."
-                        )
-                      ]).map((item) => (
-                    <li key={item}>{l(item)}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div className="panel copilot-runtime-panel">
-            <div className="section-header slim">
-              <div>
-                <span className="section-kicker">{t(locale, "런타임", "Runtime")}</span>
-                <h2>{t(locale, "연결과 스레드 제어는 보조 패널에서 관리", "Keep connection controls in a secondary runtime panel")}</h2>
-              </div>
-            </div>
-
-            <div className="note-list">
-              <div className="note-item">
-                <strong>{t(locale, "현재 모델", "Current model")}</strong>
-                <p>
-                  {selectedLocalModelMeta
-                    ? `${selectedLocalModelMeta.name} / ${selectedLocalModelMeta.parameterSize || t(locale, "파라미터 정보 없음", "no parameter metadata")}`
-                    : t(locale, "선택된 로컬 모델이 없습니다.", "No local model is selected yet.")}
-                </p>
-              </div>
-              <div className="note-item">
-                <strong>{t(locale, "Claude 참고 포인트", "Claude reference points")}</strong>
-                <div className="copilot-reference-list">
-                  {copilotClaudeBenchmarks.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="copilot-reference-chip"
-                      onClick={() => window.desktopBridge?.openExternal(item.url)}
-                    >
-                      {item.kicker}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="field-grid">
-              <label>
-                <span>{t(locale, "Ollama 주소", "Ollama base URL")}</span>
-                <input
-                  value={localLlmState.baseUrl}
-                  onChange={(event) =>
-                    setLocalLlmState((current) => ({
-                      ...current,
-                      baseUrl: event.target.value
-                    }))
-                  }
-                  placeholder="http://127.0.0.1:11434"
-                />
-              </label>
-            </div>
-
-            {selectedLocalModelMeta ? (
-              <div className="field-list copilot-model-stats">
-                <div>
-                  <span>{t(locale, "패밀리", "Family")}</span>
-                  <strong>{selectedLocalModelMeta.family || t(locale, "없음", "n/a")}</strong>
-                </div>
-                <div>
-                  <span>{t(locale, "파라미터", "Parameters")}</span>
-                  <strong>{selectedLocalModelMeta.parameterSize || t(locale, "없음", "n/a")}</strong>
-                </div>
-                <div>
-                  <span>{t(locale, "양자화", "Quantization")}</span>
-                  <strong>{selectedLocalModelMeta.quantizationLevel || t(locale, "없음", "n/a")}</strong>
-                </div>
-                <div>
-                  <span>{t(locale, "수정 시각", "Modified")}</span>
-                  <strong>{formatDate(locale, selectedLocalModelMeta.modifiedAt)}</strong>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="inline-actions">
-              {localLlmState.installed && !localLlmState.reachable ? (
-                <button
-                  type="button"
-                  className="button ghost small"
-                  onClick={handleLaunchLocalLlm}
-                  disabled={localLlmLaunching}
-                >
-                  {localLlmLaunching
-                    ? t(locale, "Ollama 시작 중", "Starting Ollama")
-                    : t(locale, "Ollama 시작", "Start Ollama")}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="button ghost small"
-                onClick={handleSaveLocalLlmSettings}
-                disabled={localLlmSaving || localLlmLaunching}
-              >
-                {localLlmSaving ? t(locale, "확인 중", "Checking") : t(locale, "연결 확인", "Check connection")}
-              </button>
-              <span className={`feed-pill tone-${localLlmState.available ? "positive" : localLlmState.installed ? "neutral" : "negative"}`}>
-                {getLocalLlmStatusLabel(locale, localLlmState)}
-              </span>
-              {localLlmState.cliVersion ? <span className="feed-pill">{`CLI ${localLlmState.cliVersion}`}</span> : null}
-            </div>
-
-            {localLlmError ? (
-              <div className="status-card error">
-                <strong>{t(locale, "로컬 모델 오류", "Local model error")}</strong>
-                <p>{localLlmError}</p>
-              </div>
-            ) : null}
-
-            {!localLlmError && localLlmState.error ? (
-              <div className="status-card warning">
-                <strong>{t(locale, "연결 상태", "Connection status")}</strong>
-                <p>{localLlmState.error}</p>
-                {getLocalLlmSetupSteps(locale, localLlmState).length > 0 ? (
-                  <ul className="plain-list command-list">
-                    {getLocalLlmSetupSteps(locale, localLlmState).map((item) => (
-                      <li key={item}>{l(item)}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   function renderInspector() {
     return (
       <aside className="app-inspector" ref={inspectorScrollRef}>
@@ -5253,16 +3677,12 @@ export default function App() {
             <span className="eyebrow">
               {surface === "command"
                 ? t(locale, "Carbon mission control", "Carbon mission control")
-                : surface === "copilot"
-                  ? t(locale, "濡쒖뺄 留덉폆 肄뷀뙆?쇰읉", "Local market copilot")
                 : t(locale, "Global carbon decision desk", "Global carbon decision desk")}
             </span>
             <h1>
               {surface === "command"
                 ? "C-Quant Command"
-                : surface === "copilot"
-                  ? "C-Quant Copilot"
-                  : selectedMarket.name}
+                : selectedMarket.name}
             </h1>
             <p>
               {surface === "command"
@@ -5271,12 +3691,6 @@ export default function App() {
                     "怨듭떇 ?듭빱, ?ㅼ떆媛?鍮꾧탳 ?뚯씠?? ?뚯뒪 ?좊ː, 援щ룆 媛移섎? ???붾㈃?먯꽌 ?쎈뒗 ?곸쐞 ?댁쁺硫댁엯?덈떎.",
                     "A top-level operating surface for official anchors, live comparison tapes, source trust, and subscription value."
                   )
-                : surface === "copilot"
-                  ? t(
-                      locale,
-                      "濡쒖뺄 紐⑤뜽, ?쒖옣 而⑦뀓?ㅽ듃, 洹쇨굅 移대뱶, ?쒕굹由ъ삤 ?뚰겕踰ㅼ튂瑜????붾㈃??紐⑥? ?꾩슜 肄뷀뙆?쇰읉 ?뚰겕?ㅽ럹?댁뒪?낅땲??",
-                      "A dedicated copilot workspace that groups the local model, market context, grounding cards, and scenario workbench."
-                    )
                 : getMarketHeadline(locale, marketId)}
             </p>
           </div>
@@ -5284,18 +3698,6 @@ export default function App() {
           <div className="head-actions">
             <div className="live-chip">{t(locale, "?쇱씠釉?李⑦듃 30珥?媛깆떊", "Live chart refreshes every 30s")}</div>
             <div className="feed-pill">{sourceRefreshLabel}</div>
-            {surface === "copilot" ? (
-              <div className={`feed-pill tone-${localLlmState.available ? "positive" : "negative"}`}>
-                {localCopilotBadge}
-              </div>
-            ) : null}
-            <button
-              type="button"
-              className="button ghost"
-              onClick={() => openCopilotWorkspace(chatInput)}
-            >
-              {surface === "copilot" ? t(locale, "Focus chat", "Focus chat") : t(locale, "Open chat", "Open chat")}
-            </button>
             <button type="button" className="button primary" onClick={handleRefresh}>
               {sourcesLoading ? t(locale, "Refreshing", "Refreshing") : t(locale, "Refresh data", "Refresh data")}
             </button>
@@ -5331,15 +3733,14 @@ export default function App() {
           <div className="status-banner warning">{connectedSources.warnings.join(" / ")}</div>
         ) : null}
 
-        <div className={`workspace-grid ${surface === "copilot" ? "copilot-focus" : ""}`}>
+        <div className="workspace-grid">
           <section className="workspace-scroll" ref={workspaceScrollRef}>
             {surface === "command" ? renderCommand() : null}
             {surface === "desk" ? renderDesk() : null}
             {surface === "drivers" ? renderDrivers() : null}
             {surface === "sources" ? renderSources() : null}
-            {surface === "copilot" ? renderCopilot() : null}
           </section>
-          {surface === "copilot" ? null : renderInspector()}
+          {renderInspector()}
         </div>
       </main>
     </div>

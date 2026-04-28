@@ -1,28 +1,40 @@
 const { app, BrowserWindow, dialog, ipcMain, shell, screen } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
-const { execFile } = require("node:child_process");
 const { fileURLToPath } = require("node:url");
 const { getConnectedSources, getLiveQuoteHistory } = require("./electron/liveSources");
-const {
-  DEFAULT_OLLAMA_BASE_URL,
-  listOllamaModels,
-  runOllamaChat
-} = require("./electron/decisionAssistant");
 
 const isDev = !app.isPackaged;
-const SETTINGS_FILENAME = "settings.json";
-const DEFAULT_LOCAL_OLLAMA_MODEL = "granite3-dense:2b";
 const TRUSTED_DEV_SERVER_ORIGINS = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173"
 ]);
 const ALLOWED_EXTERNAL_PROTOCOLS = new Set(["http:", "https:"]);
-const ALLOWED_LOCAL_SERVICE_PROTOCOLS = new Set(["http:", "https:"]);
-const ALLOWED_LOCAL_SERVICE_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 const ALLOWED_QUOTE_RANGE_IDS = new Set(["1d", "5d", "1m", "3m", "6m", "1y"]);
+const RENDERER_STARTUP_TIMEOUT_MS = isDev ? 15000 : 8000;
 let mainWindow = null;
 let startupWatchdog = null;
+const rendererStartupState = new Map();
+
+function getStartupLogPath() {
+  try {
+    return path.join(app.getPath("userData"), "startup-diagnostics.log");
+  } catch {
+    return "";
+  }
+}
+
+function appendStartupDiagnostic(label, detail) {
+  const logPath = getStartupLogPath();
+  if (!logPath) {
+    return;
+  }
+
+  const timestamp = new Date().toISOString();
+  const message = String(detail ?? "").trim();
+  const record = `[${timestamp}] ${label}\n${message}\n\n`;
+  void fs.appendFile(logPath, record, "utf8").catch(() => {});
+}
 
 function escapeHtml(value) {
   return String(value ?? "").replace(
@@ -86,41 +98,6 @@ function normalizeExternalUrl(value) {
     throw new Error("Only http and https links can be opened from C-Quant.");
   }
   return parsed.toString();
-}
-
-function normalizeLocalServiceUrl(value, label = "Local service URL") {
-  const parsed = parseUrl(value || DEFAULT_OLLAMA_BASE_URL, label);
-  const host = parsed.hostname.toLowerCase();
-
-  if (!ALLOWED_LOCAL_SERVICE_PROTOCOLS.has(parsed.protocol)) {
-    throw new Error(`${label} must use http or https.`);
-  }
-
-  if (!ALLOWED_LOCAL_SERVICE_HOSTS.has(host)) {
-    throw new Error(`${label} must stay on the local machine.`);
-  }
-
-  if ((parsed.pathname && parsed.pathname !== "/") || parsed.search || parsed.hash) {
-    throw new Error(`${label} must point to a bare local origin without a path.`);
-  }
-
-  parsed.pathname = "/";
-  parsed.search = "";
-  parsed.hash = "";
-  return parsed.toString().replace(/\/$/, "");
-}
-
-function normalizeOllamaModel(value) {
-  const candidate = String(value ?? "").trim();
-  if (!candidate) {
-    return "";
-  }
-
-  if (candidate.length > 120 || /[\r\n\t]/.test(candidate)) {
-    throw new Error("Local model name is invalid.");
-  }
-
-  return candidate;
 }
 
 function sanitizeQuoteHistoryPayload(payload) {
@@ -249,6 +226,65 @@ function clearStartupWatchdog() {
   }
 }
 
+function normalizeRendererStartupFailure(payload) {
+  const phase = String(payload?.phase ?? "renderer-startup").trim().slice(0, 120) || "renderer-startup";
+  const message = String(payload?.message ?? "Unknown renderer startup error.").trim().slice(0, 2000);
+  const stack = String(payload?.stack ?? "").trim().slice(0, 8000);
+  return { phase, message, stack };
+}
+
+function getRendererStartupDetail(payload) {
+  return payload.stack ? `[${payload.phase}] ${payload.message}\n\n${payload.stack}` : `[${payload.phase}] ${payload.message}`;
+}
+
+function showStartupFailure(window, title, detail, options = {}) {
+  if (!window || window.isDestroyed()) {
+    return;
+  }
+
+  const showDialog = options.showDialog !== false;
+
+  clearStartupWatchdog();
+  fitWindowToVisibleArea(window);
+  window.setTitle(title);
+  appendStartupDiagnostic(title, detail);
+
+  if (showDialog) {
+    dialog.showErrorBox(title, detail);
+  }
+
+  showFallbackPage(window, title, detail);
+  revealWindow(window);
+}
+
+function setRendererStartupState(window, partial) {
+  if (!window || window.isDestroyed()) {
+    return null;
+  }
+
+  const key = window.webContents.id;
+  const current = rendererStartupState.get(key) ?? { ready: false };
+  const next = { ...current, ...partial };
+  rendererStartupState.set(key, next);
+  return next;
+}
+
+function getRendererStartupState(window) {
+  if (!window || window.isDestroyed()) {
+    return null;
+  }
+
+  return rendererStartupState.get(window.webContents.id) ?? null;
+}
+
+function clearRendererStartupState(window) {
+  if (!window || window.isDestroyed()) {
+    return;
+  }
+
+  rendererStartupState.delete(window.webContents.id);
+}
+
 function armStartupWatchdog(window) {
   clearStartupWatchdog();
   startupWatchdog = setTimeout(() => {
@@ -257,9 +293,20 @@ function armStartupWatchdog(window) {
       return;
     }
 
-    fitWindowToVisibleArea(window);
-    revealWindow(window);
-  }, isDev ? 7000 : 4000);
+    const startup = getRendererStartupState(window);
+    if (startup?.ready) {
+      fitWindowToVisibleArea(window);
+      revealWindow(window);
+      return;
+    }
+
+    showStartupFailure(
+      window,
+      "C-Quant renderer startup timed out",
+      "The window loaded but the renderer never confirmed startup. This usually means a boot error happened before the React app mounted.",
+      { showDialog: false }
+    );
+  }, RENDERER_STARTUP_TIMEOUT_MS);
 }
 
 function getWindowIconPath() {
@@ -327,7 +374,7 @@ function createWindow() {
     minimizable: true,
     maximizable: true,
     resizable: true,
-    show: true,
+    show: false,
     backgroundColor: "#f7f9fd",
     autoHideMenuBar: true,
     webPreferences: {
@@ -344,13 +391,17 @@ function createWindow() {
 
   mainWindow = window;
   hardenWindow(window);
+  setRendererStartupState(window, { ready: false });
 
   const reveal = () => revealWindow(window);
-  const fallbackTimer = setTimeout(reveal, isDev ? 5000 : 2500);
   armStartupWatchdog(window);
 
-  window.once("ready-to-show", reveal);
-  window.webContents.once("did-finish-load", reveal);
+  window.once("ready-to-show", () => {
+    fitWindowToVisibleArea(window);
+  });
+  window.webContents.once("did-finish-load", () => {
+    fitWindowToVisibleArea(window);
+  });
   window.once("show", () => {
     window.setAlwaysOnTop(true);
     setTimeout(() => {
@@ -361,48 +412,49 @@ function createWindow() {
     }, 600);
   });
   window.on("show", () => {
-    clearTimeout(fallbackTimer);
     fitWindowToVisibleArea(window);
   });
   window.on("closed", () => {
-    clearTimeout(fallbackTimer);
     clearStartupWatchdog();
+    clearRendererStartupState(window);
     if (mainWindow === window) {
       mainWindow = null;
     }
   });
 
   window.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
-    clearTimeout(fallbackTimer);
-    clearStartupWatchdog();
-    dialog.showErrorBox(
-      "C-Quant failed to load",
-      `The desktop window could not load its UI.\n\nCode: ${errorCode}\nMessage: ${errorDescription}`
-    );
-    showFallbackPage(
+    showStartupFailure(
       window,
       "C-Quant failed to load",
-      `Code: ${errorCode}\nMessage: ${errorDescription}`
+      `The desktop window could not load its UI.\n\nCode: ${errorCode}\nMessage: ${errorDescription}`
     );
   });
 
   window.webContents.on("render-process-gone", (_event, details) => {
-    clearTimeout(fallbackTimer);
-    clearStartupWatchdog();
-    dialog.showErrorBox(
+    showStartupFailure(
+      window,
       "C-Quant renderer stopped",
       `The app window stopped unexpectedly.\n\nReason: ${details.reason}`
     );
-    showFallbackPage(window, "C-Quant renderer stopped", `Reason: ${details.reason}`);
   });
 
   window.on("unresponsive", () => {
-    clearStartupWatchdog();
-    showFallbackPage(
+    showStartupFailure(
       window,
       "C-Quant stopped responding",
-      "The app window became unresponsive during startup."
+      "The app window became unresponsive during startup.",
+      { showDialog: false }
     );
+  });
+
+  window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+    if (level >= 2) {
+      console.error(`[renderer:${level}] ${sourceId || "unknown"}:${line || 0} ${message}`);
+      appendStartupDiagnostic(
+        `renderer-console:${level}`,
+        `${sourceId || "unknown"}:${line || 0} ${message}`
+      );
+    }
   });
 
   if (isDev) {
@@ -415,243 +467,6 @@ function createWindow() {
 
   window.loadFile(path.join(__dirname, "dist", "index.html"));
   return window;
-}
-
-function execFileAsync(command, args) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      command,
-      args,
-      {
-        cwd: app.getAppPath(),
-        windowsHide: true,
-        maxBuffer: 10 * 1024 * 1024
-      },
-      (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message));
-          return;
-        }
-        resolve(stdout);
-      }
-    );
-  });
-}
-
-async function getSettingsPath() {
-  return path.join(app.getPath("userData"), SETTINGS_FILENAME);
-}
-
-async function loadSettings() {
-  const settingsPath = await getSettingsPath();
-
-  try {
-    const raw = await fs.readFile(settingsPath, "utf8");
-    const parsed = JSON.parse(raw);
-    return {
-      ollamaBaseUrl: normalizeLocalServiceUrl(parsed.ollamaBaseUrl, "Ollama base URL"),
-      ollamaModel: normalizeOllamaModel(parsed.ollamaModel)
-    };
-  } catch {
-    return {
-      ollamaBaseUrl: DEFAULT_OLLAMA_BASE_URL,
-      ollamaModel: ""
-    };
-  }
-}
-
-async function saveSettings(partial) {
-  const current = await loadSettings();
-  const next = {
-    ...current,
-    ...(Object.prototype.hasOwnProperty.call(partial, "ollamaBaseUrl")
-      ? {
-          ollamaBaseUrl: normalizeLocalServiceUrl(
-            partial.ollamaBaseUrl,
-            "Ollama base URL"
-          )
-        }
-      : {}),
-    ...(Object.prototype.hasOwnProperty.call(partial, "ollamaModel")
-      ? { ollamaModel: normalizeOllamaModel(partial.ollamaModel) }
-      : {})
-  };
-
-  const settingsPath = await getSettingsPath();
-  await fs.mkdir(path.dirname(settingsPath), { recursive: true });
-  await fs.writeFile(settingsPath, JSON.stringify(next, null, 2), "utf8");
-  return next;
-}
-
-async function findFirstExistingPath(candidates) {
-  for (const candidate of candidates) {
-    if (!candidate || candidate === "ollama") {
-      continue;
-    }
-
-    try {
-      await fs.access(candidate);
-      return candidate;
-    } catch {}
-  }
-
-  return "";
-}
-
-function getOllamaCliCandidates() {
-  return [
-    "ollama",
-    path.join(process.env.LOCALAPPDATA || "", "Programs", "Ollama", "ollama.exe"),
-    path.join(process.env.ProgramFiles || "", "Ollama", "ollama.exe")
-  ].filter((candidate, index, items) => candidate && items.indexOf(candidate) === index);
-}
-
-function getOllamaAppCandidates() {
-  return [
-    path.join(process.env.LOCALAPPDATA || "", "Programs", "Ollama", "ollama app.exe"),
-    path.join(process.env.ProgramFiles || "", "Ollama", "ollama app.exe")
-  ].filter((candidate, index, items) => candidate && items.indexOf(candidate) === index);
-}
-
-async function getOllamaCliVersion() {
-  for (const candidate of getOllamaCliCandidates()) {
-    try {
-      const stdout = await execFileAsync(candidate, ["--version"]);
-      return String(stdout).trim();
-    } catch {}
-  }
-
-  return "";
-}
-
-async function launchLocalOllama() {
-  const appPath = await findFirstExistingPath(getOllamaAppCandidates());
-
-  if (appPath) {
-    const error = await shell.openPath(appPath);
-    if (error) {
-      throw new Error(error);
-    }
-
-    return {
-      started: true,
-      mode: "desktop-app",
-      path: appPath
-    };
-  }
-
-  const cliPath = await findFirstExistingPath(getOllamaCliCandidates());
-  if (cliPath) {
-    const child = execFile(cliPath, ["serve"], {
-      cwd: app.getAppPath(),
-      detached: true,
-      windowsHide: true
-    });
-    child.unref();
-
-    return {
-      started: true,
-      mode: "cli-serve",
-      path: cliPath
-    };
-  }
-
-  throw new Error("Ollama is not installed on this PC yet.");
-}
-
-async function getLocalLlmState(settings) {
-  const baseUrl = normalizeLocalServiceUrl(
-    settings?.ollamaBaseUrl,
-    "Ollama base URL"
-  );
-  const savedModel = normalizeOllamaModel(settings?.ollamaModel);
-  const cliVersion = await getOllamaCliVersion();
-  const installed = Boolean(cliVersion);
-
-  try {
-    const models = await listOllamaModels(baseUrl);
-    const recommendedModel = models.find(
-      (entry) =>
-        entry.model === DEFAULT_LOCAL_OLLAMA_MODEL ||
-        entry.name === DEFAULT_LOCAL_OLLAMA_MODEL
-    )?.model;
-    const selectedModel =
-      (savedModel && models.some((entry) => entry.model === savedModel || entry.name === savedModel)
-        ? savedModel
-        : recommendedModel || models[0]?.model) || "";
-
-    return {
-      available: models.length > 0,
-      installed,
-      reachable: true,
-      cliVersion,
-      baseUrl,
-      selectedModel,
-      models,
-      ...(models.length === 0
-        ? {
-            error:
-              "Ollama API is reachable but no local model is installed yet. Pull a model, then recheck."
-          }
-        : {})
-    };
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return {
-      available: false,
-      installed,
-      reachable: false,
-      cliVersion,
-      baseUrl,
-      selectedModel: savedModel,
-      models: [],
-      error: installed
-        ? `Ollama is installed but the local API at ${baseUrl} is not responding. Start Ollama and retry. Details: ${reason}`
-        : "Ollama is not installed on this PC yet. Install Ollama for Windows, pull a local model, then retry."
-    };
-  }
-}
-
-async function resolveLocalOllamaTarget(payload) {
-  const settings = await loadSettings();
-  const baseUrl = normalizeLocalServiceUrl(
-    typeof payload?.baseUrl === "string" && payload.baseUrl.trim()
-      ? payload.baseUrl
-      : settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL,
-    "Ollama base URL"
-  );
-  const models = await listOllamaModels(baseUrl);
-  const requestedModel = normalizeOllamaModel(
-    typeof payload?.model === "string" && payload.model.trim()
-      ? payload.model
-      : settings.ollamaModel
-  );
-  const recommendedModel = models.find(
-    (entry) =>
-      entry.model === DEFAULT_LOCAL_OLLAMA_MODEL ||
-      entry.name === DEFAULT_LOCAL_OLLAMA_MODEL
-  )?.model;
-  const resolvedModel =
-    requestedModel &&
-    models.some((entry) => entry.model === requestedModel || entry.name === requestedModel)
-      ? requestedModel
-      : recommendedModel || models[0]?.model;
-
-  if (!resolvedModel) {
-    throw new Error("No local Ollama model is available. Pull a model first, then retry.");
-  }
-
-  if (resolvedModel !== settings.ollamaModel || baseUrl !== settings.ollamaBaseUrl) {
-    await saveSettings({
-      ollamaBaseUrl: baseUrl,
-      ollamaModel: resolvedModel
-    });
-  }
-
-  return {
-    baseUrl,
-    model: resolvedModel
-  };
 }
 
 ipcMain.handle("window-minimize", (event) => {
@@ -699,29 +514,43 @@ ipcMain.handle("get-live-quote-history", async (event, payload) => {
   const request = sanitizeQuoteHistoryPayload(payload);
   return getLiveQuoteHistory(request.quoteId, request.range);
 });
-ipcMain.handle("get-local-llm-state", async (event) => {
+ipcMain.on("renderer-ready", (event) => {
   assertTrustedSender(event);
-  return getLocalLlmState(await loadSettings());
-});
-ipcMain.handle("save-local-llm-settings", async (event, payload) => {
-  assertTrustedSender(event);
-  const next = await saveSettings(payload ?? {});
-  return getLocalLlmState(next);
-});
-ipcMain.handle("launch-local-llm", async (event) => {
-  assertTrustedSender(event);
-  return launchLocalOllama();
-});
-ipcMain.handle("run-local-chat", async (event, payload) => {
-  assertTrustedSender(event);
-  const target = await resolveLocalOllamaTarget(payload);
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (!window) {
+    return;
+  }
 
-  return runOllamaChat({
-    baseUrl: target.baseUrl,
-    model: target.model,
-    locale: payload?.locale === "en" ? "en" : "ko",
-    context: payload?.context ?? {},
-    messages: Array.isArray(payload?.messages) ? payload.messages : []
+  setRendererStartupState(window, { ready: true });
+  clearStartupWatchdog();
+  fitWindowToVisibleArea(window);
+  window.setTitle("C-Quant");
+  revealWindow(window);
+});
+ipcMain.on("renderer-startup-failed", (event, payload) => {
+  assertTrustedSender(event);
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (!window) {
+    return;
+  }
+
+  const startup = getRendererStartupState(window);
+  const failure = normalizeRendererStartupFailure(payload);
+  console.error(`[renderer-startup] ${failure.phase}: ${failure.message}`);
+  if (failure.stack) {
+    console.error(failure.stack);
+  }
+  appendStartupDiagnostic(
+    `renderer-startup:${failure.phase}`,
+    getRendererStartupDetail(failure)
+  );
+
+  if (startup?.ready) {
+    return;
+  }
+
+  showStartupFailure(window, "C-Quant renderer startup failed", getRendererStartupDetail(failure), {
+    showDialog: false
   });
 });
 

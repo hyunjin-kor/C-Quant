@@ -85,6 +85,13 @@ The current loop also borrows a few proven harness ideas from OpenHands V1 and i
 - If a round changes copy, source labeling, or visible decision logic:
   - verify the screen path manually or with automation before closing the round
 
+### CircleCI Gate
+
+- `.circleci/config.yml` mirrors the local Windows release path instead of introducing a separate CI-only workflow.
+- `verify_build` runs `npm.cmd ci` and `npm.cmd run ci:verify` on CircleCI's Windows Server 2022 machine executor.
+- `package_desktop` runs `npm.cmd run package:dir` and `npm.cmd run package:portable` sequentially after `verify_build` succeeds.
+- This keeps the CI contract aligned with the local autonomy and release contract: build first, then Electron syntax checks, then desktop packaging.
+
 ### Recommended Re-entry Prompt
 
 Use this when you want the next autonomous round to continue without restating the full project:
@@ -182,7 +189,7 @@ By default the loop starts or resumes with `stop_on_user_return=true`, so any no
 1. Verify the selected market shows official price, freshness, and source method.
 2. Verify linked futures or proxies are labeled correctly.
 3. Verify factor decomposition and quant playbook panels render for each market.
-4. Verify the copilot keeps grounded evidence and does not blur the product boundary.
+4. Verify the evidence briefing layer keeps grounded evidence and does not blur the product boundary.
 5. Rebuild the desktop app and rerun a smoke test.
 6. Update [pdf-reference-audit.md](C:/Users/user/Desktop/C-Quant/docs/pdf-reference-audit.md) if the scope changed.
 

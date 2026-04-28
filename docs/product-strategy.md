@@ -117,9 +117,9 @@ The app now centers charts before text.
    - Watchlists and proxy links
    - Trust principles and subscription value
 
-## Carbon Market Copilot
+## Evidence Briefing Layer
 
-- The LLM should be a carbon-market copilot, not a generic chatbot.
+- Briefing support should stay tied to carbon-market evidence, not generic chatbot behavior.
 - The app always computes a local rule-based posture first.
 - The LLM should receive only grounded inputs:
   - official market cards

@@ -15,6 +15,14 @@ The app is built around one operating workflow:
 
 It does not execute trades or intermediate transactions.
 
+## Project Links And Handoff
+
+- GitHub: [hyunjin-kor/C-Quant](https://github.com/hyunjin-kor/C-Quant)
+- Link registry: [docs/project-links.md](docs/project-links.md)
+- Claude handoff: [CLAUDE.md](CLAUDE.md)
+- Agent harness: [AGENTS.md](AGENTS.md)
+- Blog/public site: not configured in this repository as of 2026-04-26
+
 ## What The App Does
 
 - Shows the official market anchor first for each ETS
@@ -24,7 +32,7 @@ It does not execute trades or intermediate transactions.
 - Calculates gap, recent co-movement, and direction match between the two tapes
 - Builds a simple desk posture from official move, listed move, tape agreement, and source freshness
 - Keeps the driver map, source method, and trust boundary visible
-- Includes a grounded local copilot, signal workspace, and source-trust workflow
+- Includes a signal workspace and source-trust workflow
 - Keeps external pages as explicit source buttons instead of default navigation
 
 ## Open-Source Benchmark Map
@@ -95,18 +103,13 @@ The app is built to work even if you do not want to pay for data.
   - integrated decision pack
   - operator checklist
   - scenario-oriented decision support
-- `Copilot`
-  - conversation-first local model workspace
-  - grounded context, evidence chips, and runtime controls
 
 ## Important Notes
 
 - This is a research and monitoring tool, not a broker.
 - Yahoo Finance data can be delayed depending on the exchange, so it is shown as a reference source only.
 - Local ETS futures are not added unless a verified free feed is available; where needed, the app labels listed proxies explicitly as proxies.
-- The AI layer is a carbon-market copilot and can run on a local free Ollama model inside the desktop app.
-- OpenAI can still be wired separately, but the default desktop copilot flow is local-model-first.
-- The copilot is designed to explain posture, contrary evidence, missing data, and next checks. It is not allowed to fabricate official facts or behave like an execution assistant.
+- Scenario and signal outputs are constrained to evidence-backed research support and must not fabricate official facts or behave like execution assistance.
 
 ## Autonomous Loop
 

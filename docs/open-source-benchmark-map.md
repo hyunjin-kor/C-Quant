@@ -241,7 +241,7 @@ LLM use:
 
 ## Specialized LLM Design
 
-The LLM should be a carbon-market copilot, not a generic chatbot.
+Any briefing support should stay tied to carbon-market evidence, not generic chatbot behavior.
 
 ### Inputs
 
@@ -276,4 +276,4 @@ The LLM should be a carbon-market copilot, not a generic chatbot.
 2. Add registry-document ingestion and freshness tracking.
 3. Add project integrity overlays for nature-based credits.
 4. Add a practical carbon sleeve optimizer before any advanced quantum framing.
-5. Expand the LLM from optional commentary into a grounded carbon-market copilot tied to official facts and evidence packs.
+5. Expand evidence packaging from optional commentary into grounded briefings tied to official facts and evidence packs.
