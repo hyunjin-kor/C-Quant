@@ -741,6 +741,7 @@ app.whenReady().then(() => {
   // 1) Initialize file logger first so subsequent failures get captured.
   const userData = app.getPath("userData");
   logger.setActiveLogger(logger.createLogger({ logDir: path.join(userData, "logs") }));
+  logger.installShutdownHandlers();
   logger.info("C-Quant starting", {
     isDev,
     version: app.getVersion(),

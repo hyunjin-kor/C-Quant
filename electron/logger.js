@@ -103,7 +103,51 @@ function createLogger({ logDir = "" } = {}) {
     writeLine(logPath, "error", args);
   }
 
-  return { debug, info, warn, error, logPath };
+  function flushSync(reason) {
+    // appendFileSync is already used per call; this is a marker line so
+    // operators reading the log can see when the process shut down.
+    if (logPath) {
+      try {
+        fs.appendFileSync(
+          logPath,
+          `[${nowIso()}] [info] logger flush on ${reason || "exit"}\n`,
+          "utf8"
+        );
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return { debug, info, warn, error, flushSync, logPath };
+}
+
+/**
+ * Wire process-level signals so an exit always leaves a clean tail in
+ * the rotating log. Idempotent — calling twice is safe.
+ */
+let shutdownInstalled = false;
+function installShutdownHandlers() {
+  if (shutdownInstalled) return;
+  shutdownInstalled = true;
+
+  const finish = (signal) => () => {
+    try {
+      activeLogger?.flushSync?.(signal);
+    } catch {
+      // ignore
+    }
+  };
+
+  process.on("exit", finish("exit"));
+  process.on("SIGINT", () => {
+    finish("SIGINT")();
+    process.exit(130);
+  });
+  process.on("SIGTERM", () => {
+    finish("SIGTERM")();
+    process.exit(143);
+  });
 }
 
 function setActiveLogger(logger) {
@@ -125,6 +169,7 @@ const lazy = {
 module.exports = {
   createLogger,
   setActiveLogger,
+  installShutdownHandlers,
   ...lazy,
   MAX_LOG_BYTES,
   MAX_KEEP

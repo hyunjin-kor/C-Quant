@@ -7,6 +7,7 @@ import { ThemeProvider } from "./lib/theme";
 import { ToastProvider } from "./lib/toast";
 import { CommandPaletteProvider } from "./lib/commandPalette";
 import { AppShellExtensions } from "./lib/AppShellExtensions";
+import { RuntimeErrorBoundary } from "./lib/RuntimeErrorBoundary";
 import "./styles.css";
 import "./styles.claude.css";
 import "./styles.shell.css";
@@ -197,7 +198,9 @@ function RendererBootstrap() {
       <ToastProvider>
         <CommandPaletteProvider>
           <AppShellExtensions />
-          <App />
+          <RuntimeErrorBoundary>
+            <App />
+          </RuntimeErrorBoundary>
         </CommandPaletteProvider>
       </ToastProvider>
     </ThemeProvider>

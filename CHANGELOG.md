@@ -4,6 +4,35 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Added — Polish & meta pass
+
+- **LICENSE** (MIT) added at the repository root, with third-party
+  attribution and the research-only product-boundary statement
+- **SECURITY.md** with the threat model, supported versions,
+  responsible-disclosure flow, hardening checklist for distributors,
+  and coordinated-disclosure timeline by severity
+- **README** rewritten to match the current capabilities (palette,
+  drawers, exports, dark mode, auto-update, privacy stance, release flow)
+- **CI badge** + license badge + Node version badge in README
+- **`src/lib/RuntimeErrorBoundary.tsx`** — distinct from the existing
+  `StartupErrorBoundary`. Renders inside the providers around `<App/>`,
+  so a runtime render error after mount no longer reports as a startup
+  failure. Provides "Reset workspace" and "Reload window" actions and
+  a styled fallback that respects the warm theme tokens
+- **Logger graceful shutdown**: `installShutdownHandlers()` registers
+  `exit`, `SIGINT`, `SIGTERM` listeners that write a final `flush on …`
+  marker so a tail of `cquant.log` always shows when the process ended
+- **Cache periodic prune**: `createTtlCache` now runs a
+  `setInterval(pruneExpired, 5 min)` (unref'd so it never blocks
+  shutdown). Disable by passing `pruneIntervalMs: 0`. Exposed
+  `stopPeriodicPrune` for tests and teardown
+- **CONTRIBUTING** gained an end-to-end release section: env vars for
+  signing, electron-builder publish, GitHub release tagging, and a
+  local smoke-test recipe with `CQUANT_DISABLE_UPDATER`
+- **Lint cleanup**: 12 → 9 pre-existing warnings (the autonomy-monitor
+  unused-helper warnings and the dead `resolveTheme` import are gone)
+- **Vitest spec** for the periodic prune behavior
+
 ### Added — User-facing features pass
 
 - **In-app update notice**: top-of-viewport banner that surfaces when an

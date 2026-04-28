@@ -96,6 +96,66 @@ position.
 The build workflow expects `package:portable` to pass cleanly; if you
 introduce a regression in packaging, mention it in the PR description.
 
+### End-to-end release flow (signed + auto-update wired)
+
+1. Bump `version` in `package.json` (and `CHANGELOG.md` heading).
+
+2. Set the operator-side environment in your shell or CI secrets:
+
+   ```bash
+   # Windows code signing
+   CSC_LINK=/path/to/cert.pfx
+   CSC_KEY_PASSWORD=...
+
+   # macOS code signing + notarization (only when shipping mac)
+   CSC_NAME="Developer ID Application: Your Name (TEAMID)"
+   APPLE_ID=...
+   APPLE_APP_SPECIFIC_PASSWORD=...
+   APPLE_TEAM_ID=...
+
+   # GitHub releases (electron-builder publish + auto-update feed)
+   GH_TOKEN=...
+   ```
+
+3. Build + publish artifacts:
+
+   ```bash
+   npm run package:nsis        # Windows installer
+   npm run package:portable    # Windows portable
+   npm run package:mac         # macOS dmg + zip (x64 + arm64)
+   npm run package:linux       # Linux AppImage + deb
+
+   # Or all in one shot (requires a multi-arch host or CI matrix):
+   npm run package:all
+   ```
+
+   With `GH_TOKEN` set, electron-builder publishes the artifacts (and the
+   `latest.yml` update manifest) to a GitHub release matching the
+   current version.
+
+4. Tag and push:
+
+   ```bash
+   git tag v$(node -p "require('./package.json').version")
+   git push --tags
+   ```
+
+   When the release is public, the in-app `electron-updater` feed picks
+   it up on the next launch and surfaces the in-app update banner.
+
+5. End users see the banner, click **Download**, then **Restart &
+   install**. The update is verified against the publisher's signature
+   before it replaces the running binary.
+
+### Smoke-test a release locally
+
+```bash
+CQUANT_DISABLE_UPDATER=1 ./release/C-Quant-X.Y.Z.exe
+```
+
+The `CQUANT_DISABLE_UPDATER=1` env var prevents the freshly-built
+binary from contacting GitHub during local QA.
+
 ## Reporting issues
 
 Please include:

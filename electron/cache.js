@@ -11,9 +11,14 @@
  */
 
 const DEFAULT_MAX_ENTRIES = 256;
+const DEFAULT_PRUNE_INTERVAL_MS = 5 * 60 * 1000;
 
-function createTtlCache({ maxEntries = DEFAULT_MAX_ENTRIES } = {}) {
+function createTtlCache({
+  maxEntries = DEFAULT_MAX_ENTRIES,
+  pruneIntervalMs = DEFAULT_PRUNE_INTERVAL_MS
+} = {}) {
   const store = new Map();
+  let pruneTimer = null;
 
   function pruneExpired(now) {
     for (const [key, entry] of store) {
@@ -60,6 +65,23 @@ function createTtlCache({ maxEntries = DEFAULT_MAX_ENTRIES } = {}) {
     return value;
   }
 
+  function startPeriodicPrune() {
+    if (pruneTimer || !pruneIntervalMs || pruneIntervalMs <= 0) return;
+    pruneTimer = setInterval(() => pruneExpired(Date.now()), pruneIntervalMs);
+    // In Node's event loop, an interval keeps the process alive. Detach so
+    // the cache never blocks shutdown.
+    if (typeof pruneTimer.unref === "function") pruneTimer.unref();
+  }
+
+  function stopPeriodicPrune() {
+    if (pruneTimer) {
+      clearInterval(pruneTimer);
+      pruneTimer = null;
+    }
+  }
+
+  startPeriodicPrune();
+
   return {
     withCache,
     get: (key) => store.get(key),
@@ -67,7 +89,8 @@ function createTtlCache({ maxEntries = DEFAULT_MAX_ENTRIES } = {}) {
     delete: (key) => store.delete(key),
     clear: () => store.clear(),
     size: () => store.size,
-    pruneExpired
+    pruneExpired,
+    stopPeriodicPrune
   };
 }
 

@@ -60,10 +60,6 @@ function readSystemLocale(): AppLocale {
   return String(navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en";
 }
 
-function resolveTheme(pref: ThemePreference): EffectiveTheme {
-  return pref === "system" ? readSystemTheme() : pref;
-}
-
 function applyThemeToDocument(theme: ThemePreference, reducedMotion: boolean) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;

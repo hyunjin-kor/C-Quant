@@ -44,12 +44,13 @@ Security baseline:
 
 ```
 src/main.tsx
-  └─ <StartupErrorBoundary>
+  └─ <StartupErrorBoundary>          — catches errors before renderer-ready
         └─ <ThemeProvider>           — theme + locale + reduced-motion, persisted via bridge
              └─ <ToastProvider>      — passive notifications (4 max, auto-dismiss)
                   └─ <CommandPaletteProvider>  — Cmd/Ctrl+K palette
-                       ├─ <AppShellExtensions/>  — registers commands, skip-link
-                       └─ <App/>     — surfaces (Command, Desk, Drivers, Sources)
+                       ├─ <AppShellExtensions/>  — registers commands, skip-link, drawers, banner
+                       └─ <RuntimeErrorBoundary> — catches errors after mount
+                              └─ <App/>     — surfaces (Command, Desk, Drivers, Sources)
 ```
 
 Surfaces (`src/components/surfaces/*.tsx`) are the four major workspaces.
@@ -166,6 +167,7 @@ target):
 | `src/lib/toast.tsx` | Passive notifications (max 4, auto-dismiss, ARIA live) |
 | `src/lib/commandPalette.tsx` | ⌘K palette with fuzzy search + keyboard nav |
 | `src/lib/AppShellExtensions.tsx` | Wires all shell-level chrome and Cmd+K commands |
+| `src/lib/RuntimeErrorBoundary.tsx` | Catches render errors after the app has mounted; offers Reset + Reload |
 | `src/lib/UpdateNotice.tsx` | Top-of-viewport banner for updater state |
 | `src/lib/WatchlistDrawer.tsx` | Right-aligned modal listing pinned views |
 | `src/lib/BacktestDrawer.tsx` | Right-aligned modal listing saved backtests |
