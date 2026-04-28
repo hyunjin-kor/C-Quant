@@ -4,6 +4,47 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Added — User-facing features pass
+
+- **In-app update notice**: top-of-viewport banner that surfaces when an
+  update is available or already downloaded; "Download" / "Restart &
+  install" / "Later" buttons hooked to `electron-updater` IPC. Polls
+  `updaterStatus` every 5s while open and schedules a fresh check every
+  30 minutes
+- **Watchlist drawer**: full-height right-aligned modal listing pinned
+  views, click-to-restore (rewrites `cquant:surface` and `cquant:market`
+  in localStorage), per-row remove, "Clear all" footer action. Esc
+  dismisses
+- **Backtest drawer**: lists saved backtest summaries newest first,
+  with load and delete actions. Esc dismisses
+- **Drag-and-drop CSV importer**: a window-wide listener detects file
+  drags, validates extension (csv/tsv/txt) and size (≤8MB), then
+  broadcasts a `cquant:csv-dropped` `CustomEvent` with `{ name, bytes,
+  content }` so any surface can subscribe without App.tsx surgery
+- **First-run welcome sequence**: timed toasts (welcome → theme/language
+  hint → privacy stance) on the first launch only, persisted via
+  `firstRunCompletedAt` in `settings.json` (with localStorage fallback)
+- **Markdown exporter**: `electron/exporters.js` extended with
+  `rowsToMarkdown` (header + divider + escaped cells); IPC
+  `export-markdown`; Cmd+K command "Export app diagnostics as Markdown"
+- **Privacy-first analytics**: `electron/analytics.js` opted-in via
+  `analyticsEnabled` setting *and* `CQUANT_ANALYTICS_ENDPOINT` env var.
+  Without both, every `track()` call is a no-op. Cmd+K command
+  "Enable / Disable analytics"
+- **Chart indicators library**: `src/lib/indicators.ts` with pure
+  `sma`, `ema`, `rsi`, `bollinger`, `logReturns`, `correlation`. Ready
+  to drop into the chart layer without external deps
+- **i18n message catalog**: `src/lib/i18n.ts` with `tt(locale, key,
+  params)` lookup, used by all new shell components. Sits alongside
+  the existing `localizeText` system rather than replacing it
+- **App settings extended**: `analyticsEnabled`, `firstRunCompletedAt`
+  fields with validation
+- **CSS shell sheet** (`src/styles.shell.css`): drawer overlay,
+  drawer-row interactions, update-notice banner, drop-zone overlay,
+  small-button modifier
+- **Vitest specs** for `analytics`, `i18n`, `markdown export`,
+  `chart indicators`
+
 ### Added — Distribution & feature pass
 
 - **Auto-update** via `electron-updater`, wired to GitHub releases. Disabled

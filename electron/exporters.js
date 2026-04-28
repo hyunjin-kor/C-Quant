@@ -85,6 +85,68 @@ async function exportCsv({ window, payload }) {
   });
 }
 
+function rowsToMarkdown(rows, columns) {
+  if (!Array.isArray(rows)) {
+    throw new Error("Markdown export requires an array of rows.");
+  }
+
+  let resolvedColumns = Array.isArray(columns) && columns.length > 0 ? columns : null;
+  if (!resolvedColumns) {
+    const seen = new Set();
+    for (const row of rows) {
+      if (row && typeof row === "object") {
+        for (const key of Object.keys(row)) seen.add(key);
+      }
+    }
+    resolvedColumns = Array.from(seen);
+  }
+  if (resolvedColumns.length === 0) {
+    throw new Error("Markdown export needs at least one column.");
+  }
+
+  const escape = (value) =>
+    String(value ?? "")
+      .replace(/\|/g, "\\|")
+      .replace(/\r?\n/g, " ");
+
+  const header = `| ${resolvedColumns.join(" | ")} |`;
+  const divider = `| ${resolvedColumns.map(() => "---").join(" | ")} |`;
+  const lines = [header, divider];
+  for (const row of rows) {
+    const cells = resolvedColumns.map((column) =>
+      escape(row && typeof row === "object" ? row[column] : "")
+    );
+    lines.push(`| ${cells.join(" | ")} |`);
+  }
+  return lines.join("\n");
+}
+
+async function exportMarkdown({ window, payload }) {
+  const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+  const columns = Array.isArray(payload?.columns) ? payload.columns : null;
+  const title = String(payload?.title ?? "C-Quant export");
+  const intro = payload?.intro ? `\n${String(payload.intro)}\n` : "";
+  const generatedAt = `_Generated ${new Date().toISOString()} by C-Quant_`;
+  const defaultName = String(payload?.defaultName ?? "c-quant-export.md").slice(0, 200);
+
+  const body =
+    rows.length > 0
+      ? rowsToMarkdown(rows, columns)
+      : "_(no rows in this export)_";
+
+  const content = `# ${title}\n${intro}\n${body}\n\n${generatedAt}\n`;
+
+  return writeFileWithDialog({
+    window,
+    defaultName,
+    content,
+    filters: [
+      { name: "Markdown", extensions: ["md", "markdown"] },
+      { name: "All files", extensions: ["*"] }
+    ]
+  });
+}
+
 async function exportPdf({ window, payload }) {
   if (!window) {
     throw new Error("Cannot export PDF without an active window.");
@@ -116,7 +178,9 @@ async function exportPdf({ window, payload }) {
 
 module.exports = {
   rowsToCsv,
+  rowsToMarkdown,
   quoteCsvCell,
   exportCsv,
-  exportPdf
+  exportPdf,
+  exportMarkdown
 };

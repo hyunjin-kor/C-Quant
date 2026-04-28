@@ -20,6 +20,7 @@ const { createSettingsStore } = require("./electron/appSettings");
 const sentry = require("./electron/sentry");
 const autoUpdate = require("./electron/autoUpdate");
 const exporters = require("./electron/exporters");
+const analytics = require("./electron/analytics");
 const { createWatchlistStore } = require("./electron/watchlist");
 const { createBacktestStore } = require("./electron/backtests");
 
@@ -557,6 +558,28 @@ ipcMain.handle("export-pdf", async (event, payload) => {
   return exporters.exportPdf({ window, payload: payload ?? {} });
 });
 
+ipcMain.handle("export-markdown", async (event, payload) => {
+  assertTrustedSender(event);
+  const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  return exporters.exportMarkdown({ window, payload: payload ?? {} });
+});
+
+// --- Analytics IPC -----------------------------------------------------------
+
+ipcMain.handle("analytics-track", (event, payload) => {
+  assertTrustedSender(event);
+  if (!payload || typeof payload !== "object") return;
+  analytics.track(String(payload.name ?? ""), payload.properties);
+});
+
+ipcMain.handle("analytics-set-enabled", async (event, value) => {
+  assertTrustedSender(event);
+  const enabled = value === true;
+  analytics.setEnabled(enabled);
+  await settingsStore?.save({ analyticsEnabled: enabled });
+  return enabled;
+});
+
 // --- Watchlist IPC -----------------------------------------------------------
 
 ipcMain.handle("watchlist-load", async (event) => {
@@ -753,7 +776,19 @@ app.whenReady().then(() => {
   // 5) Wire the auto-updater (no-op in dev or when disabled by env).
   autoUpdate.init({ packaged: app.isPackaged });
 
-  // 6) Open the main window.
+  // 6) Wire analytics (gated by user opt-in + env). Default state is off.
+  void settingsStore.load().then((settings) => {
+    analytics.init({
+      enabled: settings.analyticsEnabled,
+      app: {
+        version: app.getVersion(),
+        platform: process.platform,
+        locale: settings.locale
+      }
+    });
+  });
+
+  // 7) Open the main window.
   createWindow();
 
   app.on("activate", () => {

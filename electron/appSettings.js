@@ -19,7 +19,9 @@ const DEFAULTS = {
   locale: "ko",
   reducedMotion: false,
   surface: "command",
-  market: "k-ets"
+  market: "k-ets",
+  analyticsEnabled: false,
+  firstRunCompletedAt: ""
 };
 
 function pickString(value, allowed, fallback) {
@@ -37,7 +39,12 @@ function normalize(input = {}) {
     locale: pickString(input.locale, ALLOWED_LOCALES, DEFAULTS.locale),
     reducedMotion: pickBoolean(input.reducedMotion, DEFAULTS.reducedMotion),
     surface: typeof input.surface === "string" ? input.surface.slice(0, 32) : DEFAULTS.surface,
-    market: typeof input.market === "string" ? input.market.slice(0, 32) : DEFAULTS.market
+    market: typeof input.market === "string" ? input.market.slice(0, 32) : DEFAULTS.market,
+    analyticsEnabled: pickBoolean(input.analyticsEnabled, DEFAULTS.analyticsEnabled),
+    firstRunCompletedAt:
+      typeof input.firstRunCompletedAt === "string"
+        ? input.firstRunCompletedAt.slice(0, 64)
+        : DEFAULTS.firstRunCompletedAt
   };
 }
 

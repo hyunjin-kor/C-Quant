@@ -9,6 +9,8 @@ export type AppSettings = {
   reducedMotion: boolean;
   surface: string;
   market: string;
+  analyticsEnabled: boolean;
+  firstRunCompletedAt: string;
 };
 
 export type RendererStartupFailurePayload = {
@@ -119,6 +121,19 @@ export type DesktopBridge = {
 
   exportCsv?: (payload: CsvExportPayload) => Promise<ExportResult>;
   exportPdf?: (payload: PdfExportPayload) => Promise<ExportResult>;
+  exportMarkdown?: (payload: {
+    rows?: Array<Record<string, unknown>>;
+    columns?: string[];
+    title?: string;
+    intro?: string;
+    defaultName?: string;
+  }) => Promise<ExportResult>;
+
+  analyticsTrack?: (payload: {
+    name: string;
+    properties?: Record<string, string | number | boolean>;
+  }) => Promise<void>;
+  analyticsSetEnabled?: (value: boolean) => Promise<boolean>;
 
   watchlistLoad?: () => Promise<WatchlistPayload>;
   watchlistAdd?: (item: WatchlistItem) => Promise<WatchlistPayload>;

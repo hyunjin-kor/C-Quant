@@ -28,7 +28,7 @@
     "test:all": "npm run test && npm run test:node",
     "build": "npm run type-check && vite build",
     "bundle:check": "node tools/check-bundle-size.mjs",
-    "ci:verify": "node --check main.js && node --check preload.js && node --check electron/security.js && node --check electron/cache.js && node --check electron/logger.js && node --check electron/windowState.js && node --check electron/appSettings.js && node --check electron/liveSources.js && node --check electron/autoUpdate.js && node --check electron/sentry.js && node --check electron/exporters.js && node --check electron/watchlist.js && node --check electron/backtests.js",
+    "ci:verify": "node --check main.js && node --check preload.js && node --check electron/security.js && node --check electron/cache.js && node --check electron/logger.js && node --check electron/windowState.js && node --check electron/appSettings.js && node --check electron/liveSources.js && node --check electron/autoUpdate.js && node --check electron/sentry.js && node --check electron/exporters.js && node --check electron/watchlist.js && node --check electron/backtests.js && node --check electron/analytics.js",
     "preview": "vite preview",
     "autonomy:cycle": "powershell -ExecutionPolicy Bypass -File scripts/run-autonomous-cycle.ps1",
     "autonomy:release": "powershell -ExecutionPolicy Bypass -File scripts/run-autonomous-cycle.ps1 -WithPackaging",

@@ -36,6 +36,11 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   // Exporters
   exportCsv: (payload) => ipcRenderer.invoke("export-csv", payload),
   exportPdf: (payload) => ipcRenderer.invoke("export-pdf", payload),
+  exportMarkdown: (payload) => ipcRenderer.invoke("export-markdown", payload),
+
+  // Analytics (opt-in)
+  analyticsTrack: (payload) => ipcRenderer.invoke("analytics-track", payload),
+  analyticsSetEnabled: (value) => ipcRenderer.invoke("analytics-set-enabled", value),
 
   // Watchlist
   watchlistLoad: () => ipcRenderer.invoke("watchlist-load"),

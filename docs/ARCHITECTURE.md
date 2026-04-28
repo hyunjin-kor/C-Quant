@@ -38,6 +38,7 @@ Security baseline:
 | `electron/exporters.js` | `printToPDF` + RFC 4180 CSV serializer. Save dialog mediated by main |
 | `electron/watchlist.js` | Pinned-view archive with validation, capped at 64 entries |
 | `electron/backtests.js` | Per-run JSON archive at `<userData>/backtests/`, 4 MB cap, ID-validated |
+| `electron/analytics.js` | Opt-in event dispatcher. No-op unless `analyticsEnabled` setting + `CQUANT_ANALYTICS_ENDPOINT` env var both set |
 
 ## Renderer architecture
 
@@ -156,6 +157,23 @@ target):
 7. `node --check` on Electron entry points
 8. `vite build`
 9. Bundle size budget
+
+## Renderer libraries
+
+| File | Role |
+|---|---|
+| `src/lib/theme.tsx` | Theme/locale/reduced-motion provider; persists via bridge |
+| `src/lib/toast.tsx` | Passive notifications (max 4, auto-dismiss, ARIA live) |
+| `src/lib/commandPalette.tsx` | ⌘K palette with fuzzy search + keyboard nav |
+| `src/lib/AppShellExtensions.tsx` | Wires all shell-level chrome and Cmd+K commands |
+| `src/lib/UpdateNotice.tsx` | Top-of-viewport banner for updater state |
+| `src/lib/WatchlistDrawer.tsx` | Right-aligned modal listing pinned views |
+| `src/lib/BacktestDrawer.tsx` | Right-aligned modal listing saved backtests |
+| `src/lib/DropZone.tsx` | Window-wide CSV drag-drop with `cquant:csv-dropped` event |
+| `src/lib/firstRun.tsx` | Three-step welcome sequence on first launch |
+| `src/lib/i18n.ts` | Additive message catalog (tt(locale, key, params)) |
+| `src/lib/indicators.ts` | Pure SMA/EMA/RSI/Bollinger/log-returns/correlation |
+| `src/lib/desktopBridge.ts` | Typed handle on `window.desktopBridge` |
 
 ## Power UX
 

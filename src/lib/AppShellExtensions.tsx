@@ -1,17 +1,19 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme } from "./theme";
 import { useToast } from "./toast";
 import { useRegisterCommands, type Command } from "./commandPalette";
-import { getBridge } from "./desktopBridge";
-
-const ITEM_ID = "current-view";
+import { getBridge, loadAppSettings, saveAppSettings } from "./desktopBridge";
+import { UpdateNotice } from "./UpdateNotice";
+import { WatchlistDrawer } from "./WatchlistDrawer";
+import { BacktestDrawer } from "./BacktestDrawer";
+import { DropZone } from "./DropZone";
+import { FirstRun } from "./firstRun";
 
 /**
- * Mounts cross-cutting UX wiring that lives at the App shell level:
- *  - Skip link (a11y)
- *  - Floating theme toggle (visible quick-switch)
- *  - Standard command palette commands
- *  - Welcome toast on first run / bridge missing
+ * The shell layer renders the floating chrome (theme toggle, update banner,
+ * drawers, drop zone), wires every Cmd+K command, and triggers the
+ * first-run sequence. App.tsx remains responsible for the surface
+ * routing — we sit alongside it as additive UX.
  */
 export function AppShellExtensions() {
   const {
@@ -24,40 +26,65 @@ export function AppShellExtensions() {
     setReducedMotion
   } = useTheme();
   const toast = useToast();
+  const [watchlistOpen, setWatchlistOpen] = useState(false);
+  const [backtestOpen, setBacktestOpen] = useState(false);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
 
   const bridgeAvailable = useMemo(() => Boolean(getBridge()), []);
+
+  // Hydrate analytics state from settings.
+  useEffect(() => {
+    let cancelled = false;
+    void loadAppSettings().then((settings) => {
+      if (!cancelled && settings) setAnalyticsEnabled(settings.analyticsEnabled);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setAnalytics = useCallback(
+    async (next: boolean) => {
+      const bridge = getBridge();
+      if (bridge?.analyticsSetEnabled) {
+        try {
+          await bridge.analyticsSetEnabled(next);
+        } catch {
+          // ignore
+        }
+      } else {
+        await saveAppSettings({ analyticsEnabled: next });
+      }
+      setAnalyticsEnabled(next);
+      toast.push({
+        tone: "info",
+        title: next ? "Analytics enabled" : "Analytics disabled",
+        description: next
+          ? "Anonymized usage events will be sent only when an endpoint is configured."
+          : "No usage events will leave this machine."
+      });
+    },
+    [toast]
+  );
 
   const commands = useMemo<Command[]>(() => {
     const bridge = getBridge();
 
     const list: Command[] = [
-      // ── Appearance ────────────────────────────────────────────────
-      {
-        id: "theme.light",
-        title: "Theme: Light",
-        group: "Appearance",
-        keywords: "light theme cream warm",
-        run: () => setTheme("light")
-      },
-      {
-        id: "theme.dark",
-        title: "Theme: Dark",
-        group: "Appearance",
-        keywords: "dark night theme",
-        run: () => setTheme("dark")
-      },
+      // ── Appearance ───────────────────────────────────────────────
+      { id: "theme.light", title: "Theme: Light", group: "Appearance", run: () => setTheme("light") },
+      { id: "theme.dark", title: "Theme: Dark", group: "Appearance", run: () => setTheme("dark") },
       {
         id: "theme.system",
         title: "Theme: Match system",
         group: "Appearance",
-        keywords: "system auto follow os",
         run: () => setTheme("system")
       },
       {
         id: "theme.toggle",
         title: "Toggle theme",
         group: "Appearance",
-        keywords: "toggle switch theme",
+        keywords: "switch toggle",
         run: () =>
           setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark")
       },
@@ -65,44 +92,97 @@ export function AppShellExtensions() {
         id: "motion.toggle",
         title: reducedMotion ? "Motion: enable animations" : "Motion: reduce animations",
         group: "Appearance",
-        keywords: "motion animation accessibility",
         run: () => setReducedMotion(!reducedMotion)
       },
 
-      // ── Language ──────────────────────────────────────────────────
+      // ── Language ────────────────────────────────────────────────
       {
         id: "locale.toggle",
         title: locale === "ko" ? "Switch to English" : "한국어로 전환",
         group: "Language",
-        keywords: "locale language korean english 한국어 영어",
+        keywords: "language locale 한국어 english",
         run: () => setLocale(locale === "ko" ? "en" : "ko")
       },
       {
         id: "locale.ko",
         title: "Language: 한국어",
         group: "Language",
-        keywords: "korean ko 한국어",
         run: () => setLocale("ko")
       },
       {
         id: "locale.en",
         title: "Language: English",
         group: "Language",
-        keywords: "english en",
         run: () => setLocale("en")
       },
 
-      // ── View ──────────────────────────────────────────────────────
+      // ── Watchlist & backtests ───────────────────────────────────
+      {
+        id: "watchlist.open",
+        title: "Open watchlist",
+        group: "Workspace",
+        keywords: "watchlist pin",
+        run: () => setWatchlistOpen(true)
+      },
+      {
+        id: "backtest.open",
+        title: "Open backtest archive",
+        group: "Workspace",
+        keywords: "backtest results saved",
+        run: () => setBacktestOpen(true)
+      },
+
+      // ── View ─────────────────────────────────────────────────────
       {
         id: "view.reload",
         title: "Reload window",
         group: "View",
-        keywords: "reload refresh restart",
         run: () => window.location.reload()
       }
     ];
 
-    // ── Export ──────────────────────────────────────────────────────
+    // ── Pin current view ──────────────────────────────────────────
+    if (bridge?.watchlistAdd) {
+      list.push({
+        id: "watchlist.pin",
+        title: "Pin current view to watchlist",
+        group: "Workspace",
+        keywords: "pin save bookmark watchlist",
+        run: async () => {
+          const surfaceLabel =
+            (typeof window !== "undefined" &&
+              window.localStorage.getItem("cquant:surface")) ||
+            "command";
+          const marketLabel =
+            (typeof window !== "undefined" &&
+              window.localStorage.getItem("cquant:market")) ||
+            "k-ets";
+          const item = {
+            id: `${surfaceLabel}-${marketLabel}-${Date.now().toString(36)}`,
+            label: `${marketLabel.toUpperCase()} · ${surfaceLabel}`,
+            marketId: marketLabel,
+            surface: surfaceLabel,
+            createdAt: new Date().toISOString()
+          };
+          try {
+            await bridge.watchlistAdd!(item);
+            toast.push({
+              tone: "success",
+              title: "Pinned to watchlist",
+              description: item.label
+            });
+          } catch (error) {
+            toast.push({
+              tone: "error",
+              title: "Pin failed",
+              description: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      });
+    }
+
+    // ── Export ───────────────────────────────────────────────────
     if (bridge?.exportPdf) {
       list.push({
         id: "export.pdf",
@@ -164,40 +244,37 @@ export function AppShellExtensions() {
       });
     }
 
-    // ── Watchlist ───────────────────────────────────────────────────
-    if (bridge?.watchlistAdd) {
+    if (bridge?.exportMarkdown) {
       list.push({
-        id: "watchlist.pin",
-        title: "Pin current view to watchlist",
-        group: "Watchlist",
-        keywords: "pin watchlist save bookmark",
+        id: "export.appinfo.md",
+        title: "Export app diagnostics as Markdown…",
+        group: "Export",
+        keywords: "markdown md report export",
         run: async () => {
-          const surfaceLabel =
-            (typeof window !== "undefined" &&
-              window.localStorage.getItem("cquant:surface")) ||
-            "command";
-          const marketLabel =
-            (typeof window !== "undefined" &&
-              window.localStorage.getItem("cquant:market")) ||
-            "k-ets";
-          const item = {
-            id: `${surfaceLabel}-${marketLabel}-${Date.now().toString(36)}`,
-            label: `${marketLabel.toUpperCase()} · ${surfaceLabel}`,
-            marketId: marketLabel,
-            surface: surfaceLabel,
-            createdAt: new Date().toISOString()
-          };
           try {
-            await bridge.watchlistAdd!(item);
-            toast.push({
-              tone: "success",
-              title: "Pinned to watchlist",
-              description: item.label
+            const info = (await bridge.getAppInfo?.()) ?? {};
+            const rows = Object.entries(info).map(([key, value]) => ({
+              key,
+              value: String(value ?? "")
+            }));
+            const result = await bridge.exportMarkdown!({
+              defaultName: "c-quant-diagnostics.md",
+              title: "C-Quant diagnostics",
+              intro: `Generated for build ${(info as { version?: string }).version ?? "0.1.0"}.`,
+              rows,
+              columns: ["key", "value"]
             });
+            if (!result?.canceled && result?.filePath) {
+              toast.push({
+                tone: "success",
+                title: "Exported diagnostics",
+                description: result.filePath
+              });
+            }
           } catch (error) {
             toast.push({
               tone: "error",
-              title: "Pin failed",
+              title: "Markdown export failed",
               description: error instanceof Error ? error.message : String(error)
             });
           }
@@ -205,72 +282,77 @@ export function AppShellExtensions() {
       });
     }
 
-    // ── Updates ─────────────────────────────────────────────────────
+    // ── Updates ─────────────────────────────────────────────────
     if (bridge?.updaterCheck) {
-      list.push({
-        id: "updater.check",
-        title: "Check for updates",
-        group: "Updates",
-        keywords: "update upgrade check version",
-        run: async () => {
-          const status = await bridge.updaterCheck!();
-          const tone =
-            status.state === "error"
-              ? "error"
-              : status.state === "available"
-                ? "info"
-                : "success";
-          toast.push({
-            tone,
-            title: `Updater: ${status.state}`,
-            description:
-              status.state === "available" && status.version
-                ? `Version ${status.version} is available. Run "Download update" to fetch it.`
-                : status.error || ""
-          });
+      list.push(
+        {
+          id: "updater.check",
+          title: "Check for updates",
+          group: "Updates",
+          run: async () => {
+            const status = await bridge.updaterCheck!();
+            const tone =
+              status.state === "error"
+                ? "error"
+                : status.state === "available"
+                  ? "info"
+                  : "success";
+            toast.push({
+              tone,
+              title: `Updater: ${status.state}`,
+              description:
+                status.state === "available" && status.version
+                  ? `Version ${status.version} is available.`
+                  : status.error || ""
+            });
+          }
+        },
+        {
+          id: "updater.download",
+          title: "Download update",
+          group: "Updates",
+          run: async () => {
+            const status = await bridge.updaterDownload!();
+            toast.push({
+              tone: status.state === "error" ? "error" : "info",
+              title: `Updater: ${status.state}`,
+              description: status.error || ""
+            });
+          }
+        },
+        {
+          id: "updater.install",
+          title: "Install update and restart",
+          group: "Updates",
+          run: async () => {
+            const status = await bridge.updaterInstall!();
+            if (status.state === "downloaded" || status.state === "installing") return;
+            toast.push({
+              tone: "warning",
+              title: "Cannot install yet",
+              description: status.error || `Updater state: ${status.state}`
+            });
+          }
         }
-      });
-
-      list.push({
-        id: "updater.download",
-        title: "Download update",
-        group: "Updates",
-        keywords: "download update upgrade",
-        run: async () => {
-          const status = await bridge.updaterDownload!();
-          toast.push({
-            tone: status.state === "error" ? "error" : "info",
-            title: `Updater: ${status.state}`,
-            description: status.error || ""
-          });
-        }
-      });
-
-      list.push({
-        id: "updater.install",
-        title: "Install update and restart",
-        group: "Updates",
-        keywords: "install update upgrade restart",
-        run: async () => {
-          const status = await bridge.updaterInstall!();
-          if (status.state === "downloaded" || status.state === "installing") return;
-          toast.push({
-            tone: "warning",
-            title: "Cannot install yet",
-            description: status.error || `Updater state: ${status.state}`
-          });
-        }
-      });
+      );
     }
 
-    // ── Folders / diagnostics ───────────────────────────────────────
+    // ── Privacy ─────────────────────────────────────────────────
+    list.push({
+      id: "privacy.analytics.toggle",
+      title: analyticsEnabled ? "Disable analytics" : "Enable analytics",
+      group: "Privacy",
+      keywords: "analytics privacy telemetry tracking",
+      run: () => setAnalytics(!analyticsEnabled)
+    });
+
+    // ── Diagnostics ────────────────────────────────────────────
     if (bridge?.openUserDataFolder) {
       list.push(
         {
           id: "folder.userdata",
           title: "Open app data folder",
           group: "Diagnostics",
-          keywords: "user data folder open files",
           run: async () => {
             await bridge.openUserDataFolder!("");
           }
@@ -279,7 +361,6 @@ export function AppShellExtensions() {
           id: "folder.logs",
           title: "Open log folder",
           group: "Diagnostics",
-          keywords: "logs folder open debug",
           run: async () => {
             await bridge.openUserDataFolder!("logs");
           }
@@ -288,7 +369,6 @@ export function AppShellExtensions() {
           id: "folder.backtests",
           title: "Open backtests folder",
           group: "Diagnostics",
-          keywords: "backtests folder open results",
           run: async () => {
             await bridge.openUserDataFolder!("backtests");
           }
@@ -296,12 +376,11 @@ export function AppShellExtensions() {
       );
     }
 
-    // ── About ───────────────────────────────────────────────────────
+    // ── About ───────────────────────────────────────────────────
     list.push({
       id: "about",
       title: "About C-Quant",
       group: "Help",
-      keywords: "about version info",
       run: async () => {
         const info = (await bridge?.getAppInfo?.().catch(() => null)) ?? null;
         const version = info?.version ?? bridge?.version ?? "0.1.0";
@@ -316,11 +395,22 @@ export function AppShellExtensions() {
     });
 
     return list;
-  }, [theme, effectiveTheme, locale, reducedMotion, setTheme, setLocale, setReducedMotion, toast]);
+  }, [
+    theme,
+    effectiveTheme,
+    locale,
+    reducedMotion,
+    analyticsEnabled,
+    setTheme,
+    setLocale,
+    setReducedMotion,
+    setAnalytics,
+    toast
+  ]);
 
   useRegisterCommands(commands);
 
-  // First-run / bridge-missing notice.
+  // Bridge-missing notice once at startup.
   useEffect(() => {
     if (bridgeAvailable) return;
     toast.push({
@@ -332,16 +422,23 @@ export function AppShellExtensions() {
     });
   }, [bridgeAvailable, toast]);
 
-  // Mark the unused ITEM_ID at module level so the bundler keeps the symbol
-  // available for later watchlist UX work.
-  void ITEM_ID;
-
   return (
     <>
       <a className="skip-link" href="#workspace-main">
         Skip to content
       </a>
+      <UpdateNotice />
       <ThemeQuickToggle />
+      <DropZone />
+      <FirstRun />
+      <WatchlistDrawer
+        open={watchlistOpen}
+        onClose={() => setWatchlistOpen(false)}
+      />
+      <BacktestDrawer
+        open={backtestOpen}
+        onClose={() => setBacktestOpen(false)}
+      />
     </>
   );
 }

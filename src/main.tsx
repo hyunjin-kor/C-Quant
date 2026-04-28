@@ -9,6 +9,7 @@ import { CommandPaletteProvider } from "./lib/commandPalette";
 import { AppShellExtensions } from "./lib/AppShellExtensions";
 import "./styles.css";
 import "./styles.claude.css";
+import "./styles.shell.css";
 
 type RendererStartupFailurePayload = {
   phase: string;
