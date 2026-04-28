@@ -28,7 +28,7 @@
     "test:all": "npm run test && npm run test:node",
     "build": "npm run type-check && vite build",
     "bundle:check": "node tools/check-bundle-size.mjs",
-    "ci:verify": "node --check main.js && node --check preload.js && node --check electron/security.js && node --check electron/cache.js && node --check electron/logger.js && node --check electron/windowState.js && node --check electron/appSettings.js && node --check electron/liveSources.js",
+    "ci:verify": "node --check main.js && node --check preload.js && node --check electron/security.js && node --check electron/cache.js && node --check electron/logger.js && node --check electron/windowState.js && node --check electron/appSettings.js && node --check electron/liveSources.js && node --check electron/autoUpdate.js && node --check electron/sentry.js && node --check electron/exporters.js && node --check electron/watchlist.js && node --check electron/backtests.js",
     "preview": "vite preview",
     "autonomy:cycle": "powershell -ExecutionPolicy Bypass -File scripts/run-autonomous-cycle.ps1",
     "autonomy:release": "powershell -ExecutionPolicy Bypass -File scripts/run-autonomous-cycle.ps1 -WithPackaging",
@@ -44,7 +44,13 @@
     "smoke:portable": "powershell -ExecutionPolicy Bypass -File scripts/smoke-cquant.ps1 -Mode portable",
     "smoke:release": "powershell -ExecutionPolicy Bypass -File scripts/smoke-cquant.ps1 -Mode all",
     "package:dir": "powershell -ExecutionPolicy Bypass -File scripts/stop-running-cquant.ps1 && npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win dir",
-    "package:portable": "powershell -ExecutionPolicy Bypass -File scripts/stop-running-cquant.ps1 && npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win portable"
+    "package:portable": "powershell -ExecutionPolicy Bypass -File scripts/stop-running-cquant.ps1 && npm.cmd run build && set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win portable",
+    "package:nsis": "npm run build && electron-builder --win nsis",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:linux": "npm run build && electron-builder --linux",
+    "package:all": "npm run build && electron-builder -mwl",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui"
   },
   "engines": {
     "node": ">=24"
@@ -53,12 +59,15 @@
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/inter": "^5.2.8",
+    "@sentry/electron": "^7.12.0",
+    "electron-updater": "^6.8.3",
     "exceljs": "^4.4.0",
     "lightweight-charts": "^5.2.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^22.10.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -95,13 +104,51 @@
       "preload.js",
       "package.json"
     ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "hyunjin-kor",
+        "repo": "C-Quant"
+      }
+    ],
     "win": {
       "signAndEditExecutable": false,
       "icon": "assets/app-icon.ico",
       "target": [
-        "portable"
+        "portable",
+        "nsis"
       ],
-      "artifactName": "C-Quant-${version}.${ext}"
+      "artifactName": "C-Quant-${version}.${ext}",
+      "signingHashAlgorithms": ["sha256"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "category": "public.app-category.finance",
+      "icon": "assets/app-icon.png",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
+      "artifactName": "C-Quant-${version}-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "writeUpdateInfo": true
+    },
+    "linux": {
+      "category": "Finance",
+      "icon": "assets/app-icon.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "artifactName": "C-Quant-${version}-${arch}.${ext}"
     }
   }
 }

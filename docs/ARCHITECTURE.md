@@ -33,6 +33,11 @@ Security baseline:
 | `electron/windowState.js` | Persists window position, size, and maximized state across launches |
 | `electron/appSettings.js` | User-facing settings (theme, locale, reduced motion, last surface/market) |
 | `electron/liveSources.js` | Public-source fetchers for EU/Korea/China carbon markets |
+| `electron/autoUpdate.js` | `electron-updater` wrapper. Disabled in dev + by `CQUANT_DISABLE_UPDATER=1`. Status broadcast via IPC |
+| `electron/sentry.js` | Optional crash upload via `@sentry/electron`. No-op unless `CQUANT_SENTRY_DSN` is set |
+| `electron/exporters.js` | `printToPDF` + RFC 4180 CSV serializer. Save dialog mediated by main |
+| `electron/watchlist.js` | Pinned-view archive with validation, capped at 64 entries |
+| `electron/backtests.js` | Per-run JSON archive at `<userData>/backtests/`, 4 MB cap, ID-validated |
 
 ## Renderer architecture
 
@@ -79,6 +84,8 @@ scrollbars, toasts, command palette, theme toggle, skeletons).
 |---|---|---|
 | `<userData>/settings.json` | Theme, locale, reduced motion, last surface/market | JSON |
 | `<userData>/window-state.json` | Window x/y/width/height + maximized | JSON |
+| `<userData>/watchlist.json` | Pinned views (max 64) | JSON |
+| `<userData>/backtests/<id>.json` | Saved backtest runs (one file per run) | JSON |
 | `<userData>/logs/cquant.log` | Rotating log (1 MB × 4 files) | Plaintext |
 | `<userData>/logs/startup-diagnostics.log` | Append-only renderer-startup events | Plaintext |
 | `localStorage` | Mirrored locale/surface/market for instant first paint | Key-value |
@@ -152,7 +159,10 @@ target):
 
 ## Power UX
 
-- **Cmd/Ctrl + K** — command palette (theme, motion, reload, about)
+- **Cmd/Ctrl + K** — command palette: theme, locale toggle, motion,
+  reload, exports (PDF/CSV), watchlist pin, updates (check/download/install),
+  open data folders, about
+- **Floating theme toggle** (bottom-right) cycles light → system → dark
 - **Esc** — close palette / dismiss
 - **↑ / ↓** — navigate palette items
 - **Skip link** — first focusable element jumps to `#workspace-main`
@@ -160,3 +170,17 @@ target):
   `:focus-visible`
 - **Reduced motion** — `prefers-reduced-motion` is honored automatically;
   users can also toggle it manually
+- **Cross-app locale change** — Cmd+K locale flip dispatches a
+  `cquant:locale-change` `CustomEvent` that App.tsx listens to so the
+  workspace updates without a reload
+
+## Distribution
+
+| Concern | Surface | Operator action |
+|---|---|---|
+| Auto-update | `electron-updater` reading from GitHub releases | Push a release tag with `gh release create` and let the published artifacts feed clients |
+| Code signing (Windows) | electron-builder reads `CSC_LINK` + `CSC_KEY_PASSWORD` | Provide a `.pfx` cert path or HTTPS URL and password |
+| Code signing (macOS) | `CSC_NAME` + `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD` + `APPLE_TEAM_ID` | Developer ID + notarization secret |
+| Crash upload | `@sentry/electron` | Set `CQUANT_SENTRY_DSN` |
+| Disable updater | Per-machine env | Set `CQUANT_DISABLE_UPDATER=1` |
+| Cross-platform builds | electron-builder targets in `package.json#build` | `npm run package:mac`, `package:linux`, `package:nsis` |

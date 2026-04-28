@@ -8,13 +8,21 @@ on:
 
 jobs:
   verify:
-    name: Verify (Node ${{ matrix.node }} on ${{ matrix.os }})
+    name: Verify (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
-        node: [24]
+        # windows-latest is the primary target. mac/linux are advisory:
+        # they run the same gates but are allowed to fail until the
+        # cross-platform packaging story stabilizes.
+        include:
+          - os: windows-latest
+            primary: true
+          - os: macos-latest
+            primary: false
+          - os: ubuntu-latest
+            primary: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -30,6 +38,7 @@ jobs:
 
       - name: Type check
         run: npm run type-check
+        continue-on-error: ${{ !matrix.primary }}
 
       - name: Lint
         run: npm run lint
@@ -41,15 +50,46 @@ jobs:
 
       - name: Unit tests (vitest)
         run: npm test
+        continue-on-error: ${{ !matrix.primary }}
 
       - name: Localization tests (node:test)
         run: npm run test:node
+        continue-on-error: ${{ !matrix.primary }}
 
       - name: Syntax check (Electron entrypoints)
         run: npm run ci:verify
+        continue-on-error: ${{ !matrix.primary }}
+
+      - name: Build renderer
+        run: npm run build
+        continue-on-error: ${{ !matrix.primary }}
+
+      - name: Bundle size budget
+        run: npm run bundle:check
+        continue-on-error: ${{ !matrix.primary }}
+
+  e2e:
+    name: E2E smoke (windows)
+    runs-on: windows-latest
+    needs: verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build renderer
         run: npm run build
 
-      - name: Bundle size budget
-        run: node tools/check-bundle-size.mjs
+      - name: Run Playwright smoke
+        run: npm run e2e
+        continue-on-error: true
+        env:
+          CQUANT_DISABLE_UPDATER: "1"

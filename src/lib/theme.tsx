@@ -139,6 +139,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (getBridge()?.saveAppSettings) {
       void saveAppSettings({ locale: next });
     }
+    // Broadcast for App.tsx (and any other islands) that own their own
+    // locale state and need to re-render when the user toggles via Cmd+K.
+    if (typeof window !== "undefined") {
+      try {
+        window.dispatchEvent(
+          new CustomEvent("cquant:locale-change", { detail: { locale: next } })
+        );
+      } catch {
+        // ignore — not all renderers support CustomEvent identically
+      }
+    }
   }, []);
 
   const setReducedMotion = useCallback((next: boolean) => {

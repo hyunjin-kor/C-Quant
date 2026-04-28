@@ -1259,6 +1259,23 @@ export default function App() {
   const [locale, setLocale] = useState<AppLocale>(readStoredLocale);
   const [surface, setSurface] = useState<Surface>(readStoredSurface);
   const [marketId, setMarketId] = useState<MarketId>(readStoredMarket);
+
+  // Listen for locale changes broadcast by the global ThemeProvider (e.g.
+  // when the user flips locale via the ⌘K command palette).
+  useEffect(() => {
+    function onLocaleChange(event: Event) {
+      const detail = (event as CustomEvent<{ locale: AppLocale }>).detail;
+      const next = detail?.locale === "en" ? "en" : "ko";
+      setLocale(next);
+    }
+    window.addEventListener("cquant:locale-change", onLocaleChange as EventListener);
+    return () => {
+      window.removeEventListener(
+        "cquant:locale-change",
+        onLocaleChange as EventListener
+      );
+    };
+  }, []);
   const [quoteRange, setQuoteRange] = useState<QuoteRangePreset>("3m");
   const [quoteRefreshTick, setQuoteRefreshTick] = useState(0);
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(EMPTY_SOURCES);

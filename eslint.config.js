@@ -15,7 +15,9 @@ export default [
       ".autonomy/**",
       "package-lock.json",
       "tools/autonomy-monitor/index.html",
-      "coverage/**"
+      "coverage/**",
+      "playwright-report/**",
+      "test-results/**"
     ]
   },
   js.configs.recommended,
@@ -94,9 +96,20 @@ export default [
     }
   },
   {
-    files: ["vite.config.ts", "vitest.config.ts", "eslint.config.js"],
+    files: ["vite.config.ts", "vitest.config.ts", "playwright.config.ts", "eslint.config.js"],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 }
+    }
+  },
+  {
+    files: ["e2e/**/*.{ts,js}"],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.es2022 },
+      sourceType: "module"
+    },
+    rules: {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "off"
     }
   },
   prettier

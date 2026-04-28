@@ -4,7 +4,46 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
-### Added
+### Added — Distribution & feature pass
+
+- **Auto-update** via `electron-updater`, wired to GitHub releases. Disabled
+  in dev and when `CQUANT_DISABLE_UPDATER=1`. Renderer surfaces it through
+  Cmd+K commands: "Check for updates", "Download update", "Install update
+  and restart"
+- **Sentry crash upload** (`@sentry/electron`) gated by `CQUANT_SENTRY_DSN`.
+  Without a DSN the SDK is never initialized — zero telemetry leaves the
+  machine. `uncaughtException` and `unhandledRejection` route into Sentry
+  when enabled
+- **PDF + CSV exporters** (`electron/exporters.js`):
+  - `printToPDF` of the current renderer with save dialog
+  - RFC 4180 CSV serializer with explicit-or-inferred columns
+  - Cmd+K commands "Export current view as PDF" and
+    "Export app diagnostics as CSV"
+- **Watchlist persistence** (`electron/watchlist.js`): pinned views stored
+  at `<userData>/watchlist.json`, capped at 64 entries, with input
+  validation. Cmd+K command "Pin current view to watchlist"
+- **Backtest archive** (`electron/backtests.js`): one JSON per backtest at
+  `<userData>/backtests/<id>.json`, 4 MB cap, ID validation
+- **App info & shell utilities IPC**: `getAppInfo`, `openUserDataFolder`
+  with allow-listed sub-folders (`""`, `"logs"`, `"backtests"`)
+- **Cmd+K palette additions**: locale toggle (Korean ↔ English),
+  open app data / log / backtest folders, About C-Quant
+- **Visible theme toggle** floating button (cycles light → system → dark)
+- **App.tsx locale event listener** so Cmd+K locale changes update the
+  workspace immediately
+- **Playwright e2e smoke test**: launches the Electron app and verifies
+  the desktop bridge mounted
+- **CI matrix**: macOS, Linux, Windows all run the verify pipeline
+  (Windows is the primary; the others are advisory)
+- **e2e CI job** runs the Playwright smoke after the verify matrix
+- **Cross-platform packaging targets** in `package.json` build config:
+  Windows portable + nsis, macOS dmg + zip (x64 + arm64), Linux AppImage + deb
+- **Code-signing scaffolding**: env reads documented in `.env.example`
+  for `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`,
+  `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`, `GH_TOKEN`
+- **Vitest specs** for `exporters`, `watchlist`, `backtests`
+
+### Added — Production resilience (earlier in Unreleased)
 
 - **Production resilience**
   - Strict Content-Security-Policy injected from the Electron session

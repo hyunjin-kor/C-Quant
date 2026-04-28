@@ -17,6 +17,11 @@ const logger = require("./electron/logger");
 const { createTtlCache: _createTtlCache } = require("./electron/cache");
 const { createWindowStateStore } = require("./electron/windowState");
 const { createSettingsStore } = require("./electron/appSettings");
+const sentry = require("./electron/sentry");
+const autoUpdate = require("./electron/autoUpdate");
+const exporters = require("./electron/exporters");
+const { createWatchlistStore } = require("./electron/watchlist");
+const { createBacktestStore } = require("./electron/backtests");
 
 const isDev = !app.isPackaged;
 const RENDERER_STARTUP_TIMEOUT_MS = isDev ? 15000 : 8000;
@@ -25,6 +30,8 @@ let mainWindow = null;
 let startupWatchdog = null;
 let windowStateStore = null;
 let settingsStore = null;
+let watchlistStore = null;
+let backtestStore = null;
 const rendererStartupState = new Map();
 
 const escapeHtml = security.escapeHtml;
@@ -514,6 +521,122 @@ ipcMain.handle("save-app-settings", async (event, partial) => {
   return settingsStore?.save(partial ?? {}) ?? null;
 });
 
+// --- Auto-update IPC ---------------------------------------------------------
+
+ipcMain.handle("updater-status", (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.getStatus();
+});
+
+ipcMain.handle("updater-check", async (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.checkForUpdates();
+});
+
+ipcMain.handle("updater-download", async (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.downloadUpdate();
+});
+
+ipcMain.handle("updater-install", (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.quitAndInstall();
+});
+
+// --- Export IPC --------------------------------------------------------------
+
+ipcMain.handle("export-csv", async (event, payload) => {
+  assertTrustedSender(event);
+  const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  return exporters.exportCsv({ window, payload: payload ?? {} });
+});
+
+ipcMain.handle("export-pdf", async (event, payload) => {
+  assertTrustedSender(event);
+  const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  return exporters.exportPdf({ window, payload: payload ?? {} });
+});
+
+// --- Watchlist IPC -----------------------------------------------------------
+
+ipcMain.handle("watchlist-load", async (event) => {
+  assertTrustedSender(event);
+  return watchlistStore?.load() ?? { version: 1, items: [] };
+});
+
+ipcMain.handle("watchlist-add", async (event, item) => {
+  assertTrustedSender(event);
+  return watchlistStore?.add(item) ?? null;
+});
+
+ipcMain.handle("watchlist-remove", async (event, id) => {
+  assertTrustedSender(event);
+  return watchlistStore?.remove(String(id)) ?? null;
+});
+
+ipcMain.handle("watchlist-clear", async (event) => {
+  assertTrustedSender(event);
+  return watchlistStore?.clear() ?? null;
+});
+
+// --- Backtests IPC -----------------------------------------------------------
+
+ipcMain.handle("backtest-list", async (event) => {
+  assertTrustedSender(event);
+  return backtestStore?.list() ?? [];
+});
+
+ipcMain.handle("backtest-save", async (event, payload) => {
+  assertTrustedSender(event);
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Backtest payload missing.");
+  }
+  return backtestStore?.save(String(payload.id), payload.body ?? payload) ?? null;
+});
+
+ipcMain.handle("backtest-load", async (event, id) => {
+  assertTrustedSender(event);
+  return backtestStore?.load(String(id)) ?? null;
+});
+
+ipcMain.handle("backtest-remove", async (event, id) => {
+  assertTrustedSender(event);
+  return backtestStore?.remove(String(id)) ?? false;
+});
+
+// --- Shell utilities ---------------------------------------------------------
+
+ipcMain.handle("open-userdata-folder", async (event, subfolder) => {
+  assertTrustedSender(event);
+  const allowed = new Set(["", "logs", "backtests"]);
+  const sub = String(subfolder ?? "").trim();
+  if (!allowed.has(sub)) {
+    throw new Error("Refused to open folder outside the allow-list.");
+  }
+  const target = sub ? path.join(app.getPath("userData"), sub) : app.getPath("userData");
+  await fs.mkdir(target, { recursive: true }).catch(() => {});
+  const error = await shell.openPath(target);
+  if (error) {
+    throw new Error(error);
+  }
+  return target;
+});
+
+ipcMain.handle("get-app-info", async (event) => {
+  assertTrustedSender(event);
+  return {
+    version: app.getVersion(),
+    name: app.getName(),
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+    arch: process.arch,
+    electron: process.versions.electron,
+    node: process.versions.node,
+    chrome: process.versions.chrome,
+    userData: app.getPath("userData")
+  };
+});
+
 ipcMain.on("renderer-ready", (event) => {
   assertTrustedSender(event);
   const window = BrowserWindow.fromWebContents(event.sender);
@@ -574,6 +697,7 @@ function setupProcessHandlers() {
   process.on("uncaughtException", (error) => {
     logger.error("[uncaughtException]", error);
     appendStartupDiagnostic("uncaughtException", error?.stack || error?.message || String(error));
+    sentry.captureError(error, { source: "uncaughtException" });
   });
 
   process.on("unhandledRejection", (reason) => {
@@ -582,6 +706,9 @@ function setupProcessHandlers() {
       "unhandledRejection",
       reason instanceof Error ? reason.stack || reason.message : String(reason)
     );
+    sentry.captureError(reason instanceof Error ? reason : new Error(String(reason)), {
+      source: "unhandledRejection"
+    });
   });
 }
 
@@ -603,8 +730,9 @@ app.whenReady().then(() => {
   // 2) Process-level safety nets.
   setupProcessHandlers();
   setupCrashReporter();
+  sentry.init({ release: `c-quant@${app.getVersion()}`, environment: isDev ? "development" : "production" });
 
-  // 3) Persistence stores (window state + user settings).
+  // 3) Persistence stores (window state, user settings, watchlist, backtests).
   windowStateStore = createWindowStateStore({
     statePath: path.join(userData, "window-state.json"),
     defaults: { minWidth: 980, minHeight: 680, maxWidth: 1560, maxHeight: 980 }
@@ -612,11 +740,20 @@ app.whenReady().then(() => {
   settingsStore = createSettingsStore({
     filePath: path.join(userData, "settings.json")
   });
+  watchlistStore = createWatchlistStore({
+    filePath: path.join(userData, "watchlist.json")
+  });
+  backtestStore = createBacktestStore({
+    rootDir: path.join(userData, "backtests")
+  });
 
   // 4) Inject strict CSP via the session, no <meta> needed.
   applyContentSecurityPolicy(session.defaultSession);
 
-  // 5) Open the main window.
+  // 5) Wire the auto-updater (no-op in dev or when disabled by env).
+  autoUpdate.init({ packaged: app.isPackaged });
+
+  // 6) Open the main window.
   createWindow();
 
   app.on("activate", () => {

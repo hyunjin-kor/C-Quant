@@ -4,6 +4,8 @@ release/
 .autonomy/
 .superpowers/
 coverage/
+playwright-report/
+test-results/
 
 *.log
 Thumbs.db
