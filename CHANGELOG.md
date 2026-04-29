@@ -4,7 +4,20 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
-_Nothing in flight._
+### Security
+
+- `package.json#overrides` pins transitive dependencies that were
+  flagged by `npm audit`:
+  - `uuid >= 14.0.0` — closes the missing-buffer-bounds-check advisory
+    that propagates from `exceljs` (verified `exceljs` smoke-tests
+    cleanly under uuid 14)
+  - `esbuild >= 0.25.0` — closes the dev-server request-bridging
+    advisory carried by `vitest` 2's bundled toolchain
+  - `vitest > vite ^6.4.2` and `vite-node > vite ^6.4.2` — closes the
+    Vite path-traversal advisory inside vitest's transitive tree
+    without forcing a vitest 4 upgrade
+- `npm audit` now reports **0 vulnerabilities** at every severity
+  level. CI gates and runtime tests stay green after the bumps.
 
 ## [1.0.0] — 2026-04-29
 

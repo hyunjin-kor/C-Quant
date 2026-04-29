@@ -67,6 +67,16 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
+  "overrides": {
+    "uuid": ">=14.0.0",
+    "esbuild": ">=0.25.0",
+    "vitest": {
+      "vite": "^6.4.2"
+    },
+    "vite-node": {
+      "vite": "^6.4.2"
+    }
+  },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^22.10.5",
