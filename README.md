@@ -188,11 +188,23 @@ stabilizes.
 
 ## Build & distribute
 
+### Download v1.0.0 directly
+
+Latest release: [**v1.0.0**](https://github.com/hyunjin-kor/C-Quant/releases/tag/v1.0.0)
+
+| Asset                        | When to pick it                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `C-Quant-1.0.0-portable.exe` | Zero-install, double-click to run. Settings persist under `%APPDATA%\C-Quant\` |
+| `C-Quant-Setup-1.0.0.exe`    | Standard NSIS installer. Wires the in-app auto-updater for future releases     |
+
+> SmartScreen will warn on first launch (the 1.0 binary is not yet code-signed) — click **More info → Run anyway**.
+> 첫 실행 시 SmartScreen 경고가 뜹니다 (1.0은 아직 코드사이닝되지 않음). **추가 정보 → 실행** 누르면 됩니다.
+
 ### Local artifacts
 
 ```powershell
-npm run package:portable   # Windows portable .exe
-npm run package:nsis       # Windows NSIS installer
+npm run package:portable   # C-Quant-X.Y.Z-portable.exe
+npm run package:nsis       # C-Quant-Setup-X.Y.Z.exe + latest.yml + .blockmap
 npm run package:mac        # macOS dmg + zip (x64 + arm64)
 npm run package:linux      # Linux AppImage + deb
 ```

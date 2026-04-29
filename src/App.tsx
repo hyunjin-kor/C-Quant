@@ -329,7 +329,7 @@ function getFreshnessSummary(locale: AppLocale, value?: string | null) {
   );
 }
 
-function getLifecycleTone(status: "done" | "active" | "queued" | "warning") {
+function _getLifecycleTone(status: "done" | "active" | "queued" | "warning") {
   switch (status) {
     case "done":
       return "positive";
@@ -542,7 +542,7 @@ function getOfficialSourceName(locale: AppLocale, card: ConnectedSourceCard | nu
   }
 }
 
-function getOfficialCoverageLabel(locale: AppLocale, card: ConnectedSourceCard | null) {
+function _getOfficialCoverageLabel(locale: AppLocale, card: ConnectedSourceCard | null) {
   if (!card) {
     return "n/a";
   }
@@ -582,7 +582,7 @@ function getOfficialHeadlineLabel(locale: AppLocale, card: ConnectedSourceCard |
   return localizeText(getUiLocale(locale), card.headline);
 }
 
-function getOfficialSummaryLabel(locale: AppLocale, card: ConnectedSourceCard | null) {
+function _getOfficialSummaryLabel(locale: AppLocale, card: ConnectedSourceCard | null) {
   if (!card) {
     return "n/a";
   }
@@ -1168,7 +1168,7 @@ function getMarketScopeNote(locale: AppLocale, marketId: MarketId) {
   );
 }
 
-function getMarketSourceNote(locale: AppLocale, marketId: MarketId) {
+function _getMarketSourceNote(locale: AppLocale, marketId: MarketId) {
   if (marketId === "eu-ets") {
     return t(
       locale,
@@ -1349,7 +1349,7 @@ function getPriceDecimals(currency?: string | null) {
   return 2;
 }
 
-function buildSummaryText(
+function _buildSummaryText(
   locale: AppLocale,
   market: MarketProfile,
   card: ConnectedSourceCard | null,
@@ -3676,7 +3676,7 @@ export default function App() {
 
   /*
    */
-  function renderSignals() {
+  function _renderSignals() {
     return (
       <>
         <section className="lab-grid">

@@ -150,7 +150,11 @@ introduce a regression in packaging, mention it in the PR description.
 ### Smoke-test a release locally
 
 ```bash
-CQUANT_DISABLE_UPDATER=1 ./release/C-Quant-X.Y.Z.exe
+# Portable build (no install, just run)
+CQUANT_DISABLE_UPDATER=1 ./release/C-Quant-X.Y.Z-portable.exe
+
+# NSIS installer (registers the app, wires the auto-updater)
+./release/C-Quant-Setup-X.Y.Z.exe
 ```
 
 The `CQUANT_DISABLE_UPDATER=1` env var prevents the freshly-built

@@ -129,18 +129,21 @@
         "portable",
         "nsis"
       ],
-      "artifactName": "C-Quant-${version}.${ext}",
       "signtoolOptions": {
         "signingHashAlgorithms": [
           "sha256"
         ]
       }
     },
+    "portable": {
+      "artifactName": "C-Quant-${version}-portable.${ext}"
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "C-Quant-Setup-${version}.${ext}"
     },
     "mac": {
       "category": "public.app-category.finance",

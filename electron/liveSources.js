@@ -10,8 +10,10 @@ const KRX_SAMPLE_API_URL = "https://data-dbg.krx.co.kr/svc/sample/apis/gen/ets_b
 // CQUANT_KRX_AUTH_KEY when deploying with a real registered key.
 const KRX_PUBLIC_SAMPLE_AUTH_KEY = "74D1B99DFBF345BBA3FB4476510A4BED4C78D13A";
 const KRX_AUTH_KEY = process.env.CQUANT_KRX_AUTH_KEY || KRX_PUBLIC_SAMPLE_AUTH_KEY;
-const KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
-const KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
+// Reserved for the eventual KRX scraping path (currently unused — the KRX
+// sample API covers the same surface). Prefixed with _ to silence eslint.
+const _KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
+const _KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
 const MEE_LIST_URL = "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
 const YAHOO_PROVIDER_LABEL = "Yahoo Finance web chart feed";
@@ -183,7 +185,7 @@ function makeAbsoluteUrl(baseUrl, href) {
   return new URL(href, baseUrl).href;
 }
 
-function firstArrayValue(payload) {
+function _firstArrayValue(payload) {
   if (Array.isArray(payload)) {
     return payload;
   }

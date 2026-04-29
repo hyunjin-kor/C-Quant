@@ -22,9 +22,17 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 ## [1.0.0] — 2026-04-29
 
 First public release. Cuts the SemVer 1.0 line: every entry below was
-landed on `main` between the initial fork point and this tag. The
-release artifact is `C-Quant-1.0.0.exe` (Windows portable, ~94 MB,
-unsigned).
+landed on `main` between the initial fork point and this tag. Release
+assets:
+
+- `C-Quant-1.0.0-portable.exe` (~94 MB) — zero-install single-file
+- `C-Quant-Setup-1.0.0.exe` (~95 MB) — NSIS installer; chosen path
+  for the auto-updater
+- `C-Quant-Setup-1.0.0.exe.blockmap` — delta-update map
+- `latest.yml` — `electron-updater` feed metadata
+
+All Windows artifacts are unsigned at this release. Distributors should
+sign before redistribution.
 
 ### Added — Documentation & screenshots
 
