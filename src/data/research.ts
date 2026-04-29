@@ -1,8 +1,4 @@
-import type {
-  BenchmarkPlatform,
-  MarketProfile,
-  QuantIndicator
-} from "../types";
+import type { BenchmarkPlatform, MarketProfile, QuantIndicator } from "../types";
 
 const today = "2026-04-08";
 const latestReview = "2026-04-18";
@@ -31,8 +27,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "context",
         weight: 1.25,
-        note:
-          "Structural tightening in the EU ETS changes forward scarcity and anchors medium-term price expectations.",
+        note: "Structural tightening in the EU ETS changes forward scarcity and anchors medium-term price expectations.",
         sources: [
           {
             label: "EU Commission - About the EU ETS",
@@ -58,8 +53,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "lower",
         weight: 1.2,
-        note:
-          "Higher surplus weakens scarcity; tighter MSR withdrawals reduce auction supply and support price.",
+        note: "Higher surplus weakens scarcity; tighter MSR withdrawals reduce auction supply and support price.",
         sources: [
           {
             label: "EU Commission - Market Stability Reserve",
@@ -80,8 +74,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "higher",
         weight: 1.05,
-        note:
-          "Electricity price strength changes thermal dispatch profitability and allowance demand.",
+        note: "Electricity price strength changes thermal dispatch profitability and allowance demand.",
         sources: [
           {
             label: "Aatola et al. - market fundamentals and EUA pricing",
@@ -102,8 +95,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "context",
         weight: 1.1,
-        note:
-          "Gas moves the clean spark spread and fuel-switch economics; sign can vary with concurrent power and coal moves, so it must be modelled jointly.",
+        note: "Gas moves the clean spark spread and fuel-switch economics; sign can vary with concurrent power and coal moves, so it must be modelled jointly.",
         sources: [
           {
             label: "TandF 2024 - EU ETS non-parametric determinants",
@@ -124,8 +116,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "context",
         weight: 0.9,
-        note:
-          "Coal matters through coal-to-gas dispatch switching and dark spread economics.",
+        note: "Coal matters through coal-to-gas dispatch switching and dark spread economics.",
         sources: [
           {
             label: "Economia Politica 2024 - high-dimensional EU ETS integration",
@@ -146,8 +137,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "higher",
         weight: 0.65,
-        note:
-          "Oil is usually a secondary macro-energy proxy rather than the first dispatch signal, but it remains informative across commodity regimes.",
+        note: "Oil is usually a secondary macro-energy proxy rather than the first dispatch signal, but it remains informative across commodity regimes.",
         sources: [
           {
             label: "Economia Politica 2024 - economic and energy variables",
@@ -168,8 +158,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "context",
         weight: 0.95,
-        note:
-          "Recent work shows that financial fluctuations became more important in Phase 4, especially under crisis regimes.",
+        note: "Recent work shows that financial fluctuations became more important in Phase 4, especially under crisis regimes.",
         sources: [
           {
             label: "arXiv 2024 - Phase 4 determinant shift to financial fluctuations",
@@ -190,8 +179,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "higher",
         weight: 0.8,
-        note:
-          "Industrial output changes compliance demand from covered sectors beyond power generation.",
+        note: "Industrial output changes compliance demand from covered sectors beyond power generation.",
         sources: [
           {
             label: "Economia Politica 2024 - industrial production in broader system",
@@ -212,8 +200,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "context",
         weight: 0.7,
-        note:
-          "Weather changes power demand and renewable output, which feeds thermal generation and EUA demand.",
+        note: "Weather changes power demand and renewable output, which feeds thermal generation and EUA demand.",
         sources: [
           {
             label: "Energy Economics - weather, energy, and carbon prices",
@@ -234,8 +221,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Support",
         direction: "context",
         weight: 0.55,
-        note:
-          "Auction rhythm and derivatives positioning matter for short-horizon execution and slippage control.",
+        note: "Auction rhythm and derivatives positioning matter for short-horizon execution and slippage control.",
         sources: [
           {
             label: "EEX - EU ETS auctions",
@@ -256,8 +242,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Support",
         direction: "higher",
         weight: 0.45,
-        note:
-          "Compliance seasonality can create recurring liquidity and short-term demand patterns.",
+        note: "Compliance seasonality can create recurring liquidity and short-term demand patterns.",
         sources: [
           {
             label: "EU Commission - ETS Reporting Tool and compliance cycle",
@@ -291,8 +276,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "lower",
         weight: 1.25,
-        note:
-          "Scarcity depends on the cap, sector grouping, and how much supply is auctioned versus freely allocated.",
+        note: "Scarcity depends on the cap, sector grouping, and how much supply is auctioned versus freely allocated.",
         sources: [
           {
             label: "ICAP - K-ETS overview and phase structure",
@@ -313,8 +297,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "context",
         weight: 1.1,
-        note:
-          "The 2026-2035 basic plan introduces automatic stabilization, which directly changes supply-demand adjustment expectations.",
+        note: "The 2026-2035 basic plan introduces automatic stabilization, which directly changes supply-demand adjustment expectations.",
         sources: [
           {
             label: "ICAP - fourth Basic Plan measures",
@@ -335,8 +318,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "higher",
         weight: 1,
-        note:
-          "Relaxed carryover changes intertemporal scarcity and softens forced selling near compliance windows.",
+        note: "Relaxed carryover changes intertemporal scarcity and softens forced selling near compliance windows.",
         sources: [
           {
             label: "ICAP - 2024 liquidity measures",
@@ -352,8 +334,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "context",
         weight: 1.05,
-        note:
-          "Local research shows complementary credit prices and volumes became statistically significant as the market matured.",
+        note: "Local research shows complementary credit prices and volumes became statistically significant as the market matured.",
         sources: [
           {
             label: "KEREA 2018 - learning-by-doing in K-ETS pricing",
@@ -374,8 +355,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "higher",
         weight: 0.95,
-        note:
-          "The compliance filing calendar is one of the few variables shown as significant across commitment periods in Korean literature.",
+        note: "The compliance filing calendar is one of the few variables shown as significant across commitment periods in Korean literature.",
         sources: [
           {
             label: "KEREA 2018 - submission timing binary variables",
@@ -396,8 +376,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "higher",
         weight: 0.8,
-        note:
-          "Liquidity reforms in February 2025 changed who can participate and how orders reach the market.",
+        note: "Liquidity reforms in February 2025 changed who can participate and how orders reach the market.",
         sources: [
           {
             label: "MOE English press release - wider institution access",
@@ -418,8 +397,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "higher",
         weight: 0.72,
-        note:
-          "Oil acts as an external energy-cost proxy; its explanatory power rises after the market matures and policy frictions ease.",
+        note: "Oil acts as an external energy-cost proxy; its explanatory power rises after the market matures and policy frictions ease.",
         sources: [
           {
             label: "KEREA 2018 - macro conditions become significant in second period",
@@ -435,8 +413,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "context",
         weight: 0.68,
-        note:
-          "Local evidence indicates that exchange rate and interest-rate conditions become significant once the market internalizes trading experience.",
+        note: "Local evidence indicates that exchange rate and interest-rate conditions become significant once the market internalizes trading experience.",
         sources: [
           {
             label: "KEREA 2018 - exchange rate and call rate significance",
@@ -452,8 +429,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Support",
         direction: "higher",
         weight: 0.45,
-        note:
-          "A useful secondary proxy for industrial cycle and compliance purchasing capacity.",
+        note: "A useful secondary proxy for industrial cycle and compliance purchasing capacity.",
         sources: [
           {
             label: "KEREA 2018 - stock price significance in second period",
@@ -469,8 +445,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Support",
         direction: "context",
         weight: 0.55,
-        note:
-          "Auction design now reacts to prior-month bid ratios, so auction coverage becomes a live microstructure signal.",
+        note: "Auction design now reacts to prior-month bid ratios, so auction coverage becomes a live microstructure signal.",
         sources: [
           {
             label: "ICAP - auction volume linked to prior bid ratio",
@@ -504,8 +479,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "higher",
         weight: 1.2,
-        note:
-          "Coverage expansion mechanically changes compliance demand and strengthens national price discovery.",
+        note: "Coverage expansion mechanically changes compliance demand and strengthens national price discovery.",
         sources: [
           {
             label: "MEE 2025 progress report",
@@ -521,8 +495,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "higher",
         weight: 1.05,
-        note:
-          "China's national ETS is still anchored in the power sector, so electricity-market reform directly affects carbon demand transmission.",
+        note: "China's national ETS is still anchored in the power sector, so electricity-market reform directly affects carbon demand transmission.",
         sources: [
           {
             label: "IGES 2024 - interactions between electricity, carbon and fossil fuel prices",
@@ -543,8 +516,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Core",
         direction: "context",
         weight: 1.1,
-        note:
-          "Coal remains the key fuel anchor. Long-term cointegration with carbon price is documented, though short-run effects can be weak or regime-specific.",
+        note: "Coal remains the key fuel anchor. Long-term cointegration with carbon price is documented, though short-run effects can be weak or regime-specific.",
         sources: [
           {
             label: "IGES 2024 - long-term cointegration with coal",
@@ -565,8 +537,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "higher",
         weight: 0.72,
-        note:
-          "Gas is a cleaner substitute fuel and enters both macro and dispatch channels in China's carbon pricing studies.",
+        note: "Gas is a cleaner substitute fuel and enters both macro and dispatch channels in China's carbon pricing studies.",
         sources: [
           {
             label: "MDPI 2023 - LNGI in carbon price model",
@@ -587,8 +558,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "higher",
         weight: 0.8,
-        note:
-          "In a still-maturing market, price discovery is more fragile and volume carries extra information about regime strength.",
+        note: "In a still-maturing market, price discovery is more fragile and volume carries extra information about regime strength.",
         sources: [
           {
             label: "MEE progress report - price signal and market influence",
@@ -604,8 +574,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "context",
         weight: 0.92,
-        note:
-          "Allocation intensity settings and reporting quality are part of the core policy architecture and can dominate observed scarcity.",
+        note: "Allocation intensity settings and reporting quality are part of the core policy architecture and can dominate observed scarcity.",
         sources: [
           {
             label: "MEE progress report - intensity-based approach and supporting systems",
@@ -621,8 +590,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Support",
         direction: "higher",
         weight: 0.5,
-        note:
-          "Environmental stress can proxy policy urgency and energy-structure pressure in Chinese empirical work.",
+        note: "Environmental stress can proxy policy urgency and energy-structure pressure in Chinese empirical work.",
         sources: [
           {
             label: "MDPI 2023 - AQI as explanatory variable",
@@ -638,8 +606,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Support",
         direction: "higher",
         weight: 0.55,
-        note:
-          "Industrial cycle filters can help separate economic activity shocks from pure policy shocks.",
+        note: "Industrial cycle filters can help separate economic activity shocks from pure policy shocks.",
         sources: [
           {
             label: "MDPI 2023 - SSE industrial index in model design",
@@ -655,8 +622,7 @@ export const marketProfiles: MarketProfile[] = [
         importance: "Support",
         direction: "context",
         weight: 0.48,
-        note:
-          "Reporting and verification quality affects the credibility of scarcity itself, not just noise around it.",
+        note: "Reporting and verification quality affects the credibility of scarcity itself, not just noise around it.",
         sources: [
           {
             label: "MEE progress report - data quality as fundamental task",
@@ -743,8 +709,10 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "tradingview-lightweight-charts",
     name: "TradingView Lightweight Charts",
     category: "Open-source Chart Engine",
-    strength: "Interactive financial charts with zoom, pan, crosshair, and multi-series overlays in a lightweight client bundle",
-    differentiator: "Best reference for turning static trend panes into operator-grade interactive market charts",
+    strength:
+      "Interactive financial charts with zoom, pan, crosshair, and multi-series overlays in a lightweight client bundle",
+    differentiator:
+      "Best reference for turning static trend panes into operator-grade interactive market charts",
     source: {
       label: "Lightweight Charts docs",
       url: "https://tradingview.github.io/lightweight-charts/",
@@ -760,8 +728,10 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "yahoo-finance-advanced-chart",
     name: "Yahoo Finance Advanced Chart",
     category: "Free Retail Chart UX",
-    strength: "Fast date-range switching, chart scaling, and compare-symbol workflow on free market pages",
-    differentiator: "Best reference for what a free comparison tape should feel like before adding paid data",
+    strength:
+      "Fast date-range switching, chart scaling, and compare-symbol workflow on free market pages",
+    differentiator:
+      "Best reference for what a free comparison tape should feel like before adding paid data",
     source: {
       label: "Yahoo Finance chart help",
       url: "https://help.yahoo.com/kb/period-scale-screen-charts-yahoo-finance-web-sln28287.html",
@@ -777,8 +747,10 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "claude-desktop-cowork",
     name: "Claude Desktop / Cowork",
     category: "Desktop AI Workspace",
-    strength: "Conversation-first assistant workspace with model selection near the composer, grouped styles and tools, and persistent threads",
-    differentiator: "Best reference for making evidence briefings feel like a primary work surface instead of a settings sidebar",
+    strength:
+      "Conversation-first assistant workspace with model selection near the composer, grouped styles and tools, and persistent threads",
+    differentiator:
+      "Best reference for making evidence briefings feel like a primary work surface instead of a settings sidebar",
     source: {
       label: "Anthropic release notes",
       url: "https://support.claude.com/en/articles/12138966-release-notes",
@@ -794,8 +766,10 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "openbb-workspace",
     name: "OpenBB Workspace",
     category: "Open-source Research Workspace",
-    strength: "Dashboard canvas with multiple widgets, automatic refresh, sharing, and multi-window analytical layouts",
-    differentiator: "Best reference for combining live widgets, AI workflows, and operator dashboards in one workspace",
+    strength:
+      "Dashboard canvas with multiple widgets, automatic refresh, sharing, and multi-window analytical layouts",
+    differentiator:
+      "Best reference for combining live widgets, AI workflows, and operator dashboards in one workspace",
     source: {
       label: "OpenBB Workspace dashboards",
       url: "https://docs.openbb.co/workspace/analysts/dashboards",
@@ -811,8 +785,10 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "clearblue-vantage",
     name: "ClearBlue Vantage",
     category: "Carbon Intelligence Platform",
-    strength: "Aggregates, interprets, and visualizes carbon market and user data across pricing, supply-demand, policy, news, and scenario modules",
-    differentiator: "Best reference for carbon-specific decision modules instead of generic equity-style dashboards",
+    strength:
+      "Aggregates, interprets, and visualizes carbon market and user data across pricing, supply-demand, policy, news, and scenario modules",
+    differentiator:
+      "Best reference for carbon-specific decision modules instead of generic equity-style dashboards",
     source: {
       label: "ClearBlue Vantage",
       url: "https://www.clearbluemarkets.com/vantage",
@@ -997,7 +973,8 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "krx-ets",
     name: "KRX ETS Information Platform",
     category: "Official Trading Venue",
-    strength: "Korean market price lookups, clearing rules, market participation, and offset system detail",
+    strength:
+      "Korean market price lookups, clearing rules, market participation, and offset system detail",
     differentiator: "Best reference for K-ETS workflow, participant model, and settlement design",
     source: {
       label: "KRX ETS platform",
@@ -1032,17 +1009,14 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     name: "Xpansiv CBL",
     category: "Execution and Market Data",
     strength: "Transparent order book, automated settlement, RFQ and OTC post-trade infrastructure",
-    differentiator: "Strongest reference for institutional-grade environmental commodity execution design",
+    differentiator:
+      "Strongest reference for institutional-grade environmental commodity execution design",
     source: {
       label: "Xpansiv CBL",
       url: "https://www.xpansiv.com/trading-platforms/cbl",
       accessed: today
     },
-    featuresToBorrow: [
-      "Order-book depth view",
-      "Settlement workflow",
-      "Product-level market data"
-    ]
+    featuresToBorrow: ["Order-book depth view", "Settlement workflow", "Product-level market data"]
   },
   {
     id: "sylvera",
@@ -1084,7 +1058,8 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "allied-offsets",
     name: "AlliedOffsets",
     category: "Portfolio Analytics",
-    strength: "Portfolio monitoring, pricing and retirement analysis, sector and region forecast scenarios",
+    strength:
+      "Portfolio monitoring, pricing and retirement analysis, sector and region forecast scenarios",
     differentiator: "Useful reference for portfolio-level valuation and what-if analysis UX",
     source: {
       label: "AlliedOffsets portfolio monitoring",
@@ -1102,7 +1077,8 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     name: "Carbon Insights",
     category: "Signal Layer",
     strength: "AI-driven sentiment index focused on EU ETS news flow",
-    differentiator: "Useful reference for headline-to-signal workflow and explainable sentiment monitoring",
+    differentiator:
+      "Useful reference for headline-to-signal workflow and explainable sentiment monitoring",
     source: {
       label: "Carbon Pulse Index",
       url: "https://carboninsights.net/carbon-pulse-index",

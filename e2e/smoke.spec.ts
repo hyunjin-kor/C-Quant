@@ -34,8 +34,9 @@ test("electron app launches and reports ready", async () => {
     // The renderer notifies the main process when it mounts. We poll the
     // global window.desktopBridge handle to confirm preload exposed it.
     const bridgePresent = await window.evaluate(() => {
-      return typeof (window as typeof window & { desktopBridge?: object }).desktopBridge ===
-        "object";
+      return (
+        typeof (window as typeof window & { desktopBridge?: object }).desktopBridge === "object"
+      );
     });
     expect(bridgePresent).toBe(true);
   } finally {

@@ -33,13 +33,7 @@ describe("rowsToCsv", () => {
   });
 
   it("respects explicit column order and missing fields", () => {
-    const csv = rowsToCsv(
-      [
-        { a: 1, b: 2 },
-        { a: 3 }
-      ],
-      ["b", "a", "c"]
-    );
+    const csv = rowsToCsv([{ a: 1, b: 2 }, { a: 3 }], ["b", "a", "c"]);
     expect(csv).toBe("b,a,c\r\n2,1,\r\n,3,");
   });
 

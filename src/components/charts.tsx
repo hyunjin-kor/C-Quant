@@ -126,8 +126,7 @@ function buildPlottedPoints(
 
   return points.map((point, index) => {
     const x =
-      PADDING +
-      (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth);
+      PADDING + (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth);
     const y = PADDING + ((maxValue - point.value) / range) * innerHeight;
 
     return {
@@ -162,10 +161,7 @@ function buildAreaPathFromPlotted(points: PositionedPoint[], width: number, heig
   )} ${baseline.toFixed(2)} Z`;
 }
 
-function resolvePointIndexFromPointer(
-  event: PointerEvent<HTMLDivElement>,
-  pointsLength: number
-) {
+function resolvePointIndexFromPointer(event: PointerEvent<HTMLDivElement>, pointsLength: number) {
   if (pointsLength <= 1) {
     return 0;
   }
@@ -267,9 +263,9 @@ export function MiniTrendChart({
   const values = points.map((point) => point.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const changePct = first.value === 0 ? 0 : ((last.value - first.value) / Math.abs(first.value)) * 100;
-  const tone =
-    changePct > 0.05 ? "positive" : changePct < -0.05 ? "negative" : "neutral";
+  const changePct =
+    first.value === 0 ? 0 : ((last.value - first.value) / Math.abs(first.value)) * 100;
+  const tone = changePct > 0.05 ? "positive" : changePct < -0.05 ? "negative" : "neutral";
   const formatValue = valueFormatter ?? ((value: number) => value.toFixed(2));
 
   return (
@@ -301,7 +297,8 @@ export function MiniTrendChart({
             cx={WIDTH - PADDING}
             cy={
               PADDING +
-              ((Math.max(...values) - last.value) / (Math.max(...values) - Math.min(...values) || 1)) *
+              ((Math.max(...values) - last.value) /
+                (Math.max(...values) - Math.min(...values) || 1)) *
                 (HEIGHT - PADDING * 2)
             }
             r="3.8"
@@ -310,8 +307,12 @@ export function MiniTrendChart({
         </svg>
       </div>
       <div className="mini-trend-foot">
-        <span>{lowLabel} {formatValue(min)}</span>
-        <span>{highLabel} {formatValue(max)}</span>
+        <span>
+          {lowLabel} {formatValue(min)}
+        </span>
+        <span>
+          {highLabel} {formatValue(max)}
+        </span>
       </div>
     </div>
   );
@@ -345,8 +346,7 @@ export function LineChart({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const first = points[0];
   const last = points[points.length - 1];
-  const activePoint =
-    plottedPoints[hoveredIndex ?? Math.max(plottedPoints.length - 1, 0)] ?? null;
+  const activePoint = plottedPoints[hoveredIndex ?? Math.max(plottedPoints.length - 1, 0)] ?? null;
 
   if (points.length === 0) {
     return (
@@ -420,9 +420,7 @@ export function LineChart({
         </div>
         {activePoint ? (
           <div
-            className={`chart-tooltip ${
-              activePoint.x / WIDTH > 0.72 ? "is-left" : ""
-            }`}
+            className={`chart-tooltip ${activePoint.x / WIDTH > 0.72 ? "is-left" : ""}`}
             style={{
               left: `${clamp((activePoint.x / WIDTH) * 100, 10, 90)}%`,
               top: `${clamp((activePoint.y / HEIGHT) * 100, 18, 82)}%`
@@ -479,10 +477,7 @@ export function MultiLineChart({
           })
           .filter((point): point is ChartPoint & { index: number } => Boolean(point));
 
-        return [
-          item.id,
-          buildPlottedPoints(seriesPoints, WIDTH, HEIGHT, extent.min, extent.max)
-        ];
+        return [item.id, buildPlottedPoints(seriesPoints, WIDTH, HEIGHT, extent.min, extent.max)];
       })
     ) as Record<string, PositionedPoint[]>;
   }, [extent.max, extent.min, points, series]);
@@ -492,7 +487,8 @@ export function MultiLineChart({
   const activeSeriesPoints = series
     .map((item) => {
       const value = points[activeIndex]?.values[item.id];
-      const plottedPoint = plottedBySeries[item.id]?.find((point) => point.index === activeIndex) ?? null;
+      const plottedPoint =
+        plottedBySeries[item.id]?.find((point) => point.index === activeIndex) ?? null;
 
       if (typeof value !== "number" || !Number.isFinite(value) || !plottedPoint) {
         return null;
@@ -661,13 +657,7 @@ function heatColor(value: number) {
   return "rgba(80, 92, 120, 0.12)";
 }
 
-export function Heatmap({
-  columns,
-  rows
-}: {
-  columns: string[];
-  rows: HeatmapRow[];
-}) {
+export function Heatmap({ columns, rows }: { columns: string[]; rows: HeatmapRow[] }) {
   return (
     <div className="heatmap">
       <div className="heatmap-header">
@@ -722,7 +712,10 @@ export function WaterfallChart({
               }}
             />
           </div>
-          <div className="waterfall-value">{item.value >= 0 ? "+" : ""}{item.value.toFixed(2)}</div>
+          <div className="waterfall-value">
+            {item.value >= 0 ? "+" : ""}
+            {item.value.toFixed(2)}
+          </div>
         </div>
       ))}
     </div>

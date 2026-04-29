@@ -37,7 +37,10 @@ function parseChartTime(label: string) {
   return label;
 }
 
-function formatHoverLabel(locale: string, value: string | number | { year: number; month: number; day: number }) {
+function formatHoverLabel(
+  locale: string,
+  value: string | number | { year: number; month: number; day: number }
+) {
   if (typeof value === "string") {
     const parsed = new Date(value);
     if (!Number.isNaN(parsed.getTime())) {
@@ -95,10 +98,7 @@ export function InteractiveMarketChart({
   const [hoverLabel, setHoverLabel] = useState<string | null>(null);
   const [hoverValues, setHoverValues] = useState<HoverValue[] | null>(null);
 
-  const activeSeries = useMemo(
-    () => series.filter((item) => item.points.length > 0),
-    [series]
-  );
+  const activeSeries = useMemo(() => series.filter((item) => item.points.length > 0), [series]);
 
   const latestValues = useMemo(
     () =>
@@ -171,34 +171,34 @@ export function InteractiveMarketChart({
               priceLineVisible: false
             })
           : item.variant === "histogram"
-          ? chart.addSeries(HistogramSeries, {
-              color: item.color,
-              base: 0,
-              lastValueVisible: false,
-              priceLineVisible: false,
-              priceScaleId: "volume",
-              priceFormat: {
-                type: "volume"
-              }
-            })
-          : item.variant === "line"
-          ? chart.addSeries(LineSeries, {
-              color: item.color,
-              lineWidth: 2,
-              lineStyle: item.lineStyle === "dashed" ? LineStyle.Dashed : LineStyle.Solid,
-              crosshairMarkerRadius: 4,
-              lastValueVisible: true,
-              priceLineVisible: false
-            })
-          : chart.addSeries(AreaSeries, {
-              lineColor: item.color,
-              topColor: `${item.color}33`,
-              bottomColor: `${item.color}05`,
-              lineWidth: 2,
-              crosshairMarkerRadius: 4,
-              lastValueVisible: true,
-              priceLineVisible: false
-            });
+            ? chart.addSeries(HistogramSeries, {
+                color: item.color,
+                base: 0,
+                lastValueVisible: false,
+                priceLineVisible: false,
+                priceScaleId: "volume",
+                priceFormat: {
+                  type: "volume"
+                }
+              })
+            : item.variant === "line"
+              ? chart.addSeries(LineSeries, {
+                  color: item.color,
+                  lineWidth: 2,
+                  lineStyle: item.lineStyle === "dashed" ? LineStyle.Dashed : LineStyle.Solid,
+                  crosshairMarkerRadius: 4,
+                  lastValueVisible: true,
+                  priceLineVisible: false
+                })
+              : chart.addSeries(AreaSeries, {
+                  lineColor: item.color,
+                  topColor: `${item.color}33`,
+                  bottomColor: `${item.color}05`,
+                  lineWidth: 2,
+                  crosshairMarkerRadius: 4,
+                  lastValueVisible: true,
+                  priceLineVisible: false
+                });
 
       (chartApi as { setData: (data: unknown[]) => void }).setData(
         item.variant === "candles"
@@ -218,20 +218,20 @@ export function InteractiveMarketChart({
                 close: point.close
               }))
           : item.variant === "histogram"
-          ? item.points.map((point) => ({
-              time: parseChartTime(point.label),
-              value: point.value,
-              color:
-                typeof point.open === "number" && typeof point.close === "number"
-                  ? point.close >= point.open
-                    ? "#16a34a"
-                    : "#ef4444"
-                  : item.color
-            }))
-          : item.points.map((point) => ({
-              time: parseChartTime(point.label),
-              value: point.value
-            }))
+            ? item.points.map((point) => ({
+                time: parseChartTime(point.label),
+                value: point.value,
+                color:
+                  typeof point.open === "number" && typeof point.close === "number"
+                    ? point.close >= point.open
+                      ? "#16a34a"
+                      : "#ef4444"
+                    : item.color
+              }))
+            : item.points.map((point) => ({
+                time: parseChartTime(point.label),
+                value: point.value
+              }))
       );
 
       return {
@@ -251,7 +251,11 @@ export function InteractiveMarketChart({
       });
     }
 
-    const handleCrosshairMove = (param: Parameters<typeof chart.subscribeCrosshairMove>[0] extends (arg: infer T) => void ? T : never) => {
+    const handleCrosshairMove = (
+      param: Parameters<typeof chart.subscribeCrosshairMove>[0] extends (arg: infer T) => void
+        ? T
+        : never
+    ) => {
       if (!param.time) {
         setHoverLabel(null);
         setHoverValues(null);
@@ -260,7 +264,9 @@ export function InteractiveMarketChart({
 
       const nextValues = chartSeries
         .map(({ definition, api }) => {
-          const rawValue = param.seriesData.get(api) as { value?: number; close?: number } | undefined;
+          const rawValue = param.seriesData.get(api) as
+            | { value?: number; close?: number }
+            | undefined;
           const numeric =
             typeof rawValue?.value === "number"
               ? rawValue.value

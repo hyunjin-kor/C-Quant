@@ -6,7 +6,10 @@ import * as localization from "../src/lib/localization.ts";
 test("localizeOfficialConnectionError localizes the KRX missing rows error in Korean", () => {
   assert.equal(typeof localization.localizeOfficialConnectionError, "function");
   assert.equal(
-    localization.localizeOfficialConnectionError("ko", "KRX sample API returned no recent ETS rows."),
+    localization.localizeOfficialConnectionError(
+      "ko",
+      "KRX sample API returned no recent ETS rows."
+    ),
     "KRX 샘플 API에서 최근 ETS 행을 찾지 못했습니다."
   );
 });
@@ -14,7 +17,10 @@ test("localizeOfficialConnectionError localizes the KRX missing rows error in Ko
 test("localizeOfficialConnectionError keeps English copy unchanged", () => {
   assert.equal(typeof localization.localizeOfficialConnectionError, "function");
   assert.equal(
-    localization.localizeOfficialConnectionError("en", "KRX sample API returned no recent ETS rows."),
+    localization.localizeOfficialConnectionError(
+      "en",
+      "KRX sample API returned no recent ETS rows."
+    ),
     "KRX sample API returned no recent ETS rows."
   );
 });

@@ -90,10 +90,7 @@ function notifyRendererReady() {
   } catch {}
 }
 
-class StartupErrorBoundary extends Component<
-  StartupErrorBoundaryProps,
-  StartupErrorBoundaryState
-> {
+class StartupErrorBoundary extends Component<StartupErrorBoundaryProps, StartupErrorBoundaryState> {
   constructor(props: StartupErrorBoundaryProps) {
     super(props);
     this.state = { error: null };
@@ -126,7 +123,7 @@ class StartupErrorBoundary extends Component<
           background: "#faf9f5",
           color: "#1f1815",
           fontFamily:
-            "\"Inter Variable\", \"Inter\", \"Pretendard\", \"Segoe UI\", \"Noto Sans KR\", system-ui, sans-serif"
+            '"Inter Variable", "Inter", "Pretendard", "Segoe UI", "Noto Sans KR", system-ui, sans-serif'
         }}
       >
         <section
@@ -158,15 +155,15 @@ class StartupErrorBoundary extends Component<
               fontSize: "30px",
               letterSpacing: "-0.025em",
               fontFamily:
-                "\"Fraunces Variable\", \"Fraunces\", \"Source Serif 4\", \"Iowan Old Style\", \"Georgia\", serif",
+                '"Fraunces Variable", "Fraunces", "Source Serif 4", "Iowan Old Style", "Georgia", serif',
               fontWeight: 500
             }}
           >
             Renderer startup failed
           </h1>
           <p style={{ margin: 0, lineHeight: 1.6, color: "#3a2e26" }}>
-            The desktop shell loaded, but the React renderer stopped during startup. Restart the app. If the problem
-            repeats, use the error detail below.
+            The desktop shell loaded, but the React renderer stopped during startup. Restart the
+            app. If the problem repeats, use the error detail below.
           </p>
           <pre
             style={{

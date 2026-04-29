@@ -16,15 +16,8 @@ import { FirstRun } from "./firstRun";
  * routing — we sit alongside it as additive UX.
  */
 export function AppShellExtensions() {
-  const {
-    theme,
-    setTheme,
-    effectiveTheme,
-    locale,
-    setLocale,
-    reducedMotion,
-    setReducedMotion
-  } = useTheme();
+  const { theme, setTheme, effectiveTheme, locale, setLocale, reducedMotion, setReducedMotion } =
+    useTheme();
   const toast = useToast();
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [backtestOpen, setBacktestOpen] = useState(false);
@@ -72,7 +65,12 @@ export function AppShellExtensions() {
 
     const list: Command[] = [
       // ── Appearance ───────────────────────────────────────────────
-      { id: "theme.light", title: "Theme: Light", group: "Appearance", run: () => setTheme("light") },
+      {
+        id: "theme.light",
+        title: "Theme: Light",
+        group: "Appearance",
+        run: () => setTheme("light")
+      },
       { id: "theme.dark", title: "Theme: Dark", group: "Appearance", run: () => setTheme("dark") },
       {
         id: "theme.system",
@@ -85,8 +83,7 @@ export function AppShellExtensions() {
         title: "Toggle theme",
         group: "Appearance",
         keywords: "switch toggle",
-        run: () =>
-          setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark")
+        run: () => setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark")
       },
       {
         id: "motion.toggle",
@@ -150,12 +147,10 @@ export function AppShellExtensions() {
         keywords: "pin save bookmark watchlist",
         run: async () => {
           const surfaceLabel =
-            (typeof window !== "undefined" &&
-              window.localStorage.getItem("cquant:surface")) ||
+            (typeof window !== "undefined" && window.localStorage.getItem("cquant:surface")) ||
             "command";
           const marketLabel =
-            (typeof window !== "undefined" &&
-              window.localStorage.getItem("cquant:market")) ||
+            (typeof window !== "undefined" && window.localStorage.getItem("cquant:market")) ||
             "k-ets";
           const item = {
             id: `${surfaceLabel}-${marketLabel}-${Date.now().toString(36)}`,
@@ -431,14 +426,8 @@ export function AppShellExtensions() {
       <ThemeQuickToggle />
       <DropZone />
       <FirstRun />
-      <WatchlistDrawer
-        open={watchlistOpen}
-        onClose={() => setWatchlistOpen(false)}
-      />
-      <BacktestDrawer
-        open={backtestOpen}
-        onClose={() => setBacktestOpen(false)}
-      />
+      <WatchlistDrawer open={watchlistOpen} onClose={() => setWatchlistOpen(false)} />
+      <BacktestDrawer open={backtestOpen} onClose={() => setBacktestOpen(false)} />
     </>
   );
 }
@@ -468,9 +457,7 @@ function ThemeQuickToggle() {
         zIndex: 90
       }}
     >
-      <span aria-hidden="true">
-        {effectiveTheme === "dark" ? "☾" : "☀"}
-      </span>
+      <span aria-hidden="true">{effectiveTheme === "dark" ? "☾" : "☀"}</span>
       <span>{label}</span>
     </button>
   );

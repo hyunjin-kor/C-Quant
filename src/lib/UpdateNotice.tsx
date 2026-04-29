@@ -43,7 +43,10 @@ export function UpdateNotice() {
     }, FIRST_CHECK_DELAY_MS);
 
     const poll = setInterval(() => {
-      void bridge.updaterCheck?.().then(setStatus).catch(() => {});
+      void bridge
+        .updaterCheck?.()
+        .then(setStatus)
+        .catch(() => {});
     }, POLL_INTERVAL_MS);
 
     const refreshTick = setInterval(refresh, 5000);
@@ -90,36 +93,19 @@ export function UpdateNotice() {
       </div>
       <div className="update-notice__copy">
         <strong>
-          {tt(
-            locale,
-            isReady ? "update.downloaded.title" : "update.available.title"
-          )}
+          {tt(locale, isReady ? "update.downloaded.title" : "update.available.title")}
         </strong>
         <p>
-          {tt(
-            locale,
-            isReady ? "update.downloaded.body" : "update.available.body",
-            { version: status.version || "" }
-          )}
+          {tt(locale, isReady ? "update.downloaded.body" : "update.available.body", {
+            version: status.version || ""
+          })}
         </p>
       </div>
       <div className="update-notice__actions">
-        <button
-          type="button"
-          className="button primary small"
-          onClick={onPrimary}
-          disabled={busy}
-        >
-          {tt(
-            locale,
-            isReady ? "update.actions.install" : "update.actions.download"
-          )}
+        <button type="button" className="button primary small" onClick={onPrimary} disabled={busy}>
+          {tt(locale, isReady ? "update.actions.install" : "update.actions.download")}
         </button>
-        <button
-          type="button"
-          className="button ghost small"
-          onClick={() => setDismissed(true)}
-        >
+        <button type="button" className="button ghost small" onClick={() => setDismissed(true)}>
           {tt(locale, "update.actions.dismiss")}
         </button>
       </div>

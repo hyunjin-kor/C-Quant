@@ -154,7 +154,8 @@ function deriveExecution(control) {
   return {
     state: "armed",
     label: "armed / waiting",
-    detail: "Autonomous mode is running, but there is no active lease. A scheduler or manual trigger must start the next cycle."
+    detail:
+      "Autonomous mode is running, but there is no active lease. A scheduler or manual trigger must start the next cycle."
   };
 }
 
@@ -198,15 +199,16 @@ function _summarizeBacklog(backlog) {
 }
 
 async function buildSnapshot() {
-  const [control, backlog, baseState, autonomyState, latestCycle, recentRuns, recentEvents] = await Promise.all([
-    readJson(paths.control),
-    readJson(paths.backlog),
-    readJson(paths.baseState),
-    readText(paths.autonomyState),
-    readText(paths.latestCycle),
-    listRecentRuns(),
-    listRecentEvents()
-  ]);
+  const [control, backlog, baseState, autonomyState, latestCycle, recentRuns, recentEvents] =
+    await Promise.all([
+      readJson(paths.control),
+      readJson(paths.backlog),
+      readJson(paths.baseState),
+      readText(paths.autonomyState),
+      readText(paths.latestCycle),
+      listRecentRuns(),
+      listRecentEvents()
+    ]);
 
   const tasks = Array.isArray(backlog?.tasks) ? backlog.tasks : [];
   const openTasks = tasks.filter((task) => task.status !== "done");
@@ -284,7 +286,10 @@ function writeText(response, statusCode, value, contentType = "text/plain; chars
 
 const server = http.createServer(async (request, response) => {
   try {
-    const url = new URL(request.url || "/", `http://${request.headers.host || `127.0.0.1:${port}`}`);
+    const url = new URL(
+      request.url || "/",
+      `http://${request.headers.host || `127.0.0.1:${port}`}`
+    );
 
     if (request.method === "GET" && url.pathname === "/api/status") {
       writeJson(response, 200, await buildSnapshot());
@@ -339,7 +344,5 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  process.stdout.write(
-    `Autonomy monitor running at http://127.0.0.1:${port}\n`
-  );
+  process.stdout.write(`Autonomy monitor running at http://127.0.0.1:${port}\n`);
 });

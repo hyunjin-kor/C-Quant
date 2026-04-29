@@ -92,12 +92,7 @@ export function BacktestDrawer({ open, onClose }: Props) {
       <aside className="drawer-panel">
         <header className="drawer-head">
           <h2>{tt(locale, "backtest.title")}</h2>
-          <button
-            type="button"
-            className="drawer-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
@@ -107,11 +102,7 @@ export function BacktestDrawer({ open, onClose }: Props) {
           <ul className="drawer-list">
             {items.map((item) => (
               <li key={item.id} className="drawer-row">
-                <button
-                  type="button"
-                  className="drawer-row-main"
-                  onClick={() => load(item.id)}
-                >
+                <button type="button" className="drawer-row-main" onClick={() => load(item.id)}>
                   <strong>{item.id}</strong>
                   <span>
                     {tt(locale, "backtest.savedAt", {

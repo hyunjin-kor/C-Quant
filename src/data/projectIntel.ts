@@ -1,8 +1,4 @@
-import type {
-  CreditLifecycleDossier,
-  NatureRiskOverlay,
-  RegistryOperationsTrack
-} from "../types";
+import type { CreditLifecycleDossier, NatureRiskOverlay, RegistryOperationsTrack } from "../types";
 
 const accessed = "2026-04-11";
 
@@ -270,7 +266,8 @@ export const registryOperationsTracks: RegistryOperationsTrack[] = [
     registry: "Verra VCS",
     markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
     accessMethod: "Official registry web flow",
-    refreshCadence: "Daily check, plus event-driven recheck after new issuance, monitoring, or retirement activity",
+    refreshCadence:
+      "Daily check, plus event-driven recheck after new issuance, monitoring, or retirement activity",
     freshnessSla: "Core registry evidence <= 90 days, monitoring support <= 180 days",
     lastReviewed: "2026-04-11",
     status: "watch",
@@ -323,7 +320,8 @@ export const registryOperationsTracks: RegistryOperationsTrack[] = [
     markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
     accessMethod: "Official web flow and issuer filing review",
     refreshCadence: "Weekly review, plus event-driven checks around issuance and audit updates",
-    freshnessSla: "Method or audit evidence <= 120 days; operating proof should remain in the current cycle",
+    freshnessSla:
+      "Method or audit evidence <= 120 days; operating proof should remain in the current cycle",
     lastReviewed: "2026-04-11",
     status: "watch",
     operatorRead:
@@ -390,7 +388,11 @@ export const natureRiskOverlays: NatureRiskOverlay[] = [
       { label: "Fire", value: 72, note: "Above-neutral hazard pressure." },
       { label: "Drought", value: 58, note: "Seasonal persistence risk needs monitoring." },
       { label: "Insects", value: 31, note: "Lower immediate concern." },
-      { label: "Governance", value: 64, note: "Documentation quality still matters as much as the hazard layer." }
+      {
+        label: "Governance",
+        value: 64,
+        note: "Documentation quality still matters as much as the hazard layer."
+      }
     ],
     watchItems: [
       "Do not lean on a cheap headline price if the monitoring pack is older than the retirement narrative.",
@@ -404,7 +406,8 @@ export const natureRiskOverlays: NatureRiskOverlay[] = [
     markets: ["shared", "eu-ets", "k-ets", "cn-ets"],
     title: "ARR permanence overlay",
     region: "Southeast Asia",
-    posture: "Keep removals on the watch list, but do not overstate integrity until permanence evidence improves.",
+    posture:
+      "Keep removals on the watch list, but do not overstate integrity until permanence evidence improves.",
     summary:
       "Permanence and reversal disclosure still dominate the read even when document coverage looks orderly.",
     source: {
@@ -416,7 +419,11 @@ export const natureRiskOverlays: NatureRiskOverlay[] = [
       { label: "Fire", value: 46, note: "Moderate hazard profile." },
       { label: "Drought", value: 62, note: "Long-tail biological growth risk remains relevant." },
       { label: "Reversal", value: 68, note: "Permanence watch should stay elevated." },
-      { label: "Monitoring lag", value: 55, note: "Evidence cadence matters as much as the hazard model." }
+      {
+        label: "Monitoring lag",
+        value: 55,
+        note: "Evidence cadence matters as much as the hazard model."
+      }
     ],
     watchItems: [
       "Re-check reversal disclosures before treating removals as a premium sleeve.",

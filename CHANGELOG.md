@@ -49,7 +49,7 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 - **Drag-and-drop CSV importer**: a window-wide listener detects file
   drags, validates extension (csv/tsv/txt) and size (≤8MB), then
   broadcasts a `cquant:csv-dropped` `CustomEvent` with `{ name, bytes,
-  content }` so any surface can subscribe without App.tsx surgery
+content }` so any surface can subscribe without App.tsx surgery
 - **First-run welcome sequence**: timed toasts (welcome → theme/language
   hint → privacy stance) on the first launch only, persisted via
   `firstRunCompletedAt` in `settings.json` (with localStorage fallback)
@@ -57,14 +57,14 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
   `rowsToMarkdown` (header + divider + escaped cells); IPC
   `export-markdown`; Cmd+K command "Export app diagnostics as Markdown"
 - **Privacy-first analytics**: `electron/analytics.js` opted-in via
-  `analyticsEnabled` setting *and* `CQUANT_ANALYTICS_ENDPOINT` env var.
+  `analyticsEnabled` setting _and_ `CQUANT_ANALYTICS_ENDPOINT` env var.
   Without both, every `track()` call is a no-op. Cmd+K command
   "Enable / Disable analytics"
 - **Chart indicators library**: `src/lib/indicators.ts` with pure
   `sma`, `ema`, `rsi`, `bollinger`, `logReturns`, `correlation`. Ready
   to drop into the chart layer without external deps
 - **i18n message catalog**: `src/lib/i18n.ts` with `tt(locale, key,
-  params)` lookup, used by all new shell components. Sits alongside
+params)` lookup, used by all new shell components. Sits alongside
   the existing `localizeText` system rather than replacing it
 - **App settings extended**: `analyticsEnabled`, `firstRunCompletedAt`
   fields with validation

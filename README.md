@@ -37,21 +37,21 @@ settlement. It is research and monitoring software.
 
 ## Design principles
 
-| Principle | How it shows up |
-|---|---|
-| Official first | Every market view starts from the official anchor; vendor proxies sit below it |
-| Show freshness | Every datum carries its access method and timestamp |
-| No brokerage | The product can describe and compare; it does not route or settle |
+| Principle            | How it shows up                                                                 |
+| -------------------- | ------------------------------------------------------------------------------- |
+| Official first       | Every market view starts from the official anchor; vendor proxies sit below it  |
+| Show freshness       | Every datum carries its access method and timestamp                             |
+| No brokerage         | The product can describe and compare; it does not route or settle               |
 | Explain, then signal | A posture is only shown after the drivers and counter-evidence that produced it |
 
 ## Screens
 
-| Surface | What you see |
-|---|---|
+| Surface     | What you see                                                                                   |
+| ----------- | ---------------------------------------------------------------------------------------------- |
 | **Command** | Cross-market board, official anchor, live comparison tape, posture, score build, decision memo |
-| **Desk** | Single-market deep dive: anchor, hedge tape, drivers, scenario weights |
-| **Drivers** | Cross-market factor heatmap, market-specific driver table, indicators worth running |
-| **Sources** | Source method, freshness, in-app benchmark catalogue, input coverage, source-trust registry |
+| **Desk**    | Single-market deep dive: anchor, hedge tape, drivers, scenario weights                         |
+| **Drivers** | Cross-market factor heatmap, market-specific driver table, indicators worth running            |
+| **Sources** | Source method, freshness, in-app benchmark catalogue, input coverage, source-trust registry    |
 
 ## Quick start
 
@@ -117,18 +117,18 @@ update feed).
 
 ## Power UX
 
-| Action | Shortcut |
-|---|---|
-| Command palette | `⌘K` / `Ctrl+K` |
-| Toggle theme | Bottom-right floating button or palette |
-| Toggle language | Palette: "한국어로 전환" / "Switch to English" |
-| Pin current view | Palette: "Pin current view to watchlist" |
-| Open watchlist | Palette: "Open watchlist" |
-| Open backtest archive | Palette: "Open backtest archive" |
-| Export view as PDF | Palette: "Export current view as PDF" |
-| Export diagnostics as CSV / Markdown | Palette: same group |
-| Drop a CSV onto the window | Anywhere — the app intercepts and validates |
-| Reduced motion | Palette: "Motion: reduce animations" |
+| Action                               | Shortcut                                       |
+| ------------------------------------ | ---------------------------------------------- |
+| Command palette                      | `⌘K` / `Ctrl+K`                                |
+| Toggle theme                         | Bottom-right floating button or palette        |
+| Toggle language                      | Palette: "한국어로 전환" / "Switch to English" |
+| Pin current view                     | Palette: "Pin current view to watchlist"       |
+| Open watchlist                       | Palette: "Open watchlist"                      |
+| Open backtest archive                | Palette: "Open backtest archive"               |
+| Export view as PDF                   | Palette: "Export current view as PDF"          |
+| Export diagnostics as CSV / Markdown | Palette: same group                            |
+| Drop a CSV onto the window           | Anywhere — the app intercepts and validates    |
+| Reduced motion                       | Palette: "Motion: reduce animations"           |
 
 Skip-to-content link, focus rings on every interactive surface, and
 `prefers-reduced-motion` are all wired.
@@ -137,10 +137,10 @@ Skip-to-content link, focus rings on every interactive surface, and
 
 ### Official sources
 
-| Market | Anchor |
-|---|---|
-| EU ETS | EEX EU ETS primary auction workbook + auction page |
-| K-ETS | KRX ETS information platform + KRX Open API sample (`ets_bydd_trd`) |
+| Market    | Anchor                                                                        |
+| --------- | ----------------------------------------------------------------------------- |
+| EU ETS    | EEX EU ETS primary auction workbook + auction page                            |
+| K-ETS     | KRX ETS information platform + KRX Open API sample (`ets_bydd_trd`)           |
 | China ETS | MEE carbon-market release feed + Shanghai Environment & Energy daily overview |
 
 ### Linked tapes (proxies, not official settlement)
@@ -167,7 +167,7 @@ CQUANT_KRX_AUTH_KEY=your-real-key
 - **No telemetry by default.** The app runs locally and does not contact
   any analytics server unless the operator explicitly configures one.
 - `@sentry/electron` is loaded but inactive without `CQUANT_SENTRY_DSN`.
-- `electron/analytics.js` requires *both* a user opt-in
+- `electron/analytics.js` requires _both_ a user opt-in
   (`analyticsEnabled` setting) and `CQUANT_ANALYTICS_ENDPOINT` env var
   before it sends anything.
 - Crash reports from `crashReporter` are local-only.

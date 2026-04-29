@@ -3,10 +3,7 @@
 const path = require("node:path");
 const { fileURLToPath } = require("node:url");
 
-const TRUSTED_DEV_SERVER_ORIGINS = new Set([
-  "http://localhost:5173",
-  "http://127.0.0.1:5173"
-]);
+const TRUSTED_DEV_SERVER_ORIGINS = new Set(["http://localhost:5173", "http://127.0.0.1:5173"]);
 const ALLOWED_EXTERNAL_PROTOCOLS = new Set(["http:", "https:"]);
 const ALLOWED_QUOTE_RANGE_IDS = new Set(["1d", "5d", "1m", "3m", "6m", "1y"]);
 

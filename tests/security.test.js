@@ -37,9 +37,9 @@ describe("sanitizeQuoteHistoryPayload", () => {
   });
 
   it("rejects path traversal", () => {
-    expect(() =>
-      sanitizeQuoteHistoryPayload({ quoteId: "../../etc/passwd", range: "1m" })
-    ).toThrow(/invalid quote id/);
+    expect(() => sanitizeQuoteHistoryPayload({ quoteId: "../../etc/passwd", range: "1m" })).toThrow(
+      /invalid quote id/
+    );
   });
 
   it("rejects unknown range", () => {
@@ -63,22 +63,24 @@ describe("isTrustedAppUrl", () => {
   const rendererEntryPath = "/app/dist/index.html";
 
   it("trusts dev server origins in dev", () => {
-    expect(isTrustedAppUrl("http://localhost:5173/", { isDev: true, rendererEntryPath })).toBe(true);
+    expect(isTrustedAppUrl("http://localhost:5173/", { isDev: true, rendererEntryPath })).toBe(
+      true
+    );
     expect(
       isTrustedAppUrl("http://127.0.0.1:5173/index.html", { isDev: true, rendererEntryPath })
     ).toBe(true);
   });
 
   it("rejects unknown origins", () => {
-    expect(
-      isTrustedAppUrl("http://evil.example.com/", { isDev: true, rendererEntryPath })
-    ).toBe(false);
+    expect(isTrustedAppUrl("http://evil.example.com/", { isDev: true, rendererEntryPath })).toBe(
+      false
+    );
   });
 
   it("rejects file URLs in dev", () => {
-    expect(
-      isTrustedAppUrl("file:///app/dist/index.html", { isDev: true, rendererEntryPath })
-    ).toBe(false);
+    expect(isTrustedAppUrl("file:///app/dist/index.html", { isDev: true, rendererEntryPath })).toBe(
+      false
+    );
   });
 
   it("rejects empty / malformed", () => {

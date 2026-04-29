@@ -73,28 +73,28 @@ What is **out of scope** for this threat model:
   updater installs. We require code signing to be configured on the
   publishing side (`CSC_LINK` / `CSC_NAME`).
 - Crash dumps from `crashReporter` are local-only (`uploadToServer:
-  false`) unless explicitly reconfigured.
+false`) unless explicitly reconfigured.
 
 ## Hardening checklist for distributors
 
 If you ship a packaged build to end users, please confirm:
 
 - [ ] `CSC_LINK` / `CSC_KEY_PASSWORD` (Windows) and `CSC_NAME` /
-  `APPLE_ID` / `APPLE_APP_SPECIFIC_PASSWORD` / `APPLE_TEAM_ID` (macOS)
-  are set so binaries are signed and notarized.
+      `APPLE_ID` / `APPLE_APP_SPECIFIC_PASSWORD` / `APPLE_TEAM_ID` (macOS)
+      are set so binaries are signed and notarized.
 - [ ] `GH_TOKEN` is set so electron-builder can publish artifacts that
-  the updater can verify.
+      the updater can verify.
 - [ ] `CQUANT_SENTRY_DSN` (optional) is set on a build pipeline you
-  control, not on the end-user machine.
+      control, not on the end-user machine.
 - [ ] You have a public security contact (email, security.txt, or a
-  bug-bounty platform) reachable from the published app.
+      bug-bounty platform) reachable from the published app.
 - [ ] You communicate to end users that C-Quant is research-only and
-  does not provide trade execution.
+      does not provide trade execution.
 
 ## Coordinated disclosure timeline
 
-| Severity | Initial response | Public disclosure |
-|---|---|---|
-| Critical (RCE, auth bypass, supply-chain) | within 24h | after fix is published |
-| High (CSP bypass, IPC escape, log injection) | within 5 business days | after fix is published |
-| Medium / Low (logic flaw, denial-of-service, hardening) | within 10 business days | with the next release |
+| Severity                                                | Initial response        | Public disclosure      |
+| ------------------------------------------------------- | ----------------------- | ---------------------- |
+| Critical (RCE, auth bypass, supply-chain)               | within 24h              | after fix is published |
+| High (CSP bypass, IPC escape, log injection)            | within 5 business days  | after fix is published |
+| Medium / Low (logic flaw, denial-of-service, hardening) | within 10 business days | with the next release  |

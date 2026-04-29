@@ -87,11 +87,7 @@ function sanitizeProperties(input) {
   const out = {};
   for (const [key, value] of Object.entries(input)) {
     if (typeof key !== "string" || key.length > 64) continue;
-    if (
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean"
-    ) {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
       out[key] = typeof value === "string" ? value.slice(0, 200) : value;
     }
   }

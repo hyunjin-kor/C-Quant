@@ -57,7 +57,11 @@ function readSystemTheme(): EffectiveTheme {
 
 function readSystemLocale(): AppLocale {
   if (typeof navigator === "undefined") return "en";
-  return String(navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en";
+  return String(navigator.language || "")
+    .toLowerCase()
+    .startsWith("ko")
+    ? "ko"
+    : "en";
 }
 
 function applyThemeToDocument(theme: ThemePreference, reducedMotion: boolean) {
@@ -139,9 +143,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // locale state and need to re-render when the user toggles via Cmd+K.
     if (typeof window !== "undefined") {
       try {
-        window.dispatchEvent(
-          new CustomEvent("cquant:locale-change", { detail: { locale: next } })
-        );
+        window.dispatchEvent(new CustomEvent("cquant:locale-change", { detail: { locale: next } }));
       } catch {
         // ignore — not all renderers support CustomEvent identically
       }

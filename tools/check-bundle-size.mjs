@@ -40,14 +40,20 @@ for (const budget of BUDGETS) {
   const maxKb = (budget.maxBytes / 1024).toFixed(0);
 
   if (size > budget.maxBytes) {
-    console.error(`[bundle-budget] FAIL ${budget.label}: ${matched} is ${sizeKb} KB (limit ${maxKb} KB)`);
+    console.error(
+      `[bundle-budget] FAIL ${budget.label}: ${matched} is ${sizeKb} KB (limit ${maxKb} KB)`
+    );
     failed = true;
   } else {
-    console.log(`[bundle-budget] OK   ${budget.label}: ${matched} = ${sizeKb} KB (limit ${maxKb} KB)`);
+    console.log(
+      `[bundle-budget] OK   ${budget.label}: ${matched} = ${sizeKb} KB (limit ${maxKb} KB)`
+    );
   }
 }
 
 if (failed) {
-  console.error("\nBundle exceeded budget. Either trim the change or raise the limit deliberately.");
+  console.error(
+    "\nBundle exceeded budget. Either trim the change or raise the limit deliberately."
+  );
   process.exit(1);
 }

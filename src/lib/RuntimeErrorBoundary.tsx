@@ -1,8 +1,4 @@
-import {
-  Component,
-  type ErrorInfo,
-  type ReactNode
-} from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { getBridge } from "./desktopBridge";
 
 type Props = {
@@ -114,9 +110,8 @@ export class RuntimeErrorBoundary extends Component<Props, State> {
             Something went wrong while rendering
           </h1>
           <p style={{ margin: "0 0 16px", lineHeight: 1.6, color: "var(--text-base)" }}>
-            The desk caught an unexpected error inside the React tree. Reset
-            tries to recover the workspace; Reload restarts the renderer. If
-            this repeats, share the trace below.
+            The desk caught an unexpected error inside the React tree. Reset tries to recover the
+            workspace; Reload restarts the renderer. If this repeats, share the trace below.
           </p>
           <div style={{ display: "flex", gap: "0.55rem", marginBottom: "18px" }}>
             <button type="button" className="button primary small" onClick={this.reset}>

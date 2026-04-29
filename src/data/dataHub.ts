@@ -7,7 +7,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
     title: "EU official anchor",
     accessMethod: "Official file",
     refreshCadence: "Auction day / official release",
-    purpose: "Anchor the desk to the latest official EEX primary market print before reading listed futures and proxies.",
+    purpose:
+      "Anchor the desk to the latest official EEX primary market print before reading listed futures and proxies.",
     fields: [
       {
         name: "auction_date",
@@ -58,7 +59,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
       {
         name: "power_system_context",
         priority: "Support",
-        description: "Power and gas-system context pulled from official European transparency platforms.",
+        description:
+          "Power and gas-system context pulled from official European transparency platforms.",
         sourceHint: "ENTSO-E / ENTSOG"
       }
     ]
@@ -69,7 +71,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
     title: "EU listed comparison",
     accessMethod: "Listed benchmark / public chart API",
     refreshCadence: "Intraday",
-    purpose: "Compare the official anchor with the live hedge tape and energy drivers without mistaking the proxy for settlement.",
+    purpose:
+      "Compare the official anchor with the live hedge tape and energy drivers without mistaking the proxy for settlement.",
     fields: [
       {
         name: "ice_eua_december",
@@ -97,7 +100,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
     title: "K-ETS official anchor",
     accessMethod: "Official web / official API sample",
     refreshCadence: "Daily official tape",
-    purpose: "Anchor domestic carbon read to the official KRX market tape before using any global listed proxy.",
+    purpose:
+      "Anchor domestic carbon read to the official KRX market tape before using any global listed proxy.",
     fields: [
       {
         name: "kau_close",
@@ -125,12 +129,14 @@ export const marketInputBlocks: MarketInputBlock[] = [
     title: "K-ETS official context",
     accessMethod: "Official web flow / official file",
     refreshCadence: "Policy event / auction notice",
-    purpose: "Track domestic compliance timing, auction notices, and market reform events in the same surface.",
+    purpose:
+      "Track domestic compliance timing, auction notices, and market reform events in the same surface.",
     fields: [
       {
         name: "auction_notice",
         priority: "Core",
-        description: "Auction and market-operation notices that shift domestic supply expectations.",
+        description:
+          "Auction and market-operation notices that shift domestic supply expectations.",
         sourceHint: "KRX / MOE official notice flow"
       },
       {
@@ -142,7 +148,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
       {
         name: "policy_reform_watch",
         priority: "Support",
-        description: "Domestic reform and allocation changes that can alter structure beyond daily price action.",
+        description:
+          "Domestic reform and allocation changes that can alter structure beyond daily price action.",
         sourceHint: "MOE official releases"
       }
     ]
@@ -153,18 +160,21 @@ export const marketInputBlocks: MarketInputBlock[] = [
     title: "K-ETS listed comparison",
     accessMethod: "Listed proxy / public chart API",
     refreshCadence: "Intraday",
-    purpose: "Use listed and macro comparison only as reference, never as a replacement for the official KRX close.",
+    purpose:
+      "Use listed and macro comparison only as reference, never as a replacement for the official KRX close.",
     fields: [
       {
         name: "krbn_proxy",
         priority: "Core",
-        description: "Global listed carbon proxy used when comparing domestic read with offshore listed risk appetite.",
+        description:
+          "Global listed carbon proxy used when comparing domestic read with offshore listed risk appetite.",
         sourceHint: "KRBN"
       },
       {
         name: "usdkrw_context",
         priority: "Support",
-        description: "Macro context used to watch domestic risk transfer and imported energy stress.",
+        description:
+          "Macro context used to watch domestic risk transfer and imported energy stress.",
         sourceHint: "Domestic macro layer"
       },
       {
@@ -181,7 +191,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
     title: "CN ETS official anchor",
     accessMethod: "Official web flow",
     refreshCadence: "Daily bulletin",
-    purpose: "Read the national carbon market from the official daily exchange bulletin rather than from offshore proxy action alone.",
+    purpose:
+      "Read the national carbon market from the official daily exchange bulletin rather than from offshore proxy action alone.",
     fields: [
       {
         name: "cea_close",
@@ -214,19 +225,22 @@ export const marketInputBlocks: MarketInputBlock[] = [
       {
         name: "mee_release_feed",
         priority: "Core",
-        description: "Latest MEE release used to detect changes in national market operations and expansion.",
+        description:
+          "Latest MEE release used to detect changes in national market operations and expansion.",
         sourceHint: "MEE carbon-market release feed"
       },
       {
         name: "development_report",
         priority: "Core",
-        description: "National market development report used to frame structure, institutions, and expansion.",
+        description:
+          "National market development report used to frame structure, institutions, and expansion.",
         sourceHint: "MEE development report"
       },
       {
         name: "sector_expansion_watch",
         priority: "Support",
-        description: "Expansion and implementation milestones that can change market interpretation without intraday trading.",
+        description:
+          "Expansion and implementation milestones that can change market interpretation without intraday trading.",
         sourceHint: "MEE official notices"
       }
     ]
@@ -237,7 +251,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
     title: "CN ETS listed comparison",
     accessMethod: "Listed proxy / public chart API",
     refreshCadence: "Intraday",
-    purpose: "Keep global listed carbon proxies visible, but explicitly below the official Chinese policy and bulletin flow.",
+    purpose:
+      "Keep global listed carbon proxies visible, but explicitly below the official Chinese policy and bulletin flow.",
     fields: [
       {
         name: "krbn_proxy",
@@ -254,7 +269,8 @@ export const marketInputBlocks: MarketInputBlock[] = [
       {
         name: "policy_signal_overlay",
         priority: "Support",
-        description: "Internal policy timing overlay that keeps the operator focused on official releases.",
+        description:
+          "Internal policy timing overlay that keeps the operator focused on official releases.",
         sourceHint: "C-Quant decision layer"
       }
     ]

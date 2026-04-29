@@ -15,8 +15,7 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     id: "toss-securities",
     name: "토스증권",
     category: "Consumer scan UX",
-    strength:
-      "홈, 피드, 주식 골라보기, 내 계좌 구조로 초보도 빠르게 시장을 훑을 수 있게 만듭니다.",
+    strength: "홈, 피드, 주식 골라보기, 내 계좌 구조로 초보도 빠르게 시장을 훑을 수 있게 만듭니다.",
     differentiator:
       "큰 숫자, 짧은 라벨, 쉬운 카피, 참고용 정보 고지가 동시에 보이는 점이 강합니다.",
     source: {
@@ -29,20 +28,14 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       "실시간 차트, 거래량, 급상승처럼 스캔이 빠른 표면",
       "투자 정보는 참고용이라는 명확한 경계"
     ],
-    implementedAs: [
-      "개요 화면의 시장 보드",
-      "오늘의 브리프 피드",
-      "거래 중개 없음 경계 문구"
-    ]
+    implementedAs: ["개요 화면의 시장 보드", "오늘의 브리프 피드", "거래 중개 없음 경계 문구"]
   },
   {
     id: "tradingview",
     name: "TradingView",
     category: "Trading workspace",
-    strength:
-      "다중 차트, 동기화된 레이아웃, 워치리스트, 뉴스, 알림을 하나의 작업면에 묶습니다.",
-    differentiator:
-      "데스크톱에서도 레이아웃과 워치리스트가 이어지는 작업 지속성이 강합니다.",
+    strength: "다중 차트, 동기화된 레이아웃, 워치리스트, 뉴스, 알림을 하나의 작업면에 묶습니다.",
+    differentiator: "데스크톱에서도 레이아웃과 워치리스트가 이어지는 작업 지속성이 강합니다.",
     source: {
       label: "TradingView Features",
       url: "https://www.tradingview.com/features/",
@@ -53,20 +46,14 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       "동기화된 레이아웃, 워치리스트, 설정",
       "글로벌 실시간 뉴스와 다층 분석 도구"
     ],
-    implementedAs: [
-      "워크스페이스 프리셋",
-      "마켓 워치와 뷰 프리셋",
-      "알림 허브와 피드"
-    ]
+    implementedAs: ["워크스페이스 프리셋", "마켓 워치와 뷰 프리셋", "알림 허브와 피드"]
   },
   {
     id: "koyfin",
     name: "Koyfin",
     category: "Research dashboard",
-    strength:
-      "커스터마이즈 가능한 워치리스트와 대시보드로 리서치 워크플로우를 빠르게 구성합니다.",
-    differentiator:
-      "사용자 정의 뷰를 바꿔가며 같은 자산군을 다른 문맥에서 읽는 점이 뛰어납니다.",
+    strength: "커스터마이즈 가능한 워치리스트와 대시보드로 리서치 워크플로우를 빠르게 구성합니다.",
+    differentiator: "사용자 정의 뷰를 바꿔가며 같은 자산군을 다른 문맥에서 읽는 점이 뛰어납니다.",
     source: {
       label: "Koyfin Watchlists",
       url: "https://www.koyfin.com/features/watchlists/",
@@ -77,20 +64,14 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       "대시보드형 모니터링",
       "리서치 중심 레이아웃 프리셋"
     ],
-    implementedAs: [
-      "저장형 워치리스트 프리셋",
-      "워크뷰 전환",
-      "국가별 비교 워크스페이스"
-    ]
+    implementedAs: ["저장형 워치리스트 프리셋", "워크뷰 전환", "국가별 비교 워크스페이스"]
   },
   {
     id: "carbon-pulse",
     name: "Carbon Pulse",
     category: "Carbon news and dossiers",
-    strength:
-      "탄소시장, 온실가스 가격, 기후정책을 주제로 지역별 뉴스와 포털, 도시에를 묶습니다.",
-    differentiator:
-      "Daily News Ticker, Insights, ETS Dossiers 같은 편집형 정보 계층이 강합니다.",
+    strength: "탄소시장, 온실가스 가격, 기후정책을 주제로 지역별 뉴스와 포털, 도시에를 묶습니다.",
+    differentiator: "Daily News Ticker, Insights, ETS Dossiers 같은 편집형 정보 계층이 강합니다.",
     source: {
       label: "Carbon Pulse",
       url: "https://carbon-pulse.com/",
@@ -101,20 +82,14 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       "ETS Dossiers and portals",
       "지역·정책 축으로 정리된 피드"
     ],
-    implementedAs: [
-      "오늘의 시장 피드",
-      "출처 레지스트리",
-      "촉매 캘린더"
-    ]
+    implementedAs: ["오늘의 시장 피드", "출처 레지스트리", "촉매 캘린더"]
   },
   {
     id: "sylvera",
     name: "Sylvera",
     category: "Decision layer",
-    strength:
-      "평가, 시장 인텔리전스, 마켓 게이트웨이를 묶어 신뢰와 설명 가능성을 앞세웁니다.",
-    differentiator:
-      "의사결정 레이어라는 포지셔닝과 신뢰 데이터 중심 프레이밍이 강합니다.",
+    strength: "평가, 시장 인텔리전스, 마켓 게이트웨이를 묶어 신뢰와 설명 가능성을 앞세웁니다.",
+    differentiator: "의사결정 레이어라는 포지셔닝과 신뢰 데이터 중심 프레이밍이 강합니다.",
     source: {
       label: "Sylvera",
       url: "https://www.sylvera.com/",
@@ -125,11 +100,7 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
       "시장 인텔리전스 레이어",
       "구매자·투자자 관점의 설명 구조"
     ],
-    implementedAs: [
-      "신뢰 센터",
-      "출처 방식 표시",
-      "모델 경계와 설명 우선 설계"
-    ]
+    implementedAs: ["신뢰 센터", "출처 방식 표시", "모델 경계와 설명 우선 설계"]
   },
   {
     id: "clearblue",
@@ -137,23 +108,14 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     category: "Position optimization",
     strength:
       "시나리오 예측, 관할권 집계, 시장 인텔리전스를 통합해 컴플라이언스 포지션을 관리합니다.",
-    differentiator:
-      "관할권 통합 뷰와 시나리오 예측을 하나의 운영 도구로 묶습니다.",
+    differentiator: "관할권 통합 뷰와 시나리오 예측을 하나의 운영 도구로 묶습니다.",
     source: {
       label: "ClearBlue Vantage Position Optimization",
       url: "https://www.clearbluemarkets.com/news/introducing-vantage-position-optimization-enhancing-carbon-market-management",
       accessed
     },
-    featuresToBorrow: [
-      "시나리오 예측",
-      "관할권 집계",
-      "리스크·리포팅 통합 대시보드"
-    ],
-    implementedAs: [
-      "크로스마켓 비교 보드",
-      "시나리오 연구실",
-      "관할권별 모니터링"
-    ]
+    featuresToBorrow: ["시나리오 예측", "관할권 집계", "리스크·리포팅 통합 대시보드"],
+    implementedAs: ["크로스마켓 비교 보드", "시나리오 연구실", "관할권별 모니터링"]
   }
 ];
 

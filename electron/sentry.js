@@ -30,7 +30,8 @@ function init({ release, environment }) {
     Sentry.init({
       dsn,
       release,
-      environment: environment || (process.env.NODE_ENV === "production" ? "production" : "development"),
+      environment:
+        environment || (process.env.NODE_ENV === "production" ? "production" : "development"),
       // Sentry-Electron also captures the renderer when instrumented there;
       // we keep the renderer SDK optional for now since the renderer is
       // already wrapped in StartupErrorBoundary.

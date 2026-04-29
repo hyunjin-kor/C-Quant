@@ -28,17 +28,11 @@ export function buildForecast(
     };
   });
 
-  const score = contributions.reduce(
-    (sum, entry) => sum + entry.contribution,
-    0
-  );
+  const score = contributions.reduce((sum, entry) => sum + entry.contribution, 0);
 
-  const direction =
-    score > 0.85 ? "Bullish" : score < -0.85 ? "Bearish" : "Neutral";
+  const direction = score > 0.85 ? "Bullish" : score < -0.85 ? "Bearish" : "Neutral";
 
-  const activeDrivers = contributions.filter(
-    (entry) => Math.abs(entry.contribution) > 0.05
-  ).length;
+  const activeDrivers = contributions.filter((entry) => Math.abs(entry.contribution) > 0.05).length;
   const totalWeight = profile.drivers.reduce((sum, driver) => sum + driver.weight, 0);
   const confidence = Math.min(
     0.95,

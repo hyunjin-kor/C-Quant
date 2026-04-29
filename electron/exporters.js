@@ -129,10 +129,7 @@ async function exportMarkdown({ window, payload }) {
   const generatedAt = `_Generated ${new Date().toISOString()} by C-Quant_`;
   const defaultName = String(payload?.defaultName ?? "c-quant-export.md").slice(0, 200);
 
-  const body =
-    rows.length > 0
-      ? rowsToMarkdown(rows, columns)
-      : "_(no rows in this export)_";
+  const body = rows.length > 0 ? rowsToMarkdown(rows, columns) : "_(no rows in this export)_";
 
   const content = `# ${title}\n${intro}\n${body}\n\n${generatedAt}\n`;
 

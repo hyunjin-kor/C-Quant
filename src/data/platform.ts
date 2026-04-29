@@ -166,7 +166,8 @@ export const sourceRegistry: SourceRegistryItem[] = [
     category: "Primary price source",
     method: "Official Web",
     url: "https://overview.cneeex.com/c/2025-12-24/496960.shtml",
-    appUse: "Daily official close, turnover, and bulletin-style market overview for the national ETS.",
+    appUse:
+      "Daily official close, turnover, and bulletin-style market overview for the national ETS.",
     whyItMatters:
       "When there is no confirmed public production API, the official exchange bulletin remains the most defensible primary price read.",
     notes: [

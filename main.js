@@ -174,12 +174,7 @@ function fitWindowToVisibleArea(window) {
   const x = Math.max(area.x, Math.min(bounds.x, area.x + area.width - width));
   const y = Math.max(area.y, Math.min(bounds.y, area.y + area.height - height));
 
-  if (
-    bounds.x !== x ||
-    bounds.y !== y ||
-    bounds.width !== width ||
-    bounds.height !== height
-  ) {
+  if (bounds.x !== x || bounds.y !== y || bounds.width !== width || bounds.height !== height) {
     window.setBounds({ x, y, width, height }, true);
   }
 }
@@ -193,9 +188,15 @@ function clearStartupWatchdog() {
 
 function normalizeRendererStartupFailure(payload) {
   const phase =
-    String(payload?.phase ?? "renderer-startup").trim().slice(0, 120) || "renderer-startup";
-  const message = String(payload?.message ?? "Unknown renderer startup error.").trim().slice(0, 2000);
-  const stack = String(payload?.stack ?? "").trim().slice(0, 8000);
+    String(payload?.phase ?? "renderer-startup")
+      .trim()
+      .slice(0, 120) || "renderer-startup";
+  const message = String(payload?.message ?? "Unknown renderer startup error.")
+    .trim()
+    .slice(0, 2000);
+  const stack = String(payload?.stack ?? "")
+    .trim()
+    .slice(0, 8000);
   return { phase, message, stack };
 }
 
@@ -687,10 +688,7 @@ ipcMain.on("renderer-startup-failed", (event, payload) => {
   if (failure.stack) {
     logger.error(failure.stack);
   }
-  appendStartupDiagnostic(
-    `renderer-startup:${failure.phase}`,
-    getRendererStartupDetail(failure)
-  );
+  appendStartupDiagnostic(`renderer-startup:${failure.phase}`, getRendererStartupDetail(failure));
 
   if (startup?.ready) {
     return;
@@ -754,7 +752,10 @@ app.whenReady().then(() => {
   // 2) Process-level safety nets.
   setupProcessHandlers();
   setupCrashReporter();
-  sentry.init({ release: `c-quant@${app.getVersion()}`, environment: isDev ? "development" : "production" });
+  sentry.init({
+    release: `c-quant@${app.getVersion()}`,
+    environment: isDev ? "development" : "production"
+  });
 
   // 3) Persistence stores (window state, user settings, watchlist, backtests).
   windowStateStore = createWindowStateStore({

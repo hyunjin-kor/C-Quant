@@ -177,8 +177,7 @@ const KO_EXACT: Record<string, string> = {
   KRBN: "KRBN",
   "Domestic macro layer": "국내 거시 레이어",
   "Public comparison tape": "공개 비교 테이프",
-  "Shanghai Environment and Energy Exchange daily overview":
-    "상하이환경에너지거래소 일일 개황",
+  "Shanghai Environment and Energy Exchange daily overview": "상하이환경에너지거래소 일일 개황",
   "MEE carbon-market release feed": "MEE 탄소시장 발표 피드",
   "MEE development report": "MEE 발전 보고서",
   "MEE official notices": "MEE 공식 공지",
@@ -210,10 +209,8 @@ const KO_EXACT: Record<string, string> = {
   "Check connection": "연결 확인",
   "Check the next EEX auction date and latest cover ratio":
     "다음 EEX 경매 일정과 직전 커버율을 확인",
-  "Check the whole desk before changing posture":
-    "스탠스를 바꾸기 전에 데스크 전체를 확인",
-  "Check whether KAU volume is above the 20-day average":
-    "KAU 거래량이 20일 평균을 넘는지 확인",
+  "Check the whole desk before changing posture": "스탠스를 바꾸기 전에 데스크 전체를 확인",
+  "Check whether KAU volume is above the 20-day average": "KAU 거래량이 20일 평균을 넘는지 확인",
   "Check whether a new official price tape has appeared after the latest notice":
     "최신 공지 이후 새 공식 가격 테이프가 나왔는지 확인",
   "Check whether the market is entering the compliance/reporting window":
@@ -265,8 +262,7 @@ const KO_EXACT: Record<string, string> = {
   Gap: "격차",
   "Generating response...": "응답 생성 중...",
   "Global carbon decision desk": "글로벌 탄소 의사결정 데스크",
-  "Group model and response settings in one place":
-    "모델과 응답 설정을 한곳에 묶기",
+  "Group model and response settings in one place": "모델과 응답 설정을 한곳에 묶기",
   Headline: "헤드라인",
   "Hedge tape": "헤지 테이프",
   High: "높음",
@@ -274,8 +270,7 @@ const KO_EXACT: Record<string, string> = {
   "Hold / wait": "보유 / 대기",
   Horizon: "시계",
   "How to read": "읽는 법",
-  "Immediate counter-evidence is limited.":
-    "즉시 보이는 반대 근거는 제한적입니다.",
+  "Immediate counter-evidence is limited.": "즉시 보이는 반대 근거는 제한적입니다.",
   "Indicators worth running": "돌려볼 만한 지표",
   "Install a model": "모델 설치",
   "Integrated decision pack": "통합 의사결정 팩",
@@ -317,7 +312,7 @@ const KO_EXACT: Record<string, string> = {
   "Live tape price": "라이브 테이프 가격",
   "Load CSV": "CSV 불러오기",
   "Local chat ready": "로컬 채팅 준비됨",
-    Low: "낮음",
+  Low: "낮음",
   "Macro energy proxy": "거시 에너지 프록시",
   Market: "시장",
   "Market board": "시장 보드",
@@ -327,10 +322,8 @@ const KO_EXACT: Record<string, string> = {
   "Model status": "모델 상태",
   Modified: "수정일",
   Move: "변동",
-  "Move only the top drivers and read the sensitivity":
-    "상위 드라이버만 움직여 민감도를 읽기",
-  "Move the top drivers and read the scenario":
-    "상위 드라이버를 움직여 시나리오를 읽기",
+  "Move only the top drivers and read the sensitivity": "상위 드라이버만 움직여 민감도를 읽기",
+  "Move the top drivers and read the scenario": "상위 드라이버를 움직여 시나리오를 읽기",
   Neutral: "중립",
   "New chat": "새 채팅",
   "No CSV loaded yet": "아직 CSV가 없습니다",
@@ -366,26 +359,23 @@ const KO_EXACT: Record<string, string> = {
   "On free feeds the listed tape can still carry exchange delay.":
     "무료 피드의 상장 테이프는 거래소 지연이 남아 있을 수 있습니다.",
   Open: "열기",
-    "Open chat": "채팅 열기",
+  "Open chat": "채팅 열기",
   "Open original": "원문 열기",
   "Open source doc": "출처 문서 열기",
-  "Operating principles visible before any signal":
-    "시그널보다 먼저 운영 원칙을 보여주기",
+  "Operating principles visible before any signal": "시그널보다 먼저 운영 원칙을 보여주기",
   "Operating read with no upload required": "업로드 없이 바로 읽는 운영 화면",
   "Operator checklist": "운영자 체크리스트",
   Overlap: "겹침 구간",
   "Paid value must be visible in-product": "유료 가치가 제품 안에서 보여야 함",
   Parameters: "파라미터",
-  "Pin the current read and the comparison tape":
-    "현재 판단과 비교 테이프를 고정",
+  "Pin the current read and the comparison tape": "현재 판단과 비교 테이프를 고정",
   Posture: "스탠스",
   "Preview the grounding that will travel with each answer":
     "각 답변과 함께 전달될 근거를 미리 보기",
   "Product boundary": "제품 경계",
   "Quant tools": "퀀트 도구",
   Quantization: "양자화",
-  "Re-check TTF gas and power spread direction":
-    "TTF 가스와 전력 스프레드 방향을 다시 확인",
+  "Re-check TTF gas and power spread direction": "TTF 가스와 전력 스프레드 방향을 다시 확인",
   "Read all three markets on one frame": "세 시장을 한 프레임에서 읽기",
   "Recent co-movement between the official anchor and the benchmark is weak.":
     "공식 앵커와 벤치마크의 최근 동행성은 약합니다.",
@@ -402,10 +392,8 @@ const KO_EXACT: Record<string, string> = {
   "Relative chart": "상대 차트",
   "Research and monitoring only": "리서치와 모니터링 전용",
   "Response style": "응답 스타일",
-  "Review any MSR or TNAC-related official notice":
-    "MSR 또는 TNAC 관련 공식 공지가 있는지 확인",
-  "Review any sector expansion or allocation update":
-    "업종 확대나 배정 규칙 업데이트 공지를 확인",
+  "Review any MSR or TNAC-related official notice": "MSR 또는 TNAC 관련 공식 공지가 있는지 확인",
+  "Review any sector expansion or allocation update": "업종 확대나 배정 규칙 업데이트 공지를 확인",
   "Risk-first": "리스크 우선",
   "Risks and breakers": "리스크와 브레이커",
   "Rule engine": "규칙 엔진",
@@ -418,11 +406,10 @@ const KO_EXACT: Record<string, string> = {
   "Select a model": "모델 선택",
   "Selected market": "선택된 시장",
   Send: "보내기",
-    Sending: "전송 중",
+  Sending: "전송 중",
   Source: "소스",
   "Source freshness": "소스 신선도",
-  "Source system made explicit inside the product":
-    "제품 안에서 소스 체계를 명시하기",
+  "Source system made explicit inside the product": "제품 안에서 소스 체계를 명시하기",
   "Source trust": "소스 신뢰",
   Sources: "소스",
   "Sources not loaded": "소스를 아직 불러오지 못했습니다",
@@ -475,8 +462,7 @@ const KO_EXACT: Record<string, string> = {
   confidence: "확신도",
   messages: "메시지",
   "n/a": "해당 없음",
-  "vs official": "공식 대비"
-  ,
+  "vs official": "공식 대비",
   "It measures whether coal or gas is the marginal profitable generation source. That directly changes allowance demand in power-led systems.":
     "석탄과 가스 중 어느 쪽이 한계 수익 발전원인지 측정합니다. 이는 전력 주도 시장에서 배출권 수요를 직접 바꿉니다.",
   "Auction cadence governs near-term float and liquidity. It is not enough for long-horizon valuation, but it matters for timing and slippage.":
@@ -504,43 +490,31 @@ const KO_EXACT: Record<string, string> = {
   "Risk layer for policy events, liquidity deterioration, missing data, and market-structure breaks.":
     "정책 이벤트, 유동성 악화, 누락 데이터, 시장 구조 붕괴를 다루는 리스크 레이어입니다.",
   "Desktop-first workflow with local research access, source freshness, and future connector support without implying execution.":
-    "실행을 암시하지 않으면서 로컬 리서치 접근, 소스 신선도, 향후 커넥터 지원을 담는 데스크톱 우선 워크플로우입니다."
-  ,
+    "실행을 암시하지 않으면서 로컬 리서치 접근, 소스 신선도, 향후 커넥터 지원을 담는 데스크톱 우선 워크플로우입니다.",
   "Aggregates, interprets, and visualizes carbon market and user data across pricing, supply-demand, policy, news, and scenario modules":
     "가격, 수급, 정책, 뉴스, 시나리오 모듈 전반에서 탄소시장 데이터와 사용자 데이터를 집계하고 해석해 시각화합니다.",
   "Current and historic pricing with policy context":
     "정책 맥락과 함께 현재 및 과거 가격을 보여줍니다.",
-  "Scenario planning modules":
-    "시나리오 계획 모듈을 제공합니다.",
-  "Carbon portfolio and position readout":
-    "탄소 포트폴리오와 포지션 현황을 읽어줍니다.",
+  "Scenario planning modules": "시나리오 계획 모듈을 제공합니다.",
+  "Carbon portfolio and position readout": "탄소 포트폴리오와 포지션 현황을 읽어줍니다.",
   "Transparent order book, automated settlement, RFQ and OTC post-trade infrastructure":
     "투명한 오더북, 자동화된 결제, RFQ 및 OTC 사후거래 인프라를 제공합니다.",
-  "Order-book depth view":
-    "오더북 깊이 뷰를 제공합니다.",
-  "Settlement workflow":
-    "결제 워크플로우를 제공합니다.",
-  "Product-level market data":
-    "상품 단위 시장 데이터를 제공합니다."
-  ,
-  "GHG Protocol Corporate Standard":
-    "GHG Protocol 기업 기준서",
-  "Accounting standard":
-    "회계 기준",
+  "Order-book depth view": "오더북 깊이 뷰를 제공합니다.",
+  "Settlement workflow": "결제 워크플로우를 제공합니다.",
+  "Product-level market data": "상품 단위 시장 데이터를 제공합니다.",
+  "GHG Protocol Corporate Standard": "GHG Protocol 기업 기준서",
+  "Accounting standard": "회계 기준",
   "Scope 1, 2, and 3 accounting boundary, inventory logic, and disclosure framing for the accounting sidecar.":
     "회계 사이드카를 위해 Scope 1, 2, 3 경계, 인벤토리 로직, 공시 프레이밍을 제공합니다.",
   "Any all-in-one carbon decision platform that touches accounting needs a trusted emissions-accounting standard before dashboards or memos start to imply precision.":
     "회계를 다루는 올인원 탄소 의사결정 플랫폼이라면 대시보드나 메모가 과도한 정밀함을 암시하기 전에 신뢰 가능한 배출 회계 기준이 필요합니다.",
-  "Verra Registry Overview":
-    "Verra 레지스트리 개요",
-  "Registry verification":
-    "레지스트리 검증",
+  "Verra Registry Overview": "Verra 레지스트리 개요",
+  "Registry verification": "레지스트리 검증",
   "Project status, issuance, retirement, and document checks for voluntary-credit diligence and retirement-proof review.":
     "자발적 크레딧 실사와 소각 증빙 검토를 위해 프로젝트 상태, 발행, 소각, 문서 확인 경로를 제공합니다.",
   "Registry state and retirement trace are core verification rails when the desk moves from market monitoring into integrity-aware procurement support.":
     "데스크가 시장 모니터링에서 무결성 인지형 조달 지원으로 넘어갈 때 레지스트리 상태와 소각 추적은 핵심 검증 레일입니다.",
-  "Gold Standard Impact Registry":
-    "Gold Standard 임팩트 레지스트리",
+  "Gold Standard Impact Registry": "Gold Standard 임팩트 레지스트리",
   "Track project status, issuance, transfer, retirement, and Article 6 labeling on Gold Standard credits.":
     "Gold Standard 크레딧의 프로젝트 상태, 발행, 이전, 소각, Article 6 라벨링을 추적합니다.",
   "The registry gives a public lifecycle record for issued credits and supports diligence, retirement trace, and disclosure checks.":
@@ -626,7 +600,8 @@ Object.assign(KO_EXACT, {
   "Permanence and reversal disclosure still dominate the read even when document coverage looks orderly.":
     "문서 커버리지가 정돈돼 보여도 permanence와 reversal 공시가 여전히 해석을 지배합니다.",
   "Moderate hazard profile.": "중간 수준의 hazard 프로파일입니다.",
-  "Long-tail biological growth risk remains relevant.": "장기 biological growth 리스크가 여전히 중요합니다.",
+  "Long-tail biological growth risk remains relevant.":
+    "장기 biological growth 리스크가 여전히 중요합니다.",
   "Permanence watch should stay elevated.": "permanence watch는 계속 높은 수준을 유지해야 합니다.",
   "Evidence cadence matters as much as the hazard model.":
     "evidence cadence는 hazard model만큼 중요합니다.",
@@ -681,7 +656,8 @@ Object.assign(KO_EXACT, {
   "Best benchmark for a faster, friendlier operator experience that still reaches disclosure and product-footprint workflows.":
     "더 빠르고 친숙한 운영 경험을 유지하면서도 공시와 제품 탄소발자국 워크플로우까지 닿는 벤치마크입니다.",
   "User-friendly setup for non-specialists": "비전문가도 다룰 수 있는 쉬운 설정",
-  "PCF and ESG workflows adjacent to carbon accounting": "탄소 회계 옆에 붙는 PCF 및 ESG 워크플로우",
+  "PCF and ESG workflows adjacent to carbon accounting":
+    "탄소 회계 옆에 붙는 PCF 및 ESG 워크플로우",
   "Briefing-style guidance layered on operational tasks": "운영 태스크 위에 얹힌 브리핑형 가이드",
   "One data layer reused across frameworks, validation and governance controls, supplier-risk workflows, and ROI-oriented sustainability analytics.":
     "하나의 데이터 레이어를 여러 프레임워크에서 재사용하고, 검증·거버넌스 통제, 공급업체 리스크 워크플로우, ROI 중심 지속가능성 분석을 함께 제공합니다.",
@@ -735,14 +711,16 @@ Object.assign(KO_EXACT, {
   "Use this dossier as a read-only integrity sidecar when a user wants to compare listed carbon exposure with forestry-credit quality and retirement proof.":
     "상장 탄소 익스포저를 산림 크레딧 품질 및 retirement 증거와 비교할 때 읽기 전용 integrity 보조 카드로 사용합니다.",
   "Issued volume": "발행 물량",
-  "Vintage stream is active and issuance history is present.": "vintage 흐름이 살아 있고 issuance 이력이 존재합니다.",
+  "Vintage stream is active and issuance history is present.":
+    "vintage 흐름이 살아 있고 issuance 이력이 존재합니다.",
   "Latest monitoring update is available and should be re-checked before leaning on integrity.":
     "최신 monitoring update를 확인할 수 있으며 integrity 판단에 기대기 전 다시 점검해야 합니다.",
   "Retirement proof": "Retirement 증거",
   "Retirement trail exists, but recent buyer-side retirement flow should be revalidated.":
     "retirement trail은 존재하지만 최근 buyer 측 retirement 흐름은 다시 검증해야 합니다.",
   "Method review": "방법론 검토",
-  "Method and baseline assumptions should stay on the watch list.": "방법론과 baseline 가정은 계속 watch list에 두어야 합니다.",
+  "Method and baseline assumptions should stay on the watch list.":
+    "방법론과 baseline 가정은 계속 watch list에 두어야 합니다.",
   "Verra ARR removal sleeve": "Verra ARR 제거형 슬리브",
   "Afforestation / reforestation removal": "조림 / 재조림 제거형",
   "Document coverage is good, but permanence, issuance timing, and reversal-risk disclosures still need a tight operator checklist.":
@@ -766,13 +744,16 @@ Object.assign(KO_EXACT, {
   "Use this sleeve when the user wants a lower-nature-risk benchmark against forestry-style dossiers and needs document-driven comparability.":
     "산림형 dossier 대비 nature risk가 더 낮은 benchmark와 문서 기반 comparability가 필요할 때 이 슬리브를 사용합니다.",
   "Method fit": "방법론 적합성",
-  "Method comparability remains a live screening step.": "방법론 comparability는 계속 살아 있는 screening 단계입니다.",
+  "Method comparability remains a live screening step.":
+    "방법론 comparability는 계속 살아 있는 screening 단계입니다.",
   "Production evidence": "생산 증거",
   "Operational process evidence is available.": "운영 공정 증거를 확인할 수 있습니다.",
   "Issuance cadence": "발행 cadence",
-  "Monitor whether issuance remains consistent with plant throughput.": "issuance가 plant throughput과 계속 일치하는지 모니터링해야 합니다.",
+  "Monitor whether issuance remains consistent with plant throughput.":
+    "issuance가 plant throughput과 계속 일치하는지 모니터링해야 합니다.",
   "Retirement demand": "Retirement 수요",
-  "Watch concentration in buyer-side retirement demand.": "buyer 측 retirement 수요의 concentration을 봐야 합니다.",
+  "Watch concentration in buyer-side retirement demand.":
+    "buyer 측 retirement 수요의 concentration을 봐야 합니다.",
   "Official registry web flow": "공식 레지스트리 웹 플로우",
   "Daily check, plus event-driven recheck after new issuance, monitoring, or retirement activity":
     "일일 점검, 그리고 신규 issuance, monitoring, retirement 활동 이후 이벤트 기반 재점검",
@@ -809,15 +790,19 @@ Object.assign(KO_EXACT, {
   "Method note review": "방법론 노트 검토",
   "Method and process framing are linked.": "방법론과 공정 framing은 연결되어 있습니다.",
   "Audit window": "Audit 윈도",
-  "Latest audit is usable, but the next cycle should not slip.": "최신 audit은 활용 가능하지만 다음 주기가 밀리면 안 됩니다.",
-  "Check that issuance remains consistent with plant throughput.": "issuance가 plant throughput과 계속 일치하는지 확인해야 합니다.",
+  "Latest audit is usable, but the next cycle should not slip.":
+    "최신 audit은 활용 가능하지만 다음 주기가 밀리면 안 됩니다.",
+  "Check that issuance remains consistent with plant throughput.":
+    "issuance가 plant throughput과 계속 일치하는지 확인해야 합니다.",
   "Buyer concentration": "Buyer concentration",
-  "Demand concentration still needs separate review.": "demand concentration은 여전히 별도 검토가 필요합니다.",
+  "Demand concentration still needs separate review.":
+    "demand concentration은 여전히 별도 검토가 필요합니다.",
   "Do not over-credit engineered removals if issuance cadence drifts away from operating evidence.":
     "issuance cadence가 운영 증거와 멀어지면 engineered removals를 과도하게 높게 평가하지 마십시오.",
   "Method comparability should be checked before mixing engineered sleeves with nature-based integrity assumptions.":
     "engineered 슬리브를 nature-based integrity 가정과 섞기 전에 방법론 comparability를 점검해야 합니다.",
-  "If audit timing slips, treat the sleeve as watch rather than clean.": "audit timing이 밀리면 이 슬리브는 clean이 아니라 watch로 취급해야 합니다.",
+  "If audit timing slips, treat the sleeve as watch rather than clean.":
+    "audit timing이 밀리면 이 슬리브는 clean이 아니라 watch로 취급해야 합니다.",
   "Cross-registry comparability is still partly manual in this product.":
     "이 제품에서 cross-registry comparability는 아직 일부 수작업입니다.",
   "Buyer concentration is not yet supported by a structured public feed.":
@@ -1017,8 +1002,7 @@ Object.assign(KO_EXACT, {
     "underwriting에 중요하므로 다음 업데이트를 추적해야 합니다.",
   "Watch concentration in buyer-side retirement demand.":
     "buyer 측 retirement 수요의 concentration을 지켜봐야 합니다.",
-  "Current process documentation is available.":
-    "현재 공정 문서를 확인할 수 있습니다.",
+  "Current process documentation is available.": "현재 공정 문서를 확인할 수 있습니다.",
   "Current enough for reference, but due for the next cycle.":
     "참고용으로는 충분히 최근이지만 다음 사이클 업데이트 시점이 다가오고 있습니다."
 });
@@ -1057,7 +1041,8 @@ const KO_PATTERNS: Array<{
   },
   {
     pattern: /^Official KRX sample API data for (.+) on (.+)\.$/,
-    translate: ([, instrument, asOf]) => `${instrument}의 공식 KRX 샘플 API 데이터 기준일은 ${asOf}입니다.`
+    translate: ([, instrument, asOf]) =>
+      `${instrument}의 공식 KRX 샘플 API 데이터 기준일은 ${asOf}입니다.`
   },
   {
     pattern: /^Latest official MEE carbon-market release dated (.+)\.$/,
@@ -1114,11 +1099,14 @@ export function localizeText(locale: "ko" | "en", text?: string) {
 
 const KO_OFFICIAL_CONNECTION_ERROR_EXACT: Record<string, string> = {
   "KRX sample API returned no recent ETS rows.": "KRX 샘플 API에서 최근 ETS 행을 찾지 못했습니다.",
-  "No EEX auction rows were found in the official workbook.": "공식 워크북에서 최신 경매 행을 찾지 못했습니다.",
-  "KRX sample API did not return an active KAU instrument.": "KRX 샘플 API에서 활성 KAU 종목을 찾지 못했습니다.",
+  "No EEX auction rows were found in the official workbook.":
+    "공식 워크북에서 최신 경매 행을 찾지 못했습니다.",
+  "KRX sample API did not return an active KAU instrument.":
+    "KRX 샘플 API에서 활성 KAU 종목을 찾지 못했습니다.",
   "KRX sample API returned no recent series for the active allowance.":
     "KRX 샘플 API에서 활성 배출권의 최근 시계열을 찾지 못했습니다.",
-  "MEE list page returned no carbon-market entries.": "MEE 목록 페이지에서 탄소시장 항목을 찾지 못했습니다."
+  "MEE list page returned no carbon-market entries.":
+    "MEE 목록 페이지에서 탄소시장 항목을 찾지 못했습니다."
 };
 
 const KO_RESEARCH_DRIVER_CATEGORY_EXACT: Record<string, string> = {
@@ -1269,7 +1257,10 @@ export function localizeOfficialConnectionError(locale: "ko" | "en", summary?: s
     return raw;
   }
 
-  return KO_OFFICIAL_CONNECTION_ERROR_LOOKUP[normalizeOfficialConnectionErrorKey(raw)] ?? localizeText("ko", raw);
+  return (
+    KO_OFFICIAL_CONNECTION_ERROR_LOOKUP[normalizeOfficialConnectionErrorKey(raw)] ??
+    localizeText("ko", raw)
+  );
 }
 
 export function localizeResearchDriverCategory(locale: "ko" | "en", category?: string) {
@@ -1370,7 +1361,8 @@ export function localizeLiveQuoteUnavailableNote(
 ) {
   const raw = String(reason ?? "").trim();
   const title = String(quoteTitle ?? "").trim();
-  const resolvedTitle = title || (locale === "ko" ? "선택한 비교 시세" : "the selected comparison quote");
+  const resolvedTitle =
+    title || (locale === "ko" ? "선택한 비교 시세" : "the selected comparison quote");
 
   const httpMatch = raw.match(/^HTTP\s+(\d+)\s+from\s+/i);
   if (httpMatch) {
@@ -1414,7 +1406,8 @@ export function localizeQuoteHistoryErrorLabel(
 ) {
   const raw = String(error ?? "").trim();
   const title = String(quoteTitle ?? "").trim();
-  const resolvedTitle = title || (locale === "ko" ? "선택한 비교 시세" : "the selected comparison quote");
+  const resolvedTitle =
+    title || (locale === "ko" ? "선택한 비교 시세" : "the selected comparison quote");
 
   if (/^Unknown live quote:/i.test(raw) || /invalid quote id/i.test(raw)) {
     return locale === "ko"
@@ -1508,13 +1501,16 @@ export function localizeQuoteDelayNoteLabel(
   }
 
   const isReferenceChartFeed = /^Reference web chart feed\./i.test(raw);
-  const isProxyDelay = raw.includes("listed proxy") || String(category ?? "").trim() === "Listed proxy";
+  const isProxyDelay =
+    raw.includes("listed proxy") || String(category ?? "").trim() === "Listed proxy";
 
   if (raw === "Reference web chart feed. Exchange delay may apply.") {
     return "참고용 웹 차트 소스입니다. 거래소 지연이 있을 수 있습니다.";
   }
 
-  if (raw === "Reference web chart feed. Use as a listed proxy, not as the official carbon price.") {
+  if (
+    raw === "Reference web chart feed. Use as a listed proxy, not as the official carbon price."
+  ) {
     return "참고용 웹 차트 소스입니다. 공식 탄소 가격이 아니라 상장 대용지표로만 써야 합니다.";
   }
 

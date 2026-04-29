@@ -119,7 +119,9 @@
         "nsis"
       ],
       "artifactName": "C-Quant-${version}.${ext}",
-      "signingHashAlgorithms": ["sha256"]
+      "signingHashAlgorithms": [
+        "sha256"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -131,8 +133,20 @@
       "category": "public.app-category.finance",
       "icon": "assets/app-icon.png",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] },
-        { "target": "zip", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "artifactName": "C-Quant-${version}-${arch}.${ext}",
       "hardenedRuntime": true,

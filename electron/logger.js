@@ -86,8 +86,7 @@ function writeLine(logPath, level, args) {
 
 function createLogger({ logDir = "" } = {}) {
   const logPath = logDir ? path.join(logDir, "cquant.log") : "";
-  const isVerbose =
-    process.env.CQUANT_DEBUG === "1" || process.env.NODE_ENV !== "production";
+  const isVerbose = process.env.CQUANT_DEBUG === "1" || process.env.NODE_ENV !== "production";
 
   function debug(...args) {
     if (!isVerbose) return;

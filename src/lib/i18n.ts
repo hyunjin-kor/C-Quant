@@ -98,11 +98,7 @@ function interpolate(template: string, params?: Record<string, string | number>)
   });
 }
 
-export function tt(
-  locale: Locale,
-  key: string,
-  params?: Record<string, string | number>
-): string {
+export function tt(locale: Locale, key: string, params?: Record<string, string | number>): string {
   const entry = catalog[key];
   if (!entry) return key;
   const template = locale === "ko" ? entry.ko : entry.en;

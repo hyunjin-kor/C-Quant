@@ -1,10 +1,8 @@
 const ExcelJS = require("exceljs");
 const { createTtlCache } = require("./cache");
 
-const EEX_AUCTION_PAGE_URL =
-  "https://www.eex.com/en/markets/environmental-markets/eu-ets-auctions";
-const KRX_MARKET_PAGE_URL =
-  "https://ets.krx.co.kr/contents/ETS/03/03010000/ETS03010000.jsp";
+const EEX_AUCTION_PAGE_URL = "https://www.eex.com/en/markets/environmental-markets/eu-ets-auctions";
+const KRX_MARKET_PAGE_URL = "https://ets.krx.co.kr/contents/ETS/03/03010000/ETS03010000.jsp";
 const KRX_OPEN_API_DETAIL_URL =
   "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=IZiYdcgRQFMeENJPEMKG";
 const KRX_SAMPLE_API_URL = "https://data-dbg.krx.co.kr/svc/sample/apis/gen/ets_bydd_trd";
@@ -38,8 +36,7 @@ const QUOTE_RANGE_PRESETS = {
 const DEFAULT_HEADERS = {
   "user-agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
-  accept:
-    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "accept-language": "en-US,en;q=0.9,ko;q=0.8,zh-CN;q=0.7"
 };
 
@@ -52,9 +49,7 @@ function toIsoDate(value) {
     return "";
   }
 
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(
-    value.getDate()
-  )}`;
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
 }
 
 function toCompactDate(value) {
@@ -62,9 +57,7 @@ function toCompactDate(value) {
     return "";
   }
 
-  return `${value.getFullYear()}${pad(value.getMonth() + 1)}${pad(
-    value.getDate()
-  )}`;
+  return `${value.getFullYear()}${pad(value.getMonth() + 1)}${pad(value.getDate())}`;
 }
 
 function compactToIsoDate(value) {
@@ -98,14 +91,17 @@ function getLiveQuoteConfigs() {
     {
       id: "eua-dec-benchmark",
       title: "ICE EUA December benchmark future",
-      symbolCandidates: [`ECFZ${currentSuffix}.NYM`, `ECFZ${nextSuffix}.NYM`, `ECFZ${previousSuffix}.NYM`],
+      symbolCandidates: [
+        `ECFZ${currentSuffix}.NYM`,
+        `ECFZ${nextSuffix}.NYM`,
+        `ECFZ${previousSuffix}.NYM`
+      ],
       category: "Benchmark futures",
       markets: ["eu-ets", "shared"],
       provider: YAHOO_PROVIDER_LABEL,
       sourceUrl: "https://www.ice.com/products/197",
       role: "Primary listed hedge tape for EU carbon risk",
-      note:
-        "December benchmark contract used as the main listed EUA reference. Some free chart feeds expose the live price faster than the full historical curve.",
+      note: "December benchmark contract used as the main listed EUA reference. Some free chart feeds expose the live price faster than the full historical curve.",
       delayNote: YAHOO_DELAY_NOTE
     },
     {
@@ -253,14 +249,7 @@ function makeLinks(...items) {
   }));
 }
 
-function makeErrorCard({
-  id,
-  marketId,
-  sourceName,
-  sourceUrl,
-  coverage,
-  error
-}) {
+function makeErrorCard({ id, marketId, sourceName, sourceUrl, coverage, error }) {
   return {
     id,
     marketId,
@@ -272,9 +261,7 @@ function makeErrorCard({
     headline: "Connection unavailable",
     summary: error,
     metrics: [],
-    notes: [
-      "The app could not fetch this official source in the current environment."
-    ],
+    notes: ["The app could not fetch this official source in the current environment."],
     links: makeLinks({ label: "Official source", url: sourceUrl })
   };
 }
@@ -337,8 +324,9 @@ function toDateLabelFromUnix(timestamp, options = {}) {
 }
 
 function buildSeriesFromYahoo(timestamps, quote, options = {}) {
-  const seriesLimit =
-    Object.prototype.hasOwnProperty.call(options, "seriesLimit") ? options.seriesLimit : 22;
+  const seriesLimit = Object.prototype.hasOwnProperty.call(options, "seriesLimit")
+    ? options.seriesLimit
+    : 22;
   const includeTime = Boolean(options.includeTime);
   const opens = Array.isArray(quote?.open) ? quote.open : [];
   const highs = Array.isArray(quote?.high) ? quote.high : [];
@@ -417,8 +405,9 @@ async function fetchYahooChartResult(symbol, options = {}) {
 async function fetchLiveQuote(config, options = {}) {
   let selectedSymbol = "";
   let result = null;
-  const seriesLimit =
-    Object.prototype.hasOwnProperty.call(options, "seriesLimit") ? options.seriesLimit : 22;
+  const seriesLimit = Object.prototype.hasOwnProperty.call(options, "seriesLimit")
+    ? options.seriesLimit
+    : 22;
   const usesIntradayRange =
     typeof options.interval === "string" &&
     (options.interval.endsWith("m") || options.interval.endsWith("h"));
@@ -529,9 +518,7 @@ function makeErrorQuote(config, error) {
 
 async function runQuoteTask(config) {
   try {
-    return await withCache(`quote:${config.id}`, QUOTE_CACHE_TTL_MS, () =>
-      fetchLiveQuote(config)
-    );
+    return await withCache(`quote:${config.id}`, QUOTE_CACHE_TTL_MS, () => fetchLiveQuote(config));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return makeErrorQuote(config, message);
@@ -618,9 +605,7 @@ async function fetchKrxHistorySeries(instrumentCode, asOfCompactDate) {
 
   return dayRows
     .map((rows, index) => {
-      const matchedRow = rows.find(
-        (row) => normalizeWhitespace(row.ISU_CD) === instrumentCode
-      );
+      const matchedRow = rows.find((row) => normalizeWhitespace(row.ISU_CD) === instrumentCode);
 
       if (!matchedRow) {
         return null;
@@ -669,8 +654,7 @@ async function fetchEuEtsCard() {
     const workbookReader = new ExcelJS.Workbook();
     await workbookReader.xlsx.load(workbookBuffer);
     const worksheet =
-      workbookReader.getWorksheet("Primary Market Auction") ??
-      workbookReader.worksheets[0];
+      workbookReader.getWorksheet("Primary Market Auction") ?? workbookReader.worksheets[0];
     const rows = [];
     worksheet.eachRow({ includeEmpty: false }, (row) => {
       rows.push(row.values.slice(2));
@@ -830,10 +814,7 @@ function parseMeeListEntries(html) {
 }
 
 function parseMetaValue(html, name) {
-  const pattern = new RegExp(
-    `<meta\\s+name="${name}"\\s+content="([^"]*)"\\s*\\/?>`,
-    "i"
-  );
+  const pattern = new RegExp(`<meta\\s+name="${name}"\\s+content="([^"]*)"\\s*\\/?>`, "i");
   const match = html.match(pattern);
   return match ? normalizeWhitespace(match[1]) : "";
 }
@@ -867,73 +848,73 @@ function extractMeeOperationalMetrics(html) {
 
 async function fetchCnEtsCard() {
   return withCache("card:cn-ets-official", CN_CARD_CACHE_TTL_MS, async () => {
-  const listHtml = await fetchText(MEE_LIST_URL, {
-    headers: DEFAULT_HEADERS
-  });
-  const entries = parseMeeListEntries(listHtml).filter((entry) =>
-    /碳市场|碳排放权交易市场/.test(entry.title)
-  );
-
-  if (entries.length === 0) {
-    throw new Error("MEE list page returned no carbon-market entries.");
-  }
-
-  const latestEntry = entries[0];
-  let metrics = [];
-  let metricsEntry = null;
-
-  for (const entry of entries.slice(0, 6)) {
-    const articleHtml = await fetchText(entry.url, {
-      headers: {
-        ...DEFAULT_HEADERS,
-        referer: MEE_LIST_URL
-      }
+    const listHtml = await fetchText(MEE_LIST_URL, {
+      headers: DEFAULT_HEADERS
     });
-    const articleMetrics = extractMeeOperationalMetrics(articleHtml);
-    if (articleMetrics.length > 0) {
-      metrics = articleMetrics;
-      metricsEntry = {
-        ...entry,
-        title: parseMetaValue(articleHtml, "ArticleTitle") || entry.title,
-        date: parseMetaValue(articleHtml, "PubDate").slice(0, 10) || entry.date
-      };
-      break;
-    }
-  }
-
-  const notes = [
-    "This official feed reflects MEE policy and operations releases, not a stable daily exchange tape."
-  ];
-
-  if (metricsEntry && metricsEntry.url !== latestEntry.url) {
-    notes.push(
-      `Numeric operating metrics are taken from the latest MEE bulletin with published market statistics (${metricsEntry.date}).`
+    const entries = parseMeeListEntries(listHtml).filter((entry) =>
+      /碳市场|碳排放权交易市场/.test(entry.title)
     );
-  }
 
-  return {
-    id: "cn-ets-official",
-    marketId: "cn-ets",
-    sourceName: "MEE carbon-market release feed",
-    coverage: "Official policy and operations feed",
-    sourceUrl: latestEntry.url,
-    status: metrics.length > 0 ? "limited" : "connected",
-    asOf: latestEntry.date,
-    headline: latestEntry.title,
-    summary:
-      metrics.length > 0
-        ? `Latest official MEE carbon-market release dated ${latestEntry.date}.`
-        : `Latest official MEE carbon-market release dated ${latestEntry.date}. Numeric market statistics were not published in the latest item.`,
-    metrics,
-    notes,
-    links: makeLinks(
-      { label: "MEE feed page", url: MEE_LIST_URL },
-      { label: "Latest official release", url: latestEntry.url },
-      ...(metricsEntry && metricsEntry.url !== latestEntry.url
-        ? [{ label: "Latest stats bulletin", url: metricsEntry.url }]
-        : [])
-    )
-  };
+    if (entries.length === 0) {
+      throw new Error("MEE list page returned no carbon-market entries.");
+    }
+
+    const latestEntry = entries[0];
+    let metrics = [];
+    let metricsEntry = null;
+
+    for (const entry of entries.slice(0, 6)) {
+      const articleHtml = await fetchText(entry.url, {
+        headers: {
+          ...DEFAULT_HEADERS,
+          referer: MEE_LIST_URL
+        }
+      });
+      const articleMetrics = extractMeeOperationalMetrics(articleHtml);
+      if (articleMetrics.length > 0) {
+        metrics = articleMetrics;
+        metricsEntry = {
+          ...entry,
+          title: parseMetaValue(articleHtml, "ArticleTitle") || entry.title,
+          date: parseMetaValue(articleHtml, "PubDate").slice(0, 10) || entry.date
+        };
+        break;
+      }
+    }
+
+    const notes = [
+      "This official feed reflects MEE policy and operations releases, not a stable daily exchange tape."
+    ];
+
+    if (metricsEntry && metricsEntry.url !== latestEntry.url) {
+      notes.push(
+        `Numeric operating metrics are taken from the latest MEE bulletin with published market statistics (${metricsEntry.date}).`
+      );
+    }
+
+    return {
+      id: "cn-ets-official",
+      marketId: "cn-ets",
+      sourceName: "MEE carbon-market release feed",
+      coverage: "Official policy and operations feed",
+      sourceUrl: latestEntry.url,
+      status: metrics.length > 0 ? "limited" : "connected",
+      asOf: latestEntry.date,
+      headline: latestEntry.title,
+      summary:
+        metrics.length > 0
+          ? `Latest official MEE carbon-market release dated ${latestEntry.date}.`
+          : `Latest official MEE carbon-market release dated ${latestEntry.date}. Numeric market statistics were not published in the latest item.`,
+      metrics,
+      notes,
+      links: makeLinks(
+        { label: "MEE feed page", url: MEE_LIST_URL },
+        { label: "Latest official release", url: latestEntry.url },
+        ...(metricsEntry && metricsEntry.url !== latestEntry.url
+          ? [{ label: "Latest stats bulletin", url: metricsEntry.url }]
+          : [])
+      )
+    };
   });
 }
 

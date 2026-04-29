@@ -324,7 +324,9 @@ export function CommandSurface({
                 <span className="section-kicker">{card.region}</span>
                 <h3>{card.name}</h3>
               </div>
-              <span className={`freshness-badge ${card.freshnessLevel}`}>{card.freshnessLabel}</span>
+              <span className={`freshness-badge ${card.freshnessLevel}`}>
+                {card.freshnessLabel}
+              </span>
             </div>
 
             <div className="command-market-metrics">
@@ -407,7 +409,11 @@ export function CommandSurface({
                   <span>{item.category}</span>
                   <span>{item.appUse}</span>
                 </div>
-                <button type="button" className="button ghost small" onClick={() => onOpenUrl(item.url)}>
+                <button
+                  type="button"
+                  className="button ghost small"
+                  onClick={() => onOpenUrl(item.url)}
+                >
                   {openSourceDocLabel}
                 </button>
               </div>
@@ -485,7 +491,11 @@ export function CommandSurface({
                     <span key={feature}>{feature}</span>
                   ))}
                 </div>
-                <button type="button" className="button ghost small" onClick={() => onOpenUrl(platform.url)}>
+                <button
+                  type="button"
+                  className="button ghost small"
+                  onClick={() => onOpenUrl(platform.url)}
+                >
                   {referenceLabel}
                 </button>
               </div>
@@ -515,7 +525,11 @@ export function CommandSurface({
                   <span>{signal.cQuantMove}</span>
                 </li>
               </ul>
-              <button type="button" className="button ghost small" onClick={() => onOpenUrl(signal.url)}>
+              <button
+                type="button"
+                className="button ghost small"
+                onClick={() => onOpenUrl(signal.url)}
+              >
                 {sourceLabel}
               </button>
             </div>
@@ -578,7 +592,11 @@ export function CommandSurface({
                     <span key={feature}>{feature}</span>
                   ))}
                 </div>
-                <button type="button" className="button ghost small" onClick={() => onOpenUrl(platform.url)}>
+                <button
+                  type="button"
+                  className="button ghost small"
+                  onClick={() => onOpenUrl(platform.url)}
+                >
                   {referenceLabel}
                 </button>
               </div>
@@ -616,7 +634,11 @@ export function CommandSurface({
                   <span>{benchmark.llmUse}</span>
                 </li>
               </ul>
-              <button type="button" className="button ghost small" onClick={() => onOpenUrl(benchmark.url)}>
+              <button
+                type="button"
+                className="button ghost small"
+                onClick={() => onOpenUrl(benchmark.url)}
+              >
                 {originalLabel}
               </button>
             </div>

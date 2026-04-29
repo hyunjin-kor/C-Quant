@@ -54,7 +54,10 @@ test("quote delay-note helper keeps English copy unchanged", () => {
 });
 
 test("quote delay-note helper falls back safely for empty and unknown values", () => {
-  assert.equal(localization.localizeQuoteDelayNoteLabel("ko", "", "Listed proxy"), "지연 정보 없음");
+  assert.equal(
+    localization.localizeQuoteDelayNoteLabel("ko", "", "Listed proxy"),
+    "지연 정보 없음"
+  );
   assert.equal(
     localization.localizeQuoteDelayNoteLabel("ko", "Internal vendor relay", "Benchmark futures"),
     "시세 지연 주석은 원문 소스를 다시 확인해야 합니다."

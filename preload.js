@@ -5,8 +5,7 @@ contextBridge.exposeInMainWorld("desktopBridge", {
 
   // Lifecycle / startup signaling
   notifyRendererReady: () => ipcRenderer.send("renderer-ready"),
-  reportRendererStartupFailure: (payload) =>
-    ipcRenderer.send("renderer-startup-failed", payload),
+  reportRendererStartupFailure: (payload) => ipcRenderer.send("renderer-startup-failed", payload),
 
   // Live sources
   refreshConnectedSources: () => ipcRenderer.invoke("refresh-connected-sources"),

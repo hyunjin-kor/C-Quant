@@ -18,13 +18,19 @@ test("chat grounding metadata helpers localize known reliance values in Korean",
   assert.equal(localization.localizeChatGroundingReliance("ko", "Primary evidence"), "핵심 근거");
   assert.equal(localization.localizeChatGroundingReliance("ko", "Context signal"), "맥락 신호");
   assert.equal(localization.localizeChatGroundingReliance("ko", "Proxy benchmark"), "프록시 비교");
-  assert.equal(localization.localizeChatGroundingReliance("ko", "Research driver"), "연구 드라이버");
+  assert.equal(
+    localization.localizeChatGroundingReliance("ko", "Research driver"),
+    "연구 드라이버"
+  );
   assert.equal(localization.localizeChatGroundingReliance("ko", "Accounting control"), "회계 통제");
 });
 
 test("chat grounding metadata helpers keep English values unchanged", () => {
   assert.equal(localization.localizeChatGroundingKind("en", "Official anchor"), "Official anchor");
-  assert.equal(localization.localizeChatGroundingReliance("en", "Primary evidence"), "Primary evidence");
+  assert.equal(
+    localization.localizeChatGroundingReliance("en", "Primary evidence"),
+    "Primary evidence"
+  );
 });
 
 test("chat grounding metadata helpers fall back to raw values when they are unknown", () => {

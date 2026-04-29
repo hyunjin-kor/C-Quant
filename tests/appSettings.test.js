@@ -2,11 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import {
-  createSettingsStore,
-  DEFAULTS,
-  normalize
-} from "../electron/appSettings.js";
+import { createSettingsStore, DEFAULTS, normalize } from "../electron/appSettings.js";
 
 let tempDir;
 let filePath;

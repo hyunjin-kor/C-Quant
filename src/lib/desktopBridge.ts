@@ -161,9 +161,7 @@ export async function loadAppSettings(): Promise<AppSettings | null> {
   }
 }
 
-export async function saveAppSettings(
-  partial: Partial<AppSettings>
-): Promise<AppSettings | null> {
+export async function saveAppSettings(partial: Partial<AppSettings>): Promise<AppSettings | null> {
   const bridge = getBridge();
   if (!bridge?.saveAppSettings) return null;
   try {

@@ -41,11 +41,7 @@ test("quote note helper localizes regex-style note variants and stable fallback 
     "대용지표 전용입니다. 공식 상장 헤지 기준은 ICE EUA 선물로 유지해야 합니다."
   );
   assert.equal(
-    localization.localizeQuoteNoteLabel(
-      "ko",
-      "custom-quote",
-      "Internal vendor relay note"
-    ),
+    localization.localizeQuoteNoteLabel("ko", "custom-quote", "Internal vendor relay note"),
     "비교 시세 비고는 원문 소스를 다시 확인해야 합니다."
   );
   assert.equal(localization.localizeQuoteNoteLabel("ko", "", ""), "메모 없음");
@@ -77,7 +73,11 @@ test("quote role helper localizes known role copy in Korean", () => {
 
 test("quote role helper localizes regex-style role variants and stable fallback in Korean", () => {
   assert.equal(
-    localization.localizeQuoteRoleLabel("ko", "custom-quote", "Fuel-switching driver for EU carbon"),
+    localization.localizeQuoteRoleLabel(
+      "ko",
+      "custom-quote",
+      "Fuel-switching driver for EU carbon"
+    ),
     "탄소용 연료 전환 동인"
   );
   assert.equal(

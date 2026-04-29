@@ -131,11 +131,7 @@ export type BollingerBand = {
  * Bollinger bands: middle = SMA, upper/lower = middle ± k * std-dev.
  * Defaults match the popular 20 / 2 setup.
  */
-export function bollinger(
-  values: Series,
-  period = 20,
-  k = 2
-): Array<BollingerBand> {
+export function bollinger(values: Series, period = 20, k = 2): Array<BollingerBand> {
   if (period <= 1 || !Number.isInteger(period)) {
     throw new Error("bollinger: period must be an integer > 1.");
   }

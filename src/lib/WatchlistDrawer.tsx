@@ -121,11 +121,7 @@ export function WatchlistDrawer({ open, onClose }: Props) {
               .reverse()
               .map((item) => (
                 <li key={item.id} className="drawer-row">
-                  <button
-                    type="button"
-                    className="drawer-row-main"
-                    onClick={() => restore(item)}
-                  >
+                  <button type="button" className="drawer-row-main" onClick={() => restore(item)}>
                     <strong>{item.label}</strong>
                     <span>{new Date(item.createdAt).toLocaleString()}</span>
                   </button>

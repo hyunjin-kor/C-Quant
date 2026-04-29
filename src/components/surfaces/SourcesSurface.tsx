@@ -295,7 +295,11 @@ export function SourcesSurface({
                 <strong>{quote.note}</strong>
                 <span>{quote.delayNote}</span>
               </div>
-              <button type="button" className="button ghost small" onClick={() => onOpenUrl(quote.url)}>
+              <button
+                type="button"
+                className="button ghost small"
+                onClick={() => onOpenUrl(quote.url)}
+              >
                 {quote.sourceLabel}
               </button>
             </div>
@@ -471,7 +475,11 @@ export function SourcesSurface({
                     <span key={meta}>{meta}</span>
                   ))}
                 </div>
-                <button type="button" className="button ghost small" onClick={() => onOpenUrl(item.url)}>
+                <button
+                  type="button"
+                  className="button ghost small"
+                  onClick={() => onOpenUrl(item.url)}
+                >
                   {item.buttonLabel}
                 </button>
               </div>
@@ -514,7 +522,11 @@ export function SourcesSurface({
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
-                <button type="button" className="button ghost small" onClick={() => onOpenUrl(track.url)}>
+                <button
+                  type="button"
+                  className="button ghost small"
+                  onClick={() => onOpenUrl(track.url)}
+                >
                   {track.buttonLabel}
                 </button>
               </div>
@@ -555,7 +567,11 @@ export function SourcesSurface({
                     </li>
                   ))}
                 </ul>
-                <button type="button" className="button ghost small" onClick={() => onOpenUrl(dossier.url)}>
+                <button
+                  type="button"
+                  className="button ghost small"
+                  onClick={() => onOpenUrl(dossier.url)}
+                >
                   {dossier.buttonLabel}
                 </button>
               </div>
@@ -594,7 +610,11 @@ export function SourcesSurface({
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
-                <button type="button" className="button ghost small" onClick={() => onOpenUrl(overlay.url)}>
+                <button
+                  type="button"
+                  className="button ghost small"
+                  onClick={() => onOpenUrl(overlay.url)}
+                >
                   {overlay.buttonLabel}
                 </button>
               </div>

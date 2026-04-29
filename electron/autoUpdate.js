@@ -46,9 +46,7 @@ function getUpdater() {
       debug: (...args) => logger.debug("[updater]", ...args)
     };
 
-    autoUpdater.on("checking-for-update", () =>
-      setStatus({ state: "checking" })
-    );
+    autoUpdater.on("checking-for-update", () => setStatus({ state: "checking" }));
     autoUpdater.on("update-available", (info) =>
       setStatus({ state: "available", version: info?.version || "" })
     );

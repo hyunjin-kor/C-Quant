@@ -247,7 +247,9 @@ export function DeskSurface({
                 <strong>{row.officialPrice}</strong>
                 <span>{row.officialChange}</span>
                 <div className="board-meta-row">
-                  <span className={`freshness-badge ${row.freshnessLevel}`}>{row.freshnessLabel}</span>
+                  <span className={`freshness-badge ${row.freshnessLevel}`}>
+                    {row.freshnessLabel}
+                  </span>
                   <span className="board-inline-meta">{row.freshnessSummary}</span>
                 </div>
               </div>
@@ -451,7 +453,11 @@ export function DeskSurface({
               <h2>{scoreBuildTitle}</h2>
             </div>
           </div>
-          <WaterfallChart items={waterfallItems} positiveColor={positiveColor} negativeColor={negativeColor} />
+          <WaterfallChart
+            items={waterfallItems}
+            positiveColor={positiveColor}
+            negativeColor={negativeColor}
+          />
         </div>
 
         <div className="panel">

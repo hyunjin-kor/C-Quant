@@ -92,11 +92,7 @@ function createWindowStateStore({ statePath, defaults = {} }) {
     const candidate = {
       x: Math.round(saved.x),
       y: Math.round(saved.y),
-      width: clamp(
-        Math.round(saved.width),
-        defaults.minWidth ?? MIN_WIDTH,
-        MAX_RESONABLE_WIDTH
-      ),
+      width: clamp(Math.round(saved.width), defaults.minWidth ?? MIN_WIDTH, MAX_RESONABLE_WIDTH),
       height: clamp(
         Math.round(saved.height),
         defaults.minHeight ?? MIN_HEIGHT,

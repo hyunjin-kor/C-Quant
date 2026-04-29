@@ -26,11 +26,7 @@ import {
   productRequirements,
   quantIndicators
 } from "./data/research";
-import {
-  sourceRegistry,
-  subscriptionFeatures,
-  trustPrinciples
-} from "./data/platform";
+import { sourceRegistry, subscriptionFeatures, trustPrinciples } from "./data/platform";
 import { buildForecast } from "./lib/forecast";
 import { localizeText, localizeTextWithFallback } from "./lib/localization";
 import type {
@@ -142,7 +138,8 @@ const DRIVER_FAMILIES: Array<{
     id: "power",
     ko: "?꾨젰쨌?곗뾽",
     en: "Power & Industry",
-    match: (driver) => /power|industrial|manufacturing|industry/i.test(`${driver.category} ${driver.variable}`)
+    match: (driver) =>
+      /power|industrial|manufacturing|industry/i.test(`${driver.category} ${driver.variable}`)
   },
   {
     id: "fuel",
@@ -154,19 +151,28 @@ const DRIVER_FAMILIES: Array<{
     id: "macro",
     ko: "嫄곗떆쨌湲덉쑖",
     en: "Macro & Financial",
-    match: (driver) => /macro|financial|equity|credit|fx|exchange|call rate/i.test(`${driver.category} ${driver.variable}`)
+    match: (driver) =>
+      /macro|financial|equity|credit|fx|exchange|call rate/i.test(
+        `${driver.category} ${driver.variable}`
+      )
   },
   {
     id: "weather",
     ko: "?섍꼍쨌湲곗긽",
     en: "Weather & Environment",
-    match: (driver) => /weather|temperature|wind|hydro|aqi|environment/i.test(`${driver.category} ${driver.variable}`)
+    match: (driver) =>
+      /weather|temperature|wind|hydro|aqi|environment/i.test(
+        `${driver.category} ${driver.variable}`
+      )
   },
   {
     id: "execution",
     ko: "유동성·집행",
     en: "Liquidity & Execution",
-    match: (driver) => /microstructure|liquidity|auction|open interest|volume/i.test(`${driver.category} ${driver.variable}`)
+    match: (driver) =>
+      /microstructure|liquidity|auction|open interest|volume/i.test(
+        `${driver.category} ${driver.variable}`
+      )
   }
 ];
 
@@ -196,7 +202,11 @@ function getSystemLocale(): AppLocale {
     return "en";
   }
 
-  return String(navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en";
+  return String(navigator.language || "")
+    .toLowerCase()
+    .startsWith("ko")
+    ? "ko"
+    : "en";
 }
 
 function readStoredString(key: string, fallback: string) {
@@ -257,9 +267,7 @@ function formatRelativeDays(locale: AppLocale, value: string) {
     return t(locale, "Date unavailable", "Date unavailable");
   }
 
-  const days = Math.floor(
-    (Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const days = Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
 
   if (days <= 0) return t(locale, "?ㅻ뒛 媛깆떊", "Updated today");
   if (days === 1) return t(locale, "1??寃쎄낵", "1 day old");
@@ -343,7 +351,10 @@ function getRegistryHealthTone(status: "healthy" | "watch" | "blocked") {
   }
 }
 
-function getLifecycleStatusLabel(locale: AppLocale, status: "done" | "active" | "queued" | "warning") {
+function getLifecycleStatusLabel(
+  locale: AppLocale,
+  status: "done" | "active" | "queued" | "warning"
+) {
   switch (status) {
     case "done":
       return tf(locale, "완료", "Done");
@@ -403,7 +414,9 @@ function joinReadoutParts(...parts: Array<string | null | undefined>) {
 }
 
 function parseMetricNumber(value: string) {
-  const match = String(value).replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  const match = String(value)
+    .replace(/,/g, "")
+    .match(/-?\d+(?:\.\d+)?/);
   if (!match) {
     return null;
   }
@@ -453,8 +466,7 @@ function buildVolumePoints(series: ConnectedSourceSeriesPoint[] | undefined): Ch
 
 function getOfficialPriceLabel(card: ConnectedSourceCard | null) {
   return (
-    findMetric(card, ["auction price", "close", "year-end close", "average price"])?.value ??
-    "n/a"
+    findMetric(card, ["auction price", "close", "year-end close", "average price"])?.value ?? "n/a"
   );
 }
 
@@ -489,7 +501,7 @@ function getOfficialChangePct(card: ConnectedSourceCard | null) {
   const priceValue = getOfficialPriceValue(card);
 
   if (changeValue !== null && priceValue && priceValue !== 0) {
-    return ((changeValue / Math.abs(priceValue - changeValue)) * 100) || null;
+    return (changeValue / Math.abs(priceValue - changeValue)) * 100 || null;
   }
 
   return null;
@@ -629,7 +641,10 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
     );
   }
 
-  if (note === "This uses the official KRX Open API sample endpoint published on the service detail page.") {
+  if (
+    note ===
+    "This uses the official KRX Open API sample endpoint published on the service detail page."
+  ) {
     return t(
       locale,
       "???곗씠?곕뒗 ?쒕퉬???곸꽭 ?섏씠吏?먯꽌 怨듭떆??怨듭떇 KRX Open API ?섑뵆 ?덈뱶?ъ씤?몃? ?ъ슜?⑸땲??",
@@ -645,7 +660,10 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
     );
   }
 
-  if (note === "This official feed reflects MEE policy and operations releases, not a stable daily exchange tape.") {
+  if (
+    note ===
+    "This official feed reflects MEE policy and operations releases, not a stable daily exchange tape."
+  ) {
     return t(
       locale,
       "???怨듭떇 ?뚯뒪??MEE ?뺤콉 / ?댁쁺 諛쒗몴瑜?諛섏쁺?섎㈃, ?덉젙?쒖씤 ?쇱씪 嫄곕옒???뚯씠?꾧? ?꾨땲?덈떎.",
@@ -653,7 +671,11 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
     );
   }
 
-  if (note.startsWith("Numeric operating metrics are taken from the latest MEE bulletin with published market statistics")) {
+  if (
+    note.startsWith(
+      "Numeric operating metrics are taken from the latest MEE bulletin with published market statistics"
+    )
+  ) {
     const dateMatch = note.match(/\(([^)]+)\)/);
     const asOf = dateMatch?.[1] ? formatDate(locale, dateMatch[1]) : "n/a";
     return t(
@@ -725,7 +747,10 @@ function compareSeries(
 ): { points: MultiLinePoint[]; stats: CompareStats } {
   const officialCollapsed = collapseSeriesByBucket(officialPoints);
   const benchmarkByBucket = new Map(
-    collapseSeriesByBucket(benchmarkPoints).map((point) => [normalizeSeriesBucket(point.label), point])
+    collapseSeriesByBucket(benchmarkPoints).map((point) => [
+      normalizeSeriesBucket(point.label),
+      point
+    ])
   );
   const alignedPairs = officialCollapsed
     .map((point) => {
@@ -782,7 +807,11 @@ function compareSeries(
   });
 
   let directionMatches = 0;
-  for (let index = 0; index < Math.min(officialReturns.length, benchmarkReturns.length); index += 1) {
+  for (
+    let index = 0;
+    index < Math.min(officialReturns.length, benchmarkReturns.length);
+    index += 1
+  ) {
     if (Math.sign(officialReturns[index]) === Math.sign(benchmarkReturns[index])) {
       directionMatches += 1;
     }
@@ -823,22 +852,58 @@ function getDriverFamilyLabel(locale: AppLocale, familyId: string) {
 function getMarketChecklist(locale: AppLocale, marketId: MarketId) {
   if (marketId === "eu-ets") {
     return [
-      t(locale, "?ㅼ쓬 EEX 寃쎈ℓ ?쇱젙怨?吏곸쟾 而ㅻ쾭???뺤씤", "Check the next EEX auction date and latest cover ratio"),
-      t(locale, "Re-check TTF gas and power spread direction", "Re-check TTF gas and power spread direction"),
-      t(locale, "MSR쨌TNAC 愿??怨듭떇 諛쒗몴 ?щ? ?뺤씤", "Review any MSR or TNAC-related official notice")
+      t(
+        locale,
+        "?ㅼ쓬 EEX 寃쎈ℓ ?쇱젙怨?吏곸쟾 而ㅻ쾭???뺤씤",
+        "Check the next EEX auction date and latest cover ratio"
+      ),
+      t(
+        locale,
+        "Re-check TTF gas and power spread direction",
+        "Re-check TTF gas and power spread direction"
+      ),
+      t(
+        locale,
+        "MSR쨌TNAC 愿??怨듭떇 諛쒗몴 ?щ? ?뺤씤",
+        "Review any MSR or TNAC-related official notice"
+      )
     ];
   }
   if (marketId === "k-ets") {
     return [
-      t(locale, "KAU 嫄곕옒?됱씠 20???됯퇏 ?꾩씤吏 ?뺤씤", "Check whether KAU volume is above the 20-day average"),
-      t(locale, "?댄뻾 ?쒖쫵쨌寃利앸낫怨??쇱젙 吏꾩엯 ?щ? ?뺤씤", "Check whether the market is entering the compliance/reporting window"),
-      t(locale, "KCU/KOC? ?꾨Ъ 泥닿껐 ?먮쫫 遺꾨━ ?щ? ?뺤씤", "Confirm whether offset flow is diverging from the main tape")
+      t(
+        locale,
+        "KAU 嫄곕옒?됱씠 20???됯퇏 ?꾩씤吏 ?뺤씤",
+        "Check whether KAU volume is above the 20-day average"
+      ),
+      t(
+        locale,
+        "?댄뻾 ?쒖쫵쨌寃利앸낫怨??쇱젙 吏꾩엯 ?щ? ?뺤씤",
+        "Check whether the market is entering the compliance/reporting window"
+      ),
+      t(
+        locale,
+        "KCU/KOC? ?꾨Ъ 泥닿껐 ?먮쫫 遺꾨━ ?щ? ?뺤씤",
+        "Confirm whether offset flow is diverging from the main tape"
+      )
     ];
   }
   return [
-    t(locale, "怨듭떇 怨듭? ?댄썑 ??媛寃??뚯씠?꾧? ?덈뒗吏 ?뺤씤", "Check whether a new official price tape has appeared after the latest notice"),
-    t(locale, "?뱁꽣 ?뺣?쨌諛곗젙 洹쒖튃 怨듭떆 ?щ? ?뺤씤", "Review any sector expansion or allocation update"),
-    t(locale, "?꾨줉?쒖? 怨듭떇 怨듭? ?먮쫫??遺꾨━?댁꽌 ?쎄린", "Keep proxy price action separate from official policy flow")
+    t(
+      locale,
+      "怨듭떇 怨듭? ?댄썑 ??媛寃??뚯씠?꾧? ?덈뒗吏 ?뺤씤",
+      "Check whether a new official price tape has appeared after the latest notice"
+    ),
+    t(
+      locale,
+      "?뱁꽣 ?뺣?쨌諛곗젙 洹쒖튃 怨듭떆 ?щ? ?뺤씤",
+      "Review any sector expansion or allocation update"
+    ),
+    t(
+      locale,
+      "?꾨줉?쒖? 怨듭떇 怨듭? ?먮쫫??遺꾨━?댁꽌 ?쎄린",
+      "Keep proxy price action separate from official policy flow"
+    )
   ];
 }
 
@@ -870,10 +935,22 @@ function buildDecisionSummary(
   const sourcePenalty =
     card?.status === "connected" ? 0.08 : card?.status === "limited" ? -0.08 : -0.18;
   const proxyPenalty =
-    benchmark?.category === "Listed proxy" ? -0.04 : benchmark?.category === "Benchmark futures" ? 0.06 : 0;
+    benchmark?.category === "Listed proxy"
+      ? -0.04
+      : benchmark?.category === "Benchmark futures"
+        ? 0.06
+        : 0;
   const score = Math.max(
     -1,
-    Math.min(1, officialScore + benchmarkScore + agreementScore + freshnessScore + sourcePenalty + proxyPenalty)
+    Math.min(
+      1,
+      officialScore +
+        benchmarkScore +
+        agreementScore +
+        freshnessScore +
+        sourcePenalty +
+        proxyPenalty
+    )
   );
   const confidence = Math.max(
     0.2,
@@ -899,10 +976,22 @@ function buildDecisionSummary(
     confidence,
     summary:
       stance === "buy"
-        ? t(locale, "怨듭떇媛믨낵 鍮꾧탳 湲곗???鍮꾧탳??媛숈? 諛⑺뼢?낅땲?? 吏湲덉? 留ㅼ닔 ?곗쐞 ?댁꽍??媛?ν빀?덈떎.", "Official tape and listed benchmark are mostly aligned. The current read leans buy.")
+        ? t(
+            locale,
+            "怨듭떇媛믨낵 鍮꾧탳 湲곗???鍮꾧탳??媛숈? 諛⑺뼢?낅땲?? 吏湲덉? 留ㅼ닔 ?곗쐞 ?댁꽍??媛?ν빀?덈떎.",
+            "Official tape and listed benchmark are mostly aligned. The current read leans buy."
+          )
         : stance === "reduce"
-          ? t(locale, "怨듭떇媛믨낵 鍮꾧탳 湲곗????쏀빐吏嫄곕굹 ?닿툔?⑸땲?? 吏湲덉? 鍮꾩쨷 異뺤냼 履쎌씠 ?덉쟾?⑸땲??", "The official anchor and listed benchmark are weakening or diverging. Reducing risk is cleaner here.")
-          : t(locale, "?쒖そ 諛⑺뼢?쇰줈 諛湲곕낫??怨듭떇媛??좎?? 鍮꾧탳 湲곗? ?⑹쓽瑜????뺤씤??援ш컙?낅땲??", "This is a wait zone. Confirm the official anchor and benchmark agreement before leaning harder."),
+          ? t(
+              locale,
+              "怨듭떇媛믨낵 鍮꾧탳 湲곗????쏀빐吏嫄곕굹 ?닿툔?⑸땲?? 吏湲덉? 鍮꾩쨷 異뺤냼 履쎌씠 ?덉쟾?⑸땲??",
+              "The official anchor and listed benchmark are weakening or diverging. Reducing risk is cleaner here."
+            )
+          : t(
+              locale,
+              "?쒖そ 諛⑺뼢?쇰줈 諛湲곕낫??怨듭떇媛??좎?? 鍮꾧탳 湲곗? ?⑹쓽瑜????뺤씤??援ш컙?낅땲??",
+              "This is a wait zone. Confirm the official anchor and benchmark agreement before leaning harder."
+            ),
     support: [
       {
         title: t(locale, "Official anchor", "Official anchor"),
@@ -914,7 +1003,11 @@ function buildDecisionSummary(
       },
       {
         title: t(locale, "?곸옣 湲곗?", "Listed benchmark"),
-        detail: t(locale, `${benchmark?.title ?? "鍮꾧탳 湲곗? ?놁쓬"} 蹂?붿쑉? ${formatPercent(locale, benchmarkMove, 2)}?낅땲??`, `${benchmark?.title ?? "No benchmark selected"} is moving ${formatPercent(locale, benchmarkMove, 2)}.`)
+        detail: t(
+          locale,
+          `${benchmark?.title ?? "鍮꾧탳 湲곗? ?놁쓬"} 蹂?붿쑉? ${formatPercent(locale, benchmarkMove, 2)}?낅땲??`,
+          `${benchmark?.title ?? "No benchmark selected"} is moving ${formatPercent(locale, benchmarkMove, 2)}.`
+        )
       },
       {
         title: t(locale, "?듭떖 ?붿씤", "Top drivers"),
@@ -923,14 +1016,38 @@ function buildDecisionSummary(
     ],
     risks: [
       benchmark?.category === "Listed proxy"
-        ? t(locale, "?꾩옱 鍮꾧탳 湲곗?? ?꾨줉?쒖엯?덈떎. 怨듭떇 ?뺤궛媛믨낵 1:1濡??쎌쑝硫????⑸땲??", "The active benchmark is a proxy. Do not read it as a one-for-one replacement for the official settlement.")
-        : t(locale, "臾대즺 ?쇰뱶 湲곗? ?곸옣 ?뚯씠?꾨뒗 嫄곕옒??吏?곗씠 ?덉쓣 ???덉뒿?덈떎.", "On free feeds the listed tape can still carry exchange delay."),
+        ? t(
+            locale,
+            "?꾩옱 鍮꾧탳 湲곗?? ?꾨줉?쒖엯?덈떎. 怨듭떇 ?뺤궛媛믨낵 1:1濡??쎌쑝硫????⑸땲??",
+            "The active benchmark is a proxy. Do not read it as a one-for-one replacement for the official settlement."
+          )
+        : t(
+            locale,
+            "臾대즺 ?쇰뱶 湲곗? ?곸옣 ?뚯씠?꾨뒗 嫄곕옒??吏?곗씠 ?덉쓣 ???덉뒿?덈떎.",
+            "On free feeds the listed tape can still carry exchange delay."
+          ),
       card?.status === "limited"
-        ? t(locale, "怨듭떇 ?뚯뒪媛 ?쒗븳 ?곹깭???좊ː?꾨? ??떠???⑸땲??", "The official source is limited, so conviction should be discounted.")
-        : t(locale, "怨듭떇 ?뚯뒪媛 ?곌껐???덉뼱???ㅼ쓬 媛깆떊 ?꾩뿉???먮떒??諛붾????덉뒿?덈떎.", "Even with the official source connected, the read can change before the next update."),
+        ? t(
+            locale,
+            "怨듭떇 ?뚯뒪媛 ?쒗븳 ?곹깭???좊ː?꾨? ??떠???⑸땲??",
+            "The official source is limited, so conviction should be discounted."
+          )
+        : t(
+            locale,
+            "怨듭떇 ?뚯뒪媛 ?곌껐???덉뼱???ㅼ쓬 媛깆떊 ?꾩뿉???먮떒??諛붾????덉뒿?덈떎.",
+            "Even with the official source connected, the read can change before the next update."
+          ),
       stats.correlation !== null && stats.correlation < 0.2
-        ? t(locale, "怨듭떇媛믨낵 鍮꾧탳 湲곗???理쒓렐 ?숉뻾?깆씠 ?쏀빀?덈떎.", "Recent co-movement between the official anchor and the benchmark is weak.")
-        : t(locale, "?꾩옱 ?먮떒? 理쒓렐 ?숉뻾?깆씠 ?좎??쒕떎??媛?뺤뿉 ???덉뒿?덈떎.", "The current read assumes recent tape agreement continues.")
+        ? t(
+            locale,
+            "怨듭떇媛믨낵 鍮꾧탳 湲곗???理쒓렐 ?숉뻾?깆씠 ?쏀빀?덈떎.",
+            "Recent co-movement between the official anchor and the benchmark is weak."
+          )
+        : t(
+            locale,
+            "?꾩옱 ?먮떒? 理쒓렐 ?숉뻾?깆씠 ?좎??쒕떎??媛?뺤뿉 ???덉뒿?덈떎.",
+            "The current read assumes recent tape agreement continues."
+          )
     ],
     checks: getMarketChecklist(locale, market.id),
     waterfall: [
@@ -945,7 +1062,9 @@ function buildDecisionSummary(
 
 function chooseDefaultQuote(marketId: MarketId, quotes: MarketLiveQuote[]) {
   const target = DEFAULT_COMPARE_QUOTE[marketId];
-  const available = quotes.filter((quote) => quote.markets.includes(marketId) || quote.markets.includes("shared"));
+  const available = quotes.filter(
+    (quote) => quote.markets.includes(marketId) || quote.markets.includes("shared")
+  );
   return (
     available.find((quote) => quote.id === target)?.id ??
     available.find((quote) => quote.series.length > 1)?.id ??
@@ -985,12 +1104,24 @@ function getSurfaceLabel(locale: AppLocale, surface: Surface) {
 
 function getMarketHeadline(locale: AppLocale, marketId: MarketId) {
   if (marketId === "eu-ets") {
-    return t(locale, "EU carbon desk built around EEX auctions and listed hedge anchors", "EU carbon desk built around EEX auctions and listed hedge anchors");
+    return t(
+      locale,
+      "EU carbon desk built around EEX auctions and listed hedge anchors",
+      "EU carbon desk built around EEX auctions and listed hedge anchors"
+    );
   }
   if (marketId === "k-ets") {
-    return t(locale, "Korean carbon desk centered on official KRX tape and trading depth", "Korean carbon desk centered on official KRX tape and trading depth");
+    return t(
+      locale,
+      "Korean carbon desk centered on official KRX tape and trading depth",
+      "Korean carbon desk centered on official KRX tape and trading depth"
+    );
   }
-  return t(locale, "China carbon desk that separates policy flow from limited official time series", "China carbon desk that separates policy flow from limited official time series");
+  return t(
+    locale,
+    "China carbon desk that separates policy flow from limited official time series",
+    "China carbon desk that separates policy flow from limited official time series"
+  );
 }
 
 function getMarketStageNote(locale: AppLocale, marketId: MarketId) {
@@ -1174,11 +1305,7 @@ function getQuoteRoleLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
         "Primary listed hedge tape for EU carbon risk"
       );
     case "ttf-gas-future":
-      return t(
-        locale,
-        "EU ?꾩냼???곕즺?꾪솚 ?붿씤",
-        "Fuel-switching driver for EU carbon"
-      );
+      return t(locale, "EU ?꾩냼???곕즺?꾪솚 ?붿씤", "Fuel-switching driver for EU carbon");
     case "brent-future":
       return t(locale, "嫄곗떆 ?먮꼫吏 ?꾨줉??", "Macro energy proxy");
     case "co2-l-proxy":
@@ -1242,7 +1369,10 @@ function buildSummaryText(
     `${benchmark?.title ?? "n/a"} / ${benchmark?.symbol ?? "n/a"} / ${benchmark ? formatPercent(locale, benchmark.changePct, 2) : "n/a"}`,
     "",
     t(locale, "Current stance", "Current stance"),
-    joinReadoutParts(getStanceLabel(locale, decision.stance), `${Math.round(decision.confidence * 100)}%`),
+    joinReadoutParts(
+      getStanceLabel(locale, decision.stance),
+      `${Math.round(decision.confidence * 100)}%`
+    ),
     "",
     t(locale, "?듭떖 ?댁꽍", "Desk read"),
     decision.summary,
@@ -1270,10 +1400,7 @@ export default function App() {
     }
     window.addEventListener("cquant:locale-change", onLocaleChange as EventListener);
     return () => {
-      window.removeEventListener(
-        "cquant:locale-change",
-        onLocaleChange as EventListener
-      );
+      window.removeEventListener("cquant:locale-change", onLocaleChange as EventListener);
     };
   }, []);
   const [quoteRange, setQuoteRange] = useState<QuoteRangePreset>("3m");
@@ -1304,9 +1431,10 @@ export default function App() {
   const inspectorScrollRef = useRef<HTMLElement | null>(null);
   const officialCardsByMarket = useMemo(
     () =>
-      Object.fromEntries(
-        connectedSources.cards.map((card) => [card.marketId, card])
-      ) as Record<MarketId, ConnectedSourceCard | undefined>,
+      Object.fromEntries(connectedSources.cards.map((card) => [card.marketId, card])) as Record<
+        MarketId,
+        ConnectedSourceCard | undefined
+      >,
     [connectedSources.cards]
   );
   const marketQuotes = useMemo(
@@ -1325,7 +1453,7 @@ export default function App() {
     () =>
       compareQuoteHistory?.id === selectedCompareQuoteId
         ? compareQuoteHistory
-        : marketQuotes.find((quote) => quote.id === selectedCompareQuoteId) ?? null,
+        : (marketQuotes.find((quote) => quote.id === selectedCompareQuoteId) ?? null),
     [compareQuoteHistory, marketQuotes, selectedCompareQuoteId]
   );
   const hedgeAnchorQuote = useMemo(
@@ -1437,10 +1565,16 @@ export default function App() {
     () => ({
       officialConnected: connectedSources.cards.filter((card) => card.status !== "error").length,
       officialFresh: marketBoardRows.filter((row) => row.freshnessLevel === "fresh").length,
-      liveConnected: connectedSources.liveQuotes.filter((quote) => quote.status === "connected").length,
+      liveConnected: connectedSources.liveQuotes.filter((quote) => quote.status === "connected")
+        .length,
       warningCount: connectedSources.warnings.length
     }),
-    [connectedSources.cards, connectedSources.liveQuotes, connectedSources.warnings.length, marketBoardRows]
+    [
+      connectedSources.cards,
+      connectedSources.liveQuotes,
+      connectedSources.warnings.length,
+      marketBoardRows
+    ]
   );
   const benchmarkReferenceCards = useMemo(
     () =>
@@ -1601,7 +1735,11 @@ export default function App() {
       {
         id: "market-intel",
         kicker: tf(locale, "시장", "Market intelligence"),
-        title: tf(locale, "규제시장 읽기와 비교 테이프", "Compliance-market read and comparison tape"),
+        title: tf(
+          locale,
+          "규제시장 읽기와 비교 테이프",
+          "Compliance-market read and comparison tape"
+        ),
         summary: tf(
           locale,
           "EU ETS, K-ETS, China ETS를 같은 프레임에서 읽고 공식 앵커와 상장 비교 테이프를 분리해 보여줍니다.",
@@ -1629,7 +1767,11 @@ export default function App() {
       {
         id: "accounting-sidecar",
         kicker: tf(locale, "회계", "Accounting sidecar"),
-        title: tf(locale, "Scope 1-3와 배출계수 근거를 함께 보기", "Keep Scope 1-3 logic and factor provenance visible"),
+        title: tf(
+          locale,
+          "Scope 1-3와 배출계수 근거를 함께 보기",
+          "Keep Scope 1-3 logic and factor provenance visible"
+        ),
         summary: tf(
           locale,
           "거래 판단 화면 옆에서 회계 경계, 배출계수 출처, 공시 프레임을 같이 읽게 만들어 조달과 보고가 분리되지 않게 합니다.",
@@ -1657,7 +1799,11 @@ export default function App() {
       {
         id: "verification-layer",
         kicker: tf(locale, "검증", "Verification and integrity"),
-        title: tf(locale, "레지스트리, 문서 신선도, 평정 근거를 한쪽에", "Hold registry state, freshness, and rating context in one sidecar"),
+        title: tf(
+          locale,
+          "레지스트리, 문서 신선도, 평정 근거를 한쪽에",
+          "Hold registry state, freshness, and rating context in one sidecar"
+        ),
         summary: tf(
           locale,
           "프로젝트 문서, 레지스트리 상태, retirement trace, 품질 평정 맥락이 빠지면 조달 판단이 과신으로 바뀌기 쉽습니다.",
@@ -1685,7 +1831,11 @@ export default function App() {
       {
         id: "procurement-intel",
         kicker: tf(locale, "조달", "Procurement and retirement intelligence"),
-        title: tf(locale, "검색, 비교, retirement planning까지는 돕되 실행은 하지 않기", "Support screening and retirement planning without executing"),
+        title: tf(
+          locale,
+          "검색, 비교, retirement planning까지는 돕되 실행은 하지 않기",
+          "Support screening and retirement planning without executing"
+        ),
         summary: tf(
           locale,
           "사용자는 프로젝트를 찾고, 포트폴리오를 비교하고, retirement proof와 공시 문서를 정리할 수 있어야 하지만 실제 구매는 외부에서 끝나야 합니다.",
@@ -1725,8 +1875,7 @@ export default function App() {
             .filter((driver) => family.match(driver))
             .reduce((sum, driver) => sum + driver.weight, 0);
           const normalized = Math.min(totalWeight / 3, 1);
-          const direction =
-            decision?.stance === "buy" ? 1 : decision?.stance === "reduce" ? -1 : 0;
+          const direction = decision?.stance === "buy" ? 1 : decision?.stance === "reduce" ? -1 : 0;
           return normalized * direction;
         })
       })),
@@ -1751,7 +1900,11 @@ export default function App() {
   );
   const comparisonSeries = useMemo<MultiLineSeries[]>(
     () => [
-      { id: "official", label: t(locale, "Official", "Official"), color: MARKET_THEMES[marketId].accent },
+      {
+        id: "official",
+        label: t(locale, "Official", "Official"),
+        color: MARKET_THEMES[marketId].accent
+      },
       {
         id: "benchmark",
         label: selectedCompareQuote?.symbol ?? t(locale, "鍮꾧탳 湲곗?", "Benchmark"),
@@ -1764,12 +1917,13 @@ export default function App() {
     () => [
       {
         id: `${marketId}-official-series`,
-        label: selectedOfficialCard?.seriesLabel ?? t(locale, "Official time series", "Official time series"),
+        label:
+          selectedOfficialCard?.seriesLabel ??
+          t(locale, "Official time series", "Official time series"),
         color: selectedTheme.accent,
         variant: "area" as const,
         points: officialSeries,
-        valueFormatter: (value: number) =>
-          formatNumber(locale, value, marketId === "k-ets" ? 0 : 2)
+        valueFormatter: (value: number) => formatNumber(locale, value, marketId === "k-ets" ? 0 : 2)
       }
     ],
     [locale, marketId, officialSeries, selectedOfficialCard?.seriesLabel, selectedTheme.accent]
@@ -1804,7 +1958,14 @@ export default function App() {
           ]
         : [])
     ],
-    [comparePoints, compareVolumeSeries, liveTapeSupportsCandles, locale, marketId, selectedCompareQuote]
+    [
+      comparePoints,
+      compareVolumeSeries,
+      liveTapeSupportsCandles,
+      locale,
+      marketId,
+      selectedCompareQuote
+    ]
   );
   const relativeInteractiveSeries = useMemo(
     () =>
@@ -1883,7 +2044,10 @@ export default function App() {
       setCompareQuoteByMarket((current) => ({ ...current, [marketId]: nextId }));
       return;
     }
-    if (selectedCompareQuoteId && !benchmarkOptions.some((quote) => quote.id === selectedCompareQuoteId)) {
+    if (
+      selectedCompareQuoteId &&
+      !benchmarkOptions.some((quote) => quote.id === selectedCompareQuoteId)
+    ) {
       setCompareQuoteByMarket((current) => ({ ...current, [marketId]: nextId }));
     }
   }, [benchmarkOptions, connectedSources.liveQuotes, marketId, selectedCompareQuoteId]);
@@ -2002,9 +2166,12 @@ export default function App() {
       } catch {}
     }
 
-    const timer = window.setInterval(() => {
-      void refreshQuietly();
-    }, 5 * 60 * 1000);
+    const timer = window.setInterval(
+      () => {
+        void refreshQuietly();
+      },
+      5 * 60 * 1000
+    );
 
     const onFocus = () => {
       void refreshQuietly();
@@ -2041,7 +2208,9 @@ export default function App() {
           <div className="command-hero-main">
             <div className="command-hero-top">
               <div>
-                <span className="section-kicker">{t(locale, "Mission control", "Mission control")}</span>
+                <span className="section-kicker">
+                  {t(locale, "Mission control", "Mission control")}
+                </span>
                 <h2>{selectedMarket.name}</h2>
               </div>
               <span className={`freshness-badge ${selectedOfficialFreshnessLevel}`}>
@@ -2082,7 +2251,9 @@ export default function App() {
           <div className="command-hero-side">
             <div className="command-brief-card emphasis">
               <span className="section-kicker">{t(locale, "?쒗뭹 寃쎄퀎", "Boundary")}</span>
-              <strong>{t(locale, "由ъ꽌移샕룸え?덊꽣留??꾩슜", "Research and monitoring only")}</strong>
+              <strong>
+                {t(locale, "由ъ꽌移샕룸え?덊꽣留??꾩슜", "Research and monitoring only")}
+              </strong>
               <p>
                 {t(
                   locale,
@@ -2182,8 +2353,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "?좊ː ?꾪궎?띿쿂", "Trust architecture")}</span>
-                <h2>{t(locale, "?レ옄蹂대떎 癒쇱? ?쏀엳???댁쁺 ?먯튃", "Operating principles visible before any signal")}</h2>
+                <span className="section-kicker">
+                  {t(locale, "?좊ː ?꾪궎?띿쿂", "Trust architecture")}
+                </span>
+                <h2>
+                  {t(
+                    locale,
+                    "?レ옄蹂대떎 癒쇱? ?쏀엳???댁쁺 ?먯튃",
+                    "Operating principles visible before any signal"
+                  )}
+                </h2>
               </div>
               <p>
                 {t(
@@ -2235,8 +2414,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "怨듭떇 ?곗씠???ㅺ퀎", "Official data map")}</span>
-                <h2>{t(locale, "?쒖옣蹂??뚯뒪 泥닿퀎瑜??쒗뭹 ?덉뿉 紐낆떆", "Source system made explicit inside the product")}</h2>
+                <span className="section-kicker">
+                  {t(locale, "怨듭떇 ?곗씠???ㅺ퀎", "Official data map")}
+                </span>
+                <h2>
+                  {t(
+                    locale,
+                    "?쒖옣蹂??뚯뒪 泥닿퀎瑜??쒗뭹 ?덉뿉 紐낆떆",
+                    "Source system made explicit inside the product"
+                  )}
+                </h2>
               </div>
               <p>
                 {t(
@@ -2274,8 +2461,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{tf(locale, "올인원 운영 스택", "All-in-one operating stack")}</span>
-                <h2>{tf(locale, "시장, 회계, 검증, 조달 인텔리전스를 한 운영 모델로 묶기", "One operating model for market, accounting, verification, and procurement intelligence")}</h2>
+                <span className="section-kicker">
+                  {tf(locale, "올인원 운영 스택", "All-in-one operating stack")}
+                </span>
+                <h2>
+                  {tf(
+                    locale,
+                    "시장, 회계, 검증, 조달 인텔리전스를 한 운영 모델로 묶기",
+                    "One operating model for market, accounting, verification, and procurement intelligence"
+                  )}
+                </h2>
               </div>
               <p>
                 {t(
@@ -2322,8 +2517,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{tf(locale, "상용 벤치마크", "Commercial benchmark transfer")}</span>
-                <h2>{tf(locale, "무엇을 빌려오고 무엇은 제품 경계 밖에 둘지 명확히", "Borrow product logic, not the business model")}</h2>
+                <span className="section-kicker">
+                  {tf(locale, "상용 벤치마크", "Commercial benchmark transfer")}
+                </span>
+                <h2>
+                  {tf(
+                    locale,
+                    "무엇을 빌려오고 무엇은 제품 경계 밖에 둘지 명확히",
+                    "Borrow product logic, not the business model"
+                  )}
+                </h2>
               </div>
               <p>
                 {t(
@@ -2368,8 +2571,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header slim">
               <div>
-                <span className="section-kicker">{t(locale, "Subscription value", "Subscription value")}</span>
-                <h2>{t(locale, "Paid value must be visible in-product", "Paid value must be visible in-product")}</h2>
+                <span className="section-kicker">
+                  {t(locale, "Subscription value", "Subscription value")}
+                </span>
+                <h2>
+                  {t(
+                    locale,
+                    "Paid value must be visible in-product",
+                    "Paid value must be visible in-product"
+                  )}
+                </h2>
               </div>
             </div>
 
@@ -2386,8 +2597,12 @@ export default function App() {
           <div className="panel">
             <div className="section-header slim">
               <div>
-                <span className="section-kicker">{t(locale, "?쒗뭹 湲곗?", "Delivery standard")}</span>
-                <h2>{t(locale, "What this desktop must deliver", "What this desktop must deliver")}</h2>
+                <span className="section-kicker">
+                  {t(locale, "?쒗뭹 湲곗?", "Delivery standard")}
+                </span>
+                <h2>
+                  {t(locale, "What this desktop must deliver", "What this desktop must deliver")}
+                </h2>
               </div>
             </div>
 
@@ -2403,8 +2618,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header slim">
               <div>
-                <span className="section-kicker">{t(locale, "踰ㅼ튂留덊겕 ?덊띁?곗뒪", "Reference platforms")}</span>
-                <h2>{t(locale, "移댄뵾媛 ?꾨땲???먯튃留?李⑥슜", "Borrow principles, not literal screens")}</h2>
+                <span className="section-kicker">
+                  {t(locale, "踰ㅼ튂留덊겕 ?덊띁?곗뒪", "Reference platforms")}
+                </span>
+                <h2>
+                  {t(
+                    locale,
+                    "移댄뵾媛 ?꾨땲???먯튃留?李⑥슜",
+                    "Borrow principles, not literal screens"
+                  )}
+                </h2>
               </div>
             </div>
 
@@ -2435,8 +2658,16 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-                <span className="section-kicker">{tf(locale, "오픈소스 아키텍처", "Open-source architecture transfer")}</span>
-                <h2>{tf(locale, "코드와 데이터 구조는 여기서 빌려오고 제품 경계는 더 엄격하게 유지", "Borrow data and workflow architecture while keeping a stricter product boundary")}</h2>
+              <span className="section-kicker">
+                {tf(locale, "오픈소스 아키텍처", "Open-source architecture transfer")}
+              </span>
+              <h2>
+                {tf(
+                  locale,
+                  "코드와 데이터 구조는 여기서 빌려오고 제품 경계는 더 엄격하게 유지",
+                  "Borrow data and workflow architecture while keeping a stricter product boundary"
+                )}
+              </h2>
             </div>
             <p>
               {t(
@@ -2489,7 +2720,13 @@ export default function App() {
           <div className="section-header">
             <div>
               <span className="section-kicker">{t(locale, "?쒖옣 蹂대뱶", "Market board")}</span>
-              <h2>{t(locale, "???쒖옣??媛숈? 湲곗??쇰줈 蹂닿린", "Read all three markets on one frame")}</h2>
+              <h2>
+                {t(
+                  locale,
+                  "???쒖옣??媛숈? 湲곗??쇰줈 蹂닿린",
+                  "Read all three markets on one frame"
+                )}
+              </h2>
             </div>
             <p>
               {t(
@@ -2577,10 +2814,17 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "怨듭떇 ?듭빱", "Official anchor")}</span>
+                <span className="section-kicker">
+                  {t(locale, "怨듭떇 ?듭빱", "Official anchor")}
+                </span>
                 <h2>{getOfficialSourceName(locale, selectedOfficialCard)}</h2>
               </div>
-              <p>{joinReadoutParts(getOfficialMethod(selectedOfficialCard, locale), formatDate(locale, selectedOfficialCard?.asOf ?? ""))}</p>
+              <p>
+                {joinReadoutParts(
+                  getOfficialMethod(selectedOfficialCard, locale),
+                  formatDate(locale, selectedOfficialCard?.asOf ?? "")
+                )}
+              </p>
             </div>
 
             <div className="metric-strip">
@@ -2625,7 +2869,9 @@ export default function App() {
                 <ColumnChart points={officialVolumeSeries} color={selectedTheme.accent} />
               ) : (
                 <div className="status-card">
-                  <strong>{t(locale, "怨듭떇 嫄곕옒???쒓퀎 ?놁쓬", "No official volume series")}</strong>
+                  <strong>
+                    {t(locale, "怨듭떇 嫄곕옒???쒓퀎 ?놁쓬", "No official volume series")}
+                  </strong>
                   <p>
                     {t(
                       locale,
@@ -2641,8 +2887,13 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "Live comparison tape", "Live comparison tape")}</span>
-                <h2>{selectedCompareQuote?.title ?? t(locale, "鍮꾧탳 ?뚯씠???놁쓬", "No live tape selected")}</h2>
+                <span className="section-kicker">
+                  {t(locale, "Live comparison tape", "Live comparison tape")}
+                </span>
+                <h2>
+                  {selectedCompareQuote?.title ??
+                    t(locale, "鍮꾧탳 ?뚯씠???놁쓬", "No live tape selected")}
+                </h2>
               </div>
               <p>
                 {quoteLoading
@@ -2707,11 +2958,15 @@ export default function App() {
             </div>
 
             <div className="feed-inline">
-              <span className={`feed-pill tone-${getSourceTone(selectedCompareQuote?.status ?? "error")}`}>
+              <span
+                className={`feed-pill tone-${getSourceTone(selectedCompareQuote?.status ?? "error")}`}
+              >
                 {getSourceStatusLabel(locale, selectedCompareQuote?.status ?? "error")}
               </span>
               <span>{getQuoteProviderLabel(locale, selectedCompareQuote?.provider)}</span>
-              <span>{selectedCompareQuote?.exchange || t(locale, "嫄곕옒???뺣낫 ?놁쓬", "No exchange")}</span>
+              <span>
+                {selectedCompareQuote?.exchange || t(locale, "嫄곕옒???뺣낫 ?놁쓬", "No exchange")}
+              </span>
               <span>{formatDate(locale, selectedCompareQuote?.asOf ?? "")}</span>
             </div>
 
@@ -2797,10 +3052,20 @@ export default function App() {
           <div className="section-header">
             <div>
               <span className="section-kicker">{t(locale, "鍮꾧탳 李⑦듃", "Relative chart")}</span>
-              <h2>{t(locale, "怨듭떇媛믨낵 ?곸옣 湲곗???媛숈? 異쒕컻?먯쑝濡?鍮꾧탳", "Compare official anchor and listed benchmark on one scale")}</h2>
+              <h2>
+                {t(
+                  locale,
+                  "怨듭떇媛믨낵 ?곸옣 湲곗???媛숈? 異쒕컻?먯쑝濡?鍮꾧탳",
+                  "Compare official anchor and listed benchmark on one scale"
+                )}
+              </h2>
             </div>
             <p>
-              {t(locale, "媛숈? 援ш컙?먯꽌 100 湲곗??쇰줈 留욎떠 ?吏곸엫???쎌뒿?덈떎.", "Both lines are normalized to 100 over the overlapping window.")}
+              {t(
+                locale,
+                "媛숈? 援ш컙?먯꽌 100 湲곗??쇰줈 留욎떠 ?吏곸엫???쎌뒿?덈떎.",
+                "Both lines are normalized to 100 over the overlapping window."
+              )}
             </p>
           </div>
 
@@ -2808,7 +3073,11 @@ export default function App() {
             series={relativeInteractiveSeries}
             locale={getIntlLocale(locale)}
             height={360}
-            guideLabel={t(locale, "媛숈? 湲곗??좎뿉???뺣?/異뺤냼 鍮꾧탳", "Zoom and compare on the same base")}
+            guideLabel={t(
+              locale,
+              "媛숈? 湲곗??좎뿉???뺣?/異뺤냼 鍮꾧탳",
+              "Zoom and compare on the same base"
+            )}
             emptyTitle={t(locale, "寃뱀튂??鍮꾧탳 援ш컙 ?놁쓬", "No overlapping comparison range")}
             emptySubtitle={t(
               locale,
@@ -2894,7 +3163,9 @@ export default function App() {
           </div>
 
           <Heatmap
-            columns={MARKET_ORDER.map((id) => (marketProfiles.find((item) => item.id === id) ?? marketProfiles[0]).name)}
+            columns={MARKET_ORDER.map(
+              (id) => (marketProfiles.find((item) => item.id === id) ?? marketProfiles[0]).name
+            )}
             rows={familyHeatmapRows}
           />
         </section>
@@ -2903,7 +3174,9 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "?좏깮 ?쒖옣", "Selected market")}</span>
+                <span className="section-kicker">
+                  {t(locale, "?좏깮 ?쒖옣", "Selected market")}
+                </span>
                 <h2>{selectedMarket.name}</h2>
               </div>
               <p>{getMarketScopeNote(locale, selectedMarket.id)}</p>
@@ -2959,7 +3232,13 @@ export default function App() {
               <span className="section-kicker">{tf(locale, "공식 소스", "Official source")}</span>
               <h2>{getOfficialSourceName(locale, selectedOfficialCard)}</h2>
             </div>
-            <p>{tf(locale, "앱 안에서 먼저 읽고, 외부 페이지는 명시적으로 열 때만 나갑니다.", "The app uses sources in-app first. External pages only open when you explicitly ask for them.")}</p>
+            <p>
+              {tf(
+                locale,
+                "앱 안에서 먼저 읽고, 외부 페이지는 명시적으로 열 때만 나갑니다.",
+                "The app uses sources in-app first. External pages only open when you explicitly ask for them."
+              )}
+            </p>
           </div>
 
           <div className="source-grid">
@@ -3005,8 +3284,12 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-              <span className="section-kicker">{tf(locale, "상장 비교 테이프", "Listed benchmarks")}</span>
-              <h2>{tf(locale, "데스크 안에서 쓰는 비교 벤치마크", "Benchmarks used inside the desk")}</h2>
+              <span className="section-kicker">
+                {tf(locale, "상장 비교 테이프", "Listed benchmarks")}
+              </span>
+              <h2>
+                {tf(locale, "데스크 안에서 쓰는 비교 벤치마크", "Benchmarks used inside the desk")}
+              </h2>
             </div>
           </div>
 
@@ -3041,8 +3324,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{tf(locale, "회계 sidecar", "Accounting sidecar")}</span>
-                <h2>{tf(locale, "현재 제품이 회계·공시 쪽에서 어디까지 준비됐는지", "What the product can support today on accounting and disclosure")}</h2>
+                <span className="section-kicker">
+                  {tf(locale, "회계 sidecar", "Accounting sidecar")}
+                </span>
+                <h2>
+                  {tf(
+                    locale,
+                    "현재 제품이 회계·공시 쪽에서 어디까지 준비됐는지",
+                    "What the product can support today on accounting and disclosure"
+                  )}
+                </h2>
               </div>
               <p>
                 {tf(
@@ -3068,7 +3359,13 @@ export default function App() {
             <div className="section-header">
               <div>
                 <span className="section-kicker">{tf(locale, "준비 상태", "Readiness state")}</span>
-                <h2>{tf(locale, "경계, provenance, activity ledger, disclosure pack", "Boundary, provenance, activity ledger, and disclosure pack")}</h2>
+                <h2>
+                  {tf(
+                    locale,
+                    "경계, provenance, activity ledger, disclosure pack",
+                    "Boundary, provenance, activity ledger, and disclosure pack"
+                  )}
+                </h2>
               </div>
             </div>
 
@@ -3087,8 +3384,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{tf(locale, "회계·검증 기준", "Accounting and verification rails")}</span>
-                <h2>{tf(locale, "GHG 경계와 레지스트리 기준을 같은 소스 면에 고정", "Keep accounting standards and registry rails on the same source surface")}</h2>
+                <span className="section-kicker">
+                  {tf(locale, "회계·검증 기준", "Accounting and verification rails")}
+                </span>
+                <h2>
+                  {tf(
+                    locale,
+                    "GHG 경계와 레지스트리 기준을 같은 소스 면에 고정",
+                    "Keep accounting standards and registry rails on the same source surface"
+                  )}
+                </h2>
               </div>
               <p>
                 {tf(
@@ -3124,8 +3429,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{tf(locale, "레지스트리 운영 트랙", "Registry operations watch")}</span>
-                <h2>{tf(locale, "문서 신선도와 retirement trail을 운영 관점에서 보기", "Read freshness and retirement trail as an operator workflow")}</h2>
+                <span className="section-kicker">
+                  {tf(locale, "레지스트리 운영 트랙", "Registry operations watch")}
+                </span>
+                <h2>
+                  {tf(
+                    locale,
+                    "문서 신선도와 retirement trail을 운영 관점에서 보기",
+                    "Read freshness and retirement trail as an operator workflow"
+                  )}
+                </h2>
               </div>
               <p>
                 {tf(
@@ -3149,12 +3462,22 @@ export default function App() {
                   <div className="registry-meta">
                     <span>{l(track.accessMethod)}</span>
                     <span>{l(track.refreshCadence)}</span>
-                    <span>{joinReadoutParts(tf(locale, "검토일", "Reviewed"), formatDate(locale, track.lastReviewed))}</span>
+                    <span>
+                      {joinReadoutParts(
+                        tf(locale, "검토일", "Reviewed"),
+                        formatDate(locale, track.lastReviewed)
+                      )}
+                    </span>
                   </div>
                   <ul className="bullet-list compact">
                     {track.steps.slice(0, 3).map((step) => (
                       <li key={step.id}>
-                        <strong>{joinReadoutParts(l(step.label), getLifecycleStatusLabel(locale, step.status))}</strong>
+                        <strong>
+                          {joinReadoutParts(
+                            l(step.label),
+                            getLifecycleStatusLabel(locale, step.status)
+                          )}
+                        </strong>
                         <span>{l(step.note)}</span>
                       </li>
                     ))}
@@ -3181,8 +3504,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{tf(locale, "크레딧 라이프사이클", "Credit lifecycle dossiers")}</span>
-                <h2>{tf(locale, "발행, 모니터링, retirement 증거를 한 카드에서 요약", "Summarize issuance, monitoring, and retirement proof on one card")}</h2>
+                <span className="section-kicker">
+                  {tf(locale, "크레딧 라이프사이클", "Credit lifecycle dossiers")}
+                </span>
+                <h2>
+                  {tf(
+                    locale,
+                    "발행, 모니터링, retirement 증거를 한 카드에서 요약",
+                    "Summarize issuance, monitoring, and retirement proof on one card"
+                  )}
+                </h2>
               </div>
               <p>
                 {tf(
@@ -3202,7 +3533,9 @@ export default function App() {
                 return (
                   <div key={dossier.id} className="registry-card">
                     <div className="module-card-top">
-                      <span className="registry-method">{joinReadoutParts(dossier.registry, dossier.projectType)}</span>
+                      <span className="registry-method">
+                        {joinReadoutParts(dossier.registry, dossier.projectType)}
+                      </span>
                       <span className="feed-pill tone-neutral">{l(dossier.region)}</span>
                     </div>
                     <strong>{l(dossier.title)}</strong>
@@ -3210,13 +3543,23 @@ export default function App() {
                     <div className="registry-meta">
                       <span>{l(dossier.operatorUse)}</span>
                       {latestDocument ? (
-                        <span>{joinReadoutParts(tf(locale, "최신 문서", "Latest doc"), formatDate(locale, latestDocument.publishedAt))}</span>
+                        <span>
+                          {joinReadoutParts(
+                            tf(locale, "최신 문서", "Latest doc"),
+                            formatDate(locale, latestDocument.publishedAt)
+                          )}
+                        </span>
                       ) : null}
                     </div>
                     <ul className="bullet-list compact">
                       {dossier.stages.slice(0, 3).map((stage) => (
                         <li key={stage.id}>
-                          <strong>{joinReadoutParts(l(stage.label), getLifecycleStatusLabel(locale, stage.status))}</strong>
+                          <strong>
+                            {joinReadoutParts(
+                              l(stage.label),
+                              getLifecycleStatusLabel(locale, stage.status)
+                            )}
+                          </strong>
                           <span>{l(stage.note)}</span>
                         </li>
                       ))}
@@ -3237,8 +3580,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{tf(locale, "무결성 리스크", "Nature and integrity overlays")}</span>
-                <h2>{tf(locale, "가격보다 먼저 hazard와 disclosure 품질을 읽기", "Read hazard and disclosure quality before price")}</h2>
+                <span className="section-kicker">
+                  {tf(locale, "무결성 리스크", "Nature and integrity overlays")}
+                </span>
+                <h2>
+                  {tf(
+                    locale,
+                    "가격보다 먼저 hazard와 disclosure 품질을 읽기",
+                    "Read hazard and disclosure quality before price"
+                  )}
+                </h2>
               </div>
               <p>
                 {tf(
@@ -3261,7 +3612,9 @@ export default function App() {
                   <ul className="bullet-list compact">
                     {overlay.components.map((component) => (
                       <li key={component.label}>
-                        <strong>{joinReadoutParts(component.label, `${component.value}/100`)}</strong>
+                        <strong>
+                          {joinReadoutParts(component.label, `${component.value}/100`)}
+                        </strong>
                         <span>{l(component.note)}</span>
                       </li>
                     ))}
@@ -3287,8 +3640,16 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-              <span className="section-kicker">{tf(locale, "통합 입력 레이어", "Integrated feature store")}</span>
-              <h2>{tf(locale, `${selectedMarket.name} 인앱 입력 범위`, `${selectedMarket.name} in-app coverage`)}</h2>
+              <span className="section-kicker">
+                {tf(locale, "통합 입력 레이어", "Integrated feature store")}
+              </span>
+              <h2>
+                {tf(
+                  locale,
+                  `${selectedMarket.name} 인앱 입력 범위`,
+                  `${selectedMarket.name} in-app coverage`
+                )}
+              </h2>
             </div>
             <p>
               {tf(
@@ -3314,7 +3675,7 @@ export default function App() {
   }
 
   /*
-  */
+   */
   function renderSignals() {
     return (
       <>
@@ -3323,7 +3684,13 @@ export default function App() {
             <div className="section-header">
               <div>
                 <span className="section-kicker">{t(locale, "?쒕굹由ъ삤", "Scenario")}</span>
-                <h2>{t(locale, "Move the top drivers and read the scenario", "Move the top drivers and read the scenario")}</h2>
+                <h2>
+                  {t(
+                    locale,
+                    "Move the top drivers and read the scenario",
+                    "Move the top drivers and read the scenario"
+                  )}
+                </h2>
               </div>
               <p>
                 {t(
@@ -3347,7 +3714,9 @@ export default function App() {
                     max={1}
                     step={0.05}
                     value={scenarioState[driver.id] ?? 0}
-                    onChange={(event) => handleScenarioChange(driver.id, Number(event.target.value))}
+                    onChange={(event) =>
+                      handleScenarioChange(driver.id, Number(event.target.value))
+                    }
                   />
                   <strong>{formatSigned(locale, scenarioState[driver.id] ?? 0, "")}</strong>
                 </label>
@@ -3379,8 +3748,16 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "Integrated decision pack", "Integrated decision pack")}</span>
-                <h2>{t(locale, "Operating read with no upload required", "Operating read with no upload required")}</h2>
+                <span className="section-kicker">
+                  {t(locale, "Integrated decision pack", "Integrated decision pack")}
+                </span>
+                <h2>
+                  {t(
+                    locale,
+                    "Operating read with no upload required",
+                    "Operating read with no upload required"
+                  )}
+                </h2>
               </div>
               <p>
                 {t(
@@ -3424,7 +3801,11 @@ export default function App() {
                         formatPercent(locale, selectedCompareQuote.changePct, 2),
                         getSourceStatusLabel(locale, selectedCompareQuote.status)
                       )
-                    : t(locale, "?꾩옱 ?좏깮??鍮꾧탳 ?뚯씠?꾧? ?놁뒿?덈떎.", "No comparison tape is selected.")}
+                    : t(
+                        locale,
+                        "?꾩옱 ?좏깮??鍮꾧탳 ?뚯씠?꾧? ?놁뒿?덈떎.",
+                        "No comparison tape is selected."
+                      )}
                 </p>
               </div>
             </div>
@@ -3449,8 +3830,16 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-              <span className="section-kicker">{t(locale, "Operator checklist", "Operator checklist")}</span>
-              <h2>{t(locale, "?ㅽ깲??蹂寃????곗뒪???꾩껜 ?뺤씤", "Check the whole desk before changing posture")}</h2>
+              <span className="section-kicker">
+                {t(locale, "Operator checklist", "Operator checklist")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "?ㅽ깲??蹂寃????곗뒪???꾩껜 ?뺤씤",
+                  "Check the whole desk before changing posture"
+                )}
+              </h2>
             </div>
             <p>
               {t(
@@ -3500,7 +3889,8 @@ export default function App() {
                         "利됱떆 蹂댁씠??援ъ“??釉뚮젅?댁빱???쒗븳?곸씠吏留??ㅼ쓬 怨듭떇 ?낅뜲?댄듃??怨꾩냽 ?뺤씤?댁빞 ?⑸땲??",
                         "No immediate structural breaker is visible, but the next official update still matters."
                       )
-                    ]).map((item) => (
+                    ]
+                ).map((item) => (
                   <li key={item}>{l(item)}</li>
                 ))}
               </ul>
@@ -3616,17 +4006,23 @@ export default function App() {
               <strong className={`tone-${getSourceTone(selectedCompareQuote?.status ?? "error")}`}>
                 {selectedCompareQuote?.status ?? "error"}
               </strong>
-              <p className="field-note">{getQuoteProviderLabel(locale, selectedCompareQuote?.provider)}</p>
+              <p className="field-note">
+                {getQuoteProviderLabel(locale, selectedCompareQuote?.provider)}
+              </p>
             </div>
             <div>
               <span>{t(locale, "공식 신선도", "Official freshness")}</span>
               <strong>{getFreshnessLevelLabel(locale, selectedOfficialFreshnessLevel)}</strong>
-              <p className="field-note">{getFreshnessSummary(locale, selectedOfficialCard?.asOf ?? "")}</p>
+              <p className="field-note">
+                {getFreshnessSummary(locale, selectedOfficialCard?.asOf ?? "")}
+              </p>
             </div>
             <div>
               <span>{t(locale, "상장 신선도", "Listed freshness")}</span>
               <strong>{getFreshnessLevelLabel(locale, selectedLiveFreshnessLevel)}</strong>
-              <p className="field-note">{getFreshnessSummary(locale, selectedCompareQuote?.asOf ?? "")}</p>
+              <p className="field-note">
+                {getFreshnessSummary(locale, selectedCompareQuote?.asOf ?? "")}
+              </p>
             </div>
           </div>
         </div>
@@ -3696,11 +4092,7 @@ export default function App() {
                 ? t(locale, "Carbon mission control", "Carbon mission control")
                 : t(locale, "Global carbon decision desk", "Global carbon decision desk")}
             </span>
-            <h1>
-              {surface === "command"
-                ? "C-Quant Command"
-                : selectedMarket.name}
-            </h1>
+            <h1>{surface === "command" ? "C-Quant Command" : selectedMarket.name}</h1>
             <p>
               {surface === "command"
                 ? t(
@@ -3713,10 +4105,14 @@ export default function App() {
           </div>
 
           <div className="head-actions">
-            <div className="live-chip">{t(locale, "?쇱씠釉?李⑦듃 30珥?媛깆떊", "Live chart refreshes every 30s")}</div>
+            <div className="live-chip">
+              {t(locale, "?쇱씠釉?李⑦듃 30珥?媛깆떊", "Live chart refreshes every 30s")}
+            </div>
             <div className="feed-pill">{sourceRefreshLabel}</div>
             <button type="button" className="button primary" onClick={handleRefresh}>
-              {sourcesLoading ? t(locale, "Refreshing", "Refreshing") : t(locale, "Refresh data", "Refresh data")}
+              {sourcesLoading
+                ? t(locale, "Refreshing", "Refreshing")
+                : t(locale, "Refresh data", "Refresh data")}
             </button>
           </div>
         </header>

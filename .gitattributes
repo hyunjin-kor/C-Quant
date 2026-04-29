@@ -1,0 +1,18 @@
+# Default to LF in working tree and on disk so prettier and editorconfig
+# stay consistent across Windows / macOS / Linux contributors.
+* text=auto eol=lf
+
+# PowerShell scripts must stay CRLF for Windows-native tooling.
+*.ps1   text eol=crlf
+*.psm1  text eol=crlf
+*.psd1  text eol=crlf
+
+# Treat the binaries we ship explicitly as binary so Git never tries to
+# normalize them.
+*.png   binary
+*.ico   binary
+*.woff2 binary
+*.pdf   binary
+*.xlsx  binary
+*.xls   binary
+*.zip   binary
