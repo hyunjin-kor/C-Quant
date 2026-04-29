@@ -21,7 +21,7 @@ import { join, resolve } from "node:path";
 const REPO_ROOT = resolve(".");
 const OUT_DIR = join(REPO_ROOT, "docs", "images");
 const VIEWPORT = { width: 1440, height: 900 };
-const RENDER_SETTLE_MS = 2500; // Time for live source IPC + chart renders to settle.
+const RENDER_SETTLE_MS = 4500; // Time for live source IPC + chart renders to settle.
 
 mkdirSync(OUT_DIR, { recursive: true });
 
