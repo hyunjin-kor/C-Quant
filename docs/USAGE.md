@@ -33,7 +33,8 @@ C-Quant는 하나의 반복 가능한 워크플로우를 중심으로 설계됐�
 ## 2. The Command surface / 사령탑 화면
 
 <p align="center">
-  <img src="images/command-surface.svg" alt="Command surface walkthrough" width="100%"/>
+  <img src="images/shot-command-light.png" alt="Command surface — actual capture" width="100%"/>
+  <br/><sub><i>Real capture from a running build — KRX ETS sample API live, K-ETS focused</i></sub>
 </p>
 
 The default landing screen. It answers one question at a glance: **"What should I do today, and why?"**
@@ -63,10 +64,76 @@ The default landing screen. It answers one question at a glance: **"What should 
 
 ---
 
+## 2.5 Desk · Drivers · Sources / 나머지 세 화면
+
+### Desk — single-market deep dive / 한 시장에 집중
+
+<p align="center">
+  <img src="images/shot-desk-light.png" alt="Desk surface — K-ETS focused" width="100%"/>
+  <br/><sub><i>K-ETS focused: cross-market table, hedge tape (KRBN), CN comparison row, K-ETS chart</i></sub>
+</p>
+
+The Desk surface centres on **one** market and shows the full cross-market context next to it: official anchor, hedge tape, range/correlation table, and the focused chart on the right.
+
+Desk 화면은 **하나의** 시장에 집중하면서 다른 시장과의 비교 컨텍스트를 옆에 보여줍니다 — 공식 앵커, 헤지 테이프, 범위/상관성 테이블, 우측에 포커스 차트.
+
+Use Desk when you need to **drill into K-ETS / EU ETS / China ETS individually** — for example, before exporting a market-specific brief.
+
+특정 시장 (K-ETS / EU ETS / 중국 ETS)을 깊이 파야 할 때 사용하세요 — 예: 시장별 브리프를 PDF로 내보내기 전.
+
+### Drivers — what's pushing each market this week / 무엇이 시장을 움직이는가
+
+<p align="center">
+  <img src="images/shot-drivers-light.png" alt="Drivers surface — cross-market driver structure heatmap" width="100%"/>
+  <br/><sub><i>Six driver families × three markets · score symbols for each cell</i></sub>
+</p>
+
+The Drivers heatmap covers the **same six families** across all three markets:
+
+| Family | What it tracks |
+|---|---|
+| **Policy & Supply** | Cap, allocation, MSR/TNAC, auction calendar |
+| **Power & Industry** | Demand, generation mix, industrial activity |
+| **Fuel switching** | Gas, coal, oil, clean spark spread |
+| **Macro & Financial** | FX, rates, credit, equities |
+| **Weather & Environment** | Temperature, wind, hydro |
+| **Liquidity & Execution** | Microstructure, auction, open interest |
+
+Drivers 히트맵은 **6개 패밀리 × 3개 시장**을 동시에 봅니다. 각 셀의 기호가 그 시장에 대한 해당 드라이버의 영향 부호와 강도를 나타냅니다.
+
+Read horizontally to compare a market's drivers; vertically to see which family is hot across regions.
+
+가로로 읽으면 한 시장의 드라이버 구조, 세로로 읽으면 어느 패밀리가 글로벌하게 뜨거운지.
+
+### Sources — where every datum came from / 모든 데이터의 출처
+
+<p align="center">
+  <img src="images/shot-sources-light.png" alt="Sources surface — KRX ETS sample API source card" width="100%"/>
+  <br/><sub><i>Source card example: KRX ETS sample API · access method, last updated, status</i></sub>
+</p>
+
+Every datum that touches C-Quant has a source card here. Each card shows:
+
+- **Access method** — official web flow / official file / public API / public chart feed
+- **Last updated** — the freshness timestamp
+- **Status** — connected / waiting / unavailable
+- **Open original** — opens the upstream URL in your default browser via `shell.openExternal`
+
+C-Quant에 들어오는 모든 데이터에는 여기 소스 카드가 있습니다. 각 카드는 접근 방식, 마지막 업데이트 시각, 상태, 원본 페이지 열기 버튼을 가집니다.
+
+Use this surface to verify provenance before quoting a number anywhere.
+
+어디서든 숫자를 인용하기 전에 이 화면에서 출처를 확인하세요.
+
+**한 줄 요약**: Desk = 한 시장 깊이, Drivers = 무엇이 미는가, Sources = 어디서 왔는가.
+
+---
+
 ## 3. The command palette (⌘K) / 명령 팔레트
 
 <p align="center">
-  <img src="images/cmd-k-palette.svg" alt="Command palette opened with Cmd+K" width="100%"/>
+  <img src="images/shot-cmd-k.png" alt="Command palette captured live" width="100%"/>
+  <br/><sub><i>"theme" typed into the palette — every appearance command rises to the top</i></sub>
 </p>
 
 Press **⌘K** (macOS) or **Ctrl+K** (Windows / Linux) **anywhere** to open the palette. Fuzzy search across ~25 commands grouped by intent.
@@ -102,8 +169,8 @@ Press **⌘K** (macOS) or **Ctrl+K** (Windows / Linux) **anywhere** to open the 
 
 <table>
   <tr>
-    <td width="50%"><img src="images/command-surface.svg" alt="Light mode" width="100%"/><br/><sub><b>Light · Claude warm cream</b></sub></td>
-    <td width="50%"><img src="images/dark-mode.svg" alt="Dark mode" width="100%"/><br/><sub><b>Dark · warm-dark variant</b></sub></td>
+    <td width="50%"><img src="images/shot-command-light.png" alt="Light mode" width="100%"/><br/><sub><b>Light · Claude warm cream</b></sub></td>
+    <td width="50%"><img src="images/shot-command-dark.png" alt="Dark mode" width="100%"/><br/><sub><b>Dark · warm-dark variant</b></sub></td>
   </tr>
 </table>
 
@@ -122,7 +189,8 @@ The theme is persisted across launches in `<userData>/settings.json`. If you set
 ## 5. Watchlist & backtest drawers / 워치리스트 + 백테스트 드로어
 
 <p align="center">
-  <img src="images/watchlist-drawer.svg" alt="Watchlist drawer" width="100%"/>
+  <img src="images/shot-watchlist-drawer.png" alt="Watchlist drawer with a pinned K-ETS · command view" width="100%"/>
+  <br/><sub><i>Drawer slid in from the right · one K-ETS · command view pinned</i></sub>
 </p>
 
 ### Watchlist / 워치리스트
@@ -338,7 +406,9 @@ If you see something in C-Quant that suggests otherwise, file a bug. The product
 
 <p align="center">
   <sub>
-    Illustrations are SVG mockups in the actual Claude warm theme; live UI may differ slightly based on data state.<br/>
-    위 일러스트는 실제 Claude warm 테마로 그린 SVG 목업입니다. 실제 화면은 데이터 상태에 따라 다를 수 있습니다.
+    Surface screenshots are real captures of a running build (regenerate with <code>npm run capture</code>).<br/>
+    Decision-flow and architecture diagrams remain hand-drawn SVGs.<br/>
+    화면 캡처는 실제 빌드를 실행한 결과입니다 (<code>npm run capture</code>로 재생성).<br/>
+    의사결정 흐름과 아키텍처 다이어그램은 손으로 그린 SVG입니다.
   </sub>
 </p>

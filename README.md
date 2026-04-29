@@ -37,17 +37,48 @@ C-Quant 세션은 항상 같은 흐름을 따릅니다 — **공식 앵커 읽�
 ### Command surface — what you see when you launch
 
 <p align="center">
-  <img src="docs/images/command-surface.svg" alt="Command surface — cross-market board" width="100%"/>
+  <img src="docs/images/shot-command-light.png" alt="Command surface — actual screenshot" width="100%"/>
+  <br/><sub><i>Live capture — K-ETS · live tape refresh every 30s · KRX ETS sample API connected</i></sub>
 </p>
 
 The default landing screen answers: **"What should I do today, and why?"** Market strip up top, anchor-vs-tape chart in the centre, decision memo on the right, drivers and source freshness across the bottom.
 
 기본 첫 화면은 한 가지 질문에 답합니다 — **"오늘 무엇을 해야 하고, 왜 그런가?"**. 상단에 시장 스트립, 중앙에 앵커 vs 테이프 차트, 우측에 의사결정 메모, 하단에 드라이버와 소스 신선도.
 
+### Drivers, Desk, Sources — the rest of the loop
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/shot-desk-light.png" alt="Desk surface" width="100%"/>
+      <br/><sub align="center"><b>Desk</b> — single-market deep dive with cross-market context</sub>
+    </td>
+    <td width="50%">
+      <img src="docs/images/shot-drivers-light.png" alt="Drivers surface" width="100%"/>
+      <br/><sub align="center"><b>Drivers</b> — cross-market driver structure heatmap</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/shot-sources-light.png" alt="Sources surface" width="100%"/>
+      <br/><sub align="center"><b>Sources</b> — provenance, access method, freshness</sub>
+    </td>
+    <td width="50%" valign="top" style="padding-left:1rem">
+      <p>Each surface answers a different question:</p>
+      <ul>
+        <li><b>Desk</b> — "What does <i>this one market</i> look like right now?"</li>
+        <li><b>Drivers</b> — "Which factors are pushing each ETS this week?"</li>
+        <li><b>Sources</b> — "Where exactly did each datum come from, and how fresh is it?"</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
 ### Power UX — ⌘K is the entry point for everything
 
 <p align="center">
-  <img src="docs/images/cmd-k-palette.svg" alt="Cmd+K command palette" width="100%"/>
+  <img src="docs/images/shot-cmd-k.png" alt="Command palette filtered to 'theme'" width="100%"/>
+  <br/><sub><i>⌘K opened with "theme" typed — fuzzy-matched to all Appearance commands</i></sub>
 </p>
 
 Press **⌘K** (macOS) or **Ctrl+K** (Windows / Linux) anywhere to open the palette. ~25 commands across 8 groups: theme, language, watchlist, exports, updates, privacy, diagnostics, help.
@@ -58,8 +89,8 @@ Press **⌘K** (macOS) or **Ctrl+K** (Windows / Linux) anywhere to open the pale
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/command-surface.svg" alt="Light mode" width="100%"/><br/><sub align="center"><b>Claude warm cream (light)</b></sub></td>
-    <td width="50%"><img src="docs/images/dark-mode.svg" alt="Dark mode" width="100%"/><br/><sub align="center"><b>Warm-dark variant</b></sub></td>
+    <td width="50%"><img src="docs/images/shot-command-light.png" alt="Light mode" width="100%"/><br/><sub align="center"><b>Claude warm cream (light)</b></sub></td>
+    <td width="50%"><img src="docs/images/shot-command-dark.png" alt="Dark mode" width="100%"/><br/><sub align="center"><b>Warm-dark variant</b></sub></td>
   </tr>
 </table>
 
@@ -70,7 +101,8 @@ Toggle via the floating button (bottom-right) or ⌘K → "Theme: Dark". Set "Ma
 ### Watchlist — pin the views you keep coming back to
 
 <p align="center">
-  <img src="docs/images/watchlist-drawer.svg" alt="Watchlist drawer" width="100%"/>
+  <img src="docs/images/shot-watchlist-drawer.png" alt="Watchlist drawer with one pinned K-ETS view" width="100%"/>
+  <br/><sub><i>One K-ETS · command view pinned · click the row to restore</i></sub>
 </p>
 
 ⌘K → **"Pin current view to watchlist"** to bookmark a market + surface combination. ⌘K → **"Open watchlist"** to bring back the drawer and click any row to restore.

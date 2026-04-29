@@ -24,7 +24,11 @@ const analytics = require("./electron/analytics");
 const { createWatchlistStore } = require("./electron/watchlist");
 const { createBacktestStore } = require("./electron/backtests");
 
-const isDev = !app.isPackaged;
+// CQUANT_LOAD_DIST forces the main process to load dist/index.html instead of
+// the Vite dev server. Used by the screenshot capture tool so it can launch
+// Electron from the repo root without spinning up Vite first.
+const FORCE_DIST = process.env.CQUANT_LOAD_DIST === "1";
+const isDev = !app.isPackaged && !FORCE_DIST;
 const RENDERER_STARTUP_TIMEOUT_MS = isDev ? 15000 : 8000;
 
 let mainWindow = null;
