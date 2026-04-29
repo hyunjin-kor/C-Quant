@@ -169,8 +169,11 @@ Press **⌘K** (macOS) or **Ctrl+K** (Windows / Linux) **anywhere** to open the 
 
 <table>
   <tr>
-    <td width="50%"><img src="images/shot-command-light.png" alt="Light mode" width="100%"/><br/><sub><b>Light · Claude warm cream</b></sub></td>
-    <td width="50%"><img src="images/shot-command-dark.png" alt="Dark mode" width="100%"/><br/><sub><b>Dark · warm-dark variant</b></sub></td>
+    <td width="50%"><img src="images/shot-command-light.png" alt="Light mode (English)" width="100%"/><br/><sub><b>Light · English</b></sub></td>
+    <td width="50%"><img src="images/shot-command-dark.png" alt="Dark mode (English)" width="100%"/><br/><sub><b>Dark · English</b></sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="images/shot-command-light-ko.png" alt="Light mode in Korean" width="100%"/><br/><sub align="center"><b>Light · 한국어</b> — 동일 화면, 모든 라벨이 한국어로 자동 전환됩니다 (⌘K → "한국어로 전환")</sub></td>
   </tr>
 </table>
 

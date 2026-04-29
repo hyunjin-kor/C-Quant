@@ -156,6 +156,34 @@ CQUANT_DISABLE_UPDATER=1 ./release/C-Quant-X.Y.Z.exe
 The `CQUANT_DISABLE_UPDATER=1` env var prevents the freshly-built
 binary from contacting GitHub during local QA.
 
+## Regenerate screenshots
+
+The README and `docs/USAGE.md` embed real screenshots taken from a
+running build. To refresh them after a UI change:
+
+```bash
+npm run build       # produce dist/
+npm run capture     # walks the renderer + saves PNGs to docs/images/
+```
+
+`tools/capture-screenshots.mjs` uses Playwright's `_electron.launch()`
+to drive Electron headfully on Windows. It pre-seeds `localStorage`
+so each shot mounts in a deterministic state (locale, theme, surface,
+market). The script reads `dist/index.html` directly via
+`CQUANT_LOAD_DIST=1` instead of spinning up the Vite dev server.
+
+If you add a new surface or a major chrome change, also:
+
+1. Add a corresponding `seedAndReload({...})` + `snap()` call to the
+   capture script.
+2. Reference the new PNG from `README.md` and / or `docs/USAGE.md`.
+3. Commit the regenerated PNGs alongside the code change so the
+   docs and the UI stay in sync.
+
+The hero, decision-flow, and architecture diagrams remain hand-coded
+SVG (they are illustrations, not screenshots) and live in
+`docs/images/` next to the captures.
+
 ## Reporting issues
 
 Please include:

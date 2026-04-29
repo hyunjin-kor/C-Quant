@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
 /**
  * Real screenshot capture for the README and USAGE guide.
  *
@@ -23,7 +22,6 @@ const REPO_ROOT = resolve(".");
 const OUT_DIR = join(REPO_ROOT, "docs", "images");
 const VIEWPORT = { width: 1440, height: 900 };
 const RENDER_SETTLE_MS = 2500; // Time for live source IPC + chart renders to settle.
-const SURFACES = ["command", "desk", "drivers", "sources"];
 
 mkdirSync(OUT_DIR, { recursive: true });
 
@@ -123,6 +121,15 @@ async function main() {
       market: "k-ets"
     });
     await snap(window, "shot-command-dark");
+
+    // 5b. Light · Command in Korean (bilingual preview)
+    await seedAndReload(window, {
+      theme: "light",
+      locale: "ko",
+      surface: "command",
+      market: "k-ets"
+    });
+    await snap(window, "shot-command-light-ko");
 
     // 6. Cmd+K palette opened (light)
     await seedAndReload(window, {

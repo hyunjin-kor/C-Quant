@@ -4,6 +4,41 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Added — Documentation & screenshots
+
+- **README + docs/USAGE.md** rewritten with screen-by-screen walkthroughs.
+  USAGE.md is bilingual (English + Korean) with a "한 줄 요약" trailing
+  every section.
+- **docs/images/** with seven hand-crafted SVG illustrations (hero,
+  decision flow, architecture, etc.) — kept for the diagram-style
+  content (decision-flow, architecture, hero).
+- **`npm run capture`** — Playwright + `_electron.launch()` walks the
+  renderer through every surface, opens ⌘K, opens the Watchlist
+  drawer, and produces eight real PNG captures. Pre-seeds
+  `localStorage` so each shot mounts in a deterministic state.
+  - `tools/capture-screenshots.mjs` is the script.
+  - `main.js` gained `CQUANT_LOAD_DIST=1`: when set, the main process
+    loads `dist/index.html` instead of the Vite dev server, so the
+    capture tool can run without spinning up Vite first.
+- **Real screenshots** replace the earlier surface mockups in README
+  and USAGE.md:
+  - `shot-command-light.png` — Command surface, K-ETS focused, KRX live
+  - `shot-desk-light.png` — Desk surface deep dive
+  - `shot-drivers-light.png` — Drivers heatmap (6 families × 3 markets)
+  - `shot-sources-light.png` — Sources card for KRX ETS sample API
+  - `shot-command-dark.png` — Same Command surface, dark theme
+  - `shot-command-light-ko.png` — Korean locale preview
+  - `shot-cmd-k.png` — Palette opened with "theme" typed
+  - `shot-watchlist-drawer.png` — Drawer open with one pinned view
+- **CONTRIBUTING.md** documents the capture flow under "Regenerate
+  screenshots".
+
+### Removed
+
+- The four interim mockup SVGs (`command-surface.svg`, `dark-mode.svg`,
+  `cmd-k-palette.svg`, `watchlist-drawer.svg`) that were placeholder
+  illustrations before the real captures landed.
+
 ### Added — Polish & meta pass
 
 - **LICENSE** (MIT) added at the repository root, with third-party
