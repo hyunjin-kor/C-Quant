@@ -1,4 +1,5 @@
 const ExcelJS = require("exceljs");
+const { createTtlCache } = require("./cache");
 
 const EEX_AUCTION_PAGE_URL =
   "https://www.eex.com/en/markets/environmental-markets/eu-ets-auctions";
@@ -7,7 +8,10 @@ const KRX_MARKET_PAGE_URL =
 const KRX_OPEN_API_DETAIL_URL =
   "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=IZiYdcgRQFMeENJPEMKG";
 const KRX_SAMPLE_API_URL = "https://data-dbg.krx.co.kr/svc/sample/apis/gen/ets_bydd_trd";
-const KRX_SAMPLE_AUTH_KEY = "74D1B99DFBF345BBA3FB4476510A4BED4C78D13A";
+// Public KRX sample key documented in their open API portal. Override via
+// CQUANT_KRX_AUTH_KEY when deploying with a real registered key.
+const KRX_PUBLIC_SAMPLE_AUTH_KEY = "74D1B99DFBF345BBA3FB4476510A4BED4C78D13A";
+const KRX_AUTH_KEY = process.env.CQUANT_KRX_AUTH_KEY || KRX_PUBLIC_SAMPLE_AUTH_KEY;
 const KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
 const KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
 const MEE_LIST_URL = "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/";
@@ -21,7 +25,7 @@ const KRX_DAY_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 const KRX_CARD_CACHE_TTL_MS = 15 * 60 * 1000;
 const CN_CARD_CACHE_TTL_MS = 30 * 60 * 1000;
 const QUOTE_CACHE_TTL_MS = 30 * 1000;
-const cacheStore = new Map();
+const liveSourcesCache = createTtlCache({ maxEntries: 256 });
 const QUOTE_RANGE_PRESETS = {
   "1d": { range: "1d", interval: "5m", seriesLimit: null },
   "5d": { range: "5d", interval: "60m", seriesLimit: null },
@@ -237,19 +241,8 @@ function parseNumeric(value) {
   return Number.isFinite(numeric) ? numeric : null;
 }
 
-async function withCache(key, ttlMs, loader) {
-  const cached = cacheStore.get(key);
-
-  if (cached && Date.now() - cached.fetchedAt < ttlMs) {
-    return cached.value;
-  }
-
-  const value = await loader();
-  cacheStore.set(key, {
-    fetchedAt: Date.now(),
-    value
-  });
-  return value;
+function withCache(key, ttlMs, loader) {
+  return liveSourcesCache.withCache(key, ttlMs, loader);
 }
 
 function makeLinks(...items) {
@@ -554,7 +547,7 @@ async function fetchKrxApiRowsByDate(compactDate) {
         headers: {
           ...DEFAULT_HEADERS,
           accept: "application/json,text/plain,*/*",
-          AUTH_KEY: KRX_SAMPLE_AUTH_KEY
+          AUTH_KEY: KRX_AUTH_KEY
         }
       },
       15000

@@ -702,16 +702,18 @@ const sourceRegistryCopy = {
   }
 } as const;
 
+type LocaleOverrideMap = Readonly<Record<string, Readonly<Record<string, unknown>> | undefined>>;
+
 function mergeLocalized<T extends { id: string }>(
   item: T,
   locale: AppLocale,
   maps: {
-    ko: Partial<Record<string, Partial<T>>>;
-    en: Partial<Record<string, Partial<T>>>;
+    ko: LocaleOverrideMap;
+    en: LocaleOverrideMap;
   }
 ): T {
   const mapped = locale === "ko" ? maps.ko[item.id] : maps.en[item.id];
-  return mapped ? { ...item, ...mapped } : item;
+  return mapped ? ({ ...item, ...mapped } as T) : item;
 }
 
 export function getUiCopy(locale: AppLocale): UiCopy {

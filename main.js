@@ -1,24 +1,47 @@
-const { app, BrowserWindow, dialog, ipcMain, shell, screen } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  crashReporter,
+  dialog,
+  ipcMain,
+  shell,
+  screen,
+  session
+} = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
-const { fileURLToPath } = require("node:url");
+
 const { getConnectedSources, getLiveQuoteHistory } = require("./electron/liveSources");
+const security = require("./electron/security");
+const logger = require("./electron/logger");
+const { createTtlCache: _createTtlCache } = require("./electron/cache");
+const { createWindowStateStore } = require("./electron/windowState");
+const { createSettingsStore } = require("./electron/appSettings");
+const sentry = require("./electron/sentry");
+const autoUpdate = require("./electron/autoUpdate");
+const exporters = require("./electron/exporters");
+const analytics = require("./electron/analytics");
+const { createWatchlistStore } = require("./electron/watchlist");
+const { createBacktestStore } = require("./electron/backtests");
 
 const isDev = !app.isPackaged;
-const TRUSTED_DEV_SERVER_ORIGINS = new Set([
-  "http://localhost:5173",
-  "http://127.0.0.1:5173"
-]);
-const ALLOWED_EXTERNAL_PROTOCOLS = new Set(["http:", "https:"]);
-const ALLOWED_QUOTE_RANGE_IDS = new Set(["1d", "5d", "1m", "3m", "6m", "1y"]);
 const RENDERER_STARTUP_TIMEOUT_MS = isDev ? 15000 : 8000;
+
 let mainWindow = null;
 let startupWatchdog = null;
+let windowStateStore = null;
+let settingsStore = null;
+let watchlistStore = null;
+let backtestStore = null;
 const rendererStartupState = new Map();
+
+const escapeHtml = security.escapeHtml;
+const normalizeExternalUrl = security.normalizeExternalUrl;
+const sanitizeQuoteHistoryPayload = security.sanitizeQuoteHistoryPayload;
 
 function getStartupLogPath() {
   try {
-    return path.join(app.getPath("userData"), "startup-diagnostics.log");
+    return path.join(app.getPath("userData"), "logs", "startup-diagnostics.log");
   } catch {
     return "";
   }
@@ -33,21 +56,10 @@ function appendStartupDiagnostic(label, detail) {
   const timestamp = new Date().toISOString();
   const message = String(detail ?? "").trim();
   const record = `[${timestamp}] ${label}\n${message}\n\n`;
-  void fs.appendFile(logPath, record, "utf8").catch(() => {});
-}
-
-function escapeHtml(value) {
-  return String(value ?? "").replace(
-    /[&<>"']/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      })[character] || character
-  );
+  void fs
+    .mkdir(path.dirname(logPath), { recursive: true })
+    .then(() => fs.appendFile(logPath, record, "utf8"))
+    .catch(() => {});
 }
 
 function getRendererEntryPath() {
@@ -55,24 +67,10 @@ function getRendererEntryPath() {
 }
 
 function isTrustedAppUrl(value) {
-  const candidate = String(value ?? "").trim();
-  if (!candidate) {
-    return false;
-  }
-
-  try {
-    const parsed = new URL(candidate);
-    if (parsed.protocol === "file:") {
-      if (isDev) {
-        return false;
-      }
-      return path.resolve(fileURLToPath(parsed)) === getRendererEntryPath();
-    }
-
-    return TRUSTED_DEV_SERVER_ORIGINS.has(parsed.origin);
-  } catch {
-    return false;
-  }
+  return security.isTrustedAppUrl(value, {
+    isDev,
+    rendererEntryPath: getRendererEntryPath()
+  });
 }
 
 function assertTrustedSender(event) {
@@ -80,39 +78,6 @@ function assertTrustedSender(event) {
   if (!isTrustedAppUrl(senderUrl)) {
     throw new Error(`Blocked IPC from untrusted renderer: ${senderUrl || "unknown"}`);
   }
-}
-
-function parseUrl(value, label) {
-  const candidate = String(value ?? "").trim();
-
-  try {
-    return new URL(candidate);
-  } catch {
-    throw new Error(`${label} must be a valid URL.`);
-  }
-}
-
-function normalizeExternalUrl(value) {
-  const parsed = parseUrl(value, "External URL");
-  if (!ALLOWED_EXTERNAL_PROTOCOLS.has(parsed.protocol)) {
-    throw new Error("Only http and https links can be opened from C-Quant.");
-  }
-  return parsed.toString();
-}
-
-function sanitizeQuoteHistoryPayload(payload) {
-  const quoteId = String(payload?.quoteId ?? "").trim();
-  const range = String(payload?.range ?? "3m").trim();
-
-  if (!/^[a-z0-9-]{1,64}$/i.test(quoteId)) {
-    throw new Error("Quote history request contains an invalid quote id.");
-  }
-
-  if (!ALLOWED_QUOTE_RANGE_IDS.has(range)) {
-    throw new Error("Quote history request contains an invalid range id.");
-  }
-
-  return { quoteId, range };
 }
 
 function showFallbackPage(window, title, detail) {
@@ -131,9 +96,9 @@ function showFallbackPage(window, title, detail) {
         <style>
           body {
             margin: 0;
-            font-family: "Segoe UI", "Noto Sans KR", sans-serif;
-            background: #f7f9fd;
-            color: #111827;
+            font-family: "Segoe UI", "Noto Sans KR", system-ui, sans-serif;
+            background: #faf9f5;
+            color: #1f1815;
           }
           .wrap {
             max-width: 760px;
@@ -142,18 +107,18 @@ function showFallbackPage(window, title, detail) {
           }
           .card {
             background: #ffffff;
-            border: 1px solid #d9e1ef;
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e7dfcf;
+            border-radius: 22px;
+            padding: 28px;
+            box-shadow: 0 14px 36px rgba(46, 30, 19, 0.08);
           }
-          h1 { margin: 0 0 12px; font-size: 28px; }
-          p { margin: 0 0 12px; line-height: 1.6; color: #445066; }
+          h1 { margin: 0 0 12px; font-size: 28px; letter-spacing: -0.02em; }
+          p { margin: 0 0 12px; line-height: 1.6; color: #3a2e26; }
           pre {
             margin: 16px 0 0;
             padding: 16px;
             overflow: auto;
-            background: #f3f6fb;
+            background: #f5f1e8;
             border-radius: 14px;
             white-space: pre-wrap;
             word-break: break-word;
@@ -227,14 +192,17 @@ function clearStartupWatchdog() {
 }
 
 function normalizeRendererStartupFailure(payload) {
-  const phase = String(payload?.phase ?? "renderer-startup").trim().slice(0, 120) || "renderer-startup";
+  const phase =
+    String(payload?.phase ?? "renderer-startup").trim().slice(0, 120) || "renderer-startup";
   const message = String(payload?.message ?? "Unknown renderer startup error.").trim().slice(0, 2000);
   const stack = String(payload?.stack ?? "").trim().slice(0, 8000);
   return { phase, message, stack };
 }
 
 function getRendererStartupDetail(payload) {
-  return payload.stack ? `[${payload.phase}] ${payload.message}\n\n${payload.stack}` : `[${payload.phase}] ${payload.message}`;
+  return payload.stack
+    ? `[${payload.phase}] ${payload.message}\n\n${payload.stack}`
+    : `[${payload.phase}] ${payload.message}`;
 }
 
 function showStartupFailure(window, title, detail, options = {}) {
@@ -248,6 +216,7 @@ function showStartupFailure(window, title, detail, options = {}) {
   fitWindowToVisibleArea(window);
   window.setTitle(title);
   appendStartupDiagnostic(title, detail);
+  logger.error(title, detail);
 
   if (showDialog) {
     dialog.showErrorBox(title, detail);
@@ -317,7 +286,9 @@ function hardenWindow(window) {
   window.webContents.setWindowOpenHandler(({ url }) => {
     try {
       void shell.openExternal(normalizeExternalUrl(url));
-    } catch {}
+    } catch (error) {
+      logger.warn("Blocked window-open for invalid URL:", error);
+    }
 
     return { action: "deny" };
   });
@@ -331,17 +302,30 @@ function hardenWindow(window) {
 
     try {
       void shell.openExternal(normalizeExternalUrl(navigationUrl));
-    } catch {}
+    } catch (error) {
+      logger.warn("Blocked navigation to invalid URL:", error);
+    }
   });
 
   window.webContents.on("will-attach-webview", (event) => {
     event.preventDefault();
   });
 
-  const { session } = window.webContents;
-  session.setPermissionCheckHandler(() => false);
-  session.setPermissionRequestHandler((_webContents, _permission, callback) => {
+  const { session: windowSession } = window.webContents;
+  windowSession.setPermissionCheckHandler(() => false);
+  windowSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
     callback(false);
+  });
+}
+
+function applyContentSecurityPolicy(targetSession) {
+  const headerValue = security.buildContentSecurityPolicy({ isDev });
+  targetSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...(details.responseHeaders || {}) };
+    delete responseHeaders["content-security-policy"];
+    delete responseHeaders["Content-Security-Policy"];
+    responseHeaders["Content-Security-Policy"] = [headerValue];
+    callback({ responseHeaders });
   });
 }
 
@@ -353,16 +337,21 @@ function createWindow() {
 
   const primaryDisplay = screen.getPrimaryDisplay();
   const workArea = primaryDisplay.workArea;
-  const width = Math.min(1560, Math.max(1200, workArea.width - 80));
-  const height = Math.min(980, Math.max(760, workArea.height - 80));
-  const x = Math.round(workArea.x + (workArea.width - width) / 2);
-  const y = Math.round(workArea.y + (workArea.height - height) / 2);
+  const displays = screen.getAllDisplays();
+
+  const initial = windowStateStore?.getInitialBounds({ workArea, displays }) ?? {
+    width: Math.min(1560, Math.max(1200, workArea.width - 80)),
+    height: Math.min(980, Math.max(760, workArea.height - 80)),
+    x: Math.round(workArea.x + (workArea.width - 1320) / 2),
+    y: Math.round(workArea.y + (workArea.height - 880) / 2),
+    maximized: false
+  };
 
   const window = new BrowserWindow({
-    x,
-    y,
-    width,
-    height,
+    x: initial.x,
+    y: initial.y,
+    width: initial.width,
+    height: initial.height,
     minWidth: 980,
     minHeight: 680,
     title: "C-Quant",
@@ -375,7 +364,7 @@ function createWindow() {
     maximizable: true,
     resizable: true,
     show: false,
-    backgroundColor: "#f7f9fd",
+    backgroundColor: "#faf9f5",
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -385,7 +374,8 @@ function createWindow() {
       webviewTag: false,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      navigateOnDragDrop: false
+      navigateOnDragDrop: false,
+      spellcheck: false
     }
   });
 
@@ -393,7 +383,12 @@ function createWindow() {
   hardenWindow(window);
   setRendererStartupState(window, { ready: false });
 
-  const reveal = () => revealWindow(window);
+  if (initial.maximized) {
+    window.maximize();
+  }
+
+  windowStateStore?.track(window);
+
   armStartupWatchdog(window);
 
   window.once("ready-to-show", () => {
@@ -449,7 +444,7 @@ function createWindow() {
 
   window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
     if (level >= 2) {
-      console.error(`[renderer:${level}] ${sourceId || "unknown"}:${line || 0} ${message}`);
+      logger.error(`[renderer:${level}] ${sourceId || "unknown"}:${line || 0} ${message}`);
       appendStartupDiagnostic(
         `renderer-console:${level}`,
         `${sourceId || "unknown"}:${line || 0} ${message}`
@@ -505,15 +500,166 @@ ipcMain.handle("open-external", async (event, url) => {
   assertTrustedSender(event);
   return shell.openExternal(normalizeExternalUrl(url));
 });
+
 ipcMain.handle("refresh-connected-sources", async (event) => {
   assertTrustedSender(event);
   return getConnectedSources();
 });
+
 ipcMain.handle("get-live-quote-history", async (event, payload) => {
   assertTrustedSender(event);
   const request = sanitizeQuoteHistoryPayload(payload);
   return getLiveQuoteHistory(request.quoteId, request.range);
 });
+
+ipcMain.handle("get-app-settings", async (event) => {
+  assertTrustedSender(event);
+  return settingsStore?.load() ?? null;
+});
+
+ipcMain.handle("save-app-settings", async (event, partial) => {
+  assertTrustedSender(event);
+  return settingsStore?.save(partial ?? {}) ?? null;
+});
+
+// --- Auto-update IPC ---------------------------------------------------------
+
+ipcMain.handle("updater-status", (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.getStatus();
+});
+
+ipcMain.handle("updater-check", async (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.checkForUpdates();
+});
+
+ipcMain.handle("updater-download", async (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.downloadUpdate();
+});
+
+ipcMain.handle("updater-install", (event) => {
+  assertTrustedSender(event);
+  return autoUpdate.quitAndInstall();
+});
+
+// --- Export IPC --------------------------------------------------------------
+
+ipcMain.handle("export-csv", async (event, payload) => {
+  assertTrustedSender(event);
+  const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  return exporters.exportCsv({ window, payload: payload ?? {} });
+});
+
+ipcMain.handle("export-pdf", async (event, payload) => {
+  assertTrustedSender(event);
+  const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  return exporters.exportPdf({ window, payload: payload ?? {} });
+});
+
+ipcMain.handle("export-markdown", async (event, payload) => {
+  assertTrustedSender(event);
+  const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  return exporters.exportMarkdown({ window, payload: payload ?? {} });
+});
+
+// --- Analytics IPC -----------------------------------------------------------
+
+ipcMain.handle("analytics-track", (event, payload) => {
+  assertTrustedSender(event);
+  if (!payload || typeof payload !== "object") return;
+  analytics.track(String(payload.name ?? ""), payload.properties);
+});
+
+ipcMain.handle("analytics-set-enabled", async (event, value) => {
+  assertTrustedSender(event);
+  const enabled = value === true;
+  analytics.setEnabled(enabled);
+  await settingsStore?.save({ analyticsEnabled: enabled });
+  return enabled;
+});
+
+// --- Watchlist IPC -----------------------------------------------------------
+
+ipcMain.handle("watchlist-load", async (event) => {
+  assertTrustedSender(event);
+  return watchlistStore?.load() ?? { version: 1, items: [] };
+});
+
+ipcMain.handle("watchlist-add", async (event, item) => {
+  assertTrustedSender(event);
+  return watchlistStore?.add(item) ?? null;
+});
+
+ipcMain.handle("watchlist-remove", async (event, id) => {
+  assertTrustedSender(event);
+  return watchlistStore?.remove(String(id)) ?? null;
+});
+
+ipcMain.handle("watchlist-clear", async (event) => {
+  assertTrustedSender(event);
+  return watchlistStore?.clear() ?? null;
+});
+
+// --- Backtests IPC -----------------------------------------------------------
+
+ipcMain.handle("backtest-list", async (event) => {
+  assertTrustedSender(event);
+  return backtestStore?.list() ?? [];
+});
+
+ipcMain.handle("backtest-save", async (event, payload) => {
+  assertTrustedSender(event);
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Backtest payload missing.");
+  }
+  return backtestStore?.save(String(payload.id), payload.body ?? payload) ?? null;
+});
+
+ipcMain.handle("backtest-load", async (event, id) => {
+  assertTrustedSender(event);
+  return backtestStore?.load(String(id)) ?? null;
+});
+
+ipcMain.handle("backtest-remove", async (event, id) => {
+  assertTrustedSender(event);
+  return backtestStore?.remove(String(id)) ?? false;
+});
+
+// --- Shell utilities ---------------------------------------------------------
+
+ipcMain.handle("open-userdata-folder", async (event, subfolder) => {
+  assertTrustedSender(event);
+  const allowed = new Set(["", "logs", "backtests"]);
+  const sub = String(subfolder ?? "").trim();
+  if (!allowed.has(sub)) {
+    throw new Error("Refused to open folder outside the allow-list.");
+  }
+  const target = sub ? path.join(app.getPath("userData"), sub) : app.getPath("userData");
+  await fs.mkdir(target, { recursive: true }).catch(() => {});
+  const error = await shell.openPath(target);
+  if (error) {
+    throw new Error(error);
+  }
+  return target;
+});
+
+ipcMain.handle("get-app-info", async (event) => {
+  assertTrustedSender(event);
+  return {
+    version: app.getVersion(),
+    name: app.getName(),
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+    arch: process.arch,
+    electron: process.versions.electron,
+    node: process.versions.node,
+    chrome: process.versions.chrome,
+    userData: app.getPath("userData")
+  };
+});
+
 ipcMain.on("renderer-ready", (event) => {
   assertTrustedSender(event);
   const window = BrowserWindow.fromWebContents(event.sender);
@@ -527,6 +673,7 @@ ipcMain.on("renderer-ready", (event) => {
   window.setTitle("C-Quant");
   revealWindow(window);
 });
+
 ipcMain.on("renderer-startup-failed", (event, payload) => {
   assertTrustedSender(event);
   const window = BrowserWindow.fromWebContents(event.sender);
@@ -536,9 +683,9 @@ ipcMain.on("renderer-startup-failed", (event, payload) => {
 
   const startup = getRendererStartupState(window);
   const failure = normalizeRendererStartupFailure(payload);
-  console.error(`[renderer-startup] ${failure.phase}: ${failure.message}`);
+  logger.error(`[renderer-startup] ${failure.phase}: ${failure.message}`);
   if (failure.stack) {
-    console.error(failure.stack);
+    logger.error(failure.stack);
   }
   appendStartupDiagnostic(
     `renderer-startup:${failure.phase}`,
@@ -554,8 +701,95 @@ ipcMain.on("renderer-startup-failed", (event, payload) => {
   });
 });
 
+function setupCrashReporter() {
+  try {
+    crashReporter.start({
+      productName: "C-Quant",
+      companyName: "C-Quant",
+      submitURL: "",
+      uploadToServer: false,
+      ignoreSystemCrashHandler: false,
+      compress: true
+    });
+  } catch (error) {
+    logger.warn("Failed to start crash reporter:", error);
+  }
+}
+
+function setupProcessHandlers() {
+  process.on("uncaughtException", (error) => {
+    logger.error("[uncaughtException]", error);
+    appendStartupDiagnostic("uncaughtException", error?.stack || error?.message || String(error));
+    sentry.captureError(error, { source: "uncaughtException" });
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    logger.error("[unhandledRejection]", reason);
+    appendStartupDiagnostic(
+      "unhandledRejection",
+      reason instanceof Error ? reason.stack || reason.message : String(reason)
+    );
+    sentry.captureError(reason instanceof Error ? reason : new Error(String(reason)), {
+      source: "unhandledRejection"
+    });
+  });
+}
+
 app.whenReady().then(() => {
   app.setAppUserModelId("C-Quant");
+
+  // 1) Initialize file logger first so subsequent failures get captured.
+  const userData = app.getPath("userData");
+  logger.setActiveLogger(logger.createLogger({ logDir: path.join(userData, "logs") }));
+  logger.installShutdownHandlers();
+  logger.info("C-Quant starting", {
+    isDev,
+    version: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    electron: process.versions.electron,
+    node: process.versions.node
+  });
+
+  // 2) Process-level safety nets.
+  setupProcessHandlers();
+  setupCrashReporter();
+  sentry.init({ release: `c-quant@${app.getVersion()}`, environment: isDev ? "development" : "production" });
+
+  // 3) Persistence stores (window state, user settings, watchlist, backtests).
+  windowStateStore = createWindowStateStore({
+    statePath: path.join(userData, "window-state.json"),
+    defaults: { minWidth: 980, minHeight: 680, maxWidth: 1560, maxHeight: 980 }
+  });
+  settingsStore = createSettingsStore({
+    filePath: path.join(userData, "settings.json")
+  });
+  watchlistStore = createWatchlistStore({
+    filePath: path.join(userData, "watchlist.json")
+  });
+  backtestStore = createBacktestStore({
+    rootDir: path.join(userData, "backtests")
+  });
+
+  // 4) Inject strict CSP via the session, no <meta> needed.
+  applyContentSecurityPolicy(session.defaultSession);
+
+  // 5) Wire the auto-updater (no-op in dev or when disabled by env).
+  autoUpdate.init({ packaged: app.isPackaged });
+
+  // 6) Wire analytics (gated by user opt-in + env). Default state is off.
+  void settingsStore.load().then((settings) => {
+    analytics.init({
+      enabled: settings.analyticsEnabled,
+      app: {
+        version: app.getVersion(),
+        platform: process.platform,
+        locale: settings.locale
+      }
+    });
+  });
+
+  // 7) Open the main window.
   createWindow();
 
   app.on("activate", () => {

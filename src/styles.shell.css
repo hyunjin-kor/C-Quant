@@ -1,0 +1,264 @@
+/* ============================================================ */
+/* Shell layer: update notice, drawers, drop zone, button polish */
+/* ============================================================ */
+
+/* ---------- Update notice (top-of-viewport banner) ---------- */
+
+.update-notice {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 2rem));
+  z-index: 80;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lift);
+  animation: update-notice-in var(--motion-slow) var(--ease-out);
+}
+
+@keyframes update-notice-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.update-notice__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.update-notice__copy strong {
+  display: block;
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.update-notice__copy p {
+  margin: 0.18rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.update-notice__actions {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+/* ---------- Drawer (right-aligned modal) ---------- */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(46, 30, 19, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 220;
+  display: flex;
+  justify-content: flex-end;
+  animation: drawer-fade var(--motion-base) var(--ease-out);
+}
+
+:root[data-theme="dark"] .drawer-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+@keyframes drawer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.drawer-panel {
+  width: min(420px, 100%);
+  height: 100vh;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow-lift);
+  display: flex;
+  flex-direction: column;
+  animation: drawer-slide var(--motion-slow) var(--ease-out);
+}
+
+@keyframes drawer-slide {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.drawer-close {
+  color: var(--text-soft);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.drawer-close:hover {
+  color: var(--text-strong);
+  background: var(--panel-muted);
+}
+
+.drawer-empty {
+  padding: 1.5rem;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.drawer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.55rem;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.drawer-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.drawer-row-main {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  text-align: left;
+  color: var(--text-strong);
+  width: 100%;
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out);
+}
+
+.drawer-row-main:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-muted);
+}
+
+.drawer-row-main strong {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.drawer-row-main span {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.drawer-row-action {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text-soft);
+  font-size: 1rem;
+}
+
+.drawer-row-action:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.drawer-foot {
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---------- Drop zone (CSV intake) ---------- */
+
+.dropzone-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: drawer-fade var(--motion-base) var(--ease-out);
+}
+
+.dropzone-card {
+  pointer-events: none;
+  background: var(--panel);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-xl);
+  padding: 2rem 2.5rem;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  box-shadow: var(--shadow-lift);
+}
+
+.dropzone-glyph {
+  font-size: 2.4rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.dropzone-card p {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+/* ---------- Button modifier: small ---------- */
+
+.button.small {
+  padding: 0.42rem 0.85rem;
+  font-size: 0.86rem;
+}

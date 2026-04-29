@@ -182,10 +182,11 @@ function deriveScheduler(control) {
   };
 }
 
-function summarizeBacklog(backlog) {
+function _summarizeBacklog(backlog) {
   const tasks = Array.isArray(backlog?.tasks) ? backlog.tasks : [];
   const open = tasks.filter((task) => task.status !== "done");
-  const current = tasks.find((task) => task.id === backlog?.active_task_id) ?? null;
+  const _current = tasks.find((task) => task.id === backlog?.active_task_id) ?? null;
+  void _current;
   return {
     openTasks: open,
     currentTask:

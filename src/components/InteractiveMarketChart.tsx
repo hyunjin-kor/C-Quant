@@ -184,7 +184,7 @@ export function InteractiveMarketChart({
           : item.variant === "line"
           ? chart.addSeries(LineSeries, {
               color: item.color,
-              lineWidth: 2.5,
+              lineWidth: 2,
               lineStyle: item.lineStyle === "dashed" ? LineStyle.Dashed : LineStyle.Solid,
               crosshairMarkerRadius: 4,
               lastValueVisible: true,
@@ -194,13 +194,13 @@ export function InteractiveMarketChart({
               lineColor: item.color,
               topColor: `${item.color}33`,
               bottomColor: `${item.color}05`,
-              lineWidth: 2.5,
+              lineWidth: 2,
               crosshairMarkerRadius: 4,
               lastValueVisible: true,
               priceLineVisible: false
             });
 
-      chartApi.setData(
+      (chartApi as { setData: (data: unknown[]) => void }).setData(
         item.variant === "candles"
           ? item.points
               .filter(
