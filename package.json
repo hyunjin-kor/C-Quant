@@ -1,6 +1,6 @@
 {
   "name": "c-quant",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Desktop research and strategy workstation for carbon allowance markets.",
   "repository": {
@@ -121,7 +121,9 @@
       ],
       "artifactName": "C-Quant-${version}.${ext}",
       "signtoolOptions": {
-        "signingHashAlgorithms": ["sha256"]
+        "signingHashAlgorithms": [
+          "sha256"
+        ]
       }
     },
     "nsis": {

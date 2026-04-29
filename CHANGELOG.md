@@ -4,6 +4,15 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+_Nothing in flight._
+
+## [1.0.0] — 2026-04-29
+
+First public release. Cuts the SemVer 1.0 line: every entry below was
+landed on `main` between the initial fork point and this tag. The
+release artifact is `C-Quant-1.0.0.exe` (Windows portable, ~94 MB,
+unsigned).
+
 ### Added — Documentation & screenshots
 
 - **README + docs/USAGE.md** rewritten with screen-by-screen walkthroughs.

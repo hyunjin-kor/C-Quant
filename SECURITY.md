@@ -3,8 +3,15 @@
 ## Supported versions
 
 The `main` branch and the most recent tagged release receive security fixes.
-Pre-1.0, only the latest release is maintained. We will document support
-windows for each minor series once we cut 1.0.
+
+| Series | Status          | Notes                                                                     |
+| ------ | --------------- | ------------------------------------------------------------------------- |
+| 1.0.x  | ✅ Maintained   | Current line. Critical security patches and high-severity bugs land here. |
+| < 1.0  | ❌ Unmaintained | Pre-release tags exist for historical reference only. Upgrade to 1.0.     |
+
+A 1.x release will be supported until the next minor (1.1) is published,
+plus a 60-day overlap. The overlap window will be documented on each
+minor release in `CHANGELOG.md`.
 
 ## Reporting a vulnerability
 

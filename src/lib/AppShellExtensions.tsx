@@ -255,7 +255,7 @@ export function AppShellExtensions() {
             const result = await bridge.exportMarkdown!({
               defaultName: "c-quant-diagnostics.md",
               title: "C-Quant diagnostics",
-              intro: `Generated for build ${(info as { version?: string }).version ?? "0.1.0"}.`,
+              intro: `Generated for build ${(info as { version?: string }).version ?? "1.0.0"}.`,
               rows,
               columns: ["key", "value"]
             });
@@ -378,7 +378,7 @@ export function AppShellExtensions() {
       group: "Help",
       run: async () => {
         const info = (await bridge?.getAppInfo?.().catch(() => null)) ?? null;
-        const version = info?.version ?? bridge?.version ?? "0.1.0";
+        const version = info?.version ?? bridge?.version ?? "1.0.0";
         toast.push({
           tone: "info",
           title: `C-Quant ${version}`,
