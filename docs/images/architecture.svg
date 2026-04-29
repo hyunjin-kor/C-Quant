@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" role="img" aria-label="C-Quant process architecture">
+  <defs>
+    <filter id="archShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#2e1e13" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a665a"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="800" fill="#faf9f5"/>
+
+  <text x="640" y="60" text-anchor="middle" font-family="Fraunces, serif" font-size="32" font-weight="500" letter-spacing="-1" fill="#1f1815">Process architecture</text>
+  <text x="640" y="88" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#7a665a">Three contexts. One IPC perimeter. All persistence under <tspan font-family="JetBrains Mono, monospace" font-size="13" fill="#1f1815">&lt;userData&gt;</tspan>.</text>
+
+  <!-- main process -->
+  <g transform="translate(60, 140)" filter="url(#archShadow)">
+    <rect x="0" y="0" width="360" height="600" rx="22" fill="#ffffff" stroke="#e7dfcf"/>
+    <rect x="0" y="0" width="360" height="56" rx="22" fill="#1d1612"/>
+    <rect x="0" y="44" width="360" height="12" fill="#1d1612"/>
+    <text x="20" y="36" font-family="Fraunces, serif" font-size="18" font-weight="500" fill="#f5ece0">Main process</text>
+    <text x="340" y="36" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#a99d8c">main.js</text>
+
+    <g transform="translate(20, 80)" font-family="Inter, sans-serif" font-size="13">
+      <text x="0" y="0" font-weight="700" letter-spacing="1.5" fill="#7a665a" font-size="11">RESILIENCE</text>
+      <text x="0" y="22" fill="#1f1815">· crashReporter (local-only)</text>
+      <text x="0" y="42" fill="#1f1815">· uncaughtException + unhandledRejection</text>
+      <text x="0" y="62" fill="#1f1815">· logger.js (rotating, &lt;userData&gt;/logs)</text>
+      <text x="0" y="82" fill="#1f1815">· windowState.js (bounds + maximized)</text>
+
+      <text x="0" y="116" font-weight="700" letter-spacing="1.5" fill="#7a665a" font-size="11">SECURITY PERIMETER</text>
+      <text x="0" y="138" fill="#1f1815">· assertTrustedSender on every IPC handler</text>
+      <text x="0" y="158" fill="#1f1815">· strict CSP via session.webRequest</text>
+      <text x="0" y="178" fill="#1f1815">· normalizeExternalUrl for shell.openExternal</text>
+      <text x="0" y="198" fill="#1f1815">· sanitizeQuoteHistoryPayload</text>
+
+      <text x="0" y="232" font-weight="700" letter-spacing="1.5" fill="#7a665a" font-size="11">DATA</text>
+      <text x="0" y="254" fill="#1f1815">· liveSources.js (EEX / KRX / MEE / Yahoo)</text>
+      <text x="0" y="274" fill="#1f1815">· cache.js (TTL + LRU + 5min prune)</text>
+      <text x="0" y="294" fill="#1f1815">· settings / watchlist / backtests</text>
+
+      <text x="0" y="328" font-weight="700" letter-spacing="1.5" fill="#7a665a" font-size="11">DISTRIBUTION</text>
+      <text x="0" y="350" fill="#1f1815">· autoUpdate.js (electron-updater)</text>
+      <text x="0" y="370" fill="#1f1815">· sentry.js (DSN-gated)</text>
+      <text x="0" y="390" fill="#1f1815">· analytics.js (opt-in + endpoint-gated)</text>
+      <text x="0" y="410" fill="#1f1815">· exporters.js (PDF / CSV / Markdown)</text>
+
+      <g transform="translate(0, 446)">
+        <rect x="0" y="0" width="320" height="60" rx="14" fill="#f5f1e8" stroke="#e7dfcf"/>
+        <text x="14" y="22" font-weight="700" letter-spacing="1.5" font-size="10" fill="#7a665a">PERSISTENCE</text>
+        <text x="14" y="42" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1815">~/&lt;userData&gt;/{settings,window-state,</text>
+        <text x="14" y="56" font-family="JetBrains Mono, monospace" font-size="11" fill="#1f1815">watchlist,backtests/,logs/}.json</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- preload -->
+  <g transform="translate(460, 240)" filter="url(#archShadow)">
+    <rect x="0" y="0" width="240" height="380" rx="22" fill="#ffffff" stroke="#e7dfcf"/>
+    <rect x="0" y="0" width="240" height="56" rx="22" fill="#a87d18"/>
+    <rect x="0" y="44" width="240" height="12" fill="#a87d18"/>
+    <text x="20" y="36" font-family="Fraunces, serif" font-size="18" font-weight="500" fill="#ffffff">Preload</text>
+    <text x="220" y="36" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#f3e7c5">preload.js</text>
+
+    <g transform="translate(20, 80)" font-family="Inter, sans-serif" font-size="12">
+      <text x="0" y="0" font-weight="700" letter-spacing="1.5" font-size="10" fill="#7a665a">contextBridge.exposeInMainWorld</text>
+      <text x="0" y="20" fill="#3a2e26">window.desktopBridge = {</text>
+      <text x="0" y="40" fill="#1f1815">  refreshConnectedSources()</text>
+      <text x="0" y="58" fill="#1f1815">  getLiveQuoteHistory(opts)</text>
+      <text x="0" y="76" fill="#1f1815">  openExternal(url)</text>
+      <text x="0" y="94" fill="#1f1815">  getAppSettings / saveAppSettings</text>
+      <text x="0" y="112" fill="#1f1815">  exportPdf / exportCsv / exportMarkdown</text>
+      <text x="0" y="130" fill="#1f1815">  watchlist · backtest · updater</text>
+      <text x="0" y="148" fill="#1f1815">  analyticsTrack / SetEnabled</text>
+      <text x="0" y="166" fill="#1f1815">  openUserDataFolder</text>
+      <text x="0" y="186" fill="#3a2e26">}</text>
+
+      <g transform="translate(0, 220)">
+        <rect x="0" y="0" width="200" height="60" rx="14" fill="#f1ddd1" stroke="rgba(201,100,66,0.22)"/>
+        <text x="14" y="22" font-weight="700" letter-spacing="1.5" font-size="10" fill="#6b3320">SECURITY BASELINE</text>
+        <text x="14" y="42" font-size="11" fill="#3a2e26">contextIsolation: true</text>
+        <text x="14" y="56" font-size="11" fill="#3a2e26">nodeIntegration: false</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- renderer -->
+  <g transform="translate(740, 140)" filter="url(#archShadow)">
+    <rect x="0" y="0" width="480" height="600" rx="22" fill="#ffffff" stroke="#e7dfcf"/>
+    <rect x="0" y="0" width="480" height="56" rx="22" fill="#c96442"/>
+    <rect x="0" y="44" width="480" height="12" fill="#c96442"/>
+    <text x="20" y="36" font-family="Fraunces, serif" font-size="18" font-weight="500" fill="#ffffff">Renderer (React 19)</text>
+    <text x="460" y="36" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#f1ddd1">src/main.tsx</text>
+
+    <!-- provider tree -->
+    <g transform="translate(20, 80)" font-family="JetBrains Mono, monospace" font-size="12">
+      <text x="0" y="0" font-family="Inter, sans-serif" font-weight="700" letter-spacing="1.5" font-size="11" fill="#7a665a">PROVIDER TREE</text>
+
+      <text x="0" y="22" fill="#1f1815">&lt;StartupErrorBoundary&gt;</text>
+      <text x="20" y="42" fill="#1f1815">└ &lt;ThemeProvider&gt;</text>
+      <text x="40" y="62" fill="#1f1815">└ &lt;ToastProvider&gt;</text>
+      <text x="60" y="82" fill="#1f1815">└ &lt;CommandPaletteProvider&gt;</text>
+      <text x="80" y="102" fill="#1f1815">├ &lt;AppShellExtensions/&gt;</text>
+      <text x="80" y="122" fill="#1f1815">└ &lt;RuntimeErrorBoundary&gt;</text>
+      <text x="100" y="142" fill="#c96442">└ &lt;App/&gt; surfaces</text>
+
+      <g transform="translate(0, 174)" font-family="Inter, sans-serif" font-size="13">
+        <text x="0" y="0" font-weight="700" letter-spacing="1.5" font-size="11" fill="#7a665a">SHELL CHROME</text>
+        <text x="0" y="22" fill="#1f1815">· UpdateNotice (top banner)</text>
+        <text x="0" y="42" fill="#1f1815">· WatchlistDrawer + BacktestDrawer</text>
+        <text x="0" y="62" fill="#1f1815">· DropZone (window-wide CSV intake)</text>
+        <text x="0" y="82" fill="#1f1815">· ThemeQuickToggle (bottom-right)</text>
+        <text x="0" y="102" fill="#1f1815">· FirstRun welcome sequence</text>
+
+        <text x="0" y="138" font-weight="700" letter-spacing="1.5" font-size="11" fill="#7a665a">SURFACES</text>
+        <text x="0" y="160" fill="#1f1815">· Command — cross-market board</text>
+        <text x="0" y="180" fill="#1f1815">· Desk — single-market deep dive</text>
+        <text x="0" y="200" fill="#1f1815">· Drivers — heatmap + driver map</text>
+        <text x="0" y="220" fill="#1f1815">· Sources — provenance &amp; freshness</text>
+
+        <g transform="translate(0, 248)">
+          <rect x="0" y="0" width="440" height="60" rx="14" fill="#f5f1e8" stroke="#e7dfcf"/>
+          <text x="14" y="22" font-weight="700" letter-spacing="1.5" font-size="10" fill="#7a665a">DESIGN</text>
+          <text x="14" y="42" font-size="11" fill="#3a2e26">Claude warm cream + dark variant</text>
+          <text x="14" y="56" font-size="11" fill="#3a2e26">Inter Variable + Fraunces Variable (self-hosted)</text>
+        </g>
+
+        <g transform="translate(0, 326)">
+          <rect x="0" y="0" width="440" height="60" rx="14" fill="#e2ecdc" stroke="rgba(61,122,67,0.3)"/>
+          <text x="14" y="22" font-weight="700" letter-spacing="1.5" font-size="10" fill="#7a665a">TESTING</text>
+          <text x="14" y="42" font-size="11" fill="#3a2e26">Vitest 91 · node:test 53 · Playwright e2e 1</text>
+          <text x="14" y="56" font-size="11" fill="#3a2e26">All CI gates green on Windows · macOS · Linux</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- IPC arrows -->
+  <g stroke="#7a665a" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <line x1="420" y1="280" x2="450" y2="280"/>
+    <line x1="700" y1="280" x2="730" y2="280"/>
+  </g>
+  <text x="436" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" letter-spacing="1.5" fill="#7a665a">IPC</text>
+  <text x="715" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" letter-spacing="1.5" fill="#7a665a">BRIDGE</text>
+</svg>

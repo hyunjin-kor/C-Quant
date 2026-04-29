@@ -1,5 +1,9 @@
 # C-Quant
 
+<p align="center">
+  <img src="docs/images/hero.svg" alt="C-Quant — carbon decision desk" width="100%"/>
+</p>
+
 **A desktop research workstation for global carbon allowance markets — EU ETS, K-ETS, China ETS.**
 
 C-Quant is a calm, evidence-first decision desk. It pulls the official
@@ -14,6 +18,67 @@ settlement. It is research and monitoring software.
 [![CI](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml/badge.svg)](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node 24+](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](.nvmrc)
+
+> 📘 **First time here?** Jump to **[docs/USAGE.md](docs/USAGE.md)** for a screen-by-screen walkthrough.
+> 처음이라면 [사용 가이드(USAGE.md)](docs/USAGE.md)를 먼저 읽어보세요.
+
+---
+
+## At a glance / 한눈에 보기
+
+<p align="center">
+  <img src="docs/images/decision-flow.svg" alt="The four-step decision workflow" width="100%"/>
+</p>
+
+Every C-Quant session walks the same path: **read the official anchor → compare with the listed proxy → check the drivers → decide**. Surfaces are organized to support that loop.
+
+C-Quant 세션은 항상 같은 흐름을 따릅니다 — **공식 앵커 읽기 → 상장 프록시와 비교 → 드라이버 점검 → 결정**. 화면들은 이 루프를 지원하도록 구성됐습니다.
+
+### Command surface — what you see when you launch
+
+<p align="center">
+  <img src="docs/images/command-surface.svg" alt="Command surface — cross-market board" width="100%"/>
+</p>
+
+The default landing screen answers: **"What should I do today, and why?"** Market strip up top, anchor-vs-tape chart in the centre, decision memo on the right, drivers and source freshness across the bottom.
+
+기본 첫 화면은 한 가지 질문에 답합니다 — **"오늘 무엇을 해야 하고, 왜 그런가?"**. 상단에 시장 스트립, 중앙에 앵커 vs 테이프 차트, 우측에 의사결정 메모, 하단에 드라이버와 소스 신선도.
+
+### Power UX — ⌘K is the entry point for everything
+
+<p align="center">
+  <img src="docs/images/cmd-k-palette.svg" alt="Cmd+K command palette" width="100%"/>
+</p>
+
+Press **⌘K** (macOS) or **Ctrl+K** (Windows / Linux) anywhere to open the palette. ~25 commands across 8 groups: theme, language, watchlist, exports, updates, privacy, diagnostics, help.
+
+어디서든 **⌘K** / **Ctrl+K** 로 팔레트를 엽니다. 8개 그룹 약 25개 명령 (테마, 언어, 워치리스트, 내보내기, 업데이트, 프라이버시, 진단, 도움말).
+
+### Light & dark — same data, two skins
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/command-surface.svg" alt="Light mode" width="100%"/><br/><sub align="center"><b>Claude warm cream (light)</b></sub></td>
+    <td width="50%"><img src="docs/images/dark-mode.svg" alt="Dark mode" width="100%"/><br/><sub align="center"><b>Warm-dark variant</b></sub></td>
+  </tr>
+</table>
+
+Toggle via the floating button (bottom-right) or ⌘K → "Theme: Dark". Set "Match system" to follow the OS-level `prefers-color-scheme`.
+
+우하단 플로팅 버튼 또는 ⌘K → "Theme: Dark"로 토글. "Match system"으로 OS 설정을 따라가게 할 수 있습니다.
+
+### Watchlist — pin the views you keep coming back to
+
+<p align="center">
+  <img src="docs/images/watchlist-drawer.svg" alt="Watchlist drawer" width="100%"/>
+</p>
+
+⌘K → **"Pin current view to watchlist"** to bookmark a market + surface combination. ⌘K → **"Open watchlist"** to bring back the drawer and click any row to restore.
+
+⌘K → **"Pin current view to watchlist"** 로 시장 + 화면 조합을 북마크. ⌘K → **"Open watchlist"** 로 드로어를 열고 행 클릭으로 즉시 복원.
+
+➡️ **More walkthroughs (workflows, exports, drag-and-drop CSV, troubleshooting):** [docs/USAGE.md](docs/USAGE.md)
+➡️ **워크플로우, 내보내기, CSV 드래그앤드롭, 트러블슈팅 등 자세한 가이드:** [docs/USAGE.md](docs/USAGE.md)
 
 ---
 
@@ -179,6 +244,7 @@ See [SECURITY.md](SECURITY.md) for the full threat model.
 
 ## Project meta
 
+- **Usage guide**: [docs/USAGE.md](docs/USAGE.md) — screen-by-screen walkthrough with diagrams
 - **License**: [MIT](LICENSE) (third-party deps keep their own)
 - **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md)
@@ -186,6 +252,20 @@ See [SECURITY.md](SECURITY.md) for the full threat model.
 - **Security**: [SECURITY.md](SECURITY.md)
 - **Agent / Claude operating notes**: [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md)
 - **Open-source benchmarks we borrow patterns from**: [docs/open-source-benchmark-map.md](docs/open-source-benchmark-map.md)
+
+### Process architecture
+
+<p align="center">
+  <img src="docs/images/architecture.svg" alt="Process architecture: main, preload, renderer" width="100%"/>
+</p>
+
+Three execution contexts, one IPC perimeter, all persistence under
+`<userData>`. The full module map and provider tree live in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+세 실행 컨텍스트, 단일 IPC 경계, 모든 영속화는 `<userData>` 아래.
+전체 모듈 맵과 프로바이더 트리는
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Truth boundary
 

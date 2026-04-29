@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" role="img" aria-label="Dark mode preview of the same Command surface">
+  <defs>
+    <linearGradient id="darkRailGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0d0805"/>
+      <stop offset="100%" stop-color="#18110b"/>
+    </linearGradient>
+    <filter id="darkShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- canvas (dark warm) -->
+  <rect width="1280" height="800" fill="#1a1410"/>
+
+  <!-- side rail (deeper) -->
+  <rect x="0" y="0" width="228" height="800" fill="url(#darkRailGrad)"/>
+
+  <!-- rail brand -->
+  <g transform="translate(20, 22)">
+    <rect x="0" y="0" width="42" height="42" rx="14" fill="#000000"/>
+    <path d="M 30 13 C 27 11, 23.5 10, 20.5 10 C 13.5 10, 8 15.5, 8 22.5 C 8 29.5, 13.5 35, 20.5 35 C 23.5 35, 27 34, 30 32 L 30 26 C 28 28, 25.5 29, 22.5 29 C 18 29, 14.5 25.5, 14.5 21 C 14.5 16.5, 18 13, 22.5 13 C 25.5 13, 28 14, 30 16 Z" fill="#e2825c"/>
+    <text x="56" y="20" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#f5ece0">C-Quant</text>
+    <text x="56" y="36" font-family="Inter, sans-serif" font-size="11" fill="#8a7a64">Carbon desk</text>
+  </g>
+
+  <text x="20" y="100" font-family="Inter, sans-serif" font-size="10" font-weight="700" letter-spacing="2" fill="#8a7a64">SCREENS</text>
+
+  <g font-family="Inter, sans-serif" font-size="13" font-weight="600">
+    <g transform="translate(14, 116)">
+      <rect x="0" y="0" width="200" height="46" rx="14" fill="rgba(232,220,196,0.10)" stroke="rgba(232,220,196,0.16)"/>
+      <rect x="0" y="0" width="3" height="46" fill="#e2825c"/>
+      <text x="14" y="28" fill="#ede1cf">Command</text>
+    </g>
+    <g transform="translate(14, 168)">
+      <rect x="0" y="0" width="200" height="46" rx="14" fill="rgba(232,220,196,0.025)" stroke="rgba(232,220,196,0.06)"/>
+      <text x="14" y="28" fill="#ede1cf">Desk</text>
+    </g>
+    <g transform="translate(14, 220)">
+      <rect x="0" y="0" width="200" height="46" rx="14" fill="rgba(232,220,196,0.025)" stroke="rgba(232,220,196,0.06)"/>
+      <text x="14" y="28" fill="#ede1cf">Drivers</text>
+    </g>
+    <g transform="translate(14, 272)">
+      <rect x="0" y="0" width="200" height="46" rx="14" fill="rgba(232,220,196,0.025)" stroke="rgba(232,220,196,0.06)"/>
+      <text x="14" y="28" fill="#ede1cf">Sources</text>
+    </g>
+  </g>
+
+  <!-- main content -->
+  <g transform="translate(248, 22)">
+    <text x="0" y="14" font-family="Inter, sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#e2825c">CARBON MISSION CONTROL</text>
+    <text x="0" y="58" font-family="Fraunces, serif" font-size="42" font-weight="500" letter-spacing="-1.2" fill="#f4ebda">Global carbon decision desk</text>
+    <text x="0" y="86" font-family="Inter, sans-serif" font-size="14" fill="#a89478">Read the official anchor for each ETS, then compare it against the live hedge tape.</text>
+
+    <!-- live chip -->
+    <g transform="translate(750, 32)">
+      <rect x="0" y="0" width="148" height="36" rx="18" fill="#3a221b" stroke="rgba(226,130,92,0.4)"/>
+      <circle cx="18" cy="18" r="4" fill="#e2825c"/>
+      <text x="32" y="23" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#f5dcc6">Live tape · 30s</text>
+    </g>
+
+    <!-- market strip -->
+    <g transform="translate(0, 116)" font-family="Inter, sans-serif">
+      <g filter="url(#darkShadow)">
+        <rect x="0" y="0" width="320" height="76" rx="18" fill="#3a221b" stroke="#e2825c" stroke-width="1.5"/>
+        <rect x="0" y="0" width="3" height="76" fill="#e2825c"/>
+        <text x="16" y="22" font-size="11" font-weight="700" letter-spacing="1.5" fill="#f5dcc6">EU ETS</text>
+        <text x="16" y="48" font-size="22" font-weight="600" fill="#f4ebda">€ 78.42</text>
+        <text x="16" y="66" font-size="11" fill="#a89478">+1.8% · official anchor 1d</text>
+      </g>
+      <g transform="translate(336, 0)" filter="url(#darkShadow)">
+        <rect x="0" y="0" width="320" height="76" rx="18" fill="#221a14" stroke="#3a2c1f"/>
+        <text x="16" y="22" font-size="11" font-weight="700" letter-spacing="1.5" fill="#a89478">K-ETS</text>
+        <text x="16" y="48" font-size="22" font-weight="600" fill="#f4ebda">₩ 9,520</text>
+        <text x="16" y="66" font-size="11" fill="#a89478">−0.6% · official 2d</text>
+      </g>
+      <g transform="translate(672, 0)" filter="url(#darkShadow)">
+        <rect x="0" y="0" width="320" height="76" rx="18" fill="#221a14" stroke="#3a2c1f"/>
+        <text x="16" y="22" font-size="11" font-weight="700" letter-spacing="1.5" fill="#a89478">CN ETS</text>
+        <text x="16" y="48" font-size="22" font-weight="600" fill="#f4ebda">¥ 84.10</text>
+        <text x="16" y="66" font-size="11" fill="#a89478">+0.3% · bulletin 1d</text>
+      </g>
+    </g>
+
+    <!-- chart panel -->
+    <g transform="translate(0, 220)" font-family="Inter, sans-serif">
+      <rect x="0" y="0" width="660" height="320" rx="22" fill="#221a14" stroke="#3a2c1f" filter="url(#darkShadow)"/>
+      <text x="20" y="32" font-family="Fraunces, serif" font-size="20" font-weight="500" fill="#f4ebda" letter-spacing="-0.5">Anchor vs hedge tape</text>
+      <text x="20" y="54" font-size="12" fill="#a89478">EEX EU ETS auction · ICE EUA Dec — normalized to 100</text>
+
+      <g transform="translate(20, 80)">
+        <line x1="0" y1="0" x2="620" y2="0" stroke="#3a2c1f" stroke-dasharray="3 3"/>
+        <line x1="0" y1="50" x2="620" y2="50" stroke="#3a2c1f" stroke-dasharray="3 3"/>
+        <line x1="0" y1="100" x2="620" y2="100" stroke="#3a2c1f" stroke-dasharray="3 3"/>
+        <line x1="0" y1="150" x2="620" y2="150" stroke="#3a2c1f" stroke-dasharray="3 3"/>
+        <line x1="0" y1="200" x2="620" y2="200" stroke="#3a2c1f" stroke-dasharray="3 3"/>
+        <text x="-8" y="4" text-anchor="end" font-size="10" fill="#7a6a55">110</text>
+        <text x="-8" y="104" text-anchor="end" font-size="10" fill="#7a6a55">100</text>
+        <text x="-8" y="204" text-anchor="end" font-size="10" fill="#7a6a55">90</text>
+
+        <path d="M 0 130 L 50 132 L 100 124 L 150 116 L 200 110 L 250 102 L 300 96 L 350 92 L 400 88 L 450 80 L 500 76 L 550 70 L 600 66"
+              fill="none" stroke="#e2825c" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M 0 140 L 50 138 L 100 134 L 150 128 L 200 124 L 250 118 L 300 110 L 350 102 L 400 96 L 450 90 L 500 84 L 550 78 L 600 72"
+              fill="none" stroke="#6db575" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+
+        <g transform="translate(0, 230)" font-size="11" font-weight="600" fill="#d8c8b0">
+          <line x1="0" y1="-3" x2="22" y2="-3" stroke="#e2825c" stroke-width="2.5"/>
+          <text x="30" y="0">Official anchor</text>
+          <line x1="180" y1="-3" x2="202" y2="-3" stroke="#6db575" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="210" y="0">ICE EUA Dec proxy</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- inspector right column -->
+    <g transform="translate(680, 220)" font-family="Inter, sans-serif">
+      <rect x="0" y="0" width="300" height="320" rx="22" fill="#221a14" stroke="#3a2c1f" filter="url(#darkShadow)"/>
+      <text x="20" y="32" font-family="Fraunces, serif" font-size="18" font-weight="500" fill="#f4ebda" letter-spacing="-0.4">Decision memo</text>
+
+      <g transform="translate(20, 50)">
+        <rect x="0" y="0" width="92" height="30" rx="15" fill="#6db575"/>
+        <text x="46" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="#1a1006">BUY BIAS</text>
+      </g>
+      <text x="124" y="68" font-size="12" fill="#a89478">Confidence 72%</text>
+
+      <text x="20" y="110" font-size="11" font-weight="700" letter-spacing="1.5" fill="#a89478">SUPPORT</text>
+      <g font-size="12" fill="#d8c8b0">
+        <text x="20" y="132">·  Official anchor +1.8% w/w</text>
+        <text x="20" y="152">·  Tape direction match 86%</text>
+        <text x="20" y="172">·  No supply-side risk events</text>
+      </g>
+
+      <text x="20" y="202" font-size="11" font-weight="700" letter-spacing="1.5" fill="#a89478">RISKS</text>
+      <g font-size="12" fill="#d8c8b0">
+        <text x="20" y="224">·  Auction calendar gap 4 days</text>
+        <text x="20" y="244">·  Free chart feed delay 15–30 min</text>
+      </g>
+
+      <g transform="translate(20, 260)">
+        <rect x="0" y="0" width="260" height="40" rx="12" fill="#2a2018" stroke="#3a2c1f"/>
+        <text x="14" y="17" font-size="10" font-weight="700" letter-spacing="1.5" fill="#a89478">NEXT CHECK</text>
+        <text x="14" y="32" font-size="12" font-weight="600" fill="#f4ebda">EEX auction notice 11:00 CET</text>
+      </g>
+    </g>
+
+    <!-- bottom strip mirrors light variant -->
+    <g transform="translate(0, 564)" font-family="Inter, sans-serif">
+      <rect x="0" y="0" width="980" height="200" rx="22" fill="#221a14" stroke="#3a2c1f" filter="url(#darkShadow)"/>
+      <text x="20" y="30" font-family="Fraunces, serif" font-size="16" font-weight="500" fill="#f4ebda">Top drivers</text>
+      <g transform="translate(20, 50)">
+        <text x="0" y="14" font-size="12" font-weight="600" fill="#f4ebda">Power · gas</text>
+        <rect x="160" y="6" width="200" height="10" rx="5" fill="#312418"/>
+        <rect x="160" y="6" width="148" height="10" rx="5" fill="#e2825c"/>
+        <text x="370" y="14" font-size="11" font-weight="600" fill="#d8c8b0">+0.74</text>
+
+        <text x="0" y="40" font-size="12" font-weight="600" fill="#f4ebda">Auction supply</text>
+        <rect x="160" y="32" width="200" height="10" rx="5" fill="#312418"/>
+        <rect x="160" y="32" width="92" height="10" rx="5" fill="#6db575"/>
+        <text x="370" y="40" font-size="11" font-weight="600" fill="#d8c8b0">+0.46</text>
+
+        <text x="0" y="66" font-size="12" font-weight="600" fill="#f4ebda">Coal spread</text>
+        <rect x="160" y="58" width="200" height="10" rx="5" fill="#312418"/>
+        <rect x="160" y="58" width="60" height="10" rx="5" fill="#d4ad4a"/>
+        <text x="370" y="66" font-size="11" font-weight="600" fill="#d8c8b0">+0.30</text>
+      </g>
+      <text x="500" y="30" font-family="Fraunces, serif" font-size="16" font-weight="500" fill="#f4ebda">Posture</text>
+      <g transform="translate(620, 110)">
+        <circle cx="0" cy="0" r="58" fill="none" stroke="#312418" stroke-width="14"/>
+        <circle cx="0" cy="0" r="58" fill="none" stroke="#e2825c" stroke-width="14"
+                stroke-dasharray="265 364" transform="rotate(-90)" stroke-linecap="round"/>
+        <text x="0" y="-2" text-anchor="middle" font-family="Fraunces, serif" font-size="28" font-weight="500" fill="#f4ebda">72</text>
+        <text x="0" y="18" text-anchor="middle" font-size="11" fill="#a89478">confidence</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- floating theme toggle -->
+  <g transform="translate(1180, 754)">
+    <rect x="0" y="0" width="80" height="32" rx="16" fill="#2a2018" stroke="#3a2c1f"/>
+    <text x="14" y="20" font-family="Inter, sans-serif" font-size="13" fill="#f4ebda">☾ Theme</text>
+  </g>
+</svg>
