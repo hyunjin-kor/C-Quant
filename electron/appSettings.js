@@ -21,7 +21,9 @@ const DEFAULTS = {
   surface: "command",
   market: "k-ets",
   analyticsEnabled: false,
-  firstRunCompletedAt: ""
+  firstRunCompletedAt: "",
+  runInTray: true,
+  notificationsEnabled: true
 };
 
 function pickString(value, allowed, fallback) {
@@ -44,7 +46,9 @@ function normalize(input = {}) {
     firstRunCompletedAt:
       typeof input.firstRunCompletedAt === "string"
         ? input.firstRunCompletedAt.slice(0, 64)
-        : DEFAULTS.firstRunCompletedAt
+        : DEFAULTS.firstRunCompletedAt,
+    runInTray: pickBoolean(input.runInTray, DEFAULTS.runInTray),
+    notificationsEnabled: pickBoolean(input.notificationsEnabled, DEFAULTS.notificationsEnabled)
   };
 }
 

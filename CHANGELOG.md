@@ -4,6 +4,61 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+_Nothing in flight._
+
+## [1.1.0] — 2026-04-30
+
+First minor after the 1.0 cut. Adds the four "always-on desk" features
+that the original 1.0 design left for follow-up.
+
+### Added
+
+- **System tray + background data refresh**. Closing the main window
+  no longer quits the app — it hides to the tray and the background
+  loop continues to refresh sources every 5 minutes. Tray menu has
+  Show / Hide / Refresh now / Quit. Click the tray icon to toggle the
+  window. New `runInTray` setting (default on); set to false to fall
+  back to the 1.0 close-quits behavior.
+- **Custom alerts + native OS notifications**. New rule kind
+  `freshness` fires when an official anchor age exceeds a chosen
+  threshold (1h / 4h / 12h / 24h presets). Persisted at
+  `<userData>/alerts.json` (max 32 rules). Background tick + manual
+  `alertsEvaluateNow()` IPC. Notifications respect the
+  `notificationsEnabled` setting. Cooldown prevents repeat fires.
+  Drawer UI (⌘K → "Open alerts") with builder, list, enable toggle,
+  delete.
+- **Korean number formatting (만 / 억 / 조)**. `formatKoreanNumber()`
+  - `formatLocalizedNumber(value, locale, options)` in
+    `src/lib/koreanNumber.ts`. Unit boundaries at 10k / 100M / 1T,
+    trailing-zero trim, currency prefix, negative sign. Used when the
+    active locale is Korean.
+- **Surface search (⌘F / Ctrl+F)**. Browser-style find-in-page
+  scoped to the workspace. Walks the live DOM under `.app-main`,
+  wraps matches in `<mark.surface-search-hit>`, supports next /
+  previous navigation and active-match highlight. Esc closes.
+
+### Files
+
+- `electron/alerts.js`, `tests/alerts.test.js`
+- `src/lib/koreanNumber.ts`, `tests/koreanNumber.test.ts`
+- `src/lib/SurfaceSearch.tsx`
+- `src/lib/AlertsDrawer.tsx`
+- New i18n keys (alerts.\*, search.placeholder)
+- New shell CSS (.surface-search, .alerts-builder, .surface-search-hit)
+- `appSettings.js` extended with `runInTray`, `notificationsEnabled`
+- `main.js` Tray + background-refresh + native notifications
+- `preload.js` + `desktopBridge.ts` exposing alerts IPC
+
+### Verification
+
+- type-check: clean
+- vitest: 118 / 118 across 14 suites (added `alerts`, `koreanNumber`)
+- node:test: 53 / 53
+- eslint: 0 errors, 0 warnings
+- npm audit: 0 vulnerabilities
+
+## [1.0.1] — 2026-04-29
+
 ### Security
 
 - `package.json#overrides` pins transitive dependencies that were

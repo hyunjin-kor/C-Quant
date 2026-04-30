@@ -266,3 +266,138 @@
   padding: 0.42rem 0.85rem;
   font-size: 0.86rem;
 }
+
+/* ============================================================ */
+/* Surface search (Ctrl/⌘ + F)                                  */
+/* ============================================================ */
+
+.surface-search {
+  position: fixed;
+  top: 0.75rem;
+  right: 1rem;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.55rem 0.4rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-lift);
+  font-size: 0.9rem;
+  color: var(--text-strong);
+  animation: surface-search-in var(--motion-base) var(--ease-out);
+}
+
+@keyframes surface-search-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.surface-search__icon {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.surface-search input {
+  width: 220px;
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0;
+  color: var(--text-strong);
+  font-size: 0.92rem;
+}
+
+.surface-search input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.surface-search__count {
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  min-width: 3rem;
+  text-align: right;
+}
+
+.surface-search__nav,
+.surface-search__close {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.surface-search__nav:hover,
+.surface-search__close:hover {
+  color: var(--text-strong);
+  background: var(--panel-muted);
+}
+
+.surface-search__nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.surface-search-hit {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.surface-search-hit[data-cquant-search-active="true"] {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* ============================================================ */
+/* Alerts builder (inside the alerts drawer)                    */
+/* ============================================================ */
+
+.alerts-builder {
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.alerts-builder__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.alerts-builder__row label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.alerts-builder__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+}
+
+.alerts-builder select {
+  padding: 0.55rem 0.7rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.alerts-builder__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

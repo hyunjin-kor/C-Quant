@@ -6,8 +6,10 @@ import { getBridge, loadAppSettings, saveAppSettings } from "./desktopBridge";
 import { UpdateNotice } from "./UpdateNotice";
 import { WatchlistDrawer } from "./WatchlistDrawer";
 import { BacktestDrawer } from "./BacktestDrawer";
+import { AlertsDrawer } from "./AlertsDrawer";
 import { DropZone } from "./DropZone";
 import { FirstRun } from "./firstRun";
+import { SurfaceSearch } from "./SurfaceSearch";
 
 /**
  * The shell layer renders the floating chrome (theme toggle, update banner,
@@ -21,6 +23,7 @@ export function AppShellExtensions() {
   const toast = useToast();
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [backtestOpen, setBacktestOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
 
   const bridgeAvailable = useMemo(() => Boolean(getBridge()), []);
@@ -127,6 +130,49 @@ export function AppShellExtensions() {
         group: "Workspace",
         keywords: "backtest results saved",
         run: () => setBacktestOpen(true)
+      },
+      {
+        id: "alerts.open",
+        title: "Open alerts",
+        group: "Workspace",
+        keywords: "alerts notifications rules freshness",
+        run: () => setAlertsOpen(true)
+      },
+      {
+        id: "alerts.evaluate",
+        title: "Evaluate alerts now",
+        group: "Workspace",
+        keywords: "alerts evaluate trigger fire",
+        run: async () => {
+          const bridge = getBridge();
+          if (!bridge?.alertsEvaluateNow) {
+            toast.push({
+              tone: "warning",
+              title: "Alerts unavailable",
+              description: "Desktop bridge is not connected."
+            });
+            return;
+          }
+          await bridge.alertsEvaluateNow();
+          toast.push({
+            tone: "info",
+            title: "Alerts evaluated",
+            description: "Re-checked every active rule."
+          });
+        }
+      },
+      {
+        id: "search.open",
+        title: "Search this surface…",
+        group: "Workspace",
+        keywords: "search find filter ctrl-f cmd-f",
+        run: () => {
+          // Synthesize a Ctrl+F event so SurfaceSearch picks it up via the
+          // same path keyboard users use.
+          window.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "f", ctrlKey: true, bubbles: true })
+          );
+        }
       },
 
       // ── View ─────────────────────────────────────────────────────
@@ -255,7 +301,7 @@ export function AppShellExtensions() {
             const result = await bridge.exportMarkdown!({
               defaultName: "c-quant-diagnostics.md",
               title: "C-Quant diagnostics",
-              intro: `Generated for build ${(info as { version?: string }).version ?? "1.0.0"}.`,
+              intro: `Generated for build ${(info as { version?: string }).version ?? "1.1.0"}.`,
               rows,
               columns: ["key", "value"]
             });
@@ -378,7 +424,7 @@ export function AppShellExtensions() {
       group: "Help",
       run: async () => {
         const info = (await bridge?.getAppInfo?.().catch(() => null)) ?? null;
-        const version = info?.version ?? bridge?.version ?? "1.0.0";
+        const version = info?.version ?? bridge?.version ?? "1.1.0";
         toast.push({
           tone: "info",
           title: `C-Quant ${version}`,
@@ -428,6 +474,8 @@ export function AppShellExtensions() {
       <FirstRun />
       <WatchlistDrawer open={watchlistOpen} onClose={() => setWatchlistOpen(false)} />
       <BacktestDrawer open={backtestOpen} onClose={() => setBacktestOpen(false)} />
+      <AlertsDrawer open={alertsOpen} onClose={() => setAlertsOpen(false)} />
+      <SurfaceSearch />
     </>
   );
 }

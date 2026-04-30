@@ -4,9 +4,13 @@ const {
   crashReporter,
   dialog,
   ipcMain,
+  Menu,
+  Notification,
   shell,
   screen,
-  session
+  session,
+  Tray,
+  nativeImage
 } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
@@ -23,6 +27,7 @@ const exporters = require("./electron/exporters");
 const analytics = require("./electron/analytics");
 const { createWatchlistStore } = require("./electron/watchlist");
 const { createBacktestStore } = require("./electron/backtests");
+const { createAlertsStore, evaluateFreshness } = require("./electron/alerts");
 
 // CQUANT_LOAD_DIST forces the main process to load dist/index.html instead of
 // the Vite dev server. Used by the screenshot capture tool so it can launch
@@ -37,7 +42,12 @@ let windowStateStore = null;
 let settingsStore = null;
 let watchlistStore = null;
 let backtestStore = null;
+let alertsStore = null;
+let trayInstance = null;
+let backgroundTimer = null;
+let isQuitting = false;
 const rendererStartupState = new Map();
+const BACKGROUND_REFRESH_MS = 5 * 60 * 1000;
 
 const escapeHtml = security.escapeHtml;
 const normalizeExternalUrl = security.normalizeExternalUrl;
@@ -288,6 +298,145 @@ function getWindowIconPath() {
   return path.join(__dirname, "assets", "app-icon.png");
 }
 
+// ─── Tray + background refresh ──────────────────────────────────────────────
+
+function showWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  if (!mainWindow.isVisible()) mainWindow.show();
+  mainWindow.focus();
+}
+
+function hideWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.hide();
+}
+
+function buildTrayMenu() {
+  return Menu.buildFromTemplate([
+    {
+      label: "Show C-Quant",
+      click: () => showWindow()
+    },
+    {
+      label: "Hide window",
+      click: () => hideWindow()
+    },
+    { type: "separator" },
+    {
+      label: "Refresh sources now",
+      click: () => {
+        void runBackgroundRefresh({ reason: "tray-manual" });
+      }
+    },
+    { type: "separator" },
+    {
+      label: "Quit C-Quant",
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+}
+
+function ensureTray() {
+  if (trayInstance && !trayInstance.isDestroyed()) return trayInstance;
+  try {
+    const image = nativeImage.createFromPath(getWindowIconPath());
+    if (image.isEmpty()) {
+      logger.warn("[tray] icon image is empty; falling back without tray.");
+      return null;
+    }
+    trayInstance = new Tray(image.resize({ width: 16, height: 16 }));
+    trayInstance.setToolTip("C-Quant — carbon decision desk");
+    trayInstance.setContextMenu(buildTrayMenu());
+    trayInstance.on("click", () => {
+      if (!mainWindow || !mainWindow.isVisible()) {
+        showWindow();
+      } else {
+        hideWindow();
+      }
+    });
+    return trayInstance;
+  } catch (error) {
+    logger.warn("[tray] failed to initialize:", error);
+    return null;
+  }
+}
+
+function destroyTray() {
+  if (trayInstance && !trayInstance.isDestroyed()) {
+    trayInstance.destroy();
+    trayInstance = null;
+  }
+}
+
+function fireFreshnessNotification(triggered, settings) {
+  if (!settings?.notificationsEnabled) return;
+  if (!Notification.isSupported()) return;
+
+  for (const entry of triggered) {
+    try {
+      const notice = new Notification({
+        title: `C-Quant · ${entry.rule.name}`,
+        body: entry.message,
+        silent: false
+      });
+      notice.on("click", () => showWindow());
+      notice.show();
+      logger.info("[alert] fired", { id: entry.rule.id, marketId: entry.rule.marketId });
+    } catch (error) {
+      logger.warn("[alert] notification failed:", error);
+    }
+
+    void alertsStore?.markFired(entry.rule.id, new Date().toISOString()).catch(() => {});
+  }
+}
+
+async function runBackgroundRefresh({ reason }) {
+  if (!alertsStore || !settingsStore) return;
+  try {
+    const settings = await settingsStore.load();
+    const payload = await getConnectedSources();
+    logger.debug("[bg-refresh]", {
+      reason,
+      cards: payload?.cards?.length ?? 0,
+      warnings: payload?.warnings?.length ?? 0
+    });
+
+    const { rules } = await alertsStore.load();
+    const triggered = evaluateFreshness({ rules, payload, now: new Date() });
+    if (triggered.length > 0) {
+      fireFreshnessNotification(triggered, settings);
+    }
+  } catch (error) {
+    logger.warn("[bg-refresh] failed:", error);
+  }
+}
+
+function startBackgroundRefresh() {
+  if (backgroundTimer) return;
+  // First fire after 30s so the renderer's own initial fetch wins first.
+  setTimeout(() => {
+    void runBackgroundRefresh({ reason: "first" });
+    backgroundTimer = setInterval(() => {
+      void runBackgroundRefresh({ reason: "tick" });
+    }, BACKGROUND_REFRESH_MS);
+    if (typeof backgroundTimer.unref === "function") backgroundTimer.unref();
+  }, 30 * 1000);
+}
+
+function stopBackgroundRefresh() {
+  if (backgroundTimer) {
+    clearInterval(backgroundTimer);
+    backgroundTimer = null;
+  }
+}
+
 function hardenWindow(window) {
   window.webContents.setWindowOpenHandler(({ url }) => {
     try {
@@ -415,6 +564,23 @@ function createWindow() {
   window.on("show", () => {
     fitWindowToVisibleArea(window);
   });
+  // Hide-to-tray: when the user closes the window and runInTray is enabled,
+  // intercept the close, hide the window instead, and let the tray icon
+  // bring it back. `isQuitting` (set by tray "Quit" or app.quit()) bypasses.
+  window.on("close", (event) => {
+    if (isQuitting) return;
+    void settingsStore?.load().then((settings) => {
+      if (!settings?.runInTray) return;
+    });
+    // We can't await inside the event listener; instead do a fast sync
+    // check using the cached settings the store just resolved.
+    const cachedRunInTray = trayInstance != null;
+    if (cachedRunInTray && !mainWindow?.isDestroyed()) {
+      event.preventDefault();
+      hideWindow();
+    }
+  });
+
   window.on("closed", () => {
     clearStartupWatchdog();
     clearRendererStartupState(window);
@@ -651,6 +817,39 @@ ipcMain.handle("open-userdata-folder", async (event, subfolder) => {
   return target;
 });
 
+// --- Alerts IPC --------------------------------------------------------------
+
+ipcMain.handle("alerts-load", async (event) => {
+  assertTrustedSender(event);
+  return alertsStore?.load() ?? { version: 1, rules: [] };
+});
+
+ipcMain.handle("alerts-add", async (event, rule) => {
+  assertTrustedSender(event);
+  return alertsStore?.add(rule) ?? null;
+});
+
+ipcMain.handle("alerts-remove", async (event, id) => {
+  assertTrustedSender(event);
+  return alertsStore?.remove(String(id)) ?? null;
+});
+
+ipcMain.handle("alerts-set-enabled", async (event, payload) => {
+  assertTrustedSender(event);
+  return alertsStore?.setEnabled(String(payload?.id ?? ""), payload?.enabled === true) ?? null;
+});
+
+ipcMain.handle("alerts-clear", async (event) => {
+  assertTrustedSender(event);
+  return alertsStore?.clear() ?? null;
+});
+
+ipcMain.handle("alerts-evaluate-now", async (event) => {
+  assertTrustedSender(event);
+  await runBackgroundRefresh({ reason: "renderer-manual" });
+  return { ok: true };
+});
+
 ipcMain.handle("get-app-info", async (event) => {
   assertTrustedSender(event);
   return {
@@ -776,6 +975,9 @@ app.whenReady().then(() => {
   backtestStore = createBacktestStore({
     rootDir: path.join(userData, "backtests")
   });
+  alertsStore = createAlertsStore({
+    filePath: path.join(userData, "alerts.json")
+  });
 
   // 4) Inject strict CSP via the session, no <meta> needed.
   applyContentSecurityPolicy(session.defaultSession);
@@ -795,7 +997,15 @@ app.whenReady().then(() => {
     });
   });
 
-  // 7) Open the main window.
+  // 7) System tray + background refresh (runs even when the window is hidden).
+  void settingsStore.load().then((settings) => {
+    if (settings.runInTray) {
+      ensureTray();
+    }
+  });
+  startBackgroundRefresh();
+
+  // 8) Open the main window.
   createWindow();
 
   app.on("activate", () => {
@@ -809,7 +1019,18 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
+  // When runInTray is on, the window is hidden but the tray + background
+  // refresh stay alive. Only quit when the user explicitly chooses Quit.
+  if (trayInstance && !trayInstance.isDestroyed()) {
+    return;
+  }
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  isQuitting = true;
+  stopBackgroundRefresh();
+  destroyTray();
 });

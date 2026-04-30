@@ -11,6 +11,25 @@ export type AppSettings = {
   market: string;
   analyticsEnabled: boolean;
   firstRunCompletedAt: string;
+  runInTray: boolean;
+  notificationsEnabled: boolean;
+};
+
+export type AlertRule = {
+  id: string;
+  kind: "freshness";
+  name: string;
+  marketId: "eu-ets" | "k-ets" | "cn-ets";
+  maxAgeMinutes: number;
+  enabled: boolean;
+  createdAt: string;
+  lastFiredAt: string;
+  cooldownMinutes: number;
+};
+
+export type AlertsPayload = {
+  version: number;
+  rules: AlertRule[];
 };
 
 export type RendererStartupFailurePayload = {
@@ -144,6 +163,13 @@ export type DesktopBridge = {
   backtestSave?: (payload: { id: string; body: unknown }) => Promise<BacktestSummary | null>;
   backtestLoad?: (id: string) => Promise<BacktestRecord | null>;
   backtestRemove?: (id: string) => Promise<boolean>;
+
+  alertsLoad?: () => Promise<AlertsPayload>;
+  alertsAdd?: (rule: AlertRule) => Promise<AlertsPayload>;
+  alertsRemove?: (id: string) => Promise<AlertsPayload>;
+  alertsSetEnabled?: (id: string, enabled: boolean) => Promise<AlertsPayload>;
+  alertsClear?: () => Promise<AlertsPayload>;
+  alertsEvaluateNow?: () => Promise<{ ok: boolean }>;
 };
 
 export function getBridge(): DesktopBridge | undefined {

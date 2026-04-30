@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("desktopBridge", {
-  version: process.env.npm_package_version || "1.0.0",
+  version: process.env.npm_package_version || "1.1.0",
 
   // Lifecycle / startup signaling
   notifyRendererReady: () => ipcRenderer.send("renderer-ready"),
@@ -51,5 +51,13 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   backtestList: () => ipcRenderer.invoke("backtest-list"),
   backtestSave: (payload) => ipcRenderer.invoke("backtest-save", payload),
   backtestLoad: (id) => ipcRenderer.invoke("backtest-load", id),
-  backtestRemove: (id) => ipcRenderer.invoke("backtest-remove", id)
+  backtestRemove: (id) => ipcRenderer.invoke("backtest-remove", id),
+
+  // Alerts
+  alertsLoad: () => ipcRenderer.invoke("alerts-load"),
+  alertsAdd: (rule) => ipcRenderer.invoke("alerts-add", rule),
+  alertsRemove: (id) => ipcRenderer.invoke("alerts-remove", id),
+  alertsSetEnabled: (id, enabled) => ipcRenderer.invoke("alerts-set-enabled", { id, enabled }),
+  alertsClear: () => ipcRenderer.invoke("alerts-clear"),
+  alertsEvaluateNow: () => ipcRenderer.invoke("alerts-evaluate-now")
 });

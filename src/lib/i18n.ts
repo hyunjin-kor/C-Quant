@@ -87,7 +87,32 @@ const catalog: Catalog = {
 
   // Analytics consent
   "analytics.enabled": { ko: "분석 사용", en: "Analytics enabled" },
-  "analytics.disabled": { ko: "분석 사용 안 함", en: "Analytics disabled" }
+  "analytics.disabled": { ko: "분석 사용 안 함", en: "Analytics disabled" },
+
+  // Alerts drawer
+  "alerts.title": { ko: "알림 규칙", en: "Alerts" },
+  "alerts.empty": {
+    ko: "활성화된 규칙이 없습니다. 시장과 임계값을 골라 추가하세요.",
+    en: "No active rules yet. Pick a market and a threshold above to add one."
+  },
+  "alerts.market": { ko: "시장", en: "Market" },
+  "alerts.threshold": { ko: "신선도 임계값", en: "Freshness threshold" },
+  "alerts.add": { ko: "규칙 추가", en: "Add rule" },
+  "alerts.evaluate": { ko: "지금 검사", en: "Evaluate now" },
+  "alerts.maxAge": {
+    ko: "공식 앵커가 {{age}}을(를) 초과하면 발동",
+    en: "Fires when the anchor is older than {{age}}"
+  },
+  "alerts.lastFired": { ko: "마지막 발동 {{at}}", en: "Last fired {{at}}" },
+  "alerts.added.title": { ko: "알림 규칙 추가됨", en: "Alert rule added" },
+  "alerts.evaluated.title": { ko: "알림 검사 완료", en: "Alerts evaluated" },
+  "alerts.evaluated.body": {
+    ko: "현재 데이터로 모든 활성 규칙을 다시 평가했습니다.",
+    en: "Re-evaluated every active rule against the current snapshot."
+  },
+
+  // Surface search
+  "search.placeholder": { ko: "이 화면에서 검색…", en: "Search this surface…" }
 };
 
 function interpolate(template: string, params?: Record<string, string | number>) {
