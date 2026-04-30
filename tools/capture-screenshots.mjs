@@ -30,8 +30,10 @@ function log(...args) {
 }
 
 async function seedAndReload(window, { theme, locale, surface, market }) {
+  // Seed both localStorage (for first paint) AND the bridge-backed settings
+  // store (so the loadAppSettings hydration effect doesn't override us).
   await window.evaluate(
-    ({ theme, locale, surface, market }) => {
+    async ({ theme, locale, surface, market }) => {
       try {
         if (theme) window.localStorage.setItem("cquant:theme", theme);
         if (locale) window.localStorage.setItem("cquant:locale", locale);
@@ -39,6 +41,14 @@ async function seedAndReload(window, { theme, locale, surface, market }) {
         if (market) window.localStorage.setItem("cquant:market", market);
       } catch {
         // ignore
+      }
+      const bridge = window.desktopBridge;
+      if (bridge && bridge.saveAppSettings) {
+        try {
+          await bridge.saveAppSettings({ theme, locale, surface, market });
+        } catch {
+          // ignore
+        }
       }
     },
     { theme, locale, surface, market }

@@ -1,7 +1,11 @@
 import React, { Component, useEffect } from "react";
 import ReactDOM from "react-dom/client";
+import "@fontsource/pretendard/400.css";
+import "@fontsource/pretendard/500.css";
+import "@fontsource/pretendard/600.css";
+import "@fontsource/pretendard/700.css";
+import "@fontsource/pretendard/800.css";
 import "@fontsource-variable/inter/index.css";
-import "@fontsource-variable/fraunces/index.css";
 import App from "./App";
 import { ThemeProvider } from "./lib/theme";
 import { ToastProvider } from "./lib/toast";
@@ -120,10 +124,9 @@ class StartupErrorBoundary extends Component<StartupErrorBoundaryProps, StartupE
           display: "grid",
           placeItems: "center",
           padding: "32px",
-          background: "#faf9f5",
-          color: "#1f1815",
-          fontFamily:
-            '"Inter Variable", "Inter", "Pretendard", "Segoe UI", "Noto Sans KR", system-ui, sans-serif'
+          background: "#ffffff",
+          color: "#191f28",
+          fontFamily: '"Pretendard", "Inter", "Segoe UI", "Noto Sans KR", system-ui, sans-serif'
         }}
       >
         <section
@@ -131,9 +134,9 @@ class StartupErrorBoundary extends Component<StartupErrorBoundaryProps, StartupE
           style={{
             width: "min(760px, 100%)",
             background: "#ffffff",
-            border: "1px solid #e7dfcf",
+            border: "1px solid #e5e8eb",
             borderRadius: "22px",
-            boxShadow: "0 14px 36px rgba(46, 30, 19, 0.08)",
+            boxShadow: "0 8px 24px rgba(25, 31, 40, 0.06)",
             padding: "28px"
           }}
         >
@@ -144,7 +147,7 @@ class StartupErrorBoundary extends Component<StartupErrorBoundaryProps, StartupE
               fontWeight: 700,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              color: "#c96442"
+              color: "#0064ff"
             }}
           >
             C-Quant Startup
@@ -154,14 +157,13 @@ class StartupErrorBoundary extends Component<StartupErrorBoundaryProps, StartupE
               margin: "12px 0 8px",
               fontSize: "30px",
               letterSpacing: "-0.025em",
-              fontFamily:
-                '"Fraunces Variable", "Fraunces", "Source Serif 4", "Iowan Old Style", "Georgia", serif',
-              fontWeight: 500
+              fontWeight: 700,
+              color: "#191f28"
             }}
           >
             Renderer startup failed
           </h1>
-          <p style={{ margin: 0, lineHeight: 1.6, color: "#3a2e26" }}>
+          <p style={{ margin: 0, lineHeight: 1.6, color: "#4e5968" }}>
             The desktop shell loaded, but the React renderer stopped during startup. Restart the
             app. If the problem repeats, use the error detail below.
           </p>
@@ -170,11 +172,12 @@ class StartupErrorBoundary extends Component<StartupErrorBoundaryProps, StartupE
               margin: "18px 0 0",
               padding: "16px",
               borderRadius: "14px",
-              background: "#f5f1e8",
+              background: "#f9fafb",
               overflow: "auto",
               whiteSpace: "pre-wrap",
               wordBreak: "break-word",
-              border: "1px solid #e7dfcf"
+              border: "1px solid #e5e8eb",
+              color: "#4e5968"
             }}
           >
             {this.state.error.stack || this.state.error.message}

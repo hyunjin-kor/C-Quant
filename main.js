@@ -100,9 +100,9 @@ function showFallbackPage(window, title, detail) {
         <style>
           body {
             margin: 0;
-            font-family: "Segoe UI", "Noto Sans KR", system-ui, sans-serif;
-            background: #faf9f5;
-            color: #1f1815;
+            font-family: "Pretendard", "Segoe UI", "Noto Sans KR", system-ui, sans-serif;
+            background: #ffffff;
+            color: #191f28;
           }
           .wrap {
             max-width: 760px;
@@ -111,21 +111,22 @@ function showFallbackPage(window, title, detail) {
           }
           .card {
             background: #ffffff;
-            border: 1px solid #e7dfcf;
+            border: 1px solid #e5e8eb;
             border-radius: 22px;
             padding: 28px;
-            box-shadow: 0 14px 36px rgba(46, 30, 19, 0.08);
+            box-shadow: 0 8px 24px rgba(25, 31, 40, 0.06);
           }
-          h1 { margin: 0 0 12px; font-size: 28px; letter-spacing: -0.02em; }
-          p { margin: 0 0 12px; line-height: 1.6; color: #3a2e26; }
+          h1 { margin: 0 0 12px; font-size: 28px; letter-spacing: -0.025em; color: #191f28; }
+          p { margin: 0 0 12px; line-height: 1.6; color: #4e5968; }
           pre {
             margin: 16px 0 0;
             padding: 16px;
             overflow: auto;
-            background: #f5f1e8;
+            background: #f9fafb;
             border-radius: 14px;
             white-space: pre-wrap;
             word-break: break-word;
+            color: #4e5968;
           }
         </style>
       </head>

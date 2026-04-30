@@ -1,55 +1,57 @@
 :root {
   color-scheme: light;
   font-family:
-    "Inter Variable", "Inter", "Pretendard", "SUIT", "Noto Sans KR", "Segoe UI Variable",
-    "Segoe UI", system-ui, sans-serif;
+    "Pretendard Variable", "Pretendard", "Inter Variable", "Inter", "SUIT", "Noto Sans KR",
+    "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-sans:
-    "Inter Variable", "Inter", "Pretendard", "SUIT", "Noto Sans KR", "Segoe UI Variable",
-    "Segoe UI", system-ui, sans-serif;
+    "Pretendard Variable", "Pretendard", "Inter Variable", "Inter", "SUIT", "Noto Sans KR",
+    "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-display:
-    "Fraunces Variable", "Fraunces", "Source Serif 4", "Iowan Old Style", "Apple Garamond",
-    "Georgia", serif;
+    "Pretendard Variable", "Pretendard", "Inter Variable", "Inter", "SUIT", "Noto Sans KR",
+    "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Mono", "Consolas", monospace;
 
-  /* Claude warm canvas (light) */
-  --bg: #faf9f5;
+  /* Toss canvas (light) — clinical white, near-zero tint */
+  --bg: #ffffff;
   --panel: #ffffff;
-  --panel-muted: #f5f1e8;
-  --panel-tint: #efe8d6;
+  --panel-muted: #f9fafb;
+  --panel-tint: #f2f4f6;
 
-  /* Warm ink hierarchy */
-  --text-strong: #1f1815;
-  --text-base: #3a2e26;
-  --text-soft: #7a665a;
-  --text-mute: #a89684;
+  /* Toss ink hierarchy — cool gray, high contrast */
+  --text-strong: #191f28;
+  --text-base: #4e5968;
+  --text-soft: #8b95a1;
+  --text-mute: #b0b8c1;
   --text-on-accent: #ffffff;
 
-  /* Warm cream borders */
-  --line: #e7dfcf;
-  --line-strong: #d8cdb5;
+  /* Toss neutral borders */
+  --line: #e5e8eb;
+  --line-strong: #d1d6db;
 
-  /* Claude orange */
-  --accent: #c96442;
-  --accent-strong: #b45638;
-  --accent-soft: #f1ddd1;
-  --accent-ink: #6b3320;
+  /* Toss signature blue */
+  --accent: #0064ff;
+  --accent-strong: #0050c7;
+  --accent-soft: #e8f2ff;
+  --accent-ink: #003e99;
 
-  /* Semantic palette (warm) */
-  --green: #3d7a43;
-  --green-soft: #e2ecdc;
-  --red: #b14d44;
-  --red-soft: #f3dad6;
-  --yellow: #a87d18;
-  --yellow-soft: #f3e7c5;
+  /* Semantic palette — Toss styling. Korean stock convention follows
+     red = up, blue = down. We keep --green / --red as the legacy
+     variable names for success / error toasts. */
+  --green: #22c55e;
+  --green-soft: #dcfce7;
+  --red: #f04452;
+  --red-soft: #fde7e9;
+  --yellow: #ff9f2d;
+  --yellow-soft: #fff3e0;
 
-  /* Rail (warm dark) */
-  --rail: #1d1612;
-  --rail-soft: #a99d8c;
+  /* Rail — Toss dark navy / charcoal */
+  --rail: #1b1f23;
+  --rail-soft: #8b95a1;
 
-  /* Warm shadows */
-  --shadow: 0 14px 36px rgba(46, 30, 19, 0.08), 0 1px 2px rgba(46, 30, 19, 0.04);
-  --shadow-soft: 0 1px 2px rgba(46, 30, 19, 0.05);
-  --shadow-lift: 0 18px 44px rgba(46, 30, 19, 0.1), 0 2px 4px rgba(46, 30, 19, 0.06);
+  /* Cool, low-tint shadows (Toss is almost flat) */
+  --shadow: 0 8px 24px rgba(25, 31, 40, 0.06), 0 1px 2px rgba(25, 31, 40, 0.04);
+  --shadow-soft: 0 1px 2px rgba(25, 31, 40, 0.05);
+  --shadow-lift: 0 12px 32px rgba(25, 31, 40, 0.08), 0 2px 4px rgba(25, 31, 40, 0.06);
 
   /* Geometry */
   --radius-sm: 10px;
@@ -64,48 +66,48 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* Focus ring */
-  --focus-ring: 0 0 0 3px rgba(201, 100, 66, 0.28);
+  /* Focus ring — Toss blue */
+  --focus-ring: 0 0 0 3px rgba(0, 100, 255, 0.24);
 }
 
-/* Warm-dark theme. Activated via <html data-theme="dark"> from the renderer. */
+/* Toss dark theme. Activated via <html data-theme="dark"> from the renderer. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #1a1410;
-  --panel: #221a14;
-  --panel-muted: #2a2018;
-  --panel-tint: #312418;
+  --bg: #0e1014;
+  --panel: #17191c;
+  --panel-muted: #1c1f23;
+  --panel-tint: #21252b;
 
-  --text-strong: #f4ebda;
-  --text-base: #d8c8b0;
-  --text-soft: #a89478;
-  --text-mute: #7a6a55;
-  --text-on-accent: #1a1006;
+  --text-strong: #f2f4f6;
+  --text-base: #d1d6db;
+  --text-soft: #8b95a1;
+  --text-mute: #6b7684;
+  --text-on-accent: #ffffff;
 
-  --line: #3a2c1f;
-  --line-strong: #4d3a28;
+  --line: #2c3037;
+  --line-strong: #3a3f48;
 
-  --accent: #e2825c;
-  --accent-strong: #f29773;
-  --accent-soft: #3a221b;
-  --accent-ink: #f5dcc6;
+  --accent: #3d86ff;
+  --accent-strong: #5a99ff;
+  --accent-soft: #15233d;
+  --accent-ink: #d6e6ff;
 
-  --green: #6db575;
-  --green-soft: #243029;
-  --red: #d97a72;
-  --red-soft: #3a1f1d;
-  --yellow: #d4ad4a;
-  --yellow-soft: #2c2614;
+  --green: #2ed670;
+  --green-soft: #14241c;
+  --red: #ff5f6d;
+  --red-soft: #2a1a1d;
+  --yellow: #ffb43d;
+  --yellow-soft: #2a1f10;
 
-  --rail: #110b07;
-  --rail-soft: #8a7a64;
+  --rail: #07080a;
+  --rail-soft: #6b7684;
 
-  --shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.45);
-  --shadow-lift: 0 20px 48px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.5);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.55);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.55);
 
-  --focus-ring: 0 0 0 3px rgba(226, 130, 92, 0.36);
+  --focus-ring: 0 0 0 3px rgba(61, 134, 255, 0.32);
 }
 
 /* When the user has not picked a theme yet, follow the OS preference. */
@@ -113,40 +115,40 @@
   :root:not([data-theme]) {
     color-scheme: dark;
 
-    --bg: #1a1410;
-    --panel: #221a14;
-    --panel-muted: #2a2018;
-    --panel-tint: #312418;
+    --bg: #0e1014;
+    --panel: #17191c;
+    --panel-muted: #1c1f23;
+    --panel-tint: #21252b;
 
-    --text-strong: #f4ebda;
-    --text-base: #d8c8b0;
-    --text-soft: #a89478;
-    --text-mute: #7a6a55;
-    --text-on-accent: #1a1006;
+    --text-strong: #f2f4f6;
+    --text-base: #d1d6db;
+    --text-soft: #8b95a1;
+    --text-mute: #6b7684;
+    --text-on-accent: #ffffff;
 
-    --line: #3a2c1f;
-    --line-strong: #4d3a28;
+    --line: #2c3037;
+    --line-strong: #3a3f48;
 
-    --accent: #e2825c;
-    --accent-strong: #f29773;
-    --accent-soft: #3a221b;
-    --accent-ink: #f5dcc6;
+    --accent: #3d86ff;
+    --accent-strong: #5a99ff;
+    --accent-soft: #15233d;
+    --accent-ink: #d6e6ff;
 
-    --green: #6db575;
-    --green-soft: #243029;
-    --red: #d97a72;
-    --red-soft: #3a1f1d;
-    --yellow: #d4ad4a;
-    --yellow-soft: #2c2614;
+    --green: #2ed670;
+    --green-soft: #14241c;
+    --red: #ff5f6d;
+    --red-soft: #2a1a1d;
+    --yellow: #ffb43d;
+    --yellow-soft: #2a1f10;
 
-    --rail: #110b07;
-    --rail-soft: #8a7a64;
+    --rail: #07080a;
+    --rail-soft: #6b7684;
 
-    --shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.5);
-    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.45);
-    --shadow-lift: 0 20px 48px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.5);
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.55);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.55);
 
-    --focus-ring: 0 0 0 3px rgba(226, 130, 92, 0.36);
+    --focus-ring: 0 0 0 3px rgba(61, 134, 255, 0.32);
   }
 }
 
@@ -228,15 +230,15 @@ textarea::placeholder {
   flex-direction: column;
   gap: 1.1rem;
   padding: 1.1rem 1rem 1rem;
-  background: linear-gradient(180deg, #1d1612 0%, #2a1f17 100%);
-  color: #f5ece0;
-  border-right: 1px solid rgba(232, 220, 196, 0.06);
+  background: linear-gradient(180deg, #1b1f23 0%, #2a2f37 100%);
+  color: #f2f4f6;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
   overflow-y: auto;
 }
 
 :root[data-theme="dark"] .app-rail {
-  background: linear-gradient(180deg, #0d0805 0%, #18110b 100%);
-  border-right: 1px solid rgba(232, 220, 196, 0.04);
+  background: linear-gradient(180deg, #07080a 0%, #11141a 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .rail-brand,
@@ -314,7 +316,7 @@ textarea::placeholder {
 }
 
 .rail-label {
-  color: #b4a18b;
+  color: #8b95a1;
   padding: 0 0.15rem;
 }
 
@@ -324,9 +326,9 @@ textarea::placeholder {
   width: 100%;
   padding: 0.9rem 0.95rem;
   text-align: left;
-  border: 1px solid rgba(232, 220, 196, 0.06);
-  background: rgba(232, 220, 196, 0.025);
-  color: #ede1cf;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  color: #e5e8eb;
   font-weight: 600;
   transition:
     background var(--motion-fast) var(--ease-out),
@@ -334,32 +336,32 @@ textarea::placeholder {
 }
 
 .rail-button:hover {
-  background: rgba(232, 220, 196, 0.06);
-  border-color: rgba(232, 220, 196, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .rail-button.active {
-  background: rgba(232, 220, 196, 0.1);
-  border-color: rgba(232, 220, 196, 0.16);
+  background: rgba(0, 100, 255, 0.16);
+  border-color: rgba(0, 100, 255, 0.36);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .rail-note {
   margin-top: auto;
   padding: 0.95rem;
-  border: 1px solid rgba(232, 220, 196, 0.06);
-  background: rgba(232, 220, 196, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .rail-note strong {
   display: block;
   margin-bottom: 0.45rem;
-  color: #f5ece0;
+  color: #f2f4f6;
 }
 
 .rail-note p {
   margin: 0;
-  color: #c8b9a4;
+  color: #b0b8c1;
   font-size: 0.86rem;
   line-height: 1.55;
 }
@@ -387,17 +389,15 @@ textarea::placeholder {
   margin: 0;
   color: var(--text-strong);
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.025em;
-  font-feature-settings: "ss01", "ss02";
 }
 
 .workspace-head h1 {
   font-size: 2.55rem;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.035em;
-  font-weight: 480;
-  font-optical-sizing: auto;
+  font-weight: 800;
 }
 
 .workspace-head p,
@@ -468,16 +468,12 @@ textarea::placeholder {
 .button.primary {
   background: var(--accent);
   color: var(--text-on-accent);
-  box-shadow:
-    0 8px 18px rgba(201, 100, 66, 0.22),
-    0 1px 2px rgba(46, 30, 19, 0.12);
+  box-shadow: none;
 }
 
 .button.primary:hover {
   background: var(--accent-strong);
-  box-shadow:
-    0 12px 24px rgba(201, 100, 66, 0.28),
-    0 1px 2px rgba(46, 30, 19, 0.14);
+  box-shadow: 0 4px 12px rgba(0, 100, 255, 0.18);
 }
 
 .button.ghost {
