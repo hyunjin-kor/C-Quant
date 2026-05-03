@@ -28,6 +28,8 @@ const analytics = require("./electron/analytics");
 const { createWatchlistStore } = require("./electron/watchlist");
 const { createBacktestStore } = require("./electron/backtests");
 const { createAlertsStore, evaluateFreshness } = require("./electron/alerts");
+const { createInstitutionalFeedRegistry } = require("./electron/institutionalFeeds");
+const { createFreeFeedRegistry } = require("./electron/freeFeeds");
 
 // CQUANT_LOAD_DIST forces the main process to load dist/index.html instead of
 // the Vite dev server. Used by the screenshot capture tool so it can launch
@@ -848,6 +850,38 @@ ipcMain.handle("alerts-evaluate-now", async (event) => {
   assertTrustedSender(event);
   await runBackgroundRefresh({ reason: "renderer-manual" });
   return { ok: true };
+});
+
+const institutionalFeedRegistry = createInstitutionalFeedRegistry();
+
+ipcMain.handle("institutional-feeds-status", async (event) => {
+  assertTrustedSender(event);
+  return institutionalFeedRegistry.getStatuses();
+});
+
+ipcMain.handle("institutional-feeds-list", async (event) => {
+  assertTrustedSender(event);
+  return institutionalFeedRegistry.list();
+});
+
+const freeFeedRegistry = createFreeFeedRegistry();
+
+ipcMain.handle("free-feeds-status", async (event) => {
+  assertTrustedSender(event);
+  return freeFeedRegistry.getStatuses();
+});
+
+ipcMain.handle("free-feeds-fetch", async (event, payload) => {
+  assertTrustedSender(event);
+  if (!payload || typeof payload.adapterId !== "string" || typeof payload.seriesId !== "string") {
+    return null;
+  }
+  return freeFeedRegistry.fetchSeries(payload.adapterId, payload.seriesId, {
+    observationStart:
+      typeof payload.observationStart === "string" ? payload.observationStart : undefined,
+    observationEnd:
+      typeof payload.observationEnd === "string" ? payload.observationEnd : undefined
+  });
 });
 
 ipcMain.handle("get-app-info", async (event) => {

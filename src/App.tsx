@@ -27,15 +27,29 @@ import {
   quantIndicators
 } from "./data/research";
 import { sourceRegistry, subscriptionFeatures, trustPrinciples } from "./data/platform";
+import {
+  catalystScenarios,
+  scoreScenarioFromDriverWeights
+} from "./data/catalystScenarios";
+import { getInteractionMultiplier } from "./data/catalystCalibration";
+import { eventsForMarket } from "./data/catalystEventLog";
+import {
+  DEFAULT_DETECTOR_CONFIG,
+  detectActivePatterns,
+  type ScenarioDetection
+} from "./lib/catalystTriggerDetector";
+import { materialsResearch, rankMaterialsForMarket } from "./data/materialsResearch";
 import { buildForecast } from "./lib/forecast";
 import { localizeText, localizeTextWithFallback } from "./lib/localization";
 import type {
+  CatalystScenario,
   ConnectedSourceCard,
   ConnectedSourcePayload,
   ConnectedSourceSeriesPoint,
   MarketDriver,
   MarketLiveQuote,
-  MarketProfile
+  MarketProfile,
+  MaterialResearchEntry
 } from "./types";
 
 const appIconUrl = new URL("../assets/app-icon.png", import.meta.url).href;
@@ -87,6 +101,29 @@ declare global {
         quoteId: string;
         range: QuoteRangePreset;
       }) => Promise<MarketLiveQuote>;
+      institutionalFeedsList?: () => Promise<Array<{ id: string; provider: string }>>;
+      institutionalFeedsStatus?: () => Promise<
+        Array<{
+          status: "ready" | "not-configured" | "error";
+          provider: string;
+          message: string;
+          docUrl?: string;
+        }>
+      >;
+      freeFeedsStatus?: () => Promise<
+        Array<{
+          status: "ready" | "not-configured" | "error";
+          provider: string;
+          message: string;
+          docUrl?: string;
+        }>
+      >;
+      freeFeedsFetch?: (payload: {
+        adapterId: string;
+        seriesId: string;
+        observationStart?: string;
+        observationEnd?: string;
+      }) => Promise<Array<{ date: string; value: number }> | null>;
     };
   }
 }
@@ -1417,6 +1454,22 @@ export default function App() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [scenarioState, setScenarioState] = useState<Record<string, number>>({});
+  const [institutionalFeedStatuses, setInstitutionalFeedStatuses] = useState<
+    Array<{
+      status: "ready" | "not-configured" | "error";
+      provider: string;
+      message: string;
+      docUrl?: string;
+    }>
+  >([]);
+  const [freeFeedStatuses, setFreeFeedStatuses] = useState<
+    Array<{
+      status: "ready" | "not-configured" | "error";
+      provider: string;
+      message: string;
+      docUrl?: string;
+    }>
+  >([]);
 
   const selectedMarket = useMemo(
     () => marketProfiles.find((item) => item.id === marketId) ?? marketProfiles[1],
@@ -2037,6 +2090,33 @@ export default function App() {
     }
     setScenarioState(nextState);
   }, [scenarioDrivers]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchStatuses = async () => {
+      const bridge = window.desktopBridge;
+      try {
+        if (bridge?.institutionalFeedsStatus) {
+          const result = await bridge.institutionalFeedsStatus();
+          if (!cancelled && Array.isArray(result)) setInstitutionalFeedStatuses(result);
+        }
+      } catch {
+        if (!cancelled) setInstitutionalFeedStatuses([]);
+      }
+      try {
+        if (bridge?.freeFeedsStatus) {
+          const result = await bridge.freeFeedsStatus();
+          if (!cancelled && Array.isArray(result)) setFreeFeedStatuses(result);
+        }
+      } catch {
+        if (!cancelled) setFreeFeedStatuses([]);
+      }
+    };
+    fetchStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const nextId = chooseDefaultQuote(marketId, connectedSources.liveQuotes);
@@ -3145,6 +3225,72 @@ export default function App() {
   }
 
   function renderDrivers() {
+    const marketScenarios: CatalystScenario[] = catalystScenarios.filter(
+      (scenario) =>
+        scenario.marketIds.includes(selectedMarket.id) || scenario.marketIds.includes("shared")
+    );
+    const rankedScenarios = [...marketScenarios]
+      .map((scenario) => {
+        const cal = getInteractionMultiplier(scenario);
+        return {
+          scenario,
+          calibration: cal,
+          score: scoreScenarioFromDriverWeights(scenario, scenarioState, cal.multiplier)
+        };
+      })
+      .sort((a, b) => Math.abs(b.score) - Math.abs(a.score));
+    const marketEvents = eventsForMarket(selectedMarket.id).sort((a, b) =>
+      a.observedAt.localeCompare(b.observedAt)
+    );
+    const activeDetections: ScenarioDetection[] = detectActivePatterns(
+      marketScenarios,
+      connectedSources,
+      DEFAULT_DETECTOR_CONFIG,
+      new Date()
+    );
+    const liveActivePatterns = activeDetections.filter((detection) => detection.active);
+    const rankedMaterials: MaterialResearchEntry[] = rankMaterialsForMarket(
+      selectedMarket.id,
+      materialsResearch
+    ).slice(0, 6);
+
+    const directionLabel = (direction: CatalystScenario["expectedDirection"]) =>
+      direction === "higher"
+        ? t(locale, "Bullish", "Bullish")
+        : direction === "lower"
+          ? t(locale, "Bearish", "Bearish")
+          : t(locale, "Ambiguous", "Ambiguous");
+
+    const interactionLabel = (effect: CatalystScenario["interactionEffect"]) =>
+      effect === "amplify"
+        ? t(locale, "Amplifies", "Amplifies")
+        : effect === "offset"
+          ? t(locale, "Offsets", "Offsets")
+          : t(locale, "Regime shift", "Regime shift");
+
+    const rarityLabel = (rarity: CatalystScenario["rarity"]) =>
+      rarity === "common"
+        ? t(locale, "Common", "Common")
+        : rarity === "watch"
+          ? t(locale, "Watch", "Watch")
+          : t(locale, "Rare", "Rare");
+
+    const readinessLabel = (readiness: MaterialResearchEntry["readiness"]) =>
+      readiness === "lab"
+        ? t(locale, "Lab", "Lab")
+        : readiness === "pilot"
+          ? t(locale, "Pilot", "Pilot")
+          : readiness === "early-deploy"
+            ? t(locale, "Early deploy", "Early deploy")
+            : t(locale, "At scale", "At scale");
+
+    const componentSignLabel = (sign: "tighten" | "loosen" | "context") =>
+      sign === "tighten"
+        ? t(locale, "Tightens", "Tightens")
+        : sign === "loosen"
+          ? t(locale, "Loosens", "Loosens")
+          : t(locale, "Context", "Context");
+
     return (
       <>
         <section className="panel">
@@ -3168,6 +3314,579 @@ export default function App() {
             )}
             rows={familyHeatmapRows}
           />
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "Decision-support boundary", "Decision-support boundary")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "This is decision-support, not a calibrated price predictor",
+                  "This is decision-support, not a calibrated price predictor"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "C-Quant blends a research-backed weighted score with official anchors and observable time series. Until backtesting, walk-forward validation, institutional feeds, and compliance review are wrapped around it, treat the output as a reasoning aide, not a price target.",
+                "C-Quant blends a research-backed weighted score with official anchors and observable time series. Until backtesting, walk-forward validation, institutional feeds, and compliance review are wrapped around it, treat the output as a reasoning aide, not a price target."
+              )}
+            </p>
+          </div>
+
+          <div className="board-meta-row">
+            <span className="freshness-badge watch">
+              {t(locale, "Decision-support", "Decision-support")}
+            </span>
+            <span className="board-inline-meta">
+              {t(
+                locale,
+                "Use as a reasoning aide alongside official records",
+                "Use as a reasoning aide alongside official records"
+              )}
+            </span>
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "지금 활성", "Active patterns now")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "라이브 데이터로 자동 감지된 시나리오",
+                  "Scenarios firing against live data"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "프레시니스, 가격 점프, 거래량 점프, 프록시 괴리를 임계치 기반으로 자동 평가합니다. 절반 이상의 검증 가능한 컴포넌트가 동시에 발화하면 'active'로 표시됩니다.",
+                "We auto-evaluate freshness, price jumps, volume jumps, and proxy divergence against thresholds. A scenario goes 'active' when at least half its testable components fire."
+              )}
+            </p>
+          </div>
+
+          <div className="registry-grid">
+            {liveActivePatterns.length === 0 ? (
+              <div className="registry-card">
+                <span className="registry-method">
+                  {t(locale, "조용함", "Quiet")}
+                </span>
+                <strong>
+                  {t(
+                    locale,
+                    "현재 임계치를 넘는 시나리오가 없습니다",
+                    "No scenario crosses the live thresholds right now"
+                  )}
+                </strong>
+                <p>
+                  {t(
+                    locale,
+                    "시장 데이터가 정상 범위 안에 있거나, 현재 카드에 자동 감지에 필요한 시계열이 부족합니다.",
+                    "Either the market data is inside normal bands, or the connected cards do not yet expose enough series to auto-evaluate."
+                  )}
+                </p>
+              </div>
+            ) : (
+              liveActivePatterns.map((detection) => {
+                const matchedScenario = catalystScenarios.find(
+                  (scenario) => scenario.id === detection.scenarioId
+                );
+                if (!matchedScenario) return null;
+                return (
+                  <div key={detection.scenarioId} className="registry-card">
+                    <div className="board-meta-row">
+                      <span className="registry-method">
+                        {t(locale, "활성", "Active")}
+                      </span>
+                      <span className="freshness-badge stale">
+                        {`${detection.triggeredCount}/${detection.testableCount} ${t(
+                          locale,
+                          "발화",
+                          "fired"
+                        )}`}
+                      </span>
+                    </div>
+                    <strong>{l(matchedScenario.name)}</strong>
+                    <span className="board-inline-meta">{l(matchedScenario.windowLabel)}</span>
+                    <ul className="bullet-list compact">
+                      {detection.components.map((cd, idx) => (
+                        <li key={`${detection.scenarioId}-${idx}`}>
+                          <strong>
+                            {`${l(cd.component.variable)}${cd.triggered ? " ✓" : ""}`}
+                          </strong>
+                          <span>{cd.note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "Catalyst combinations", "Catalyst combinations")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "What changes when more than one driver fires together",
+                  "What changes when more than one driver fires together"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by your current driver weights.",
+                "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by your current driver weights."
+              )}
+            </p>
+          </div>
+
+          <div className="registry-grid">
+            {rankedScenarios.map(({ scenario, score }) => (
+              <div key={scenario.id} className="registry-card">
+                <div className="board-meta-row">
+                  <span className="registry-method">{rarityLabel(scenario.rarity)}</span>
+                  <span
+                    className={`stance-pill ${
+                      scenario.expectedDirection === "higher"
+                        ? "buy"
+                        : scenario.expectedDirection === "lower"
+                          ? "reduce"
+                          : "hold"
+                    }`}
+                  >
+                    {directionLabel(scenario.expectedDirection)}
+                  </span>
+                </div>
+                <strong>{l(scenario.name)}</strong>
+                <span className="board-inline-meta">{l(scenario.windowLabel)}</span>
+                <p>{l(scenario.whyItMatters)}</p>
+                <ul className="bullet-list compact">
+                  {scenario.components.map((component) => (
+                    <li key={`${scenario.id}-${component.variable}`}>
+                      <strong>{`${l(component.family)} - ${componentSignLabel(component.sign)}`}</strong>
+                      <span>{`${l(component.variable)} - ${l(component.threshold)}`}</span>
+                    </li>
+                  ))}
+                </ul>
+                <ul className="bullet-list compact">
+                  <li>
+                    <strong>{t(locale, "Interaction", "Interaction")}</strong>
+                    <span>{interactionLabel(scenario.interactionEffect)}</span>
+                  </li>
+                  <li>
+                    <strong>{t(locale, "Playbook", "Playbook")}</strong>
+                    <span>{l(scenario.playbook)}</span>
+                  </li>
+                  <li>
+                    <strong>{t(locale, "Historical anchor", "Historical anchor")}</strong>
+                    <span>{l(scenario.historicalAnchor)}</span>
+                  </li>
+                  <li>
+                    <strong>
+                      {t(
+                        locale,
+                        "Current driver-weighted score",
+                        "Current driver-weighted score"
+                      )}
+                    </strong>
+                    <span>{formatSigned(locale, score, "")}</span>
+                  </li>
+                </ul>
+                <div className="registry-meta">
+                  {scenario.references.map((ref) => (
+                    <button
+                      key={`${scenario.id}-${ref.url}`}
+                      type="button"
+                      className="button ghost small"
+                      onClick={() => window.desktopBridge?.openExternal(ref.url)}
+                    >
+                      {ref.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "Materials & abatement atlas", "Materials & abatement atlas")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "How material and process readiness shifts long-horizon allowance demand",
+                  "How material and process readiness shifts long-horizon allowance demand"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "These entries are decision pointers, not direct price inputs. Cost ranges and abatement potentials trace back to the named primary report (IPCC, IEA, IRENA, NETL, ICVCM). Verify the underlying report before quoting any single number.",
+                "These entries are decision pointers, not direct price inputs. Cost ranges and abatement potentials trace back to the named primary report (IPCC, IEA, IRENA, NETL, ICVCM). Verify the underlying report before quoting any single number."
+              )}
+            </p>
+          </div>
+
+          <div className="registry-grid">
+            {rankedMaterials.map((entry) => (
+              <div key={entry.id} className="registry-card">
+                <div className="board-meta-row">
+                  <span className="registry-method">{readinessLabel(entry.readiness)}</span>
+                  <span className={`freshness-badge ${entry.verified ? "fresh" : "watch"}`}>
+                    {entry.verified
+                      ? t(locale, "Verified", "Verified")
+                      : t(locale, "Pending review", "Pending review")}
+                  </span>
+                </div>
+                <strong>{l(entry.name)}</strong>
+                <span className="board-inline-meta">{l(entry.scopeNote)}</span>
+                <ul className="bullet-list compact">
+                  <li>
+                    <strong>{t(locale, "Abatement potential", "Abatement potential")}</strong>
+                    <span>{l(entry.abatementPotential)}</span>
+                  </li>
+                  <li>
+                    <strong>{t(locale, "Cost per tCO2", "Cost per tCO2")}</strong>
+                    <span>{l(entry.costPerTon)}</span>
+                  </li>
+                  <li>
+                    <strong>{t(locale, "Market relevance", "Market relevance")}</strong>
+                    <span>{l(entry.marketRelevance)}</span>
+                  </li>
+                </ul>
+                <div className="registry-meta">
+                  {entry.references.map((ref) => (
+                    <button
+                      key={`${entry.id}-${ref.url}`}
+                      type="button"
+                      className="button ghost small"
+                      onClick={() => window.desktopBridge?.openExternal(ref.url)}
+                    >
+                      {ref.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "Institutional feeds", "Institutional feeds")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "License-gated providers (status, never fabricated data)",
+                  "License-gated providers (status, never fabricated data)"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "Refinitiv, Bloomberg, ICE, and EEX adapters return status only. When credentials are not configured, the panel shows where to license the feed. No price is ever inferred when an adapter reports not-configured.",
+                "Refinitiv, Bloomberg, ICE, and EEX adapters return status only. When credentials are not configured, the panel shows where to license the feed. No price is ever inferred when an adapter reports not-configured."
+              )}
+            </p>
+          </div>
+
+          <div className="registry-grid">
+            {institutionalFeedStatuses.length === 0 ? (
+              <div className="registry-card">
+                <span className="registry-method">
+                  {t(locale, "Desktop bridge", "Desktop bridge")}
+                </span>
+                <strong>
+                  {t(
+                    locale,
+                    "Run inside Electron to see live adapter status",
+                    "Run inside Electron to see live adapter status"
+                  )}
+                </strong>
+                <p>
+                  {t(
+                    locale,
+                    "The browser preview cannot reach the institutional feed registry. Build the desktop app to see configured adapters.",
+                    "The browser preview cannot reach the institutional feed registry. Build the desktop app to see configured adapters."
+                  )}
+                </p>
+              </div>
+            ) : (
+              institutionalFeedStatuses.map((feed) => (
+                <div key={feed.provider} className="registry-card">
+                  <div className="board-meta-row">
+                    <span className="registry-method">{feed.provider}</span>
+                    <span
+                      className={`freshness-badge ${
+                        feed.status === "ready"
+                          ? "fresh"
+                          : feed.status === "error"
+                            ? "stale"
+                            : "watch"
+                      }`}
+                    >
+                      {feed.status === "ready"
+                        ? t(locale, "Ready", "Ready")
+                        : feed.status === "error"
+                          ? t(locale, "Error", "Error")
+                          : t(locale, "Not configured", "Not configured")}
+                    </span>
+                  </div>
+                  <p>{feed.message}</p>
+                  {feed.docUrl ? (
+                    <button
+                      type="button"
+                      className="button ghost small"
+                      onClick={() => window.desktopBridge?.openExternal(feed.docUrl!)}
+                    >
+                      {t(locale, "Open license docs", "Open license docs")}
+                    </button>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "Calibration provenance", "Calibration provenance")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "Each catalyst multiplier traces back to its calibration status",
+                  "Each catalyst multiplier traces back to its calibration status"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "Heuristic = placeholder. Backtest = tuned via walk-forward. Calibrated = backtested and reviewed. The walk-forward harness lives in src/lib/walkForward.ts and runs against caller-supplied historical features (no fabricated panels are bundled).",
+                "Heuristic = placeholder. Backtest = tuned via walk-forward. Calibrated = backtested and reviewed. The walk-forward harness lives in src/lib/walkForward.ts and runs against caller-supplied historical features (no fabricated panels are bundled)."
+              )}
+            </p>
+          </div>
+
+          <div className="driver-table">
+            <div className="driver-head">
+              <span>{t(locale, "Scenario", "Scenario")}</span>
+              <span>{t(locale, "Effect", "Effect")}</span>
+              <span>{t(locale, "Multiplier", "Multiplier")}</span>
+              <span>{t(locale, "Status", "Status")}</span>
+            </div>
+            {rankedScenarios.map(({ scenario, calibration: cal }) => {
+              return (
+                <div key={scenario.id} className="driver-row">
+                  <strong>{l(scenario.name)}</strong>
+                  <span>{interactionLabel(scenario.interactionEffect)}</span>
+                  <span>
+                    {cal.multiplier.toFixed(2)}
+                    {typeof cal.observations === "number"
+                      ? ` (${cal.observations}n${
+                          typeof cal.hitRate === "number"
+                            ? `, ${(cal.hitRate * 100).toFixed(0)}% hit`
+                            : ""
+                        })`
+                      : ""}
+                  </span>
+                  <span
+                    className={`freshness-badge ${
+                      cal.status === "calibrated"
+                        ? "fresh"
+                        : cal.status === "backtest"
+                          ? "watch"
+                          : "stale"
+                    }`}
+                  >
+                    {cal.status === "calibrated"
+                      ? t(locale, "Calibrated", "Calibrated")
+                      : cal.status === "backtest"
+                        ? t(locale, "Backtest", "Backtest")
+                        : t(locale, "Heuristic", "Heuristic")}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">{t(locale, "Event timeline", "Event timeline")}</span>
+              <h2>
+                {t(
+                  locale,
+                  "Citable historical events the calibration uses",
+                  "Citable historical events the calibration uses"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "Every event references a public primary source. The calibration table aggregates these events into per-scenario empirical multipliers. Operators must verify each entry before quoting it in regulated reporting.",
+                "Every event references a public primary source. The calibration table aggregates these events into per-scenario empirical multipliers. Operators must verify each entry before quoting it in regulated reporting."
+              )}
+            </p>
+          </div>
+
+          <div className="driver-table">
+            <div className="driver-head">
+              <span>{t(locale, "Date", "Date")}</span>
+              <span>{t(locale, "Event", "Event")}</span>
+              <span>{t(locale, "Scenario", "Scenario")}</span>
+              <span>{t(locale, "Confidence", "Confidence")}</span>
+            </div>
+            {marketEvents.map((event) => {
+              const matchedScenario = catalystScenarios.find(
+                (scenario) => scenario.id === event.scenarioId
+              );
+              return (
+                <div key={event.id} className="driver-row">
+                  <strong>{formatDate(locale, event.observedAt)}</strong>
+                  <div>
+                    <strong>{l(event.label)}</strong>
+                    <p>{l(event.brief)}</p>
+                    <div className="registry-meta">
+                      {event.references.map((ref) => (
+                        <button
+                          key={`${event.id}-${ref.url}`}
+                          type="button"
+                          className="button ghost small"
+                          onClick={() => window.desktopBridge?.openExternal(ref.url)}
+                        >
+                          {ref.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <span>{matchedScenario ? l(matchedScenario.name) : event.scenarioId}</span>
+                  <span
+                    className={`freshness-badge ${
+                      event.confidence === "verified"
+                        ? "fresh"
+                        : event.confidence === "reported"
+                          ? "watch"
+                          : "stale"
+                    }`}
+                  >
+                    {event.confidence === "verified"
+                      ? t(locale, "Verified", "Verified")
+                      : event.confidence === "reported"
+                        ? t(locale, "Reported", "Reported")
+                        : t(locale, "Context", "Context")}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "Public-data feeds", "Public-data feeds")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "Free, license-free providers wired in alongside institutional adapters",
+                  "Free, license-free providers wired in alongside institutional adapters"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "FRED needs a free personal API key. ECB SDW, ICAP, and World Bank dashboards are open. Empty list = running outside Electron (browser preview).",
+                "FRED needs a free personal API key. ECB SDW, ICAP, and World Bank dashboards are open. Empty list = running outside Electron (browser preview)."
+              )}
+            </p>
+          </div>
+
+          <div className="registry-grid">
+            {freeFeedStatuses.length === 0 ? (
+              <div className="registry-card">
+                <span className="registry-method">
+                  {t(locale, "Desktop bridge", "Desktop bridge")}
+                </span>
+                <strong>
+                  {t(
+                    locale,
+                    "Run inside Electron to see public feed adapter status",
+                    "Run inside Electron to see public feed adapter status"
+                  )}
+                </strong>
+              </div>
+            ) : (
+              freeFeedStatuses.map((feed) => (
+                <div key={feed.provider} className="registry-card">
+                  <div className="board-meta-row">
+                    <span className="registry-method">{feed.provider}</span>
+                    <span
+                      className={`freshness-badge ${
+                        feed.status === "ready"
+                          ? "fresh"
+                          : feed.status === "error"
+                            ? "stale"
+                            : "watch"
+                      }`}
+                    >
+                      {feed.status === "ready"
+                        ? t(locale, "Ready", "Ready")
+                        : feed.status === "error"
+                          ? t(locale, "Error", "Error")
+                          : t(locale, "Set up", "Set up")}
+                    </span>
+                  </div>
+                  <p>{feed.message}</p>
+                  {feed.docUrl ? (
+                    <button
+                      type="button"
+                      className="button ghost small"
+                      onClick={() => window.desktopBridge?.openExternal(feed.docUrl!)}
+                    >
+                      {t(locale, "Open docs", "Open docs")}
+                    </button>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
         </section>
 
         <section className="drivers-grid">

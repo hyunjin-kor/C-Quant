@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("desktopBridge", {
-  version: process.env.npm_package_version || "1.1.0",
+  version: process.env.npm_package_version || "1.2.0",
 
   // Lifecycle / startup signaling
   notifyRendererReady: () => ipcRenderer.send("renderer-ready"),
@@ -59,5 +59,13 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   alertsRemove: (id) => ipcRenderer.invoke("alerts-remove", id),
   alertsSetEnabled: (id, enabled) => ipcRenderer.invoke("alerts-set-enabled", { id, enabled }),
   alertsClear: () => ipcRenderer.invoke("alerts-clear"),
-  alertsEvaluateNow: () => ipcRenderer.invoke("alerts-evaluate-now")
+  alertsEvaluateNow: () => ipcRenderer.invoke("alerts-evaluate-now"),
+
+  // Institutional feeds (license-gated; read-only status surface)
+  institutionalFeedsList: () => ipcRenderer.invoke("institutional-feeds-list"),
+  institutionalFeedsStatus: () => ipcRenderer.invoke("institutional-feeds-status"),
+
+  // Free public-data feeds (FRED / ECB SDW / ICAP / World Bank)
+  freeFeedsStatus: () => ipcRenderer.invoke("free-feeds-status"),
+  freeFeedsFetch: (payload) => ipcRenderer.invoke("free-feeds-fetch", payload)
 });

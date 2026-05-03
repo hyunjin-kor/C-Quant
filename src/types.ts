@@ -327,3 +327,96 @@ export type ForecastResult = {
     contribution: number;
   }>;
 };
+
+export type CatalystTriggerSign = "tighten" | "loosen" | "context";
+
+export type CatalystComponent = {
+  driverId?: string;
+  family: string;
+  variable: string;
+  sign: CatalystTriggerSign;
+  threshold: string;
+};
+
+export type CatalystInteractionEffect = "amplify" | "offset" | "regime-shift";
+
+export type CatalystCalibrationStatus = "heuristic" | "backtest" | "calibrated";
+
+export type CatalystScenario = {
+  id: string;
+  marketIds: Array<MarketProfile["id"] | "shared">;
+  name: string;
+  windowLabel: string;
+  rarity: "common" | "watch" | "rare";
+  expectedDirection: "higher" | "lower" | "ambiguous";
+  components: CatalystComponent[];
+  interactionEffect: CatalystInteractionEffect;
+  /**
+   * Per-scenario interaction multiplier. When omitted, the scoring layer
+   * falls back to a documented heuristic. A non-null value should be
+   * traceable to a backtest or calibration run.
+   */
+  interactionMultiplier?: number;
+  /**
+   * Provenance of the multiplier. "heuristic" means the value is a
+   * placeholder; "backtest" means it was tuned against historical events;
+   * "calibrated" means it was both backtested and reviewed.
+   */
+  calibrationStatus: CatalystCalibrationStatus;
+  /** ISO date when the multiplier was last reviewed. */
+  calibratedAt?: string;
+  playbook: string;
+  whyItMatters: string;
+  historicalAnchor: string;
+  references: SourceLink[];
+};
+
+export type MaterialResearchType =
+  | "carbon-capture"
+  | "low-carbon-fuel"
+  | "industrial-decarb"
+  | "nature-based"
+  | "removal";
+
+export type MaterialResearchReadiness = "lab" | "pilot" | "early-deploy" | "scale";
+
+export type CatalystEventConfidence = "verified" | "reported" | "context";
+
+export type CatalystEvent = {
+  id: string;
+  scenarioId: string;
+  marketId: MarketProfile["id"] | "shared";
+  /** ISO date when the catalyst was effectively observable (publication / observed flip). */
+  observedAt: string;
+  /** Short label, used in tooltips and time-line bars. */
+  label: string;
+  brief: string;
+  /** Confidence of the event-window evidence. */
+  confidence: CatalystEventConfidence;
+  references: SourceLink[];
+};
+
+export type CatalystCalibrationRecord = {
+  scenarioId: string;
+  multiplier: number;
+  status: CatalystCalibrationStatus;
+  observations: number;
+  meanAbsReturn: number | null;
+  hitRate: number | null;
+  reviewedAt: string;
+  notes: string;
+};
+
+export type MaterialResearchEntry = {
+  id: string;
+  name: string;
+  type: MaterialResearchType;
+  readiness: MaterialResearchReadiness;
+  abatementPotential: string;
+  costPerTon: string;
+  marketRelevance: string;
+  scopeNote: string;
+  references: SourceLink[];
+  verified: boolean;
+  reviewedAt: string;
+};

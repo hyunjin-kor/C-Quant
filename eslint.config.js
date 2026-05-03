@@ -68,7 +68,7 @@ export default [
     }
   },
   {
-    files: ["tools/**/*.{js,mjs}"],
+    files: ["tools/**/*.{js,mjs}", "scripts/**/*.{js,mjs}"],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 },
       sourceType: "module"

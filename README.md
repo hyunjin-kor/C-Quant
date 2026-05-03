@@ -1,301 +1,277 @@
 # C-Quant
 
 <p align="center">
-  <img src="docs/images/hero.svg" alt="C-Quant — carbon decision desk" width="100%"/>
+  <img src="docs/images/hero.svg" alt="C-Quant — carbon allowance decision desk" width="100%"/>
 </p>
 
-**A desktop research workstation for global carbon allowance markets — EU ETS, K-ETS, China ETS.**
+**EU ETS · K-ETS · China ETS 탄소배출권 매수 / 보유 / 매도 의사결정 데스크.**
+**A decision-support desk for buying, holding, or reducing EU ETS, K-ETS, and China ETS carbon allowances.**
 
-C-Quant is a calm, evidence-first decision desk. It pulls the official
-auction tape, ministry bulletin, or exchange snapshot first; layers in
-listed hedge benchmarks and listed proxies; then surfaces a single
-opinion (buy / hold / reduce) with the drivers and source freshness
-that built it.
+C-Quant은 기관 분석가가 **"오늘 탄소배출권을 살까, 들고 갈까, 줄일까?"** 라는 한 가지 질문에 답하기 위한 데스크톱 도구입니다. 공식 경매 결과·거래소 공시·정책 공지를 1차 앵커로 읽고, 그 위에 리서치 기반 드라이버 매트릭스, 다중-드라이버 촉매 조합, 실시간 트리거 감지, 백테스트로 보정된 multiplier를 쌓아 **buy / hold / reduce** 자세를 산출합니다.
 
-It does **not** execute trades, custody assets, or intermediate
-settlement. It is research and monitoring software.
+C-Quant is a desktop tool that helps an institutional analyst answer one question — **"Should I buy, hold, or reduce carbon allowances right now?"** — by reading official auctions, exchange snapshots, and policy bulletins as primary anchors, layering a research-backed driver matrix, multi-driver catalyst combinations, real-time trigger detection, and backtest-derived multipliers on top, and surfacing a single **buy / hold / reduce** posture with the evidence trail intact.
+
+거래를 체결하지도, 자산을 수탁하지도, 결제를 중개하지도 않습니다. 리서치·모니터링·의사결정 보조 소프트웨어입니다.
+It does not execute trades, custody assets, or intermediate settlement. It is research, monitoring, and decision-support software.
 
 [![CI](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml/badge.svg)](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node 24+](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](.nvmrc)
 
-> 📘 **First time here?** Jump to **[docs/USAGE.md](docs/USAGE.md)** for a screen-by-screen walkthrough.
-> 처음이라면 [사용 가이드(USAGE.md)](docs/USAGE.md)를 먼저 읽어보세요.
+---
+
+## 무엇을 결정하게 도와주는가 / What decision it supports
+
+| 사용자 질문 · User question | C-Quant이 답하는 방식 · How C-Quant answers |
+| --- | --- |
+| 지금 EUA 매수해도 되나? · Buy EUA now? | 공식 경매 결과 + 드라이버 가중 점수 + 활성 촉매 패턴 → **posture (buy/hold/reduce)** + 신뢰도 |
+| K-ETS 보유 포지션 줄여야 하나? · Reduce K-ETS exposure? | KRX 종가 + 컴플라이언스 윈도우 근접도 + 정책 공지 신선도 |
+| 중국 시장 변곡점이 다가오는가? · Chinese ETS turning point? | MEE 공지 + 업종 확대 시나리오 활성도 + 일일 거래대금 |
+| 어떤 신호를 우선 봐야 하는가? · Which signal to weight today? | 현재 활성화된 다중-드라이버 시나리오 자동 감지 + 백테스트 hit-rate |
+| 모델 출력을 얼마나 신뢰할 수 있나? · How much can I trust the output? | 모든 multiplier에 calibration 출처 표시: heuristic / backtest / calibrated |
 
 ---
 
-## At a glance / 한눈에 보기
+## 의사결정 신호 스택 / The signal stack
 
-<p align="center">
-  <img src="docs/images/decision-flow.svg" alt="The four-step decision workflow" width="100%"/>
-</p>
+C-Quant이 buy / hold / reduce를 산출하는 8개 레이어. 각 레이어는 명시적인 1차 출처와 신선도 표시를 동반합니다.
 
-Every C-Quant session walks the same path: **read the official anchor → compare with the listed proxy → check the drivers → decide**. Surfaces are organized to support that loop.
+C-Quant derives buy / hold / reduce by stacking 8 layers. Each layer carries its primary source and a freshness label.
 
-C-Quant 세션은 항상 같은 흐름을 따릅니다 — **공식 앵커 읽기 → 상장 프록시와 비교 → 드라이버 점검 → 결정**. 화면들은 이 루프를 지원하도록 구성됐습니다.
+### Layer 1 — Official anchor (공식 앵커)
+- **EU**: EEX EU ETS 1차 경매 워크북 + 경매 페이지 (공식 웹 플로우)
+- **K-ETS**: KRX ETS Information Platform + KRX Open API 샘플 (`ets_bydd_trd`)
+- **China**: 상하이 환경에너지거래소 일일 개황 + MEE 탄소시장 공시 피드
+- 각 카드에 `fresh / watch / stale` 신선도 뱃지
 
-### Command surface — what you see when you launch
+### Layer 2 — Driver matrix (드라이버 매트릭스)
+시장별 6개 패밀리, 총 ~25개 드라이버. 각 드라이버는 `weight × direction × importance × note + sources[]` 구조.
 
-<p align="center">
-  <img src="docs/images/shot-command-light.png" alt="Command surface — actual screenshot" width="100%"/>
-  <br/><sub><i>Live capture — K-ETS · live tape refresh every 30s · KRX ETS sample API connected</i></sub>
-</p>
+| Family · 패밀리 | What lives here · 들어가는 변수 |
+| --- | --- |
+| Policy supply · 정책 공급 | MSR / TNAC, cap path, allocation share, 4차 기본계획 |
+| Power complex · 전력 복합 | 도매 전기가격, clean spark spread, 풍력 capacity factor |
+| Fuel switching · 연료 전환 | TTF gas, Rotterdam coal, Brent, LNG |
+| Macro & financial · 거시·금융 | 산업생산, 신용 스프레드, 환율, 주가지수 drawdown |
+| Weather & seasonality · 날씨·계절성 | 기온 anomaly, 난방 수요, 강수 |
+| Microstructure · 미시구조 | 경매 커버율, open interest, 거래량 |
 
-The default landing screen answers: **"What should I do today, and why?"** Market strip up top, anchor-vs-tape chart in the centre, decision memo on the right, drivers and source freshness across the bottom.
+각 드라이버의 1차 출처는 EU Commission, EEX, KRX, MEE, ICAP, Nature Energy, ScienceDirect, arXiv 논문 등 검증 가능한 공개 자료에 한정됩니다.
 
-기본 첫 화면은 한 가지 질문에 답합니다 — **"오늘 무엇을 해야 하고, 왜 그런가?"**. 상단에 시장 스트립, 중앙에 앵커 vs 테이프 차트, 우측에 의사결정 메모, 하단에 드라이버와 소스 신선도.
+### Layer 3 — Catalyst combinations (다중-드라이버 촉매 조합)
+**11개 시나리오 — 각 시나리오는 ≥2개 드라이버 조합** (`src/data/catalystScenarios.ts`).
 
-### Drivers, Desk, Sources — the rest of the loop
+대표적인 조합:
+- **EU 한파 스택**: 기온 anomaly + TTF 가스 spike + 풍력 저하 → 석탄→가스 dispatch flip → EUA 수요 비선형 증가 (anchor: 2021 Q4 에너지위기)
+- **EU MSR + Fit-for-55 스택**: MSR 경매 감축 공지 + Fit-for-55 reaffirmation → 구조적 forward scarcity
+- **K-ETS 컴플라이언스 + 얇은 유동성 + 상쇄 대체**: Q1 surrender + KCU/KOC 비중 증가 → 양방 가능 (offset 구조)
+- **K-ETS 정책+환율+유가 스택**: MOE 할당 발표 + KRW 약세 + 원유 급등 → 수입 의존도 증폭
+- **China MEE 업종 확대**: 시멘트·철강·알루미늄 편입 공지 → regime shift
+- **Cross-market multi-commodity 스트레스**: TTF + Brent + DXY + KOSPI 동시 발화 → 단일 드라이버 모델 일시 무효화
 
-<table>
-  <tr>
-    <td width="50%">
-      <img src="docs/images/shot-desk-light.png" alt="Desk surface" width="100%"/>
-      <br/><sub align="center"><b>Desk</b> — single-market deep dive with cross-market context</sub>
-    </td>
-    <td width="50%">
-      <img src="docs/images/shot-drivers-light.png" alt="Drivers surface" width="100%"/>
-      <br/><sub align="center"><b>Drivers</b> — cross-market driver structure heatmap</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <img src="docs/images/shot-sources-light.png" alt="Sources surface" width="100%"/>
-      <br/><sub align="center"><b>Sources</b> — provenance, access method, freshness</sub>
-    </td>
-    <td width="50%" valign="top" style="padding-left:1rem">
-      <p>Each surface answers a different question:</p>
-      <ul>
-        <li><b>Desk</b> — "What does <i>this one market</i> look like right now?"</li>
-        <li><b>Drivers</b> — "Which factors are pushing each ETS this week?"</li>
-        <li><b>Sources</b> — "Where exactly did each datum come from, and how fresh is it?"</li>
-      </ul>
-    </td>
-  </tr>
-</table>
+각 시나리오: `expectedDirection`, `interactionEffect (amplify / offset / regime-shift)`, `playbook`, `historicalAnchor`, 1차 출처 ≥1개.
 
-### Power UX — ⌘K is the entry point for everything
+### Layer 4 — Active patterns 자동 감지 (실시간)
+라이브 카드 데이터에서 4개 신호를 임계치 기반 자동 평가 (`src/lib/catalystTriggerDetector.ts`):
+- **Freshness**: 공식 카드 나이 > 24h
+- **Price-jump**: 5일간 |%변화| ≥ 5%
+- **Volume-jump**: 최근 거래량이 직전 5바 평균의 ≥2배
+- **Proxy-divergence**: 공식 종가 vs 1차 listed proxy |gap| ≥ 4%
 
-<p align="center">
-  <img src="docs/images/shot-cmd-k.png" alt="Command palette filtered to 'theme'" width="100%"/>
-  <br/><sub><i>⌘K opened with "theme" typed — fuzzy-matched to all Appearance commands</i></sub>
-</p>
+검증 가능한 컴포넌트 절반 이상이 동시 발화하면 시나리오가 **`active`**로 표시되고 Drivers 뷰 최상단 "지금 활성 패턴" 패널에 카드로 떠오릅니다.
 
-Press **⌘K** (macOS) or **Ctrl+K** (Windows / Linux) anywhere to open the palette. ~25 commands across 8 groups: theme, language, watchlist, exports, updates, privacy, diagnostics, help.
+### Layer 5 — Empirical calibration (event-study 백테스트)
+19개 인용 가능한 historical event (2018-2025) — MSR 공지, Fit-for-55 발표, ETS revision trilogue, 2021-2022 에너지위기, COVID risk-off, K-ETS 4차 기본계획, MEE 업종 확대 공지 등 — 을 EU/K/CN ETS 월별 가격 anchor에 대해 event-study로 평가해 시나리오별 `multiplier`, `meanAbsReturn`, `hitRate` 산출.
 
-어디서든 **⌘K** / **Ctrl+K** 로 팔레트를 엽니다. 8개 그룹 약 25개 명령 (테마, 언어, 워치리스트, 내보내기, 업데이트, 프라이버시, 진단, 도움말).
+| Calibration status | 의미 |
+| --- | --- |
+| `heuristic` | 임시 상수 (interactionEffect별 1.25 / 1.10 / 0.7) |
+| `backtest` | 이벤트 ≥2개로 walk-forward 평가 완료 — multiplier가 데이터 기반 |
+| `calibrated` | 백테스트 + 모델 오너 검토 사인오프 (현재 0개, governance 정의됨) |
 
-### Light & dark — same data, two skins
+매 push/PR마다 `npm run calibration:check`이 90일 이내 갱신을 강제.
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/images/shot-command-light.png" alt="Light mode" width="100%"/><br/><sub align="center"><b>Claude warm cream (light)</b></sub></td>
-    <td width="50%"><img src="docs/images/shot-command-dark.png" alt="Dark mode" width="100%"/><br/><sub align="center"><b>Warm-dark variant</b></sub></td>
-  </tr>
-</table>
+### Layer 6 — Listed proxy gap (상장 프록시 괴리)
+ICE EUA December, KRBN, KEUA, CO2.L, KCCA — Yahoo 공개 차트로 수집해 공식 앵커와 비교. 괴리가 1년 추세 90백분위를 2세션 연속 넘으면 정보 누설 신호로 표시.
 
-Toggle via the floating button (bottom-right) or ⌘K → "Theme: Dark". Set "Match system" to follow the OS-level `prefers-color-scheme`.
+### Layer 7 — Materials & abatement atlas (장기 수급 변화)
+10개 항목 — 아민 PCC, MOF, DAC, 그린수소, 수소환원철, 저클링커 시멘트, 바이오차, BECCS, 재생전력 LCOE — IPCC AR6 / IEA / IRENA / GCCA / ICVCM / Verra 1차 보고서 인용. 비용 범위·readiness가 바뀌면 장기 배출권 수요 곡선이 흔들리는 효과를 모니터.
 
-우하단 플로팅 버튼 또는 ⌘K → "Theme: Dark"로 토글. "Match system"으로 OS 설정을 따라가게 할 수 있습니다.
+### Layer 8 — Public-data feeds (확장 가능한 외부 데이터)
+- **FRED** (St. Louis Fed) — 무료 API key gating, `fetchSeries()` 실제 호출
+- **ECB SDW** — 키 불필요, CSV/JSON 공개
+- **ICAP Allowance Price Explorer** — 공개 dashboard 연결
+- **World Bank Carbon Pricing Dashboard** — 장기 cross-jurisdiction 비교
 
-### Watchlist — pin the views you keep coming back to
-
-<p align="center">
-  <img src="docs/images/shot-watchlist-drawer.png" alt="Watchlist drawer with one pinned K-ETS view" width="100%"/>
-  <br/><sub><i>One K-ETS · command view pinned · click the row to restore</i></sub>
-</p>
-
-⌘K → **"Pin current view to watchlist"** to bookmark a market + surface combination. ⌘K → **"Open watchlist"** to bring back the drawer and click any row to restore.
-
-⌘K → **"Pin current view to watchlist"** 로 시장 + 화면 조합을 북마크. ⌘K → **"Open watchlist"** 로 드로어를 열고 행 클릭으로 즉시 복원.
-
-➡️ **More walkthroughs (workflows, exports, drag-and-drop CSV, troubleshooting):** [docs/USAGE.md](docs/USAGE.md)
-➡️ **워크플로우, 내보내기, CSV 드래그앤드롭, 트러블슈팅 등 자세한 가이드:** [docs/USAGE.md](docs/USAGE.md)
+Institutional 어댑터 (Refinitiv / Bloomberg / ICE / EEX)는 라이센스 게이트 — 자격증명 미설정 시 `not-configured` 상태만 노출, 절대 가짜 가격 추정하지 않음.
 
 ---
 
-## What it does
+## buy / hold / reduce를 어떻게 산출하는가 / How the posture is derived
 
-- Reads the **official anchor** for each ETS first
-  - EU: EEX EU ETS auctions (workbook + auction page)
-  - Korea: KRX ETS information platform + KRX Open API sample
-  - China: MEE carbon-market release feed + Shanghai Environment & Energy daily bulletin
-- Brings **listed proxies and hedge benchmarks** into the app via public
-  chart APIs (ICE EUA front-month, KRBN, KEUA, CO2.L, KCCA, TTF, Brent)
-- Builds a **decision pack**: gap, recent co-movement, direction match,
-  source freshness, driver map, scenario weights
-- Keeps the **driver categorization** and **trust boundary** visible —
-  every metric carries its access method and last-verified timestamp
-- Offers a **command palette** (`⌘K` / `Ctrl K`) that can flip theme,
-  switch language, export PDF/CSV/Markdown, pin views, check for
-  updates, and open the local data folder
-- Persists **theme**, **locale**, **window state**, **watchlist**, and
-  **backtest archives** across launches in `<userData>/`
+```
+        Layer 1 (공식 앵커)         ┐
+              ↓                       │
+        Layer 2 (드라이버 가중치) ──→ buildForecast(scenarioState)
+              ↓                       │      └→ score = Σ(weight × direction × user_input)
+        Layer 3+5 (시나리오 + multiplier) ──→ scoreScenarioFromDriverWeights(s, weights, m)
+              ↓                       │
+        Layer 4 (활성 트리거)      ──→ "지금 활성 패턴" 패널에 카드
+              ↓                       │
+        Layer 6 (프록시 gap)       ──→ regime-shift 신호
+              ↓                       │
+        Layer 8 (외부 매크로)      ──→ 추가 검증
+              ↓                       ┘
+        Posture = sign(weighted score)
+                  Confidence = clamp(0.2..0.95) of magnitude × active-driver coverage
+                  Decision memo = top driver contributions + counter-evidence
+```
 
-## Design principles
+**핵심 원칙**: 모든 출력에 `calibrationStatus` (heuristic / backtest / calibrated)와 1차 출처가 따라옵니다. 신호가 더 강하다고 더 진하게 표시되지 않고, **출처가 더 단단해야** 더 진하게 표시됩니다.
 
-| Principle            | How it shows up                                                                 |
-| -------------------- | ------------------------------------------------------------------------------- |
-| Official first       | Every market view starts from the official anchor; vendor proxies sit below it  |
-| Show freshness       | Every datum carries its access method and timestamp                             |
-| No brokerage         | The product can describe and compare; it does not route or settle               |
-| Explain, then signal | A posture is only shown after the drivers and counter-evidence that produced it |
+**Core principle**: every output carries a `calibrationStatus` and a primary source. A signal is weighted by **how well-cited it is**, not by how loud it sounds.
 
-## Screens
+---
 
-| Surface     | What you see                                                                                   |
-| ----------- | ---------------------------------------------------------------------------------------------- |
-| **Command** | Cross-market board, official anchor, live comparison tape, posture, score build, decision memo |
-| **Desk**    | Single-market deep dive: anchor, hedge tape, drivers, scenario weights                         |
-| **Drivers** | Cross-market factor heatmap, market-specific driver table, indicators worth running            |
-| **Sources** | Source method, freshness, in-app benchmark catalogue, input coverage, source-trust registry    |
+## 의사결정 화면 흐름 / The decision flow on screen
+
+<p align="center">
+  <img src="docs/images/decision-flow.svg" alt="Anchor → Compare → Drivers → Decide" width="100%"/>
+</p>
+
+매 세션은 같은 4단계: **공식 앵커 읽기 → 상장 프록시와 비교 → 드라이버·시나리오 점검 → posture 결정**.
+
+Every session walks the same four steps: **read the official anchor → compare with the listed proxy → check the drivers and active scenarios → decide the posture**.
+
+### Command — "오늘 무엇을 해야 하고, 왜 그런가?"
+<p align="center">
+  <img src="docs/images/shot-command-light.png" alt="Command surface — actual capture" width="100%"/>
+</p>
+
+상단 시장 스트립(EU/KR/CN) → 중앙에 anchor vs 프록시 차트 → 우측에 의사결정 메모 (posture + 신뢰도 + support/risk 불릿) → 하단에 강한 드라이버 5개와 신선도 칩.
+
+### Drivers — "어떤 신호가 지금 발화하고 있는가?"
+<p align="center">
+  <img src="docs/images/shot-drivers-light.png" alt="Drivers surface" width="100%"/>
+</p>
+
+이 화면이 **C-Quant의 핵심**입니다. 위에서 아래로:
+1. **Decision-support boundary** 고지 (이건 calibrated 가격 예측기가 아님)
+2. **지금 활성 패턴** — 라이브 데이터에서 임계치를 넘은 시나리오 카드들
+3. **Catalyst combinations** — 11개 시나리오, 현재 드라이버 가중치로 정렬된 점수
+4. **Materials & abatement atlas** — 장기 수급 변화 포인터
+5. **Institutional feeds 상태** — Refinitiv/Bloomberg/ICE/EEX 라이센스 게이트
+6. **Calibration provenance** — 시나리오별 multiplier + observations + hit-rate + status
+7. **Event timeline** — 19개 historical event, 1차 출처 클릭 가능
+8. **Public-data feeds 상태** — FRED/ECB SDW/ICAP/World Bank
+9. **Driver families heatmap** — 시장 비교
+
+### Desk — "이 시장 한 군데를 깊게 보고 싶다"
+<p align="center">
+  <img src="docs/images/shot-desk-light.png" alt="Desk surface" width="100%"/>
+</p>
+
+특정 시장(EU/K/CN) 하나에 집중하면서 anchor vs hedge tape 차트, 범위·상관성 테이블, 시나리오 가중치 슬라이더를 한 화면에. 시장별 brief 작성 시 사용.
+
+### Sources — "이 데이터의 출처는 어디고, 얼마나 신선한가?"
+<p align="center">
+  <img src="docs/images/shot-sources-light.png" alt="Sources surface" width="100%"/>
+</p>
+
+모든 1차 출처의 access method, 신선도, in-app 벤치마크 카탈로그, 입력 커버리지, 신뢰 레지스트리. 컴플라이언스 검토 시 첫 번째로 보는 화면.
+
+➡️ 화면별 자세한 사용법: [docs/USAGE.md](docs/USAGE.md)
+➡️ Screen-by-screen walkthrough: [docs/USAGE.md](docs/USAGE.md)
+
+---
+
+## What it does NOT do (경계 / boundary)
+
+| 영역 · Area | 상태 · State |
+| --- | --- |
+| 주문 라우팅·체결 · Order routing / execution | **NO** — 라이센스 브로커 사용 |
+| 자산 수탁·결제 · Custody / settlement | **NO** — 라이센스 레지스트리·커스터디언 |
+| 개별 매수/매도 권유 · Individualized buy/sell recommendations | **NO** — 운영자 판단 + 컴플라이언스 |
+| 1차 공시 대체 · Replacement for primary disclosure | **NO** — 원문 직접 사용 |
+| 라이센스 데이터 위조 · Fabricated institutional pricing | **NO** — 미설정 어댑터는 `not-configured` 상태만 노출 |
+| 인용 위조 · Fabricated citations | **NO** — DOI / blog / vendor URL 추측 금지 |
+
+관할권별 컴플라이언스 노트:
+- [docs/COMPLIANCE.md](docs/COMPLIANCE.md) — 일반 경계와 calibration governance
+- [docs/COMPLIANCE-EU.md](docs/COMPLIANCE-EU.md) — MiFID II / MAR / BMR / CSRD
+- [docs/COMPLIANCE-KR.md](docs/COMPLIANCE-KR.md) — 자본시장법 / 온실가스 배출권 거래법 / PIPA
+- [docs/COMPLIANCE-CN.md](docs/COMPLIANCE-CN.md) — Securities Law / PIPL / Provisional Carbon Trading Regulations
+- [docs/MODEL_CARD.md](docs/MODEL_CARD.md) — 모델 카드 (입력·출력·한계·갱신 규칙)
+
+---
 
 ## Quick start
 
-> Requires **Node 24** (see `.nvmrc`) and **Windows 10/11** for the
-> primary build target. macOS and Linux builds are advisory.
+> Node 24 (`.nvmrc` 참조) + Windows 10/11 권장. macOS / Linux 빌드는 advisory.
+> Requires Node 24 (see `.nvmrc`) and Windows 10/11 as the primary target. macOS / Linux are advisory.
 
 ```powershell
-nvm use            # Picks up .nvmrc
+nvm use
 npm install
-cp .env.example .env   # Optional — only when you have your own keys/DSN
-npm run dev
+npm run dev          # Vite + Electron
 ```
 
-`npm run dev` starts Vite on `http://localhost:5173` and Electron
-against it. The first build can be slow because of the variable-font
-woff2 emit; subsequent dev cycles are fast.
-
-## Quality gates
-
-Run locally before opening a PR:
-
-```bash
-npm run type-check       # tsc --noEmit
-npm run lint             # eslint flat config
-npm run format           # prettier --write
-npm test                 # vitest
-npm run test:node        # node:test (legacy localization suite)
-npm run test:all         # both runners
-npm run build            # type-check + vite build
-npm run bundle:check     # enforce bundle budgets
-npm run e2e              # Playwright Electron smoke
-```
-
-CI runs the same gates on Windows, macOS, and Linux for every push and
-PR. macOS and Linux are advisory until cross-platform packaging
-stabilizes.
-
-## Build & distribute
-
-### Download v1.0.0 directly
-
-Latest release: [**v1.0.0**](https://github.com/hyunjin-kor/C-Quant/releases/tag/v1.0.0)
-
-| Asset                        | When to pick it                                                                |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `C-Quant-1.0.0-portable.exe` | Zero-install, double-click to run. Settings persist under `%APPDATA%\C-Quant\` |
-| `C-Quant-Setup-1.0.0.exe`    | Standard NSIS installer. Wires the in-app auto-updater for future releases     |
-
-> SmartScreen will warn on first launch (the 1.0 binary is not yet code-signed) — click **More info → Run anyway**.
-> 첫 실행 시 SmartScreen 경고가 뜹니다 (1.0은 아직 코드사이닝되지 않음). **추가 정보 → 실행** 누르면 됩니다.
-
-### Local artifacts
+배포 빌드 / Distribution build:
 
 ```powershell
-npm run package:portable   # C-Quant-X.Y.Z-portable.exe
-npm run package:nsis       # C-Quant-Setup-X.Y.Z.exe + latest.yml + .blockmap
-npm run package:mac        # macOS dmg + zip (x64 + arm64)
-npm run package:linux      # Linux AppImage + deb
+npm run package:portable     # C-Quant-X.Y.Z-portable.exe
+npm run package:nsis         # C-Quant-Setup-X.Y.Z.exe (auto-update wired)
 ```
 
-### Production release flow
+릴리즈 자산은 [Releases](https://github.com/hyunjin-kor/C-Quant/releases) 페이지에 게시됩니다. SmartScreen 첫 실행 경고는 **추가 정보 → 실행**.
 
-1. **Sign**: provide certs via env (Windows: `CSC_LINK` +
-   `CSC_KEY_PASSWORD`. macOS: `CSC_NAME` + Apple notarization vars).
-   See [`.env.example`](.env.example).
-2. **Build & publish**: `npm run package:portable` (or any platform)
-   with `GH_TOKEN` set so electron-builder uploads the artifacts to a
-   GitHub release.
-3. **Auto-update** picks up the release feed on the next launch and
-   prompts the user via the in-app update banner.
+---
 
-`docs/ARCHITECTURE.md` has the full process model and the operator
-checklist for what needs to be configured externally (DSNs, certs,
-update feed).
-
-## Power UX
-
-| Action                               | Shortcut                                       |
-| ------------------------------------ | ---------------------------------------------- |
-| Command palette                      | `⌘K` / `Ctrl+K`                                |
-| Toggle theme                         | Bottom-right floating button or palette        |
-| Toggle language                      | Palette: "한국어로 전환" / "Switch to English" |
-| Pin current view                     | Palette: "Pin current view to watchlist"       |
-| Open watchlist                       | Palette: "Open watchlist"                      |
-| Open backtest archive                | Palette: "Open backtest archive"               |
-| Export view as PDF                   | Palette: "Export current view as PDF"          |
-| Export diagnostics as CSV / Markdown | Palette: same group                            |
-| Drop a CSV onto the window           | Anywhere — the app intercepts and validates    |
-| Reduced motion                       | Palette: "Motion: reduce animations"           |
-
-Skip-to-content link, focus rings on every interactive surface, and
-`prefers-reduced-motion` are all wired.
-
-## Data layer
-
-### Official sources
-
-| Market    | Anchor                                                                        |
-| --------- | ----------------------------------------------------------------------------- |
-| EU ETS    | EEX EU ETS primary auction workbook + auction page                            |
-| K-ETS     | KRX ETS information platform + KRX Open API sample (`ets_bydd_trd`)           |
-| China ETS | MEE carbon-market release feed + Shanghai Environment & Energy daily overview |
-
-### Linked tapes (proxies, not official settlement)
-
-ICE EUA December benchmark, KRBN, KEUA, CO2.L, KCCA, Dutch TTF gas,
-Brent — pulled via public chart endpoints and labeled as proxies.
-
-### Cache + rate limits
-
-`electron/cache.js` caps the live-source cache at 256 entries with
-per-key TTL (10 min for EU cards, 12 h for KRX day data, 30 s for
-quotes). Expired entries are pruned lazily on overflow before LRU
-eviction.
-
-KRX uses a public sample key by default. Override with your registered
-key:
+## 검증 / Quality gates
 
 ```bash
-CQUANT_KRX_AUTH_KEY=your-real-key
+npm run type-check           # tsc --noEmit
+npm run lint                 # ESLint flat config
+npm test                     # vitest — 22 files, 185 tests
+npm run test:node            # node:test — 53 localization tests
+npm run build                # type-check + vite build
+npm run ci:verify            # syntax check all electron entrypoints + scripts
+npm run calibration:check    # 시나리오 calibration 90일 신선도 강제
+npm run bundle:check         # 번들 size budget
+npm run e2e                  # Playwright Electron smoke
 ```
 
-## Privacy stance
+CI는 push/PR마다 위 항목 전체를 Windows·macOS·Linux에서 실행. macOS/Linux는 cross-platform 패키징 안정화 전까지 advisory.
 
-- **No telemetry by default.** The app runs locally and does not contact
-  any analytics server unless the operator explicitly configures one.
-- `@sentry/electron` is loaded but inactive without `CQUANT_SENTRY_DSN`.
-- `electron/analytics.js` requires _both_ a user opt-in
-  (`analyticsEnabled` setting) and `CQUANT_ANALYTICS_ENDPOINT` env var
-  before it sends anything.
-- Crash reports from `crashReporter` are local-only.
-- KRX, EEX, MEE, and Yahoo Finance receive only the request you would
-  make if you visited their pages directly. Cookies are not persisted
-  across sessions for those domains.
+---
 
-See [SECURITY.md](SECURITY.md) for the full threat model.
+## 기술 스택 / Tech
 
-## Project meta
+- **Electron 41** + **React 19** + **TypeScript 6** + **Vite 8**
+- **Vitest 2** (185 unit tests) + **Playwright** (E2E smoke) + **node:test** (localization)
+- **electron-builder** (portable + NSIS Windows, dmg/zip macOS, AppImage/deb Linux)
+- **electron-updater** + Sentry (DSN-gated, opt-in)
+- 한글 지원: Pretendard variable font, 한국 숫자 단위(만 / 억 / 조)
 
-- **Usage guide**: [docs/USAGE.md](docs/USAGE.md) — screen-by-screen walkthrough with diagrams
-- **License**: [MIT](LICENSE) (third-party deps keep their own)
-- **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
-- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Security**: [SECURITY.md](SECURITY.md)
-- **Agent / Claude operating notes**: [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md)
-- **Open-source benchmarks we borrow patterns from**: [docs/open-source-benchmark-map.md](docs/open-source-benchmark-map.md)
+전체 모듈 맵 / Full module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+---
+
+## 프로젝트 메타 / Project meta
+
+| 문서 | 내용 |
+| --- | --- |
+| [docs/USAGE.md](docs/USAGE.md) | 화면별 사용 가이드 |
+| [docs/MODEL_CARD.md](docs/MODEL_CARD.md) | 모델 카드 (입출력·한계·갱신 규칙) |
+| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | 일반 컴플라이언스 + calibration governance |
+| [docs/COMPLIANCE-EU.md](docs/COMPLIANCE-EU.md) | EU 관할권 (MiFID II / MAR / BMR / CSRD) |
+| [docs/COMPLIANCE-KR.md](docs/COMPLIANCE-KR.md) | 한국 관할권 (자본시장법 / 배출권 거래법 / PIPA) |
+| [docs/COMPLIANCE-CN.md](docs/COMPLIANCE-CN.md) | 중국 관할권 (Securities Law / PIPL / Carbon Trading) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 프로세스·모듈 맵 |
+| [CHANGELOG.md](CHANGELOG.md) | 변경 이력 |
+| [SECURITY.md](SECURITY.md) | Threat model |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 기여 가이드 |
+| [LICENSE](LICENSE) | MIT |
 
 ### Process architecture
 
@@ -303,50 +279,22 @@ See [SECURITY.md](SECURITY.md) for the full threat model.
   <img src="docs/images/architecture.svg" alt="Process architecture: main, preload, renderer" width="100%"/>
 </p>
 
-Three execution contexts, one IPC perimeter, all persistence under
-`<userData>`. The full module map and provider tree live in
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+세 실행 컨텍스트 (main / preload / renderer), 단일 IPC 경계, 모든 영속화는 `<userData>` 아래.
+Three execution contexts, one IPC perimeter, all persistence under `<userData>`.
 
-세 실행 컨텍스트, 단일 IPC 경계, 모든 영속화는 `<userData>` 아래.
-전체 모듈 맵과 프로바이더 트리는
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+---
 
 ## Truth boundary
 
-- If an official public API is not confirmed, the app labels the source
-  as an **official web flow** or **official file** instead of pretending
-  it is an API.
-- If a listed tape is only available as a public chart feed, the app
-  labels it as a **linked tape** or **proxy** and keeps the official
-  carbon source separate.
-- Scenario and signal outputs are constrained to evidence-backed
-  research support and must not fabricate official facts or behave like
-  execution assistance.
-- China ETS daily exchange pages can be rate-limited or blocked in some
-  environments, so the official China layer remains bulletin-first
-  unless a stable official feed is reachable.
+- 공식 공개 API가 확인되지 않은 출처는 `Public API`가 아닌 `Official Web` 또는 `Official File`로 라벨.
+- 상장 테이프가 공개 차트 피드로만 확보되면 **listed proxy** 또는 **linked tape**로 라벨하고 공식 탄소 출처와 분리.
+- 시나리오·신호 출력은 evidence-backed research support로 제한되며, 공식 사실을 위조하거나 execution assistance처럼 행동하지 않음.
+- 중국 ETS 일일 거래소 페이지는 일부 환경에서 rate-limit/차단될 수 있어, 안정적 공식 피드가 닿기 전까지 China 레이어는 bulletin-first.
+- Institutional 피드 어댑터 (Refinitiv / Bloomberg / ICE / EEX)는 라이센스 미설정 시 `not-configured` 상태만 노출하고 가격을 추정하지 않음.
+- Materials atlas의 비용·잠재력 수치는 모두 **범위로 인용**, 모든 entry는 초기 `verified: false` — 운영자 직접 검증 후에만 "Verified" 뱃지.
 
-## Autonomous loop (developer-side, optional)
+---
 
-The repo includes a persistent autonomy framework so repeated
-development rounds do not have to rediscover context. See
-[`docs/autonomy-state.md`](docs/autonomy-state.md). The autonomy monitor
-is a separate local web app at `http://127.0.0.1:4781`; it is **not**
-part of the shipped product.
+## License
 
-```powershell
-npm run autonomy:monitor:open   # opens the dashboard in a browser
-npm run autonomy:cycle          # one verification cycle
-npm run autonomy:status         # current loop state
-```
-
-## Limits
-
-- Yahoo Finance data can be exchange-delayed. C-Quant labels each linked
-  tape with its delay note; do not read it as live settlement.
-- Local ETS futures are not added unless a verified free feed is
-  available; where needed the app labels listed proxies as proxies.
-- `npm audit` flags issues in transitive dev dependencies of
-  electron-builder. Re-evaluate before each release; do not run
-  `npm audit fix --force` casually because some of those flags are
-  Linux-only or have no fix path yet.
+[MIT](LICENSE) — third-party deps keep their own licenses.

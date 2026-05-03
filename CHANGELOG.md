@@ -6,6 +6,162 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 _Nothing in flight._
 
+## [1.2.0] — 2026-05-04
+
+A decision-support release. v1.1 was a monitoring desk; v1.2 turns it
+into an active decision-support tool with citable historical
+calibration, real-time trigger detection, free public-data feeds, and
+honest jurisdictional compliance documentation.
+
+### Added — research depth & calibration governance
+
+- **Catalyst combinations layer** (`src/data/catalystScenarios.ts`,
+  `src/types.ts`). 11 multi-driver scenarios across EU ETS / K-ETS /
+  China ETS / shared markets, each with explicit components, threshold
+  triggers, interaction effect, playbook, historical anchor, and
+  primary-source citations.
+- **Materials & abatement atlas** (`src/data/materialsResearch.ts`).
+  10 entries (CCUS amine, MOF, DAC, green H₂, H₂-DRI steel, low-clinker
+  cement, biochar, AFOLU, BECCS, renewable LCOE) with IPCC AR6 / IEA /
+  IRENA / GCCA / ICVCM / Verra references. All entries
+  `verified: false` until human review.
+- **Walk-forward backtest framework** (`src/lib/walkForward.ts`).
+  Generic harness: `runWalkForward`, `samplesFromPriceSeries`,
+  `makeBaselineDirectionalModel`. No fabricated historical features.
+- **Event study library** (`src/lib/eventStudy.ts`). `evaluateEvent`,
+  `aggregateByScenario`, `runEventStudy` for empirical multiplier
+  estimation from a labeled event log.
+- **Curated catalyst event log** (`src/data/catalystEventLog.ts`). 19
+  citable historical events 2018-2025 (MSR notices, Fit-for-55, ETS
+  revision, energy crises, COVID risk-off, K-ETS basic plans, MEE
+  bulletins, listed-proxy divergences). Each event tagged with
+  `verified` / `reported` / `context` confidence and a primary-source
+  URL.
+- **Bundled historical price anchors** (`src/data/historicalPriceAnchors.ts`).
+  Monthly closing-level anchors for EU / K / CN ETS drawn from public
+  press coverage, used only by the event study. Updating an entry
+  requires a CHANGELOG note.
+- **Catalyst calibration table** (`src/data/catalystCalibration.ts`).
+  Pure, deterministic event-study output per scenario:
+  `multiplier`, `status`, `observations`, `meanAbsReturn`, `hitRate`,
+  `reviewedAt`, `notes`.
+- **Layered interaction multiplier resolver**
+  (`getInteractionMultiplier` in `catalystCalibration.ts`). Resolution
+  order: explicit per-scenario value → backtest-derived → heuristic
+  constant. Status returned reflects which layer was used.
+- **Institutional feed adapter pattern**
+  (`electron/institutionalFeeds.js`). License-gated adapters for
+  Refinitiv, Bloomberg, ICE Consolidated, EEX. Returns
+  `not-configured` when env vars missing; never fabricates data.
+- **Free public-data feeds** (`electron/freeFeeds.js`). Real fetch
+  implementations for FRED (key-gated) and ECB Statistical Data
+  Warehouse (open). ICAP and World Bank dashboards exposed as
+  documented entry URLs.
+- **Renderer surfaces** in the Drivers view: catalyst combinations,
+  materials atlas, institutional feeds status, free-feed status,
+  calibration provenance table, event timeline. Plus an honest
+  "Decision-support boundary" notice.
+
+### Added — documentation & governance
+
+- `docs/MODEL_CARD.md` — model card with intended-use / out-of-scope,
+  inputs/outputs, known limitations, maintenance rules.
+- `docs/COMPLIANCE.md` — boundary statement, data sources, citation
+  policy, telemetry, license-gated feed table, calibration governance,
+  operator deployment checklist.
+- `docs/COMPLIANCE-EU.md`, `docs/COMPLIANCE-KR.md`,
+  `docs/COMPLIANCE-CN.md` — jurisdictional compliance notes against
+  MiFID II / MAR / BMR / CSRD (EU), Capital Markets Act / GHG Emission
+  Trading Act / PIPA (KR), Securities Law / PIPL / Provisional
+  Regulations on Carbon Trading (CN).
+
+### Added — tooling
+
+- `scripts/check-calibration-freshness.mjs` + `npm run calibration:check`.
+  Regex-based freshness audit that exits non-zero when a calibration
+  timestamp exceeds the configured threshold (default 90 days).
+- `npm run ci:verify` extended to syntax-check
+  `electron/institutionalFeeds.js`, `electron/freeFeeds.js`, and the
+  freshness script.
+
+### Tests
+
+- `tests/catalystScenarios.test.ts` — schema, citation hygiene,
+  calibrationStatus completeness, layered multiplier resolver,
+  materials-atlas ranking.
+- `tests/walkForward.test.ts` — sample construction, training-window
+  guards, perfect-hit case, noise-floor flat classification, default
+  fit.
+- `tests/institutionalFeeds.test.js` — env-gated status per adapter,
+  registry listing, fetchQuote refusal when not ready, unknown-id
+  guard.
+- `tests/eventStudy.test.ts` — pre/post window arithmetic, hit
+  classification by expected sign, scenario aggregation, multiplier
+  clamping.
+- `tests/freeFeeds.test.js` — adapter shape, status with/without
+  FRED key, registry listing, error handling.
+
+### Added — real-time decision support (Drivers view)
+
+- **Catalyst trigger detector** (`src/lib/catalystTriggerDetector.ts`).
+  Live `ConnectedSourcePayload` is auto-evaluated against four signal
+  types: freshness (card age > 24h), price-jump (5d |%| ≥ 5%),
+  volume-jump (latest bar ≥ 2× trailing 5-bar mean), proxy-divergence
+  (|gap| ≥ 4%). Components mapped to signal types via family/variable
+  classification; unmatched stay "untestable" rather than guessed.
+- **"지금 활성 패턴" panel** at the top of the Drivers view. Surfaces
+  the scenarios where ≥ half the testable components fired, with the
+  observed value vs threshold per component.
+- **Real Korean localizations** for ~60 newly introduced UI strings
+  (Decision-support boundary, Catalyst combinations, Materials atlas,
+  Institutional feeds, Calibration provenance, Event timeline,
+  Public-data feeds, Active patterns).
+
+### Added — UI/UX overflow fixes
+
+- `.section-header`, `.registry-card`, `.registry-method`,
+  `.registry-meta` button, `.bullet-list li`, `.board-meta-row`,
+  `.freshness-badge`, `.stance-pill`, `.button.small`, `.driver-row`
+  all gained `min-width: 0` + `overflow-wrap: anywhere` /
+  `word-break: keep-all` to handle long Korean strings without
+  bursting cards or layouts.
+- Responsive grid switched to `repeat(auto-fit, minmax(280px, 1fr))`
+  for `.registry-grid` / `.module-grid`. Added a 720px breakpoint
+  that stacks `.section-header` and `.workspace-head` vertically.
+- `.driver-head` is hidden below 1180px so the table reflows cleanly
+  to a card stack.
+
+### Added — CI + release governance
+
+- `.github/workflows/ci.yml` extended with a Calibration freshness
+  check step.
+- README rewritten end-to-end with a decision-support framing.
+  Headline question is now "buy / hold / reduce carbon allowances?"
+  and the eight signal layers are enumerated. Trivial sections
+  (light/dark skin, watchlist drawer, command palette feature tour)
+  removed in favour of the signal-stack story.
+
+### Tests
+
+- `tests/catalystEventLog.test.ts` — schema, citation hygiene,
+  market-scenario mapping.
+- `tests/eventStudy.test.ts` — pre/post window arithmetic, hit
+  classification, multiplier clamping.
+- `tests/catalystCalibration.test.ts` — deterministic build, multi-layer
+  resolver, backtest promotion.
+- `tests/catalystTriggerDetector.test.ts` — freshness / price-jump
+  classification, active-ratio threshold, untestable handling.
+
+### Verification
+
+- type-check: clean
+- vitest: 22 files / 185 tests
+- node:test: 53 / 53
+- eslint: 0 errors / 0 warnings
+- build: clean (361 kB / 109 kB gzip)
+- ci:verify: clean
+- calibration:check: clean (1d age)
+
 ## [1.1.0] — 2026-04-30
 
 First minor after the 1.0 cut. Adds the four "always-on desk" features

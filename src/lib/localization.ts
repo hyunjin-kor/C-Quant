@@ -518,7 +518,124 @@ const KO_EXACT: Record<string, string> = {
   "Track project status, issuance, transfer, retirement, and Article 6 labeling on Gold Standard credits.":
     "Gold Standard 크레딧의 프로젝트 상태, 발행, 이전, 소각, Article 6 라벨링을 추적합니다.",
   "The registry gives a public lifecycle record for issued credits and supports diligence, retirement trace, and disclosure checks.":
-    "이 레지스트리는 발행된 크레딧의 공개 라이프사이클 기록을 제공하며 실사, 소각 추적, 공시 점검을 지원합니다."
+    "이 레지스트리는 발행된 크레딧의 공개 라이프사이클 기록을 제공하며 실사, 소각 추적, 공시 점검을 지원합니다.",
+
+  // Decision-support boundary panel
+  "Decision-support boundary": "Decision-support 경계",
+  "Decision-support": "의사결정 보조",
+  "This is decision-support, not a calibrated price predictor":
+    "이것은 의사결정 보조 도구이며, 보정된 가격 예측기가 아닙니다",
+  "C-Quant blends a research-backed weighted score with official anchors and observable time series. Until backtesting, walk-forward validation, institutional feeds, and compliance review are wrapped around it, treat the output as a reasoning aide, not a price target.":
+    "C-Quant는 리서치 기반 가중 점수를 공식 앵커 및 관측 가능한 시계열과 결합합니다. 백테스트, walk-forward 검증, institutional 피드, 컴플라이언스 검토가 둘러싸이기 전까지는 출력을 추론 보조로만 다루고, 가격 목표로 간주하지 마세요.",
+  "Use as a reasoning aide alongside official records":
+    "공식 기록과 함께 추론 보조 도구로 사용",
+
+  // Catalyst combinations panel
+  "Catalyst combinations": "촉매 조합",
+  "What changes when more than one driver fires together":
+    "두 개 이상의 드라이버가 동시에 발화할 때 무엇이 바뀌는가",
+  "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by your current driver weights.":
+    "단일 이벤트는 드뭅니다. 대부분의 ETS 체제 전환은 두 개 이상 드라이버의 동시 발화에서 옵니다. 아래 각 행은 단일 이벤트가 아닌 리서치 기반 조합이며, 현재 드라이버 가중치에 따른 점수로 정렬됩니다.",
+  Ambiguous: "양방 가능",
+  Amplifies: "증폭",
+  Offsets: "상쇄",
+  "Regime shift": "체제 전환",
+  Common: "자주 발생",
+  Rare: "드뭄",
+  Tightens: "긴축",
+  Loosens: "완화",
+  Context: "참고",
+  Interaction: "상호작용",
+  Playbook: "플레이북",
+  "Historical anchor": "과거 앵커",
+  "Current driver-weighted score": "현재 드라이버 가중 점수",
+
+  // Materials atlas
+  "Materials & abatement atlas": "자재·감축 아틀라스",
+  "How material and process readiness shifts long-horizon allowance demand":
+    "자재·공정 성숙도가 장기 배출권 수요를 어떻게 바꾸는가",
+  "These entries are decision pointers, not direct price inputs. Cost ranges and abatement potentials trace back to the named primary report (IPCC, IEA, IRENA, NETL, ICVCM). Verify the underlying report before quoting any single number.":
+    "이 항목들은 의사결정 포인터이며 직접적인 가격 입력이 아닙니다. 비용 범위와 감축 잠재력은 명시된 1차 보고서(IPCC, IEA, IRENA, NETL, ICVCM)로 추적됩니다. 어떤 단일 수치든 인용하기 전에 원문을 확인하세요.",
+  Lab: "실험실",
+  Pilot: "파일럿",
+  "Early deploy": "초기 배치",
+  "At scale": "상용",
+  Verified: "검증됨",
+  "Pending review": "검토 대기",
+  "Abatement potential": "감축 잠재력",
+  "Cost per tCO2": "톤당 비용",
+  "Market relevance": "시장 연관성",
+
+  // Institutional feeds panel
+  "Institutional feeds": "Institutional 피드",
+  "License-gated providers (status, never fabricated data)":
+    "라이센스 기반 제공자 (상태만 노출, 데이터를 임의 생성하지 않음)",
+  "Refinitiv, Bloomberg, ICE, and EEX adapters return status only. When credentials are not configured, the panel shows where to license the feed. No price is ever inferred when an adapter reports not-configured.":
+    "Refinitiv, Bloomberg, ICE, EEX 어댑터는 상태만 반환합니다. 자격증명이 설정되지 않으면 피드 라이센스 경로를 안내합니다. 어댑터가 not-configured 상태일 때 가격은 절대 추정되지 않습니다.",
+  "Desktop bridge": "데스크톱 브릿지",
+  "Run inside Electron to see live adapter status":
+    "라이브 어댑터 상태를 보려면 Electron 안에서 실행하세요",
+  "The browser preview cannot reach the institutional feed registry. Build the desktop app to see configured adapters.":
+    "브라우저 미리보기는 institutional 피드 레지스트리에 접근할 수 없습니다. 데스크톱 앱을 빌드해 설정된 어댑터를 확인하세요.",
+  Ready: "준비됨",
+  "Not configured": "미설정",
+  "Open license docs": "라이센스 문서 열기",
+
+  // Calibration provenance panel
+  "Calibration provenance": "캘리브레이션 출처",
+  "Each catalyst multiplier traces back to its calibration status":
+    "각 촉매 multiplier는 캘리브레이션 상태로 추적됩니다",
+  "Heuristic = placeholder. Backtest = tuned via walk-forward. Calibrated = backtested and reviewed. The walk-forward harness lives in src/lib/walkForward.ts and runs against caller-supplied historical features (no fabricated panels are bundled).":
+    "Heuristic = 임시값. Backtest = walk-forward로 튜닝. Calibrated = 백테스트 후 검토 완료. walk-forward 하니스는 src/lib/walkForward.ts에 있으며 호출자가 제공한 과거 feature에 대해 실행됩니다(가짜 패널은 번들되지 않음).",
+  Effect: "효과",
+  Multiplier: "Multiplier",
+  Calibrated: "검교정",
+  Backtest: "백테스트",
+  Heuristic: "임시값",
+
+  // Event timeline
+  "Event timeline": "이벤트 타임라인",
+  "Citable historical events the calibration uses":
+    "캘리브레이션이 사용하는 인용 가능한 과거 이벤트",
+  "Every event references a public primary source. The calibration table aggregates these events into per-scenario empirical multipliers. Operators must verify each entry before quoting it in regulated reporting.":
+    "모든 이벤트는 공개 1차 출처를 참조합니다. 캘리브레이션 테이블은 이 이벤트들을 시나리오별 실증 multiplier로 집계합니다. 규제 보고에 인용하기 전에 운영자가 각 항목을 검증해야 합니다.",
+  Date: "일자",
+  Event: "이벤트",
+  Reported: "보도",
+
+  // Free public-data feeds panel
+  "Public-data feeds": "공개 데이터 피드",
+  "Free, license-free providers wired in alongside institutional adapters":
+    "Institutional 어댑터와 함께 연결된 무료·라이센스 불필요 제공자",
+  "FRED needs a free personal API key. ECB SDW, ICAP, and World Bank dashboards are open. Empty list = running outside Electron (browser preview).":
+    "FRED는 무료 개인 API 키가 필요합니다. ECB SDW, ICAP, World Bank 대시보드는 공개입니다. 빈 목록 = Electron 외부 실행(브라우저 미리보기).",
+  "Run inside Electron to see public feed adapter status":
+    "공개 피드 어댑터 상태를 보려면 Electron 안에서 실행하세요",
+  "Set up": "설정 필요",
+  "Open docs": "문서 열기",
+
+  // Active patterns panel
+  "지금 활성": "지금 활성",
+  "Active patterns now": "지금 활성 패턴",
+  "Scenarios firing against live data": "라이브 데이터에 발화 중인 시나리오",
+  "라이브 데이터로 자동 감지된 시나리오": "라이브 데이터로 자동 감지된 시나리오",
+  "We auto-evaluate freshness, price jumps, volume jumps, and proxy divergence against thresholds. A scenario goes 'active' when at least half its testable components fire.":
+    "프레시니스, 가격 점프, 거래량 점프, 프록시 괴리를 임계치 기반으로 자동 평가합니다. 검증 가능한 컴포넌트의 절반 이상이 발화하면 시나리오가 'active'가 됩니다.",
+  "프레시니스, 가격 점프, 거래량 점프, 프록시 괴리를 임계치 기반으로 자동 평가합니다. 절반 이상의 검증 가능한 컴포넌트가 동시에 발화하면 'active'로 표시됩니다.":
+    "프레시니스, 가격 점프, 거래량 점프, 프록시 괴리를 임계치 기반으로 자동 평가합니다. 검증 가능한 컴포넌트의 절반 이상이 동시에 발화하면 'active'로 표시됩니다.",
+  Quiet: "조용함",
+  "조용함": "조용함",
+  "No scenario crosses the live thresholds right now":
+    "현재 라이브 임계치를 넘는 시나리오가 없습니다",
+  "현재 임계치를 넘는 시나리오가 없습니다": "현재 임계치를 넘는 시나리오가 없습니다",
+  "Either the market data is inside normal bands, or the connected cards do not yet expose enough series to auto-evaluate.":
+    "시장 데이터가 정상 범위 안에 있거나, 연결된 카드가 자동 평가에 필요한 시계열을 충분히 노출하지 않습니다.",
+  "시장 데이터가 정상 범위 안에 있거나, 현재 카드에 자동 감지에 필요한 시계열이 부족합니다.":
+    "시장 데이터가 정상 범위 안에 있거나, 현재 카드에 자동 감지에 필요한 시계열이 부족합니다.",
+  Active: "활성",
+  활성: "활성",
+  fired: "발화",
+  "발화": "발화"
 };
 
 const KO_SNAKE_CASE_TOKEN_MAP: Record<string, string> = {

@@ -170,6 +170,16 @@ export type DesktopBridge = {
   alertsSetEnabled?: (id: string, enabled: boolean) => Promise<AlertsPayload>;
   alertsClear?: () => Promise<AlertsPayload>;
   alertsEvaluateNow?: () => Promise<{ ok: boolean }>;
+
+  institutionalFeedsList?: () => Promise<Array<{ id: string; provider: string }>>;
+  institutionalFeedsStatus?: () => Promise<
+    Array<{
+      status: "ready" | "not-configured" | "error";
+      provider: string;
+      message: string;
+      docUrl?: string;
+    }>
+  >;
 };
 
 export function getBridge(): DesktopBridge | undefined {
