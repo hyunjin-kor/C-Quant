@@ -1,6 +1,10 @@
-# C-Quant
+<p align="center">
+  <img src="assets/app-icon.png" alt="C-Quant" width="160" height="160"/>
+</p>
 
-**A decision-support desk for buying, holding, or reducing EU ETS, K-ETS, and China ETS carbon allowances.**
+<h1 align="center">C-Quant</h1>
+
+<p align="center"><strong>A decision-support desk for buying, holding, or reducing EU ETS, K-ETS, and China ETS carbon allowances.</strong></p>
 
 C-Quant is a desktop tool that helps an institutional analyst answer one question — **"Should I buy, hold, or reduce carbon allowances right now?"** It reads official auctions, exchange snapshots, and policy bulletins as primary anchors, then layers a research-backed driver matrix, multi-driver catalyst combinations, real-time trigger detection, and backtest-derived multipliers on top, and surfaces a single **buy / hold / reduce** posture with the evidence trail intact.
 
