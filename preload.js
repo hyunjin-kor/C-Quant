@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("desktopBridge", {
-  version: process.env.npm_package_version || "1.3.0",
+  version: process.env.npm_package_version || "1.3.1",
 
   // Lifecycle / startup signaling
   notifyRendererReady: () => ipcRenderer.send("renderer-ready"),

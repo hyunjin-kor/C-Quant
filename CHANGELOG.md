@@ -6,6 +6,33 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 _Nothing in flight._
 
+## [1.3.1] — 2026-05-04
+
+A cosmetic patch: cleaner app icon.
+
+### Changed
+
+- Redrew `assets/app-icon.png` and `assets/app-icon.ico`. The previous
+  icon had a small "verification badge" decoration in the upper-right
+  corner that read as visual noise at icon size. The new icon keeps the
+  same identity (rounded blue square, white "C", chart bars + upward
+  trend arrow) but drops the badge.
+- Drawn at 2048×2048 then downsampled with Lanczos so the icon stays
+  crisp at every size Windows / macOS / Linux ask for (16, 32, 48, 64,
+  128, 256, 512).
+- Source script committed at `tools/generate-app-icon.py`; running it
+  regenerates the PNG, the high-DPI archive, and the multi-size ICO
+  deterministically.
+
+### Files
+
+- `assets/app-icon.png`, `assets/app-icon.ico`, `assets/app-icon@1024.png`
+- `tools/generate-app-icon.py` (new)
+
+### Verification
+
+- type-check / vitest 23 files / 197 tests / node:test 53 / lint 0 / build clean / ci:verify clean / calibration:check clean
+
 ## [1.3.0] — 2026-05-04
 
 A literature-grounded release. Two parallel research agents surveyed
