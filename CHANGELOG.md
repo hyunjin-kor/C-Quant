@@ -4,6 +4,17 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+_Nothing in flight._
+
+## [1.3.0] — 2026-05-04
+
+A literature-grounded release. Two parallel research agents surveyed
+publicly verifiable carbon-pricing literature and only papers with a
+fetched URL were retained; their findings then shaped 22 new drivers,
+10 new catalyst scenarios, and 6 new historical events. The README and
+Drivers view were also tightened to drop the credibility-pitch
+surfaces.
+
 ### Added — research catalogue (44 verified papers)
 
 End-to-end literature integration. Two parallel research agents
@@ -87,6 +98,37 @@ anchor papers are flagged for quick scanning.
   taxonomy, retracted-paper exclusion, market filter, anchor filter,
   driver-ID mapping.
 - All pre-existing tests still pass: 23 files / 197 tests total.
+
+### Removed
+
+- The "Research catalogue" panel that briefly surfaced 12 papers with
+  "Open paper" buttons in the Drivers view. Literature is foundation
+  data, not credibility material to display to users — the catalogue
+  remains in `src/data/researchCatalogue.ts` and informs the drivers
+  and scenarios, but is no longer rendered as a list of citations.
+- The three SVG diagrams from README and USAGE (`hero.svg`,
+  `decision-flow.svg`, `architecture.svg`). Their visual style did not
+  match the actual app screenshots, so the diagrams looked out of
+  place; replaced with text equivalents.
+
+### Changed
+
+- README rewritten as English-only. The previous bilingual version
+  duplicated every sentence in Korean and English, which read clunky
+  on the GitHub front page. `docs/USAGE.md` remains bilingual for
+  Korean-language operators who want a deeper walkthrough.
+- Renderer bundle shrinks 436 kB → 390 kB (gzip 130 kB → 117 kB) after
+  removing the research-catalogue panel.
+
+### Verification
+
+- type-check: clean
+- vitest: 23 files / 197 tests
+- node:test: 53 / 53
+- eslint: 0 errors / 0 warnings
+- build: clean (390 kB / 117 kB gzip)
+- ci:verify: clean
+- calibration:check: clean
 
 ## [1.2.0] — 2026-05-04
 
