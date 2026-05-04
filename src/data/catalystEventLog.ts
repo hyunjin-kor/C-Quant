@@ -371,6 +371,130 @@ export const catalystEventLog: CatalystEvent[] = [
         accessed: "2026-04-29"
       }
     ]
+  },
+
+  // ── Events added 2026-05-04 from literature survey ───────────────────────
+  {
+    id: "cn-ccer-restart-2024",
+    scenarioId: "cn-q4-ccer-substitution",
+    marketId: "cn-ets",
+    observedAt: "2024-01-22",
+    label: "CCER market restart",
+    brief:
+      "China CCER market restarted after multi-year pause. First 5 days = 911k tons (~3x mandatory market volume); CCER initial peak 107.36 -> 72.81 yuan (21% premium then 17% discount vs CEA).",
+    confidence: "verified",
+    references: [
+      {
+        label: "Wang et al. 2022 - Carbon Neutrality (Springer)",
+        url: "https://link.springer.com/article/10.1007/s43979-022-00035-3",
+        accessed: "2026-05-04"
+      },
+      {
+        label: "MEE Carbon Market Feed",
+        url: "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/",
+        accessed: "2026-05-04"
+      }
+    ]
+  },
+  {
+    id: "kr-fourth-basic-plan-publication-2024",
+    scenarioId: "kr-phase4-auction-cap-relax",
+    marketId: "k-ets",
+    observedAt: "2024-12-01",
+    label: "K-ETS Fourth Basic Plan published (Phase 4 framework)",
+    brief:
+      "Korean MOE published the Fourth Basic Plan covering 2026-2035: raises auctioning, tightens benchmarking, expands liquidity access. Phase 4 power auction ramp 15% (2026) -> 50% (2030). Aggregate Phase 4 cap 2.5373 GtCO2e.",
+    confidence: "verified",
+    references: [
+      {
+        label: "ICAP - K-ETS Fourth Basic Plan",
+        url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+        accessed: "2026-05-04"
+      }
+    ]
+  },
+  {
+    id: "kr-financial-cap-relaxation-2025",
+    scenarioId: "kr-phase4-auction-cap-relax",
+    marketId: "k-ets",
+    observedAt: "2025-02-07",
+    label: "K-ETS financial-institution access expansion",
+    brief:
+      "Banks and insurers permitted broader KAU trading from Feb 7, 2025. Continues the staged regime: 200k (2021) -> 500k (Dec 2022) -> 1m (2023) -> general access (Feb 2025). Yim et al. (2024): Hurst exponent regime breaks coincide with these cap changes.",
+    confidence: "verified",
+    references: [
+      {
+        label: "ICAP - K-ETS financial institution access",
+        url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+        accessed: "2026-05-04"
+      },
+      {
+        label: "Yim et al. 2024 - Emerging Markets Finance and Trade",
+        url: "https://www.tandfonline.com/doi/full/10.1080/1540496X.2024.2379460",
+        accessed: "2026-05-04"
+      }
+    ]
+  },
+  {
+    id: "cn-mee-progress-report-2025",
+    scenarioId: "cn-mee-sector-expansion",
+    marketId: "cn-ets",
+    observedAt: "2025-09-27",
+    label: "MEE 2025 annual progress report on national carbon market",
+    brief:
+      "MEE published 2025 progress report covering data quality, intensity-based allocation, sector expansion timeline. 2024 CEA average ~98 yuan; 1,471 active entities; Q4 = 79% of annual volume.",
+    confidence: "verified",
+    references: [
+      {
+        label: "MEE 2025 progress report (PDF)",
+        url: "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/202509/W020250927515319387445.pdf",
+        accessed: "2026-05-04"
+      },
+      {
+        label: "MDPI Land 2025 - China ETS current situation",
+        url: "https://www.mdpi.com/2073-445X/14/8/1582",
+        accessed: "2026-05-04"
+      }
+    ]
+  },
+  {
+    id: "eu-cbam-transition-start-2023",
+    scenarioId: "eu-cbam-expansion-usd-strength",
+    marketId: "eu-ets",
+    observedAt: "2023-10-01",
+    label: "CBAM transitional reporting period starts",
+    brief:
+      "EU CBAM transitional reporting started 2023-10-01. Definitive period (with certificate purchase) starts 2026-01. Importers report embedded emissions of cement, iron/steel, aluminium, fertilisers, electricity, hydrogen.",
+    confidence: "verified",
+    references: [
+      {
+        label: "EU Commission - CBAM",
+        url: "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+        accessed: "2026-05-04"
+      }
+    ]
+  },
+  {
+    id: "eu-ets2-trilogue-2022-revision",
+    scenarioId: "eu-ets2-launch-price-stability",
+    marketId: "eu-ets",
+    observedAt: "2022-12-18",
+    label: "EU ETS revision trilogue agreement (incl. ETS2)",
+    brief:
+      "Provisional political agreement on EU ETS revision: faster LRF, ETS2 for buildings/road transport, updated MSR rules. ETS2 launches 2027, full surrender 2028; price stability mechanism trigger EUR 45 (2020 prices).",
+    confidence: "verified",
+    references: [
+      {
+        label: "EU Commission - ETS2",
+        url: "https://climate.ec.europa.eu/eu-action/eu-emissions-trading-system-eu-ets/ets2-buildings-road-transport-and-additional-sectors_en",
+        accessed: "2026-05-04"
+      },
+      {
+        label: "Görlach et al. 2025 - Climate Policy",
+        url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2485196",
+        accessed: "2026-05-04"
+      }
+    ]
   }
 ];
 

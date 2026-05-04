@@ -526,6 +526,465 @@ export const catalystScenarios: CatalystScenario[] = [
         accessed: reviewedAt
       }
     ]
+  },
+
+  // ── EU scenarios from 2026-05-04 literature survey ───────────────────────
+  {
+    id: "eu-hawkish-ecb-deleveraging",
+    marketIds: ["eu-ets"],
+    name: "Hawkish ECB surprise + ETS financialisation downshift",
+    windowLabel: "ECB policy meeting / projection round",
+    rarity: "watch",
+    expectedDirection: "lower",
+    components: [
+      {
+        driverId: "eu_macro_shock",
+        family: "Macro and Financial",
+        variable: "Hawkish ECB surprise (1 SD restrictive carbon shock)",
+        sign: "loosen",
+        threshold: "Surprise > 25 bp on policy day OR projection round inflation > consensus +0.3pp"
+      },
+      {
+        driverId: "eu_speculation",
+        family: "Market Microstructure",
+        variable: "Investment fund net position turning short",
+        sign: "loosen",
+        threshold: "ESMA fund-net-long share month-on-month decline > 1pp"
+      },
+      {
+        driverId: "eu_financial",
+        family: "Macro and Financial",
+        variable: "STOXX600 drawdown",
+        sign: "loosen",
+        threshold: "Peak-to-trough > 5% in trailing 30 days"
+      }
+    ],
+    interactionEffect: "amplify",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "Känzig (2023): 1 SD restrictive carbon shock historically -> real GDP -0.2%, equity prices >-2%. When ECB surprise + fund deleveraging coincide, EUA can drop sharply on flow alone.",
+    whyItMatters:
+      "Phase IV financialisation makes EUA more sensitive to risk-off + monetary tightening than to fundamentals.",
+    historicalAnchor:
+      "Q4 2022: ECB hawkish acceleration coincided with risk-off and EUA -20% peak-to-trough.",
+    references: [
+      {
+        label: "Känzig 2023 - NBER WP 31221",
+        url: "https://www.nber.org/papers/w31221",
+        accessed: reviewedAt
+      },
+      {
+        label: "Ampudia et al. 2022 - ECB Bulletin Box",
+        url: "https://www.ecb.europa.eu/press/economic-bulletin/focus/2022/html/ecb.ebbox202203_06~ca1e9ea13e.en.html",
+        accessed: reviewedAt
+      },
+      {
+        label: "ESMA 2024 EU Carbon Markets Report",
+        url: "https://www.esma.europa.eu/sites/default/files/2024-10/ESMA50-43599798-10379_Carbon_markets_report_2024.pdf",
+        accessed: reviewedAt
+      }
+    ]
+  },
+  {
+    id: "eu-msr-cancellation-surprise",
+    marketIds: ["eu-ets"],
+    name: "MSR cancellation surprise (large TNAC drop)",
+    windowLabel: "TNAC May publication window",
+    rarity: "rare",
+    expectedDirection: "higher",
+    components: [
+      {
+        driverId: "eu_tnac_msr",
+        family: "Policy Supply",
+        variable: "TNAC year-on-year change",
+        sign: "tighten",
+        threshold: "YoY TNAC drop > 200M tonnes"
+      },
+      {
+        driverId: "eu_supply_cap",
+        family: "Policy Supply",
+        variable: "Forward cap convexity (Pahle endgame)",
+        sign: "tighten",
+        threshold: "Cap-zero horizon < 15 years"
+      }
+    ],
+    interactionEffect: "amplify",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "Bocklet et al. (2019): MSR cancellation reduces overall cap and raises long-run prices. Pahle et al. (2025) flag the 'endgame' approaching ~2040 as a re-pricing inflection.",
+    whyItMatters:
+      "MSR cancellation surprises pull forward-curve scarcity into the spot more aggressively than incremental cap changes.",
+    historicalAnchor:
+      "2018-2019 reform with explicit cancellation rule reset the medium-term price path; 2025-05-28 MSR notice followed the same template.",
+    references: [
+      {
+        label: "Bocklet et al. 2019 - Energy Economics",
+        url: "https://ideas.repec.org/p/ris/ewikln/2019_004.html",
+        accessed: reviewedAt
+      },
+      {
+        label: "Pahle et al. 2025 - Resource and Energy Economics",
+        url: "https://ideas.repec.org/a/eee/resene/v81y2025ics0928765524000526.html",
+        accessed: reviewedAt
+      }
+    ]
+  },
+  {
+    id: "eu-cbam-expansion-usd-strength",
+    marketIds: ["eu-ets"],
+    name: "CBAM expansion to downstream + USD strength",
+    windowLabel: "CBAM definitive period (2026+)",
+    rarity: "watch",
+    expectedDirection: "higher",
+    components: [
+      {
+        driverId: "eu_cbam",
+        family: "Policy Supply",
+        variable: "CBAM scope expansion (downstream products / sectors)",
+        sign: "tighten",
+        threshold: "Commission proposal to add new CBAM sector"
+      },
+      {
+        driverId: "eu_eurusd",
+        family: "Macro and Financial",
+        variable: "USD strength vs EUR",
+        sign: "tighten",
+        threshold: "EUR/USD < 1.05 (DXY > 1y trailing 90th percentile)"
+      }
+    ],
+    interactionEffect: "amplify",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "CBAM mechanically links importer cost to EUA auction price. Downstream expansion enlarges the demand pool; concurrent USD strength pressures coal-to-gas substitution and amplifies the floor.",
+    whyItMatters:
+      "CBAM linkage is a structural floor: the broader the scope, the more durable the EUA price support.",
+    historicalAnchor:
+      "2023-10-01: CBAM transitional reporting started. Definitive 2026-01.",
+    references: [
+      {
+        label: "EU Commission - CBAM",
+        url: "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+        accessed: reviewedAt
+      }
+    ]
+  },
+  {
+    id: "eu-ets2-launch-price-stability",
+    marketIds: ["eu-ets"],
+    name: "ETS2 launch + price-stability mechanism trigger",
+    windowLabel: "ETS2 transition (2027 launch, 2028 first surrender)",
+    rarity: "rare",
+    expectedDirection: "ambiguous",
+    components: [
+      {
+        driverId: "eu_ets2",
+        family: "Policy Supply",
+        variable: "ETS2 secondary market price",
+        sign: "context",
+        threshold: "ETS2 spot > €45 (2020 prices) for any 2-month window in first 2 years"
+      },
+      {
+        driverId: "eu_supply_cap",
+        family: "Policy Supply",
+        variable: "EU ETS1 cap interaction",
+        sign: "context",
+        threshold: "ETS2 stability mechanism activated -> additional allowances released"
+      }
+    ],
+    interactionEffect: "regime-shift",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "ETS2 launches 2027 with a separate cap. Price stability mechanism above €45 (2020 prices) releases additional allowances. Görlach et al. (2025) project €71-€261/tCO2 in 2030 across scenarios. Watch for cross-system spillover into ETS1 expectations.",
+    whyItMatters:
+      "ETS2 is a new regime; first 2 years will set the basis for institutional positioning. ETS1 may decouple temporarily.",
+    historicalAnchor:
+      "2027-01 launch, 2028-04 first surrender (forward).",
+    references: [
+      {
+        label: "Görlach et al. 2025 - Climate Policy",
+        url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2485196",
+        accessed: reviewedAt
+      },
+      {
+        label: "EU Commission - ETS2",
+        url: "https://climate.ec.europa.eu/eu-action/eu-emissions-trading-system-eu-ets/ets2-buildings-road-transport-and-additional-sectors_en",
+        accessed: reviewedAt
+      }
+    ]
+  },
+
+  // ── K-ETS scenarios from 2026-05-04 literature survey ────────────────────
+  {
+    id: "kr-compliance-fx-cold-stack",
+    marketIds: ["k-ets"],
+    name: "Compliance squeeze + KRW weakness + cold winter",
+    windowLabel: "Q1 surrender (Feb-Apr) overlapping winter LNG burn",
+    rarity: "watch",
+    expectedDirection: "higher",
+    components: [
+      {
+        driverId: "kr_compliance_deadline",
+        family: "Calendar Effects",
+        variable: "Surrender deadline proximity",
+        sign: "tighten",
+        threshold: "Within 8 weeks of K-ETS surrender deadline"
+      },
+      {
+        driverId: "kr_fx_rates",
+        family: "Macro and Financial",
+        variable: "USD/KRW",
+        sign: "tighten",
+        threshold: "USD/KRW > 1,400"
+      },
+      {
+        family: "Fuel Switching",
+        variable: "Korean LNG/coal burn proxy (winter cold)",
+        sign: "tighten",
+        threshold: "Daily mean temperature 1.5σ below seasonal norm for 5+ days"
+      }
+    ],
+    interactionEffect: "amplify",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "Park & Lee (2021): firms shift from banking to trading near compliance. Compliance demand coincides with import-fuel cost spike. Tan et al. (2024) caveat: KEPCO tariff freeze dampens pass-through, so watch tariff regime variable.",
+    whyItMatters:
+      "Korea is import-dependent; FX + cold winter compound compliance pressure.",
+    historicalAnchor:
+      "Q1 2022 KRW weakness + cold winter coincided with KAU pull into March surrender.",
+    references: [
+      {
+        label: "Park & Lee 2021 - Env Econ Policy Studies",
+        url: "https://link.springer.com/article/10.1007/s10018-020-00281-8",
+        accessed: reviewedAt
+      },
+      {
+        label: "Tan, Wang, Choi & Lee 2024 - Utilities Policy",
+        url: "https://www.sciencedirect.com/science/article/abs/pii/S0957178724000456",
+        accessed: reviewedAt
+      }
+    ]
+  },
+  {
+    id: "kr-phase4-auction-cap-relax",
+    marketIds: ["k-ets"],
+    name: "Phase 4 auction-share step + financial-institution cap relaxation",
+    windowLabel: "K-ETS Phase 4 (2026-2035) implementation",
+    rarity: "watch",
+    expectedDirection: "ambiguous",
+    components: [
+      {
+        driverId: "kr_allowance_balance",
+        family: "Policy Supply",
+        variable: "Phase 4 auction share for power",
+        sign: "loosen",
+        threshold: "2026 auction share = 15% (first stepped expansion)"
+      },
+      {
+        driverId: "kr_financial_cap",
+        family: "Market Microstructure",
+        variable: "Financial-institution KAU position cap",
+        sign: "tighten",
+        threshold: "Banks/insurers permitted broader trading from Feb 7, 2025"
+      }
+    ],
+    interactionEffect: "regime-shift",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "New supply (auction) meets new demand (financial speculators). Yim et al. (2024) Hurst regime-change risk: banking-rule and participation-rule changes coincide with informational efficiency breaks.",
+    whyItMatters:
+      "Two simultaneous structural changes -> regime shift in price formation, not just a level move.",
+    historicalAnchor:
+      "K-ETS Fourth Basic Plan (2024-12-01); financial-institution access expansion (2025-02-07).",
+    references: [
+      {
+        label: "ICAP - K-ETS Phase 4 + financial access",
+        url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+        accessed: reviewedAt
+      },
+      {
+        label: "Yim et al. 2024 - Emerging Markets Finance and Trade",
+        url: "https://www.tandfonline.com/doi/full/10.1080/1540496X.2024.2379460",
+        accessed: reviewedAt
+      }
+    ]
+  },
+  {
+    id: "kr-penalty-multiplier-reset",
+    marketIds: ["k-ets"],
+    name: "Penalty multiplier (3x avg) approached at surrender",
+    windowLabel: "Surrender period when KAU spot near 3x rolling average",
+    rarity: "rare",
+    expectedDirection: "lower",
+    components: [
+      {
+        driverId: "kr_penalty_multiplier",
+        family: "Policy Supply",
+        variable: "KAU spot vs 3x trailing 60-day average",
+        sign: "tighten",
+        threshold: "Spot > 2.5x trailing 60-day average"
+      },
+      {
+        driverId: "kr_compliance_deadline",
+        family: "Calendar Effects",
+        variable: "Surrender proximity",
+        sign: "tighten",
+        threshold: "Within 4 weeks of surrender"
+      }
+    ],
+    interactionEffect: "offset",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "Kim & Yu (2018) demonstrated the 3x multiplier acts as a soft ceiling. Once spot crosses ~2.5x, firms substitute the penalty for compliance, capping further upside.",
+    whyItMatters:
+      "Soft ceiling is rarely tested but when it is, it can dominate other directional drivers.",
+    historicalAnchor:
+      "Analytical model in Kim & Yu (2018); not yet observed in practice but should be a watch trigger.",
+    references: [
+      {
+        label: "Kim & Yu 2018 - Carbon Management",
+        url: "https://www.tandfonline.com/doi/full/10.1080/17583004.2018.1440852",
+        accessed: reviewedAt
+      }
+    ]
+  },
+
+  // ── China scenarios from 2026-05-04 literature survey ────────────────────
+  {
+    id: "cn-q4-ccer-substitution",
+    marketIds: ["cn-ets"],
+    name: "Q4 compliance crunch + CCER offset price discount",
+    windowLabel: "Q4 compliance window (Oct-Dec)",
+    rarity: "common",
+    expectedDirection: "lower",
+    components: [
+      {
+        driverId: "cn_q4_concentration",
+        family: "Calendar Effects",
+        variable: "Q4 concentration of annual volume",
+        sign: "tighten",
+        threshold: "Within Oct-Dec window (2024 Q4 = 79% of annual volume)"
+      },
+      {
+        driverId: "cn_ccer_utilization",
+        family: "Internal Market",
+        variable: "CCER-CEA spread inversion",
+        sign: "loosen",
+        threshold: "CCER discount vs CEA > 15%"
+      }
+    ],
+    interactionEffect: "offset",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "Compliance buyers maximise CCER usage to the 5% cap when CCER trades at discount. CEA upward pressure is partially relieved.",
+    whyItMatters:
+      "CCER restart 2024 created a substitution channel that didn't exist in earlier compliance cycles.",
+    historicalAnchor:
+      "Jan 22, 2024 CCER restart: first 5 days = 911k tons (~3x mandatory volume); CCER traded at 17% discount after initial premium.",
+    references: [
+      {
+        label: "Wang et al. 2022 - Carbon Neutrality",
+        url: "https://link.springer.com/article/10.1007/s43979-022-00035-3",
+        accessed: reviewedAt
+      },
+      {
+        label: "MDPI Land 2025 - China ETS current situation",
+        url: "https://www.mdpi.com/2073-445X/14/8/1582",
+        accessed: reviewedAt
+      }
+    ]
+  },
+  {
+    id: "cn-coal-shock-emissions-release",
+    marketIds: ["cn-ets"],
+    name: "Coal price shock + power-emissions release (Liao 2025)",
+    windowLabel: "Coal market stress",
+    rarity: "watch",
+    expectedDirection: "lower",
+    components: [
+      {
+        driverId: "cn_coal",
+        family: "Fuel Economics",
+        variable: "Qinhuangdao thermal coal +20% in 60 days",
+        sign: "loosen",
+        threshold: "Qinhuangdao coal > +20% over 60 trading days"
+      },
+      {
+        driverId: "cn_power_emissions",
+        family: "Power Complex",
+        variable: "Carbon Monitor power-sector emissions YoY",
+        sign: "loosen",
+        threshold: "YoY surprise > +5%"
+      }
+    ],
+    interactionEffect: "amplify",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "Liao et al. (2025) explicit elasticities: coal -1.448, power emissions -0.757. When both fire bearish (high coal cost depressing thermal margins + high emissions = looser supply), CEA face compounded downward pressure.",
+    whyItMatters:
+      "Strongest individual quantitative anchor in the China literature - direct elasticities from VEC over 760 daily obs.",
+    historicalAnchor:
+      "2022 coal price shock window: VEC-derived elasticities suggest similar combinations would push CEA -2 to -3 yuan per 1% move.",
+    references: [
+      {
+        label: "Liao et al. 2025 - PLoS ONE",
+        url: "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0333788",
+        accessed: reviewedAt
+      },
+      {
+        label: "Carbon Monitor",
+        url: "https://carbonmonitor.org.cn/",
+        accessed: reviewedAt
+      }
+    ]
+  },
+  {
+    id: "cn-pilot-cascade-into-national",
+    marketIds: ["cn-ets"],
+    name: "Pilot price cascade into national CEA (Beijing/Chongqing transmitter)",
+    windowLabel: "Pilot price shock period",
+    rarity: "watch",
+    expectedDirection: "ambiguous",
+    components: [
+      {
+        driverId: "cn_pilot_transmission",
+        family: "Market Microstructure",
+        variable: "Beijing or Chongqing pilot price shock",
+        sign: "context",
+        threshold: "|Beijing or Chongqing pilot 5d % change| > 10%"
+      },
+      {
+        driverId: "cn_q4_concentration",
+        family: "Calendar Effects",
+        variable: "National compliance window proximity",
+        sign: "tighten",
+        threshold: "Within Q4 compliance window"
+      }
+    ],
+    interactionEffect: "regime-shift",
+    calibrationStatus: "heuristic",
+    calibratedAt,
+    playbook:
+      "Xiao et al. (2022) TVP-VAR: total system spillover ~54%; Beijing & Chongqing dominant net transmitters. Cross-pilot shocks cascade into national CEA via institutional arbitrage flow, especially when compliance window concentrates flow.",
+    whyItMatters:
+      "Pilot-to-national transmission is one of the few empirical regularities that lets you front-run national CEA moves.",
+    historicalAnchor:
+      "2014-2020 TVP-VAR sample (Xiao et al. 2022); national CEA from 2021 onward inherits the transmission pattern.",
+    references: [
+      {
+        label: "Xiao et al. 2022 - ESPR",
+        url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8961101/",
+        accessed: reviewedAt
+      }
+    ]
   }
 ];
 

@@ -250,6 +250,143 @@ export const marketProfiles: MarketProfile[] = [
             accessed: today
           }
         ]
+      },
+      {
+        id: "eu_speculation",
+        category: "Market Microstructure",
+        variable: "Investment fund net position share + open interest growth (financialisation index)",
+        importance: "High",
+        direction: "context",
+        weight: 0.85,
+        note: "ESMA 2024 reports ~6% of EUA positions held by ~406 funds (2023), turning increasingly short. Quemin & Pahle (2023) flag financialisation as needing direct monitoring; Friedrich et al. (2019) show speculative regimes shift price formation.",
+        sources: [
+          {
+            label: "ESMA 2024 EU Carbon Markets Report",
+            url: "https://www.esma.europa.eu/sites/default/files/2024-10/ESMA50-43599798-10379_Carbon_markets_report_2024.pdf",
+            accessed: today
+          },
+          {
+            label: "ECB Bulletin 3/2022 - Ampudia et al. on speculation",
+            url: "https://www.ecb.europa.eu/press/economic-bulletin/focus/2022/html/ecb.ebbox202203_06~ca1e9ea13e.en.html",
+            accessed: today
+          },
+          {
+            label: "Quemin & Pahle 2023 - Nature Climate Change",
+            url: "https://www.nature.com/articles/s41558-022-01560-w",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "eu_term_structure",
+        category: "Market Microstructure",
+        variable: "Spot vs Dec contract basis / convenience yield",
+        importance: "High",
+        direction: "context",
+        weight: 0.7,
+        note: "Bredin & Parsons (2016) document negative convenience yields persisting from 2008; persistent term-structure premium reveals expectations about banking-rule evolution.",
+        sources: [
+          {
+            label: "Bredin & Parsons 2016 - Energy Journal",
+            url: "https://ideas.repec.org/a/aen/journl/ej37-3-bredin.html",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "eu_renewables_share",
+        category: "Power Complex",
+        variable: "Wind + solar generation share (ENTSO-E daily)",
+        importance: "Core",
+        direction: "lower",
+        weight: 1,
+        note: "Koch et al. (2014) identify wind+solar generation as one of only two robust explanators of the 2008-2013 collapse. Daily renewables share is more predictive than installed capacity alone.",
+        sources: [
+          {
+            label: "Koch et al. 2014 - Energy Policy 73",
+            url: "https://ideas.repec.org/a/eee/enepol/v73y2014icp676-685.html",
+            accessed: today
+          },
+          {
+            label: "ENTSO-E transparency platform",
+            url: "https://transparency.entsoe.eu/",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "eu_eurusd",
+        category: "Macro and Financial",
+        variable: "EUR/USD exchange rate",
+        importance: "Support",
+        direction: "context",
+        weight: 0.55,
+        note: "Tan & Wang (2017) and Phase IV evidence flag FX as transmitting via the coal-gas substitution channel; effect is quantile-dependent.",
+        sources: [
+          {
+            label: "Tan & Wang 2017 - Applied Energy",
+            url: "https://ideas.repec.org/a/eee/appene/v190y2017icp306-325.html",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "eu_ets2",
+        category: "Policy Supply",
+        variable: "ETS2 price stability mechanism (buildings + road transport, 2027 launch)",
+        importance: "High",
+        direction: "context",
+        weight: 0.9,
+        note: "ETS2 launches 2027, full surrender 2028. Price stability mechanism releases additional allowances if price exceeds €45 (2020 prices) in first two years. 2030 estimated range €71-€261/tCO2.",
+        sources: [
+          {
+            label: "Görlach et al. 2025 - Climate Policy",
+            url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2485196",
+            accessed: today
+          },
+          {
+            label: "EU Commission - ETS2",
+            url: "https://climate.ec.europa.eu/eu-action/eu-emissions-trading-system-eu-ets/ets2-buildings-road-transport-and-additional-sectors_en",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "eu_cbam",
+        category: "Policy Supply",
+        variable: "CBAM certificate price linkage (= EUA quarterly auction average 2026, weekly 2027+)",
+        importance: "High",
+        direction: "higher",
+        weight: 0.85,
+        note: "CBAM mechanically links importer cost to EUA auction price; transition phase reporting started 2023-10-01. Definitive period 2026-01.",
+        sources: [
+          {
+            label: "EU Commission - CBAM",
+            url: "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "eu_macro_shock",
+        category: "Macro and Financial",
+        variable: "Carbon-policy shock (high-frequency window around EC announcements)",
+        importance: "High",
+        direction: "higher",
+        weight: 0.8,
+        note: "Känzig (2023): 1 SD restrictive carbon shock raises energy prices, cuts emissions; real GDP -0.2%, equity prices >-2%. Provides a clean shock-identification scheme usable in C-Quant.",
+        sources: [
+          {
+            label: "Känzig 2023 - NBER WP 31221",
+            url: "https://www.nber.org/papers/w31221",
+            accessed: today
+          },
+          {
+            label: "ECB Bulletin 8/2024 - Anaya Longaric et al.",
+            url: "https://www.ecb.europa.eu/press/economic-bulletin/focus/2025/html/ecb.ebbox202408_02~55e30afb57.en.html",
+            accessed: today
+          }
+        ]
       }
     ]
   },
@@ -453,6 +590,117 @@ export const marketProfiles: MarketProfile[] = [
             accessed: today
           }
         ]
+      },
+      {
+        id: "kr_penalty_multiplier",
+        category: "Policy Supply",
+        variable: "Penalty multiplier (3x average price, capped KRW 100,000/tCO2e)",
+        importance: "Core",
+        direction: "higher",
+        weight: 1.05,
+        note: "Kim & Yu (2018): Korea's penalty rate of 3 x average market price (capped KRW 100,000) creates a soft ceiling. The multiplier - not the cap - drives equilibrium prices.",
+        sources: [
+          {
+            label: "Kim & Yu 2018 - Carbon Management",
+            url: "https://www.tandfonline.com/doi/full/10.1080/17583004.2018.1440852",
+            accessed: today
+          },
+          {
+            label: "ICAP - K-ETS penalty rule",
+            url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "kr_otc_spread",
+        category: "Market Microstructure",
+        variable: "OTC-exchange spread (KOC vs KAU)",
+        importance: "High",
+        direction: "context",
+        weight: 0.75,
+        note: "Etienne & Yu (2017): KOC OTC trades persistently above exchange-listed KAU - inverse to conventional wisdom. Limited counterparties + higher OTC price jointly suppress exchange liquidity. Inverse spread is itself a liquidity signal.",
+        sources: [
+          {
+            label: "Etienne & Yu 2017 - Carbon Management",
+            url: "https://www.tandfonline.com/doi/full/10.1080/17583004.2017.1309205",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "kr_allocation_tightness",
+        category: "Policy Supply",
+        variable: "Allocation tightness ratio (expected emissions / free allowance)",
+        importance: "Core",
+        direction: "higher",
+        weight: 1.15,
+        note: "Jun, Kim & Oh (2021): the strongest determinant of intensity response in K-ETS Phase 1. Higher tightness = stronger compliance demand pressure on KAU.",
+        sources: [
+          {
+            label: "Jun, Kim & Oh 2021 - Env Econ Policy Studies",
+            url: "https://link.springer.com/article/10.1007/s10018-021-00302-0",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "kr_attention",
+        category: "Market Microstructure",
+        variable: "Search-query interest (Naver / Google trends) on carbon-trading terms",
+        importance: "Support",
+        direction: "higher",
+        weight: 0.5,
+        note: "MDPI Sustainability (2022) shows search-query interest carries leading signal for KAU price beyond coal/oil. Useful as an attention/sentiment proxy.",
+        sources: [
+          {
+            label: "MDPI Sustainability 2022 - K-ETS prediction",
+            url: "https://www.mdpi.com/2071-1050/14/13/8177",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "kr_tariff_insulation",
+        category: "Policy Implementation",
+        variable: "KEPCO power tariff freeze (regime variable)",
+        importance: "High",
+        direction: "lower",
+        weight: 0.7,
+        note: "Tan, Wang, Choi & Lee (2024): when KEPCO tariffs are frozen, carbon-cost pass-through is dampened and KAU price signal weakens. Climate Policy (2024) corroborates political-resistance channel.",
+        sources: [
+          {
+            label: "Tan, Wang, Choi & Lee 2024 - Utilities Policy",
+            url: "https://www.sciencedirect.com/science/article/abs/pii/S0957178724000456",
+            accessed: today
+          },
+          {
+            label: "Climate Policy 2024 - electricity-market constraints",
+            url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2024.2394508",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "kr_financial_cap",
+        category: "Market Microstructure",
+        variable: "Financial-institution KAU position cap regime",
+        importance: "High",
+        direction: "higher",
+        weight: 0.8,
+        note: "ICAP timeline: 200k (2021) -> 500k (Dec 2022) -> 1m (2023) -> broader trading from Feb 7, 2025. Yim et al. (2024) show Hurst exponent regime breaks coincide with cap changes.",
+        sources: [
+          {
+            label: "ICAP - K-ETS financial institution access",
+            url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+            accessed: today
+          },
+          {
+            label: "Yim et al. 2024 - Emerging Markets Finance and Trade",
+            url: "https://www.tandfonline.com/doi/full/10.1080/1540496X.2024.2379460",
+            accessed: today
+          }
+        ]
       }
     ]
   },
@@ -627,6 +875,128 @@ export const marketProfiles: MarketProfile[] = [
           {
             label: "MEE progress report - data quality as fundamental task",
             url: "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/202509/W020250927515319387445.pdf",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "cn_eua_spillover",
+        category: "Macro and Financial",
+        variable: "EU EUA spillover into national CEA (long-run elasticity)",
+        importance: "High",
+        direction: "lower",
+        weight: 0.85,
+        note: "Liao et al. (2025): long-run elasticity -0.368 (1% EUA shock -> -0.368% CEA over 760 daily obs). When EU EUA falls, China CEA tends to firm (substitution / capital reallocation channel).",
+        sources: [
+          {
+            label: "Liao et al. 2025 - PLoS ONE",
+            url: "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0333788",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "cn_power_equity_index",
+        category: "Macro and Financial",
+        variable: "Chinese power-industry equity index (Shenwan / EL 300)",
+        importance: "Core",
+        direction: "higher",
+        weight: 1.05,
+        note: "Liao et al. (2025): long-run elasticity +1.195 - the strongest non-self driver in their VEC variance decomposition for the national CEA.",
+        sources: [
+          {
+            label: "Liao et al. 2025 - PLoS ONE",
+            url: "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0333788",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "cn_power_emissions",
+        category: "Power Complex",
+        variable: "Power-sector verified emissions (Carbon Monitor)",
+        importance: "Core",
+        direction: "lower",
+        weight: 0.95,
+        note: "Liao et al. (2025): long-run elasticity -0.757%. Higher emissions -> looser supply -> lower CEA. Carbon Monitor provides daily near-real-time emissions estimates.",
+        sources: [
+          {
+            label: "Liao et al. 2025 - PLoS ONE",
+            url: "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0333788",
+            accessed: today
+          },
+          {
+            label: "Carbon Monitor - China power emissions",
+            url: "https://carbonmonitor.org.cn/",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "cn_pilot_transmission",
+        category: "Market Microstructure",
+        variable: "Pilot-to-national transmission (Beijing & Chongqing as net transmitters)",
+        importance: "High",
+        direction: "context",
+        weight: 0.78,
+        note: "Xiao et al. (2022) TVP-VAR: total system spillover ~54%; Beijing & Chongqing dominant net spillover transmitters; Guangdong & Tianjin net receivers. Pilot price shocks > 10% should be watched as cross-pilot cascade triggers into national CEA.",
+        sources: [
+          {
+            label: "Xiao et al. 2022 - ESPR",
+            url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8961101/",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "cn_ccer_utilization",
+        category: "Internal Market",
+        variable: "CCER offset utilization (relaunched Jan 2024, 5% compliance cap)",
+        importance: "High",
+        direction: "lower",
+        weight: 0.82,
+        note: "Wang et al. (2022): 5% CCER cap. CCER restart Jan 22, 2024: first 5 days = 911k tons (~3x mandatory market volume); CCER traded at 21% premium then 17% discount. Wider CCER discount vs CEA = more offset substitution = downward CEA pressure.",
+        sources: [
+          {
+            label: "Wang et al. 2022 - Carbon Neutrality (Springer)",
+            url: "https://link.springer.com/article/10.1007/s43979-022-00035-3",
+            accessed: today
+          },
+          {
+            label: "MEE Carbon Market Feed (CCER bulletins)",
+            url: "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "cn_usdcny",
+        category: "Macro and Financial",
+        variable: "USD/CNY exchange rate",
+        importance: "Support",
+        direction: "context",
+        weight: 0.55,
+        note: "Pilot literature flags USD/CNY as quantile-dependent driver (mixed sign). Liao et al. (2025) does not find strong direct effect on national CEA but combined with EUA spillover it amplifies cross-market arbitrage.",
+        sources: [
+          {
+            label: "Liao et al. 2025 - PLoS ONE",
+            url: "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0333788",
+            accessed: today
+          }
+        ]
+      },
+      {
+        id: "cn_q4_concentration",
+        category: "Calendar Effects",
+        variable: "Q4 compliance-window volume concentration",
+        importance: "Core",
+        direction: "higher",
+        weight: 1.1,
+        note: "MDPI Land (2025): Q4 2024 = 79% of annual volume (1,471 active entities). Compliance-window concentration is the dominant seasonality factor for national CEA.",
+        sources: [
+          {
+            label: "MDPI Land 2025 - China ETS current situation",
+            url: "https://www.mdpi.com/2073-445X/14/8/1582",
             accessed: today
           }
         ]

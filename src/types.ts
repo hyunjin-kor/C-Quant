@@ -407,6 +407,69 @@ export type CatalystCalibrationRecord = {
   notes: string;
 };
 
+export type ResearchCitationKind =
+  | "peer-reviewed"
+  | "working-paper"
+  | "official-report"
+  | "central-bank"
+  | "policy-document"
+  | "industry-report";
+
+export type ResearchEvidenceStrength =
+  | "strong"        // multiple peer-reviewed studies converge
+  | "moderate"      // one peer-reviewed paper + corroboration
+  | "exploratory";  // single working paper or single methodology
+
+export type ResearchVariableMapping = {
+  /** Variable as the paper names it. */
+  variableLabel: string;
+  /** Mapping to a C-Quant driver id when applicable. */
+  driverId?: string;
+  /** Sign of the effect on the carbon price. */
+  expectedSign: "+" | "-" | "context";
+  /** Quantitative anchor where the paper reports one. */
+  quantitativeAnchor?: string;
+  /** Sample period used in the source. */
+  samplePeriod?: string;
+};
+
+export type ResearchPaper = {
+  id: string;
+  /** Markets the paper informs. */
+  markets: Array<MarketProfile["id"] | "shared">;
+  citation: string;
+  authors: string[];
+  year: number;
+  venue: string;
+  url: string;
+  kind: ResearchCitationKind;
+  /** Concise summary of the paper's headline finding. */
+  finding: string;
+  /** Variables the paper studies, mapped to C-Quant drivers. */
+  variables: ResearchVariableMapping[];
+  /** Open-data sources the paper references. */
+  dataSources: SourceLink[];
+  evidenceStrength: ResearchEvidenceStrength;
+  /** Whether the paper is fully open-access (PDF reachable without login). */
+  openAccess: boolean;
+  reviewedAt: string;
+};
+
+export type DriverGap = {
+  /** Variable family the literature emphasises. */
+  family: string;
+  /** Variable label as the literature uses it. */
+  variable: string;
+  marketIds: Array<MarketProfile["id"] | "shared">;
+  /** Why the variable is important per the literature. */
+  rationale: string;
+  /** Suggested public data source. */
+  suggestedSource?: SourceLink;
+  /** Supporting paper IDs from the research catalogue. */
+  supportingPaperIds: string[];
+  status: "missing" | "underweighted" | "needs-recheck";
+};
+
 export type MaterialResearchEntry = {
   id: string;
   name: string;

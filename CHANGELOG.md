@@ -4,7 +4,89 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
-_Nothing in flight._
+### Added — research catalogue (44 verified papers)
+
+End-to-end literature integration. Two parallel research agents
+surveyed publicly verifiable carbon-pricing literature; only papers
+with a fetched URL were retained.
+
+- **`src/data/researchCatalogue.ts`** — 44 verified papers with
+  citations, findings, variable mappings to driver IDs, data sources,
+  evidence-strength ratings, and quantitative anchors where the paper
+  reports them.
+  - **EU**: 22 papers (Mansanet-Bataller 2007, Hintermann 2010, Creti
+    et al. 2012, Aatola et al. 2013, Lutz et al. 2013 regime-switching,
+    Koch et al. 2014/2016, Tan & Wang 2017, Hintermann 2017, Friedrich
+    et al. 2019, Bocklet et al. 2019, Li et al. 2021 TVP-VAR, Ampudia
+    et al. 2022 ECB, Quemin & Pahle 2023 Nature CC, Känzig 2023 NBER,
+    Anaya Longaric et al. 2024 ECB, Dittmann et al. 2024 Phase III/IV,
+    Pahle et al. 2025 endgame, ESMA 2024 carbon markets report, Bayer
+    & Aklin 2020 PNAS, Colmer et al. 2024 RES, Görlach et al. 2025
+    ETS2, Bastianin et al. 2024 BVAR).
+  - **K-ETS**: 12 papers (Park & Lee 2021, Etienne & Yu 2017, Kim & Yu
+    2018, Jun/Kim/Oh 2021, Park 2024, O et al. 2023, Yim et al. 2024,
+    Moon et al. 2019, MDPI Sustainability 2022, Park et al. 2025
+    operational review, Tan et al. 2024, Climate Policy 2024).
+  - **China**: 10 papers (Wen et al. 2022, Chen & Zhang 2022, Shi et
+    al. 2022, Liao et al. 2025 with full elasticity matrix, Xiao et
+    al. 2022, Dong et al., He et al. 2023, Wang et al. 2022, Law &
+    Fong 2025, MDPI Land 2025).
+  - One retracted paper (Song 2024 PLoS ONE, retracted Sept 2025) is
+    explicitly excluded; test prevents re-introduction.
+
+### Added — 22 new drivers from literature gaps
+
+- **EU (8)**: `eu_speculation` (ESMA fund-share), `eu_term_structure`
+  (Bredin & Parsons), `eu_renewables_share` (Koch et al. ENTSO-E),
+  `eu_eurusd`, `eu_ets2` (Görlach et al. EUR45 trigger), `eu_cbam`
+  (CBAM linkage), `eu_macro_shock` (Känzig high-frequency
+  identification), and a tightened `eu_oil` weighting per Phase IV
+  evidence.
+- **K-ETS (7)**: `kr_penalty_multiplier` (3× soft ceiling, Kim & Yu),
+  `kr_otc_spread` (KOC/KAU inverse spread, Etienne & Yu),
+  `kr_allocation_tightness` (expected emissions / free allowance, Jun
+  et al.), `kr_attention` (search-query interest, MDPI),
+  `kr_tariff_insulation` (KEPCO regime, Tan et al.),
+  `kr_financial_cap` (institutional access timeline).
+- **China (7)**: `cn_eua_spillover` (−0.368 elasticity, Liao et al.),
+  `cn_power_equity_index` (+1.195, Liao et al.), `cn_power_emissions`
+  (−0.757 + Carbon Monitor), `cn_pilot_transmission` (Xiao et al. TVP-VAR
+  ~54% spillover), `cn_ccer_utilization` (5% cap + restart Jan 2024),
+  `cn_usdcny`, `cn_q4_concentration` (79% of annual volume).
+
+### Added — 10 new catalyst scenarios from literature
+
+- **EU**: hawkish ECB + speculation downshift; MSR cancellation
+  surprise; CBAM expansion + USD strength; ETS2 launch + price
+  stability mechanism.
+- **K-ETS**: compliance squeeze + KRW weakness + cold winter; Phase 4
+  auction step + financial cap relaxation; penalty-multiplier soft
+  ceiling reset.
+- **China**: Q4 compliance crunch + CCER discount; coal price shock +
+  power emissions release (Liao 2025 anchored); pilot-to-national
+  transmission cascade.
+
+### Added — 6 new event log entries from literature
+
+CCER restart 2024-01-22, K-ETS Fourth Basic Plan 2024-12-01, K-ETS
+financial cap relaxation 2025-02-07, MEE 2025 progress report,
+CBAM transition start 2023-10-01, EU ETS revision trilogue 2022-12-18.
+Event log now totals 25 events (was 19).
+
+### Added — research catalogue UI panel
+
+Drivers view gains a "Research catalogue" panel showing per-market
+papers with citation, finding, variable mappings, evidence-strength
+badge, and primary-source / data-source link buttons. Quantitative-
+anchor papers are flagged for quick scanning.
+
+### Tests
+
+- `tests/researchCatalogue.test.ts` — 12 tests: minimum size, citation
+  hygiene, market validity, data-source URLs, evidence-strength
+  taxonomy, retracted-paper exclusion, market filter, anchor filter,
+  driver-ID mapping.
+- All pre-existing tests still pass: 23 files / 197 tests total.
 
 ## [1.2.0] — 2026-05-04
 

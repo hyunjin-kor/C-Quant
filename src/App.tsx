@@ -38,6 +38,10 @@ import {
   detectActivePatterns,
   type ScenarioDetection
 } from "./lib/catalystTriggerDetector";
+import {
+  papersForMarket,
+  papersWithQuantitativeAnchors
+} from "./data/researchCatalogue";
 import { materialsResearch, rankMaterialsForMarket } from "./data/materialsResearch";
 import { buildForecast } from "./lib/forecast";
 import { localizeText, localizeTextWithFallback } from "./lib/localization";
@@ -3249,6 +3253,10 @@ export default function App() {
       new Date()
     );
     const liveActivePatterns = activeDetections.filter((detection) => detection.active);
+    const marketPapers = papersForMarket(selectedMarket.id);
+    const quantitativePapers = papersWithQuantitativeAnchors().filter((paper) =>
+      paper.markets.includes(selectedMarket.id)
+    );
     const rankedMaterials: MaterialResearchEntry[] = rankMaterialsForMarket(
       selectedMarket.id,
       materialsResearch
@@ -3812,6 +3820,104 @@ export default function App() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                {t(locale, "리서치 카탈로그", "Research catalogue")}
+              </span>
+              <h2>
+                {t(
+                  locale,
+                  "각 드라이버를 뒷받침하는 1차 연구 (검증된 URL만)",
+                  "Primary research backing each driver (verified URLs only)"
+                )}
+              </h2>
+            </div>
+            <p>
+              {t(
+                locale,
+                "44편의 검증된 논문·보고서 (EU 22, K-ETS 12, China 10). 정량 anchor가 있는 논문은 별도 표시. 캘리브레이션 multiplier가 누구의 어떤 추정에서 왔는지 추적할 수 있도록 설계됐습니다.",
+                "44 verified papers / reports (22 EU, 12 K-ETS, 10 China). Papers with quantitative anchors are flagged separately so every calibration multiplier traces back to a specific estimate."
+              )}
+            </p>
+          </div>
+
+          <div className="board-meta-row">
+            <span className="freshness-badge fresh">
+              {`${marketPapers.length} ${t(locale, "건", "papers")}`}
+            </span>
+            <span className="freshness-badge watch">
+              {`${quantitativePapers.length} ${t(locale, "정량", "with anchors")}`}
+            </span>
+            <span className="board-inline-meta">
+              {t(
+                locale,
+                "신뢰도: strong = 다중 동료심사 일치 / moderate = 단일 동료심사 + 보강 / exploratory = 워킹페이퍼·단일 방법론",
+                "Strength: strong = multiple peer-reviewed agree / moderate = one peer-reviewed + corroboration / exploratory = working paper or single methodology"
+              )}
+            </span>
+          </div>
+
+          <div className="registry-grid">
+            {marketPapers.slice(0, 12).map((paper) => (
+              <div key={paper.id} className="registry-card">
+                <div className="board-meta-row">
+                  <span className="registry-method">
+                    {`${paper.kind} · ${paper.year}`}
+                  </span>
+                  <span
+                    className={`freshness-badge ${
+                      paper.evidenceStrength === "strong"
+                        ? "fresh"
+                        : paper.evidenceStrength === "moderate"
+                          ? "watch"
+                          : "stale"
+                    }`}
+                  >
+                    {paper.evidenceStrength}
+                  </span>
+                </div>
+                <strong>{paper.citation}</strong>
+                <p>{paper.finding}</p>
+                <ul className="bullet-list compact">
+                  {paper.variables.slice(0, 4).map((variable, idx) => (
+                    <li key={`${paper.id}-${idx}`}>
+                      <strong>
+                        {`${variable.variableLabel} (${variable.expectedSign})${
+                          variable.driverId ? ` → ${variable.driverId}` : ""
+                        }`}
+                      </strong>
+                      {variable.quantitativeAnchor ? (
+                        <span>{variable.quantitativeAnchor}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+                <div className="registry-meta">
+                  <button
+                    type="button"
+                    className="button ghost small"
+                    onClick={() => window.desktopBridge?.openExternal(paper.url)}
+                  >
+                    {t(locale, "원문 열기", "Open paper")}
+                  </button>
+                  {paper.dataSources.slice(0, 1).map((source) => (
+                    <button
+                      key={`${paper.id}-${source.url}`}
+                      type="button"
+                      className="button ghost small"
+                      onClick={() => window.desktopBridge?.openExternal(source.url)}
+                    >
+                      {source.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
