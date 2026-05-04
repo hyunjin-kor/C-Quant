@@ -1,9 +1,5 @@
 # C-Quant
 
-<p align="center">
-  <img src="docs/images/hero.svg" alt="C-Quant — carbon allowance decision desk" width="100%"/>
-</p>
-
 **EU ETS · K-ETS · China ETS 탄소배출권 매수 / 보유 / 매도 의사결정 데스크.**
 **A decision-support desk for buying, holding, or reducing EU ETS, K-ETS, and China ETS carbon allowances.**
 
@@ -45,29 +41,32 @@ C-Quant derives buy / hold / reduce by stacking 8 layers. Each layer carries its
 - 각 카드에 `fresh / watch / stale` 신선도 뱃지
 
 ### Layer 2 — Driver matrix (드라이버 매트릭스)
-시장별 6개 패밀리, 총 ~25개 드라이버. 각 드라이버는 `weight × direction × importance × note + sources[]` 구조.
+시장별 6개 패밀리, 총 ~47개 드라이버 (검증된 학술·정책 문헌으로 가중치 도출). 각 드라이버는 `weight × direction × importance × note + sources[]` 구조.
 
 | Family · 패밀리 | What lives here · 들어가는 변수 |
 | --- | --- |
-| Policy supply · 정책 공급 | MSR / TNAC, cap path, allocation share, 4차 기본계획 |
-| Power complex · 전력 복합 | 도매 전기가격, clean spark spread, 풍력 capacity factor |
-| Fuel switching · 연료 전환 | TTF gas, Rotterdam coal, Brent, LNG |
-| Macro & financial · 거시·금융 | 산업생산, 신용 스프레드, 환율, 주가지수 drawdown |
-| Weather & seasonality · 날씨·계절성 | 기온 anomaly, 난방 수요, 강수 |
-| Microstructure · 미시구조 | 경매 커버율, open interest, 거래량 |
-
-각 드라이버의 1차 출처는 EU Commission, EEX, KRX, MEE, ICAP, Nature Energy, ScienceDirect, arXiv 논문 등 검증 가능한 공개 자료에 한정됩니다.
+| Policy supply · 정책 공급 | MSR / TNAC, cap path, allocation share, 4차 기본계획, ETS2, CBAM, K-ETS 페널티 multiplier |
+| Power complex · 전력 복합 | 도매 전기가격, clean spark spread, 풍력·태양광 발전 비중, 중국 발전부문 배출 |
+| Fuel switching · 연료 전환 | TTF gas, Rotterdam coal, Brent, Qinhuangdao coal, Asian LNG |
+| Macro & financial · 거시·금융 | 산업생산, 신용 스프레드, EUR/USD, USD/KRW, USD/CNY, 주가지수 drawdown, ECB·Fed 정책 충격 |
+| Weather & seasonality · 날씨·계절성 | 기온 anomaly, 난방 수요, 강수, 한국 컴플라이언스 윈도우, 중국 Q4 집중도 |
+| Microstructure · 미시구조 | 경매 커버율, open interest, 거래량, 펀드 포지셔닝, KOC/KAU spread, 파일럿 spillover |
 
 ### Layer 3 — Catalyst combinations (다중-드라이버 촉매 조합)
-**11개 시나리오 — 각 시나리오는 ≥2개 드라이버 조합** (`src/data/catalystScenarios.ts`).
+**21개 시나리오 — 각 시나리오는 ≥2개 드라이버 조합** (`src/data/catalystScenarios.ts`).
 
 대표적인 조합:
-- **EU 한파 스택**: 기온 anomaly + TTF 가스 spike + 풍력 저하 → 석탄→가스 dispatch flip → EUA 수요 비선형 증가 (anchor: 2021 Q4 에너지위기)
+- **EU 한파 스택**: 기온 anomaly + TTF 가스 spike + 풍력 저하 → 석탄→가스 dispatch flip → EUA 수요 비선형 증가
 - **EU MSR + Fit-for-55 스택**: MSR 경매 감축 공지 + Fit-for-55 reaffirmation → 구조적 forward scarcity
-- **K-ETS 컴플라이언스 + 얇은 유동성 + 상쇄 대체**: Q1 surrender + KCU/KOC 비중 증가 → 양방 가능 (offset 구조)
-- **K-ETS 정책+환율+유가 스택**: MOE 할당 발표 + KRW 약세 + 원유 급등 → 수입 의존도 증폭
-- **China MEE 업종 확대**: 시멘트·철강·알루미늄 편입 공지 → regime shift
-- **Cross-market multi-commodity 스트레스**: TTF + Brent + DXY + KOSPI 동시 발화 → 단일 드라이버 모델 일시 무효화
+- **EU 매파적 ECB + 펀드 디레버리지**: ECB 정책 surprise + ESMA 펀드 net-long 감소 + 주식 drawdown → financialisation 매도 압력
+- **EU CBAM 확장 + USD 강세**: CBAM 적용 sector 확대 + EUR/USD < 1.05 → coal-gas substitution 압박
+- **EU ETS2 출범 + 가격안정 메커니즘**: 2027년 ETS2 출범 + €45 (2020가격) trigger → 초기 2년 regime
+- **K-ETS 컴플라이언스 + KRW 약세 + 한파**: Q1 surrender + USD/KRW > 1,400 + 겨울 LNG burn → 수입연료 비용 + 컴플라이언스 압력
+- **K-ETS Phase 4 경매·금융기관 캡 완화**: 2026년 power 경매 15% + 2025-02 금융기관 접근 확대 → regime shift
+- **K-ETS 페널티 multiplier 진입**: KAU spot이 60일 평균의 2.5x 접근 + surrender 4주 이내 → soft ceiling
+- **China Q4 컴플라이언스 + CCER 디스카운트**: Q4 집중 윈도우 (2024년 79%) + CCER-CEA spread > 15% 디스카운트
+- **China 석탄 충격 + 발전부문 배출 release**: Qinhuangdao coal +20%/60일 + Carbon Monitor 배출 YoY > +5%
+- **China 파일럿 → 국가 cascade**: 베이징/충칭 파일럿 5일 |%| > 10% + Q4 윈도우 → spillover
 
 각 시나리오: `expectedDirection`, `interactionEffect (amplify / offset / regime-shift)`, `playbook`, `historicalAnchor`, 1차 출처 ≥1개.
 
@@ -81,7 +80,7 @@ C-Quant derives buy / hold / reduce by stacking 8 layers. Each layer carries its
 검증 가능한 컴포넌트 절반 이상이 동시 발화하면 시나리오가 **`active`**로 표시되고 Drivers 뷰 최상단 "지금 활성 패턴" 패널에 카드로 떠오릅니다.
 
 ### Layer 5 — Empirical calibration (event-study 백테스트)
-19개 인용 가능한 historical event (2018-2025) — MSR 공지, Fit-for-55 발표, ETS revision trilogue, 2021-2022 에너지위기, COVID risk-off, K-ETS 4차 기본계획, MEE 업종 확대 공지 등 — 을 EU/K/CN ETS 월별 가격 anchor에 대해 event-study로 평가해 시나리오별 `multiplier`, `meanAbsReturn`, `hitRate` 산출.
+25개 인용 가능한 historical event (2018-2025) — MSR 공지, Fit-for-55 발표, ETS revision trilogue, 2021-2022 에너지위기, COVID risk-off, K-ETS 4차 기본계획, MEE 업종 확대 공지, **CCER restart 2024-01-22**, **K-ETS 금융기관 접근 확대 2025-02-07**, **CBAM 전환기 시작 2023-10-01** 등 — 을 EU/K/CN ETS 월별 가격 anchor에 대해 event-study로 평가해 시나리오별 `multiplier`, `meanAbsReturn`, `hitRate` 산출.
 
 | Calibration status | 의미 |
 | --- | --- |
@@ -107,45 +106,14 @@ Institutional 어댑터 (Refinitiv / Bloomberg / ICE / EEX)는 라이센스 게�
 
 ---
 
-## buy / hold / reduce를 어떻게 산출하는가 / How the posture is derived
-
-```
-        Layer 1 (공식 앵커)         ┐
-              ↓                       │
-        Layer 2 (드라이버 가중치) ──→ buildForecast(scenarioState)
-              ↓                       │      └→ score = Σ(weight × direction × user_input)
-        Layer 3+5 (시나리오 + multiplier) ──→ scoreScenarioFromDriverWeights(s, weights, m)
-              ↓                       │
-        Layer 4 (활성 트리거)      ──→ "지금 활성 패턴" 패널에 카드
-              ↓                       │
-        Layer 6 (프록시 gap)       ──→ regime-shift 신호
-              ↓                       │
-        Layer 8 (외부 매크로)      ──→ 추가 검증
-              ↓                       ┘
-        Posture = sign(weighted score)
-                  Confidence = clamp(0.2..0.95) of magnitude × active-driver coverage
-                  Decision memo = top driver contributions + counter-evidence
-```
-
-**핵심 원칙**: 모든 출력에 `calibrationStatus` (heuristic / backtest / calibrated)와 1차 출처가 따라옵니다. 신호가 더 강하다고 더 진하게 표시되지 않고, **출처가 더 단단해야** 더 진하게 표시됩니다.
-
-**Core principle**: every output carries a `calibrationStatus` and a primary source. A signal is weighted by **how well-cited it is**, not by how loud it sounds.
-
----
-
-## 의사결정 화면 흐름 / The decision flow on screen
-
-<p align="center">
-  <img src="docs/images/decision-flow.svg" alt="Anchor → Compare → Drivers → Decide" width="100%"/>
-</p>
+## 의사결정 화면 / Decision surfaces
 
 매 세션은 같은 4단계: **공식 앵커 읽기 → 상장 프록시와 비교 → 드라이버·시나리오 점검 → posture 결정**.
-
-Every session walks the same four steps: **read the official anchor → compare with the listed proxy → check the drivers and active scenarios → decide the posture**.
+Every session walks the same four steps: read the official anchor → compare with the listed proxy → check the drivers and active scenarios → decide the posture.
 
 ### Command — "오늘 무엇을 해야 하고, 왜 그런가?"
 <p align="center">
-  <img src="docs/images/shot-command-light.png" alt="Command surface — actual capture" width="100%"/>
+  <img src="docs/images/shot-command-light.png" alt="Command surface" width="100%"/>
 </p>
 
 상단 시장 스트립(EU/KR/CN) → 중앙에 anchor vs 프록시 차트 → 우측에 의사결정 메모 (posture + 신뢰도 + support/risk 불릿) → 하단에 강한 드라이버 5개와 신선도 칩.
@@ -158,11 +126,11 @@ Every session walks the same four steps: **read the official anchor → compare 
 이 화면이 **C-Quant의 핵심**입니다. 위에서 아래로:
 1. **Decision-support boundary** 고지 (이건 calibrated 가격 예측기가 아님)
 2. **지금 활성 패턴** — 라이브 데이터에서 임계치를 넘은 시나리오 카드들
-3. **Catalyst combinations** — 11개 시나리오, 현재 드라이버 가중치로 정렬된 점수
+3. **Catalyst combinations** — 21개 시나리오, 현재 드라이버 가중치로 정렬된 점수
 4. **Materials & abatement atlas** — 장기 수급 변화 포인터
 5. **Institutional feeds 상태** — Refinitiv/Bloomberg/ICE/EEX 라이센스 게이트
 6. **Calibration provenance** — 시나리오별 multiplier + observations + hit-rate + status
-7. **Event timeline** — 19개 historical event, 1차 출처 클릭 가능
+7. **Event timeline** — 25개 historical event
 8. **Public-data feeds 상태** — FRED/ECB SDW/ICAP/World Bank
 9. **Driver families heatmap** — 시장 비교
 
@@ -180,8 +148,7 @@ Every session walks the same four steps: **read the official anchor → compare 
 
 모든 1차 출처의 access method, 신선도, in-app 벤치마크 카탈로그, 입력 커버리지, 신뢰 레지스트리. 컴플라이언스 검토 시 첫 번째로 보는 화면.
 
-➡️ 화면별 자세한 사용법: [docs/USAGE.md](docs/USAGE.md)
-➡️ Screen-by-screen walkthrough: [docs/USAGE.md](docs/USAGE.md)
+➡️ 화면별 자세한 사용법 / Screen-by-screen walkthrough: [docs/USAGE.md](docs/USAGE.md)
 
 ---
 
@@ -232,7 +199,7 @@ npm run package:nsis         # C-Quant-Setup-X.Y.Z.exe (auto-update wired)
 ```bash
 npm run type-check           # tsc --noEmit
 npm run lint                 # ESLint flat config
-npm test                     # vitest — 22 files, 185 tests
+npm test                     # vitest — 23 files, 197 tests
 npm run test:node            # node:test — 53 localization tests
 npm run build                # type-check + vite build
 npm run ci:verify            # syntax check all electron entrypoints + scripts
@@ -248,10 +215,11 @@ CI는 push/PR마다 위 항목 전체를 Windows·macOS·Linux에서 실행. mac
 ## 기술 스택 / Tech
 
 - **Electron 41** + **React 19** + **TypeScript 6** + **Vite 8**
-- **Vitest 2** (185 unit tests) + **Playwright** (E2E smoke) + **node:test** (localization)
+- **Vitest 2** (197 unit tests across 23 files) + **Playwright** (E2E smoke) + **node:test** (localization)
 - **electron-builder** (portable + NSIS Windows, dmg/zip macOS, AppImage/deb Linux)
 - **electron-updater** + Sentry (DSN-gated, opt-in)
 - 한글 지원: Pretendard variable font, 한국 숫자 단위(만 / 억 / 조)
+- 세 실행 컨텍스트 (main / preload / renderer), 단일 IPC 경계, 모든 영속화는 `<userData>` 아래
 
 전체 모듈 맵 / Full module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
@@ -272,15 +240,6 @@ CI는 push/PR마다 위 항목 전체를 Windows·macOS·Linux에서 실행. mac
 | [SECURITY.md](SECURITY.md) | Threat model |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 기여 가이드 |
 | [LICENSE](LICENSE) | MIT |
-
-### Process architecture
-
-<p align="center">
-  <img src="docs/images/architecture.svg" alt="Process architecture: main, preload, renderer" width="100%"/>
-</p>
-
-세 실행 컨텍스트 (main / preload / renderer), 단일 IPC 경계, 모든 영속화는 `<userData>` 아래.
-Three execution contexts, one IPC perimeter, all persistence under `<userData>`.
 
 ---
 

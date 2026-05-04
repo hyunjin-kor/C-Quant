@@ -3,17 +3,9 @@
 > Read this end-to-end for your first session. Each section ends with a "한 줄 요약" so you can scan quickly.
 > 첫 사용 시 처음부터 끝까지 한 번 읽기를 권장합니다. 각 섹션 끝에 한 줄 요약이 있습니다.
 
-<p align="center">
-  <img src="images/hero.svg" alt="C-Quant — carbon decision desk" width="100%"/>
-</p>
-
 ---
 
 ## 1. The four-step decision workflow / 4단계 의사결정 워크플로우
-
-<p align="center">
-  <img src="images/decision-flow.svg" alt="Anchor → Compare → Drivers → Decide" width="100%"/>
-</p>
 
 C-Quant is built around one repeatable session loop. Every screen exists to support one of the four steps.
 
@@ -309,13 +301,8 @@ Sentry 크래시 리포트도 같은 패턴 (`CQUANT_SENTRY_DSN`). 전체 위협
 
 ## 10. Architecture at a glance / 한눈에 보는 아키텍처
 
-<p align="center">
-  <img src="images/architecture.svg" alt="C-Quant process architecture" width="100%"/>
-</p>
-
-Three execution contexts, one IPC perimeter, all persistence under `<userData>`. See [docs/ARCHITECTURE.md](ARCHITECTURE.md) for the full module map.
-
-세 실행 컨텍스트, 단일 IPC 경계, 모든 영속화는 `<userData>` 아래. 전체 모듈 맵은 [docs/ARCHITECTURE.md](ARCHITECTURE.md).
+세 실행 컨텍스트 (main / preload / renderer), 단일 IPC 경계, 모든 영속화는 `<userData>` 아래. 전체 모듈 맵은 [docs/ARCHITECTURE.md](ARCHITECTURE.md).
+Three execution contexts (main / preload / renderer), one IPC perimeter, all persistence under `<userData>`. See [docs/ARCHITECTURE.md](ARCHITECTURE.md) for the full module map.
 
 ---
 
