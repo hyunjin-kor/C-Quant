@@ -1156,6 +1156,9 @@ function buildWaterfallWithCounterfactual(
     s === "buy" ? "매수" : s === "reduce" ? "축소" : "Hold";
   const stanceLabelEn = (s: "buy" | "hold" | "reduce") =>
     s === "buy" ? "Buy" : s === "reduce" ? "Reduce" : "Hold";
+  // Korean particle: 매수/축소 (vowel-final) take 로; Hold (consonant-final) takes 으로.
+  const stanceParticleKo = (s: "buy" | "hold" | "reduce") =>
+    s === "hold" ? "으로" : "로";
 
   const unclampedTotal = rows.reduce((sum, it) => sum + it.value, 0);
   return rows.map((it) => {
@@ -1170,7 +1173,7 @@ function buildWaterfallWithCounterfactual(
           )
         : tf(
             locale,
-            `이 항목을 빼면 자세가 ${stanceLabelKo(altStance)}로 바뀜 (점수 ${withoutScore.toFixed(2)}).`,
+            `이 항목을 빼면 자세가 ${stanceLabelKo(altStance)}${stanceParticleKo(altStance)} 바뀜 (점수 ${withoutScore.toFixed(2)}).`,
             `Without this row, posture flips to ${stanceLabelEn(altStance)} (score ${withoutScore.toFixed(2)}).`
           );
     return { ...it, counterfactual };

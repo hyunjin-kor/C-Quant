@@ -23,16 +23,30 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
   ECB feed status card: EUR/USD daily reference rate
   (`EXR.D.USD.EUR.SP00.A`) and Euro-area HICP YoY annual rate of
   change (`ICP.M.U2.N.000000.4.ANR`).
-- Catalyst event log expanded from 25 → 32 entries with seven new
-  anchors covering the 2025/2026 calendar (EU surrender, TNAC, K-ETS
-  surrender, CBAM definitive start, ICAP Status Report) plus two
-  load-bearing additions for the multi-commodity-stress and ETS2
-  scenarios (Russia–Ukraine commodity peak 2022-03-08; EU Council
-  ETS-revision adoption 2023-04-25).
-- Calibration: nine scenarios are now `backtest` status (auto-promoted
-  by the event study once each crossed the ≥2-events threshold), up
-  from one. Six scenarios remain `heuristic` with one observation
-  each, six have no events yet. Model card §6 reflects the new mix.
+- Catalyst event log expanded from 25 → 34 entries. New 2025/2026
+  calendar anchors (EU surrender, TNAC, K-ETS surrender, CBAM
+  definitive start, ICAP Status Report) plus four scenario-promoting
+  additions: Russia–Ukraine commodity peak (2022-03-08), EU Council
+  ETS-revision adoption (2023-04-25), K-ETS 500k position cap raise
+  (2022-12, Yim et al.), and first CBAM transitional declaration
+  deadline (2024-01-31).
+- Calibration: eleven scenarios are now `backtest` status (auto-
+  promoted by the event study once each crossed the ≥2-events
+  threshold), up from one at the start of this round. Four scenarios
+  remain `heuristic` with one observation each, six have no events
+  yet. Model card §6 reflects the new mix.
+
+### Fixed
+
+- Score-build counterfactual tooltip Korean grammar — "Hold" (consonant-
+  ending) now uses 으로 instead of 로.
+
+### Tested
+
+- New `tests/sessionSnapshot.test.ts` (15 tests) covering load/save
+  round-trip, version mismatch handling, percent-change math, freshness
+  delta detection, active-pattern delta, isQuiet thresholding, and
+  formatRelativeTime variants.
 
 ### Added — design hand-off aids
 

@@ -649,6 +649,50 @@ export const catalystEventLog: CatalystEvent[] = [
         accessed: "2026-05-07"
       }
     ]
+  },
+  {
+    id: "kr-financial-cap-500k-2022",
+    scenarioId: "kr-banking-relaxation-stack",
+    marketId: "k-ets",
+    observedAt: "2022-12-15",
+    label: "K-ETS financial-institution position cap raised to 500k",
+    brief:
+      "MOE / Korean climate authorities raised the K-ETS financial-institution position cap to 500,000 KAU in December 2022, the second step in the staged liquidity-reform sequence (200k 2021 → 500k Dec 2022 → 1m 2023 → general access Feb 2025). Yim et al. (2024) document a Hurst-exponent regime break around this milestone consistent with broader market-maker participation tightening the bid-offer.",
+    confidence: "reported",
+    references: [
+      {
+        label: "ICAP - Korea Emissions Trading System",
+        url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+        accessed: "2026-05-07"
+      },
+      {
+        label: "Yim et al. 2024 - Emerging Markets Finance and Trade",
+        url: "https://www.tandfonline.com/doi/full/10.1080/1540496X.2024.2379460",
+        accessed: "2026-05-07"
+      }
+    ]
+  },
+  {
+    id: "eu-cbam-first-quarterly-deadline-2024",
+    scenarioId: "eu-cbam-expansion-usd-strength",
+    marketId: "eu-ets",
+    observedAt: "2024-01-31",
+    label: "First CBAM transitional quarterly declaration deadline",
+    brief:
+      "First CBAM transitional reporting deadline: importers had to submit Q4 2023 embedded-emissions declarations by 31 January 2024 per Implementing Regulation (EU) 2023/1773. The first hard administrative checkpoint after the 2023-10-01 transitional start, and the first cycle in which import-side compliance burden was visibly priced into EUA forwards.",
+    confidence: "verified",
+    references: [
+      {
+        label: "Implementing Regulation (EU) 2023/1773 (CBAM transitional)",
+        url: "https://eur-lex.europa.eu/eli/reg_impl/2023/1773/oj",
+        accessed: "2026-05-07"
+      },
+      {
+        label: "EU Taxation and Customs - CBAM",
+        url: "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+        accessed: "2026-05-07"
+      }
+    ]
   }
 ];
 
