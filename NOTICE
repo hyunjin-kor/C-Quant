@@ -1,0 +1,31 @@
+C-Quant
+Copyright (c) 2026 hyunjin.kang and the C-Quant contributors
+
+Licensed under the MIT License (see LICENSE).
+
+------------------------------------------------------------------------
+Third-party packages (under their own licenses)
+------------------------------------------------------------------------
+
+C-Quant relies on third-party packages whose licenses appear in their own
+repositories. Notably:
+
+  - Electron                                 (MIT)
+  - React, React DOM                         (MIT)
+  - lightweight-charts                       (Apache-2.0)
+  - exceljs                                  (MIT)
+  - electron-updater                         (MIT)
+  - @sentry/electron                         (MIT)
+  - Inter Variable, Fraunces Variable        (SIL Open Font License 1.1)
+  - Pretendard                               (SIL Open Font License 1.1)
+
+------------------------------------------------------------------------
+Product boundary disclaimer
+------------------------------------------------------------------------
+
+C-Quant is provided as research and monitoring software. It does not
+route orders, custody assets, or intermediate trade settlement, and must
+not be represented as financial advice or as a calibrated trading
+signal. See docs/COMPLIANCE.md and the per-jurisdiction notes
+(docs/COMPLIANCE-EU.md, docs/COMPLIANCE-KR.md, docs/COMPLIANCE-CN.md)
+for the full operational boundary.

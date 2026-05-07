@@ -19,19 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-C-Quant relies on third-party packages whose licenses appear in their own
-repositories. Notably:
-  - Electron (MIT)
-  - React, React DOM (MIT)
-  - lightweight-charts (Apache-2.0)
-  - exceljs (MIT)
-  - electron-updater (MIT)
-  - @sentry/electron (MIT)
-  - Inter Variable, Fraunces Variable (SIL Open Font License 1.1)
-
-C-Quant is provided as research and monitoring software. It does not route
-orders, custody assets, or intermediate trade settlement, and must not be
-represented as financial advice or as a calibrated trading signal.

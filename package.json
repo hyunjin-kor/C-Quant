@@ -11,6 +11,7 @@
   "bugs": {
     "url": "https://github.com/hyunjin-kor/C-Quant/issues"
   },
+  "license": "MIT",
   "main": "main.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
