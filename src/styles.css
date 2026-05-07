@@ -2772,3 +2772,28 @@ undary-note {
   text-transform: lowercase;
   letter-spacing: 0;
 }
+
+/* ── Free-feed live tile ───────────────────────────────────────────
+ * Surfaces a single live data point next to a free-feed status card
+ * (e.g., ECB SDW EUR/USD daily reference rate). Compact, monospaced,
+ * subtle.
+ */
+.free-feed-live {
+  margin: 0.5rem 0 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 0.85rem;
+}
+
+.free-feed-live strong {
+  font-family: ui-monospace, "JetBrains Mono", "Consolas", monospace;
+  color: var(--accent);
+}
+
+.free-feed-live-date {
+  font-family: ui-monospace, "JetBrains Mono", "Consolas", monospace;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}

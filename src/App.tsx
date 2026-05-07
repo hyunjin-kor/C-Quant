@@ -1552,6 +1552,10 @@ export default function App() {
       docUrl?: string;
     }>
   >([]);
+  const [ecbEurUsdLatest, setEcbEurUsdLatest] = useState<{
+    value: number;
+    date: string;
+  } | null>(null);
 
   const selectedMarket = useMemo(
     () => marketProfiles.find((item) => item.id === marketId) ?? marketProfiles[1],
@@ -2192,6 +2196,28 @@ export default function App() {
         }
       } catch {
         if (!cancelled) setFreeFeedStatuses([]);
+      }
+      // Demonstrate the ECB SDW wire by pulling the daily EUR/USD reference
+      // rate. Series key = EXR.D.USD.EUR.SP00.A (Daily, USD per EUR, spot,
+      // average). The renderer surfaces the latest data point next to the
+      // ECB feed status card. Failure is silent — the card still shows the
+      // Ready status; only the live value is hidden.
+      try {
+        if (bridge?.freeFeedsFetch) {
+          const series = await bridge.freeFeedsFetch({
+            adapterId: "ecb-sdw",
+            seriesId: "EXR.D.USD.EUR.SP00.A"
+          });
+          if (!cancelled && Array.isArray(series) && series.length > 0) {
+            const sorted = [...series].sort((a, b) => a.date.localeCompare(b.date));
+            const latest = sorted[sorted.length - 1];
+            if (latest && Number.isFinite(latest.value)) {
+              setEcbEurUsdLatest({ value: latest.value, date: latest.date });
+            }
+          }
+        }
+      } catch {
+        // graceful — feature degrades to the status card alone
       }
     };
     fetchStatuses();
@@ -4059,6 +4085,14 @@ export default function App() {
                     </span>
                   </div>
                   <p>{feed.message}</p>
+                  {feed.provider.includes("ECB") && ecbEurUsdLatest ? (
+                    <p className="free-feed-live">
+                      {t(locale, "EUR/USD 일별 기준환율 최신", "EUR/USD daily reference, latest")}
+                      :{" "}
+                      <strong>{ecbEurUsdLatest.value.toFixed(4)}</strong>{" "}
+                      <span className="free-feed-live-date">({ecbEurUsdLatest.date})</span>
+                    </p>
+                  ) : null}
                   {feed.docUrl ? (
                     <button
                       type="button"
