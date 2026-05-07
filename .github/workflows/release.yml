@@ -1,0 +1,158 @@
+name: Release
+
+# Tag-driven release pipeline.
+#
+# What this workflow does:
+#   - Triggers when a tag matching v*.*.* is pushed (e.g. v1.4.0).
+#   - Builds and packages the Electron app on Windows / macOS / Linux
+#     in parallel.
+#   - Signs Windows and macOS binaries when the corresponding secrets
+#     are present in the repository (CSC_LINK + CSC_KEY_PASSWORD for
+#     Windows; CSC_NAME + APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD +
+#     APPLE_TEAM_ID for macOS). When the secrets are absent the build
+#     still succeeds but produces unsigned artefacts (today's state).
+#   - Uploads every artefact to a draft GitHub Release on the same tag,
+#     creating it if needed. The maintainer reviews the draft and
+#     publishes when ready.
+#
+# Adding code signing later requires no workflow change: just store the
+# secrets in repo Settings → Secrets and variables → Actions, then
+# re-run the workflow on a fresh tag.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to package (e.g. v1.3.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write   # required to create release + upload assets
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer
+        run: npm run build
+
+      # ── Windows: portable + NSIS ──────────────────────────────────
+      - name: Package Windows
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          npm run package:portable
+          npm run package:nsis
+        env:
+          # Code signing secrets are optional. When absent,
+          # electron-builder produces unsigned binaries (current state).
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK && 'true' || 'false' }}
+
+      # ── macOS: dmg + zip ──────────────────────────────────────────
+      - name: Package macOS
+        if: matrix.os == 'macos-latest'
+        run: npm run package:mac
+        env:
+          # Apple code signing + notarization secrets are optional.
+          # When absent the dmg/zip are produced unsigned and Gatekeeper
+          # will warn end users on first launch.
+          CSC_NAME: ${{ secrets.CSC_NAME }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_NAME && 'true' || 'false' }}
+
+      # ── Linux: AppImage + deb ─────────────────────────────────────
+      - name: Package Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run package:linux
+
+      - name: Upload build artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+            release/*.AppImage
+            release/*.deb
+            release/*.blockmap
+            release/latest*.yml
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Create or update GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Download all build artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: List collected artefacts
+        run: |
+          ls -lh release-artifacts/
+          echo "Total files: $(find release-artifacts -type f | wc -l)"
+
+      - name: Resolve tag name
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "name=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; uploading new artefacts (overwriting matching names)."
+            gh release upload "$TAG" release-artifacts/* --clobber
+          else
+            echo "Creating draft release $TAG and uploading artefacts."
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes \
+              --draft \
+              release-artifacts/*
+          fi

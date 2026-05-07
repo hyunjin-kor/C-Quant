@@ -99,6 +99,74 @@ If you ship a packaged build to end users, please confirm:
 - [ ] You communicate to end users that C-Quant is research-only and
       does not provide trade execution.
 
+## Setting up code signing (step-by-step)
+
+C-Quant ships unsigned by default; SmartScreen (Windows) and Gatekeeper
+(macOS) will warn users on first launch. Adding code signing improves
+end-user trust and is a precondition for an unattended auto-update flow.
+
+The CI release workflow ([.github/workflows/release.yml](.github/workflows/release.yml))
+already reads the secrets below. Adding them turns on signing
+automatically — no workflow edit required.
+
+### Windows (Authenticode)
+
+1. **Buy or obtain a code-signing certificate.** Common providers:
+   DigiCert, Sectigo, GlobalSign. Standard certificates run
+   ~USD 200–500/year; EV (Extended Validation) certificates cost more
+   (~USD 400–700/year) but accumulate SmartScreen reputation faster.
+2. **Export the cert as a password-protected `.pfx`** (PKCS#12). The
+   provider usually delivers a `.p12` or `.pfx` directly.
+3. **Encode the `.pfx` for GitHub Actions secrets**:
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("C-Quant-cert.pfx")) > cert.b64
+   ```
+4. **Store the encoded bytes** as repository secret `CSC_LINK`. Set
+   `CSC_KEY_PASSWORD` to the `.pfx` password.
+5. **Validate locally** before tagging a release:
+   ```powershell
+   $env:CSC_LINK = "C:\path\to\C-Quant-cert.pfx"
+   $env:CSC_KEY_PASSWORD = "..."
+   $env:CSC_IDENTITY_AUTO_DISCOVERY = "true"
+   npm run package:nsis
+   ```
+   `signtool verify /pa release\C-Quant-Setup-X.Y.Z.exe` should report
+   "Successfully verified".
+
+### macOS (Developer ID + Notarization)
+
+1. **Enroll in the Apple Developer Program** (USD 99/year).
+2. **Create a Developer ID Application certificate** in
+   developer.apple.com → Certificates, Identifiers & Profiles. Install
+   to login keychain.
+3. **Generate an app-specific password** at appleid.apple.com.
+4. **Find your Team ID** in developer.apple.com → Membership.
+5. **Store as repository secrets**:
+   - `CSC_NAME` — exact `Developer ID Application: Your Name (TEAMID)`
+     string from the certificate.
+   - `APPLE_ID` — Apple ID email used for the developer account.
+   - `APPLE_APP_SPECIFIC_PASSWORD` — the app-specific password.
+   - `APPLE_TEAM_ID` — the team identifier.
+6. **Validate locally** (requires a Mac):
+   ```bash
+   export CSC_NAME="Developer ID Application: ..."
+   export APPLE_ID="..."
+   export APPLE_APP_SPECIFIC_PASSWORD="..."
+   export APPLE_TEAM_ID="..."
+   npm run package:mac
+   ```
+   electron-builder logs should show signing + notarization steps
+   completing without error.
+
+### After the first signed release
+
+- Tag and push (`git tag v1.4.0 && git push --tags`).
+- The Release workflow runs on tag push, builds for all 3 OS, signs
+  using the secrets, and uploads the artefacts to a draft release.
+- Review the draft, edit the description, then publish.
+- The auto-updater feed (`latest.yml`) is populated automatically;
+  existing v1.3.x users see an update banner on next launch.
+
 ## Coordinated disclosure timeline
 
 | Severity                                                | Initial response        | Public disclosure      |
