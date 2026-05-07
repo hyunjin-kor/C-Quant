@@ -36,6 +36,8 @@ import { eventsForMarket } from "./data/catalystEventLog";
 import {
   DEFAULT_DETECTOR_CONFIG,
   detectActivePatterns,
+  type ComponentDetection,
+  type DetectionSignal,
   type ScenarioDetection
 } from "./lib/catalystTriggerDetector";
 import { materialsResearch, rankMaterialsForMarket } from "./data/materialsResearch";
@@ -220,6 +222,40 @@ function t(locale: AppLocale, ko: string, en: string) {
   }
 
   return localizeText("ko", en);
+}
+
+function formatTriggerSignalLabel(locale: AppLocale, signal: DetectionSignal): string {
+  switch (signal) {
+    case "freshness":
+      return t(locale, "신선도", "freshness");
+    case "price-jump":
+      return t(locale, "가격급변", "price-jump");
+    case "volume-jump":
+      return t(locale, "거래량급변", "volume-jump");
+    case "proxy-divergence":
+      return t(locale, "프록시 괴리", "proxy gap");
+    default:
+      return t(locale, "측정 불가", "untestable");
+  }
+}
+
+function formatTriggerObservedVsThreshold(cd: ComponentDetection): string {
+  if (cd.observed === null || cd.threshold === null) return "—";
+  const obs = cd.observed;
+  const thr = cd.threshold;
+  const op = cd.triggered ? "≥" : "<";
+  switch (cd.signal) {
+    case "freshness":
+      return `${obs}h ${op} ${thr}h`;
+    case "price-jump":
+      return `${obs}% ${op} ${thr}%`;
+    case "volume-jump":
+      return `${obs.toFixed(2)}× ${op} ${thr}×`;
+    case "proxy-divergence":
+      return `${obs}% ${op} ${thr}%`;
+    default:
+      return "—";
+  }
 }
 
 function tf(locale: AppLocale, ko: string, en: string) {
@@ -3419,16 +3455,34 @@ export default function App() {
                     </div>
                     <strong>{l(matchedScenario.name)}</strong>
                     <span className="board-inline-meta">{l(matchedScenario.windowLabel)}</span>
-                    <ul className="bullet-list compact">
-                      {detection.components.map((cd, idx) => (
-                        <li key={`${detection.scenarioId}-${idx}`}>
-                          <strong>
-                            {`${l(cd.component.variable)}${cd.triggered ? " ✓" : ""}`}
-                          </strong>
-                          <span>{cd.note}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="trigger-grid">
+                      {detection.components.map((cd, idx) => {
+                        const status: "fired" | "untriggered" | "untestable" =
+                          cd.signal === "untestable"
+                            ? "untestable"
+                            : cd.triggered
+                              ? "fired"
+                              : "untriggered";
+                        return (
+                          <div
+                            key={`${detection.scenarioId}-${idx}`}
+                            className={`trigger-row trigger-${status}`}
+                            title={cd.note}
+                          >
+                            <span className="trigger-status" aria-label={status}>
+                              {status === "fired" ? "✓" : status === "untriggered" ? "✗" : "–"}
+                            </span>
+                            <span className={`trigger-signal trigger-signal-${cd.signal}`}>
+                              {formatTriggerSignalLabel(locale, cd.signal)}
+                            </span>
+                            <span className="trigger-variable">{l(cd.component.variable)}</span>
+                            <span className="trigger-numbers">
+                              {formatTriggerObservedVsThreshold(cd)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })

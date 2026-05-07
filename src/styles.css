@@ -2591,3 +2591,103 @@ undary-note {
     align-items: flex-start;
   }
 }
+
+/* ── Active-pattern explainability grid ────────────────────────────
+ * Each row of the grid is one CatalystComponent within a scenario,
+ * showing at a glance which trigger fired and by how much.
+ *   columns: status | signal-chip | variable | observed vs threshold
+ */
+.trigger-grid {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0;
+}
+
+.trigger-row {
+  display: grid;
+  grid-template-columns: 1.1rem auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.32rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  cursor: help;
+}
+
+.trigger-row.trigger-fired {
+  background: var(--green-soft);
+}
+
+.trigger-row.trigger-untriggered {
+  color: var(--text-soft);
+}
+
+.trigger-row.trigger-untestable {
+  color: var(--text-mute);
+  opacity: 0.72;
+}
+
+.trigger-status {
+  font-weight: 700;
+  text-align: center;
+  font-family: ui-monospace, "JetBrains Mono", "Consolas", monospace;
+}
+
+.trigger-row.trigger-fired .trigger-status {
+  color: var(--green);
+}
+
+.trigger-row.trigger-untriggered .trigger-status {
+  color: var(--text-soft);
+}
+
+.trigger-signal {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  padding: 0.16rem 0.5rem;
+  border-radius: 6px;
+  background: var(--panel-tint);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.trigger-signal.trigger-signal-freshness {
+  background: rgba(255, 159, 45, 0.14);
+  color: var(--yellow);
+}
+
+.trigger-signal.trigger-signal-price-jump {
+  background: rgba(0, 100, 255, 0.10);
+  color: var(--accent);
+}
+
+.trigger-signal.trigger-signal-volume-jump {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--green);
+}
+
+.trigger-signal.trigger-signal-proxy-divergence {
+  background: rgba(240, 68, 82, 0.10);
+  color: var(--red);
+}
+
+.trigger-variable {
+  font-weight: 500;
+  color: var(--text-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger-row.trigger-fired .trigger-variable {
+  color: var(--text-strong);
+}
+
+.trigger-numbers {
+  font-family: ui-monospace, "JetBrains Mono", "Consolas", monospace;
+  font-size: 0.78rem;
+  color: var(--text-base);
+  white-space: nowrap;
+}
