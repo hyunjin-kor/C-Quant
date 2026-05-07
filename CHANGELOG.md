@@ -4,14 +4,37 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
-Internal documentation refresh and new design hand-off aids.
+### Changed — Drivers / Command surface daily-use polish
 
-### Added
+- Drivers → "Active patterns now": each fired scenario card now shows
+  the four trigger types as a compact grid (`status · signal · variable
+  · observed-vs-threshold`) with the original detector note as a hover
+  tooltip.
+- Command: a "Since your last session" delta strip appears at the top
+  showing per-market price moves, freshness changes, and active-pattern
+  deltas vs the previous app open.
+- Score-build waterfall: hover any row to see what the posture would
+  be without that contribution ("Without this row, posture flips to
+  Reduce").
 
-- `docs/figma-spec.md` + Figma-importable SVG mockups under `docs/figma-spec/mockups/`.
+### Added — public-data wire and calibration coverage
+
+- ECB SDW EUR/USD daily reference rate (series `EXR.D.USD.EUR.SP00.A`)
+  is now fetched on app mount and surfaced inline on the Sources
+  surface ECB feed status card.
+- Catalyst event log expanded from 25 → 30 entries with five 2025/2026
+  calendar anchors (EU surrender deadline, EU TNAC publication window,
+  K-ETS surrender, CBAM definitive period start, ICAP Status Report).
+- Calibration: seven scenarios are now `backtest` status (auto-promoted
+  by the event study once each crossed the ≥2-events threshold), up
+  from one. Eight scenarios remain `heuristic` with one observation
+  each, six have no events yet. Model card §6 reflects the new mix.
+
+### Added — design hand-off aids
+
+- `docs/figma-spec.md` + Figma-importable SVG mockups under
+  `docs/figma-spec/mockups/`.
 - `docs/decks/c-quant-story.pptx` — 12-slide story-deck skeleton.
-
-No user-visible runtime or build behaviour changed.
 
 ## [1.3.1] — 2026-05-04
 
