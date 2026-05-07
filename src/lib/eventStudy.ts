@@ -155,42 +155,64 @@ export function aggregateByScenario(
     buckets.set(result.scenarioId, list);
   }
 
-  const stats: EventStudyScenarioStat[] = [];
+  // Pass 1: compute meanAbsAbnormalReturn per scenario.
+  type Pre = {
+    items: EventStudyEventResult[];
+    observations: number;
+    meanAR: number;
+  };
+  const pre = new Map<string, Pre>();
   for (const [scenarioId, items] of buckets) {
     const observations = items.length;
-    const meanAbsAbnormalReturn =
-      items.reduce((sum, item) => sum + Math.abs(item.abnormalReturn), 0) / Math.max(1, observations);
-    const decisive = items.filter((item) => item.expectedSign !== 0);
+    const meanAR =
+      items.reduce((sum, item) => sum + Math.abs(item.abnormalReturn), 0) /
+      Math.max(1, observations);
+    pre.set(scenarioId, { items, observations, meanAR });
+  }
+
+  // Pass 2: compute the cross-scenario median over scenarios that will
+  // ship as "backtest" (≥ minObservations). Multiplier is
+  //   raw = meanAR / median, clamped to [0.5, 2.0].
+  // By construction the median scenario maps to 1.0; strong scenarios
+  // trend toward 2.0, weak ones toward 0.5. This replaces the older
+  // fixed 0.01 baseline, which saturated every backtest scenario at
+  // the 1.6 upper clamp because monthly anchors produce 5-15% abnormal
+  // returns by design. The fixed baseline was the wrong abstraction:
+  // it implicitly assumed daily-trading-rate magnitudes. See
+  // docs/MODEL_CARD.md §6 for the audit that prompted this change.
+  const eligibleARs = Array.from(pre.values())
+    .filter((p) => p.observations >= config.minObservations)
+    .map((p) => p.meanAR)
+    .sort((a, b) => a - b);
+  const medianAR = median(eligibleARs);
+
+  const stats: EventStudyScenarioStat[] = [];
+  for (const [scenarioId, p] of pre) {
+    const decisive = p.items.filter((item) => item.expectedSign !== 0);
     const hits = decisive.filter((item) => item.hit).length;
     const hitRate = decisive.length > 0 ? hits / decisive.length : null;
-    // Multiplier scales linearly with observed reaction relative to a 1% baseline,
-    // clamped to a defensible band.
-    // Clamp band [0.6, 1.6]: 0.6 prevents pathological zero on single
-    // weak events; 1.6 caps the upper boost a single calibration can
-    // contribute. Known limitation (2026-05-07 audit): every catalyst
-    // scenario saturates at the upper clamp because the historical
-    // anchors are MONTHLY and a typical catalyst-window monthly move
-    // is 5-15%, much larger than the 1% baseline. Widening the clamp
-    // alone (tried 1.6 → 3.0) did not add discrimination — all
-    // scenarios just saturated at 3.0 instead. A real fix needs an
-    // adaptive baseline (proportional to the cross-scenario median or
-    // a daily-anchored series). See docs/macro-card-design.md and
-    // docs/MODEL_CARD.md §6 for the open work item.
-    const baseline = 0.01;
-    const raw = meanAbsAbnormalReturn / baseline;
-    const suggestedMultiplier = Math.min(1.6, Math.max(0.6, raw));
+    const raw = medianAR > 0 ? p.meanAR / medianAR : 1.0;
+    const suggestedMultiplier = Math.min(2.0, Math.max(0.5, raw));
     const status: CatalystCalibrationStatus =
-      observations >= config.minObservations ? "backtest" : "heuristic";
+      p.observations >= config.minObservations ? "backtest" : "heuristic";
     stats.push({
       scenarioId,
-      observations,
-      meanAbsAbnormalReturn,
+      observations: p.observations,
+      meanAbsAbnormalReturn: p.meanAR,
       hitRate,
       suggestedMultiplier,
       status
     });
   }
   return stats;
+}
+
+function median(sortedAscending: number[]): number {
+  if (sortedAscending.length === 0) return 0;
+  const mid = Math.floor(sortedAscending.length / 2);
+  return sortedAscending.length % 2 === 1
+    ? sortedAscending[mid]
+    : (sortedAscending[mid - 1] + sortedAscending[mid]) / 2;
 }
 
 export function runEventStudy(

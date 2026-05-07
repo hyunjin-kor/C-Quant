@@ -40,6 +40,18 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 - Score-build counterfactual tooltip Korean grammar — "Hold" (consonant-
   ending) now uses 으로 instead of 로.
+- Calibration multiplier was previously saturating every backtest
+  scenario at the same 1.6 ceiling because the formula compared monthly
+  abnormal returns against a daily-trading-rate 1% baseline. Replaced
+  with an adaptive cross-scenario-median baseline; multiplier now
+  spreads from 0.50 (weakest backtest scenario) to 1.86 (strongest)
+  and gives the catalyst layer real signal. Model card §6 documents the
+  new formula and the current spread.
+- `scripts/smoke-cquant.ps1` previously hardcoded
+  `release/C-Quant-0.1.0.exe` and had been silently broken since v1.0.
+  Now reads version from `package.json` and resolves
+  `release/C-Quant-<version>-portable.exe` at runtime. Verified against
+  the freshly-built v1.3.1 portable.
 
 ### Tested
 

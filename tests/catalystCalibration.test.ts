@@ -22,9 +22,13 @@ describe("CATALYST_CALIBRATION", () => {
   });
 
   it("multiplier is bounded to a defensible range", () => {
+    // Bounds match the adaptive-baseline clamp [0.5, 2.0]. The median
+    // backtest scenario maps to 1.0 by construction; strong scenarios
+    // trend toward 2.0, weak ones toward 0.5. See aggregateByScenario
+    // in src/lib/eventStudy.ts for the formula.
     for (const record of CATALYST_CALIBRATION) {
-      expect(record.multiplier).toBeGreaterThanOrEqual(0.6);
-      expect(record.multiplier).toBeLessThanOrEqual(1.6);
+      expect(record.multiplier).toBeGreaterThanOrEqual(0.5);
+      expect(record.multiplier).toBeLessThanOrEqual(2.0);
     }
   });
 
