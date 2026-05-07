@@ -41,6 +41,14 @@ import {
   type ScenarioDetection
 } from "./lib/catalystTriggerDetector";
 import { materialsResearch, rankMaterialsForMarket } from "./data/materialsResearch";
+import {
+  buildSnapshot,
+  computeSessionDelta,
+  loadSnapshot,
+  saveSnapshot,
+  type MarketSnapshot,
+  type SessionDelta
+} from "./lib/sessionSnapshot";
 import { buildForecast } from "./lib/forecast";
 import { localizeText, localizeTextWithFallback } from "./lib/localization";
 import type {
@@ -1481,6 +1489,8 @@ export default function App() {
   const [connectedSources, setConnectedSources] = useState<ConnectedSourcePayload>(EMPTY_SOURCES);
   const [sourcesLoading, setSourcesLoading] = useState(true);
   const [sourcesError, setSourcesError] = useState<string | null>(null);
+  const [sessionDelta, setSessionDelta] = useState<SessionDelta | null>(null);
+  const sessionSnapshotSavedRef = useRef(false);
   const [compareQuoteByMarket, setCompareQuoteByMarket] = useState<Record<MarketId, string>>({
     "eu-ets": readStoredString("cquant:quote:eu-ets", DEFAULT_COMPARE_QUOTE["eu-ets"]),
     "k-ets": readStoredString("cquant:quote:k-ets", DEFAULT_COMPARE_QUOTE["k-ets"]),
@@ -2302,6 +2312,43 @@ export default function App() {
     };
   }, []);
 
+  // Build the once-per-session snapshot the moment connected source data
+  // first becomes usable. Compares against the previous session's
+  // snapshot to surface the "since last open" delta strip on Command.
+  useEffect(() => {
+    if (sessionSnapshotSavedRef.current) return;
+    const cardsWithData = connectedSources.cards.filter((card) => card.asOf);
+    if (cardsWithData.length === 0) return;
+
+    const detections = detectActivePatterns(
+      catalystScenarios,
+      connectedSources,
+      DEFAULT_DETECTOR_CONFIG,
+      new Date()
+    );
+    const activeIds = detections.filter((d) => d.active).map((d) => d.scenarioId);
+
+    const marketIds: MarketId[] = ["eu-ets", "k-ets", "cn-ets"];
+    const markets: MarketSnapshot[] = marketIds.map((id) => {
+      const card = connectedSources.cards.find((c) => c.marketId === id) ?? null;
+      const days = getFreshnessDays(card?.asOf);
+      return {
+        id,
+        close: card ? getOfficialPriceValue(card) : null,
+        asOf: card?.asOf ?? null,
+        freshnessLevel: getFreshnessLevel(days)
+      };
+    });
+
+    const current = buildSnapshot({ markets, activeScenarioIds: activeIds });
+    const previous = loadSnapshot();
+    const delta = computeSessionDelta(previous, current, new Date());
+
+    setSessionDelta(delta);
+    saveSnapshot(current);
+    sessionSnapshotSavedRef.current = true;
+  }, [connectedSources]);
+
   function handleScenarioChange(driverId: string, nextValue: number) {
     setScenarioState((current) => ({
       ...current,
@@ -2312,6 +2359,54 @@ export default function App() {
   function renderCommand() {
     return (
       <>
+        {sessionDelta && (
+          <section
+            className={`session-delta-strip${sessionDelta.isQuiet ? " quiet" : ""}`}
+            aria-label={t(locale, "지난번 이후 변화", "Since your last session")}
+          >
+            <span className="session-delta-since">
+              {t(locale, "지난번 이후", "Since")} {sessionDelta.relativeTimeLabel}
+            </span>
+            {sessionDelta.isQuiet ? (
+              <span className="session-delta-quiet">
+                {t(locale, "주요 변동 없음", "all quiet")}
+              </span>
+            ) : (
+              <>
+                {sessionDelta.perMarket
+                  .filter((m) => m.pctChange != null)
+                  .map((m) => {
+                    const pct = m.pctChange as number;
+                    const tone =
+                      Math.abs(pct) < 0.05 ? "steady" : pct > 0 ? "up" : "down";
+                    const tag =
+                      m.id === "eu-ets" ? "EU" : m.id === "k-ets" ? "KR" : "CN";
+                    return (
+                      <span
+                        key={m.id}
+                        className={`session-delta-market session-delta-${tone}`}
+                      >
+                        {tag}{" "}
+                        {tone === "steady"
+                          ? t(locale, "보합", "steady")
+                          : `${pct > 0 ? "+" : ""}${pct.toFixed(2)}%`}
+                      </span>
+                    );
+                  })}
+                {sessionDelta.newlyFiredScenarioIds.length > 0 && (
+                  <span className="session-delta-pattern session-delta-up">
+                    {`+${sessionDelta.newlyFiredScenarioIds.length} ${t(locale, "신규 활성 패턴", "new pattern")}`}
+                  </span>
+                )}
+                {sessionDelta.clearedScenarioIds.length > 0 && (
+                  <span className="session-delta-pattern session-delta-down">
+                    {`-${sessionDelta.clearedScenarioIds.length} ${t(locale, "패턴 해제", "cleared")}`}
+                  </span>
+                )}
+              </>
+            )}
+          </section>
+        )}
         <section
           className="command-hero"
           style={
