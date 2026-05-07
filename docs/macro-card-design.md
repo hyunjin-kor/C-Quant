@@ -1,6 +1,6 @@
 # Macro Card Design — wiring ECB SDW into the trigger detector
 
-**Status:** Design note. Not yet implemented.
+**Status:** Shipped 2026-05-07 — see "How it landed" at the bottom.
 **Reviewed:** 2026-05-07.
 
 ECB SDW values are currently **displayed** on the Sources surface
@@ -128,3 +128,48 @@ When the three decisions above are confirmed, this work is roughly a
 one-day commit. Until then, the EUR/USD and HICP values shipped today
 remain *display-only* on the Sources surface — visible context, not
 yet a trigger input.
+
+---
+
+## How it landed (2026-05-07)
+
+Decisions taken:
+
+1. **Where:** new top-level `macroSeries?: MacroPayload` on
+   `ConnectedSourcePayload` (option C above).
+2. **Which scenarios:** `kr-policy-rate-fx-stack`,
+   `eu-cbam-expansion-usd-strength`, `kr-compliance-thin-liquidity`
+   already had FX components in their data — they were previously
+   misclassified as `price-jump` and silently evaluated against the
+   wrong (carbon-price) series.
+3. **Threshold:** `fxJumpPct = 1.5%` over `fxJumpWindow = 5d` as the
+   default. EUR/USD daily moves of 1.5% over a week are the documented
+   "regime flip" band.
+
+What changed in code:
+
+- `src/types.ts` — new `MacroSeriesPoint`, `MacroPayload`,
+  `ConnectedSourcePayload.macroSeries`.
+- `src/lib/catalystTriggerDetector.ts` — added `fx-jump` to the
+  `DetectionSignal` union, `fxJumpPct` / `fxJumpWindow` to
+  `DetectorConfig`, the regex branch in `classifyComponentSignal`
+  that routes `usd|krw|fx|dxy|...` haystacks to `fx-jump` (removed
+  from the price-jump regex), and a new `fx-jump` evaluator branch
+  that reads `payload.macroSeries.eurUsd`.
+- `src/App.tsx` — the ECB fetch loop now also pushes the full sorted
+  series into `connectedSources.macroSeries.eurUsd` /
+  `.hicpYoY` so the detector sees them.
+- `src/styles.css` — purple chip color for `fx-jump` rows in the
+  trigger explainability grid (distinct from the existing four
+  signal types).
+- `tests/catalystTriggerDetector.test.ts` — four new fx-jump cases:
+  classification, fires-when-large-move, does-not-fire-when-flat,
+  and graceful-null-when-macro-series-missing.
+
+Today only EUR/USD is wired. Adding `usdKrw` / `usdCny` later means
+just expanding the `MacroPayload` type and routing the relevant
+series in the same fetch loop. The detector's classifier already
+matches `usd/krw` haystacks; today they all evaluate against EUR/USD
+because that is the only series we ship. When a separate USD/KRW
+fetch lands, the classifier or evaluator can branch by component
+variable to pick the right macro series.

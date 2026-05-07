@@ -30,6 +30,7 @@ import type {
   CatalystScenario,
   ConnectedSourceCard,
   ConnectedSourcePayload,
+  MacroPayload,
   MarketLiveQuote
 } from "../types";
 
@@ -38,6 +39,7 @@ export type DetectionSignal =
   | "price-jump"
   | "volume-jump"
   | "proxy-divergence"
+  | "fx-jump"
   | "untestable";
 
 export type DetectorConfig = {
@@ -46,6 +48,9 @@ export type DetectorConfig = {
   priceJumpWindow: number;
   volumeJumpRatio: number;
   proxyDivergencePct: number;
+  /** Threshold for FX moves expressed as percent over fxJumpWindow days. */
+  fxJumpPct: number;
+  fxJumpWindow: number;
 };
 
 export const DEFAULT_DETECTOR_CONFIG: DetectorConfig = {
@@ -53,7 +58,11 @@ export const DEFAULT_DETECTOR_CONFIG: DetectorConfig = {
   priceJumpPct: 5,
   priceJumpWindow: 5,
   volumeJumpRatio: 2,
-  proxyDivergencePct: 4
+  proxyDivergencePct: 4,
+  // FX is structurally less volatile than carbon spot — a 1.5% move
+  // over 5 days is the "uncomfortable" band where regimes flip.
+  fxJumpPct: 1.5,
+  fxJumpWindow: 5
 };
 
 export type ComponentDetection = {
@@ -89,8 +98,14 @@ function classifyComponentSignal(component: CatalystComponent): DetectionSignal 
   if (/volume|coverage|bid-cover|liquidity|turnover|open interest/.test(haystack)) {
     return "volume-jump";
   }
+  // FX components are evaluated against the macro EUR/USD series, NOT
+  // against the per-market carbon price. This is a separate signal so
+  // the threshold and the data source are both correct.
+  if (/usd\/krw|usd\/eur|eur\/usd|usd strength|krw|fx|dxy/.test(haystack)) {
+    return "fx-jump";
+  }
   if (
-    /ttf|gas|coal|lng|brent|crude|spread|spark|equity|stoxx|kospi|dxy|usd|krw|fx|temperature|wind|hydro/.test(
+    /ttf|gas|coal|lng|brent|crude|spread|spark|equity|stoxx|kospi|temperature|wind|hydro/.test(
       haystack
     )
   ) {
@@ -160,6 +175,26 @@ function computeVolumeRatio(card: ConnectedSourceCard | null): number | null {
   const mean = trailing.reduce((sum, v) => sum + v, 0) / trailing.length;
   if (mean <= 0) return null;
   return recent / mean;
+}
+
+function computeFxPctChange(
+  macroSeries: MacroPayload | undefined,
+  windowDays: number
+): number | null {
+  // Today the only wired FX series is EUR/USD (`eurUsd`). When more
+  // tagged series ship (e.g. usdKrw) the classifier can branch by
+  // variable and pick the right one. For now, every fx-jump component
+  // is evaluated against EUR/USD as the canonical macro proxy.
+  const series = macroSeries?.eurUsd;
+  if (!series || series.length < windowDays + 1) return null;
+  const sorted = [...series]
+    .filter((point) => Number.isFinite(point.value))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length < windowDays + 1) return null;
+  const last = sorted[sorted.length - 1].value;
+  const prior = sorted[sorted.length - 1 - windowDays].value;
+  if (prior <= 0) return null;
+  return ((last - prior) / prior) * 100;
 }
 
 function computeProxyDivergence(
@@ -253,6 +288,27 @@ function evaluateComponent(
         observed: Math.round(ratio * 100) / 100,
         threshold: config.volumeJumpRatio,
         note: `${ratio.toFixed(2)}x trailing 5-bar mean`
+      };
+    }
+    case "fx-jump": {
+      const pct = computeFxPctChange(payload.macroSeries, config.fxJumpWindow);
+      if (pct === null) {
+        return {
+          component,
+          signal,
+          triggered: false,
+          observed: null,
+          threshold: config.fxJumpPct,
+          note: `Need ${config.fxJumpWindow + 1} EUR/USD points in macro series`
+        };
+      }
+      return {
+        component,
+        signal,
+        triggered: Math.abs(pct) >= config.fxJumpPct,
+        observed: Math.round(pct * 100) / 100,
+        threshold: config.fxJumpPct,
+        note: `${pct.toFixed(2)}% EUR/USD over ${config.fxJumpWindow}d`
       };
     }
     case "proxy-divergence": {

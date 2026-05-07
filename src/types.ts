@@ -190,11 +190,26 @@ export type ConnectedSourceCard = {
   volumeSeries?: ConnectedSourceSeriesPoint[];
 };
 
+export type MacroSeriesPoint = { date: string; value: number };
+
+/**
+ * Optional macro / cross-market series consumed by the catalyst trigger
+ * detector when a scenario component references FX or inflation. Today
+ * we wire EUR/USD daily and HICP YoY from ECB SDW; more series can be
+ * added as they become inputs to specific scenarios. Display on the
+ * Sources surface uses the same data — see App.tsx ECB fetch effect.
+ */
+export type MacroPayload = {
+  eurUsd?: MacroSeriesPoint[];
+  hicpYoY?: MacroSeriesPoint[];
+};
+
 export type ConnectedSourcePayload = {
   fetchedAt: string;
   cards: ConnectedSourceCard[];
   liveQuotes: MarketLiveQuote[];
   warnings: string[];
+  macroSeries?: MacroPayload;
 };
 
 export type MarketLiveQuoteKind = "Benchmark futures" | "Driver future" | "Listed proxy";

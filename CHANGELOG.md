@@ -23,6 +23,14 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
   ECB feed status card: EUR/USD daily reference rate
   (`EXR.D.USD.EUR.SP00.A`) and Euro-area HICP YoY annual rate of
   change (`ICP.M.U2.N.000000.4.ANR`).
+- ECB EUR/USD is now also fed into `connectedSources.macroSeries` and
+  consumed by a new `fx-jump` signal in the catalyst trigger detector.
+  Scenarios with FX components (kr-policy-rate-fx-stack,
+  eu-cbam-expansion-usd-strength, kr-compliance-thin-liquidity) are
+  evaluated against the live EUR/USD series instead of being
+  silently misclassified as carbon-price jumps. Default threshold is
+  1.5% over 5 days. The Drivers "Active patterns now" grid shows the
+  new signal in a purple chip.
 - Catalyst event log expanded from 25 → 34 entries. New 2025/2026
   calendar anchors (EU surrender, TNAC, K-ETS surrender, CBAM
   definitive start, ICAP Status Report) plus four scenario-promoting

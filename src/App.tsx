@@ -242,6 +242,8 @@ function formatTriggerSignalLabel(locale: AppLocale, signal: DetectionSignal): s
       return t(locale, "거래량급변", "volume-jump");
     case "proxy-divergence":
       return t(locale, "프록시 괴리", "proxy gap");
+    case "fx-jump":
+      return t(locale, "환율급변", "fx-jump");
     default:
       return t(locale, "측정 불가", "untestable");
   }
@@ -260,6 +262,8 @@ function formatTriggerObservedVsThreshold(cd: ComponentDetection): string {
     case "volume-jump":
       return `${obs.toFixed(2)}× ${op} ${thr}×`;
     case "proxy-divergence":
+      return `${obs}% ${op} ${thr}%`;
+    case "fx-jump":
       return `${obs}% ${op} ${thr}%`;
     default:
       return "—";
@@ -2214,12 +2218,13 @@ export default function App() {
       //       ICP.M.U2.N.000000.4.ANR
       const ecbFetches: Array<{
         seriesId: string;
+        macroKey: "eurUsd" | "hicpYoY";
         setter: (v: { value: number; date: string }) => void;
       }> = [
-        { seriesId: "EXR.D.USD.EUR.SP00.A", setter: setEcbEurUsdLatest },
-        { seriesId: "ICP.M.U2.N.000000.4.ANR", setter: setEcbHicpLatest }
+        { seriesId: "EXR.D.USD.EUR.SP00.A", macroKey: "eurUsd", setter: setEcbEurUsdLatest },
+        { seriesId: "ICP.M.U2.N.000000.4.ANR", macroKey: "hicpYoY", setter: setEcbHicpLatest }
       ];
-      for (const { seriesId, setter } of ecbFetches) {
+      for (const { seriesId, macroKey, setter } of ecbFetches) {
         try {
           if (bridge?.freeFeedsFetch) {
             const series = await bridge.freeFeedsFetch({
@@ -2232,6 +2237,15 @@ export default function App() {
               if (latest && Number.isFinite(latest.value)) {
                 setter({ value: latest.value, date: latest.date });
               }
+              // Also push the full series into connectedSources.macroSeries
+              // so the trigger detector can evaluate fx-jump components.
+              setConnectedSources((prev) => ({
+                ...prev,
+                macroSeries: {
+                  ...(prev.macroSeries ?? {}),
+                  [macroKey]: sorted
+                }
+              }));
             }
           }
         } catch {

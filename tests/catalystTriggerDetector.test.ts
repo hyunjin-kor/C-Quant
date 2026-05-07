@@ -137,3 +137,92 @@ describe("detectActivePatterns", () => {
     expect(all[0].testableCount).toBeGreaterThan(0);
   });
 });
+
+describe("fx-jump signal", () => {
+  const fxScenario: CatalystScenario = {
+    ...baseScenario,
+    id: "fx-test",
+    components: [
+      {
+        family: "Macro and Financial",
+        variable: "USD/KRW",
+        sign: "tighten",
+        threshold: "USD/KRW > 1y trailing 90th percentile"
+      }
+    ]
+  };
+
+  function payloadWithMacro(eurUsd: Array<{ date: string; value: number }>): ConnectedSourcePayload {
+    return {
+      ...buildPayload(),
+      macroSeries: { eurUsd }
+    };
+  }
+
+  it("classifies USD/KRW components as fx-jump (not price-jump)", () => {
+    const detection = detectScenarioTriggers(
+      fxScenario,
+      payloadWithMacro([
+        { date: "2026-04-20", value: 1.08 },
+        { date: "2026-04-21", value: 1.08 },
+        { date: "2026-04-22", value: 1.08 },
+        { date: "2026-04-23", value: 1.08 },
+        { date: "2026-04-24", value: 1.08 },
+        { date: "2026-04-29", value: 1.08 }
+      ]),
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
+    const fx = detection.components.find((c) => c.signal === "fx-jump");
+    expect(fx).toBeDefined();
+  });
+
+  it("fires when EUR/USD moves >= fxJumpPct over fxJumpWindow days", () => {
+    const detection = detectScenarioTriggers(
+      fxScenario,
+      payloadWithMacro([
+        { date: "2026-04-20", value: 1.10 },
+        { date: "2026-04-21", value: 1.10 },
+        { date: "2026-04-22", value: 1.10 },
+        { date: "2026-04-23", value: 1.10 },
+        { date: "2026-04-24", value: 1.10 },
+        // -2.7% over 5 days, exceeds default 1.5% fxJumpPct
+        { date: "2026-04-29", value: 1.07 }
+      ]),
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
+    const fx = detection.components.find((c) => c.signal === "fx-jump");
+    expect(fx).toBeDefined();
+    expect(fx!.triggered).toBe(true);
+    expect(Math.abs(fx!.observed!)).toBeGreaterThan(2);
+  });
+
+  it("does not fire when EUR/USD is flat", () => {
+    const detection = detectScenarioTriggers(
+      fxScenario,
+      payloadWithMacro([
+        { date: "2026-04-20", value: 1.08 },
+        { date: "2026-04-21", value: 1.081 },
+        { date: "2026-04-22", value: 1.082 },
+        { date: "2026-04-23", value: 1.081 },
+        { date: "2026-04-24", value: 1.082 },
+        { date: "2026-04-29", value: 1.083 }
+      ]),
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
+    const fx = detection.components.find((c) => c.signal === "fx-jump");
+    expect(fx).toBeDefined();
+    expect(fx!.triggered).toBe(false);
+  });
+
+  it("returns null observation when macro series is missing", () => {
+    const payload: ConnectedSourcePayload = { ...buildPayload(), macroSeries: undefined };
+    const detection = detectScenarioTriggers(fxScenario, payload, DEFAULT_DETECTOR_CONFIG, NOW);
+    const fx = detection.components.find((c) => c.signal === "fx-jump");
+    expect(fx).toBeDefined();
+    expect(fx!.observed).toBeNull();
+    expect(fx!.triggered).toBe(false);
+  });
+});

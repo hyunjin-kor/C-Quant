@@ -2683,6 +2683,11 @@ undary-note {
   color: var(--red);
 }
 
+.trigger-signal.trigger-signal-fx-jump {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
 .trigger-variable {
   font-weight: 500;
   color: var(--text-base);
