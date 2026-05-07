@@ -148,7 +148,7 @@ Bundle budgets (`tools/check-bundle-size.mjs`):
 
 | Asset | Limit |
 |---|---|
-| `index-*.js` (main) | 350 KB |
+| `index-*.js` (main) | 420 KB |
 | `vendor-react-*.js` | 250 KB |
 | `vendor-charts-*.js` | 250 KB |
 | `index-*.css` | 80 KB |

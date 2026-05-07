@@ -9,8 +9,12 @@ import { join } from "node:path";
 
 const ASSETS_DIR = "dist/assets";
 
+// Budgets last bumped 2026-05-07: main JS 350 -> 420 KB to admit
+// the v1.3 driver-matrix / catalyst-scenarios / event-log expansion.
+// Vendor and CSS unchanged. Future ratchets should be deliberate
+// and noted here.
 const BUDGETS = [
-  { match: /^index-.*\.js$/, label: "main JS chunk", maxBytes: 350 * 1024 },
+  { match: /^index-.*\.js$/, label: "main JS chunk", maxBytes: 420 * 1024 },
   { match: /^vendor-react-.*\.js$/, label: "vendor-react chunk", maxBytes: 250 * 1024 },
   { match: /^vendor-charts-.*\.js$/, label: "vendor-charts chunk", maxBytes: 250 * 1024 },
   { match: /^index-.*\.css$/, label: "main CSS chunk", maxBytes: 80 * 1024 }
