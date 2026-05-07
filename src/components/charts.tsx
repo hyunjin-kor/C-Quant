@@ -32,6 +32,10 @@ export type HeatmapRow = {
 export type WaterfallItem = {
   label: string;
   value: number;
+  /** Optional native-tooltip text. Rendered as title on the row so a
+   *  hover surfaces the counterfactual ("without this row, posture
+   *  flips to Reduce"). */
+  counterfactual?: string;
 };
 
 const WIDTH = 100;
@@ -699,7 +703,11 @@ export function WaterfallChart({
   return (
     <div className="waterfall">
       {items.map((item) => (
-        <div key={item.label} className="waterfall-row">
+        <div
+          key={item.label}
+          className={`waterfall-row${item.counterfactual ? " has-counterfactual" : ""}`}
+          title={item.counterfactual}
+        >
           <div className="waterfall-label">{item.label}</div>
           <div className="waterfall-track">
             <div className="waterfall-zero" />

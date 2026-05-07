@@ -86,7 +86,7 @@ type DecisionSummary = {
   support: Array<{ title: string; detail: string }>;
   risks: string[];
   checks: string[];
-  waterfall: Array<{ label: string; value: number }>;
+  waterfall: Array<{ label: string; value: number; counterfactual?: string }>;
 };
 
 type FreshnessLevel = "fresh" | "watch" | "stale" | "unknown";
@@ -1131,14 +1131,50 @@ function buildDecisionSummary(
           )
     ],
     checks: getMarketChecklist(locale, market.id),
-    waterfall: [
+    waterfall: buildWaterfallWithCounterfactual(locale, stance, [
       { label: t(locale, "Official", "Official"), value: officialScore },
-      { label: t(locale, "鍮꾧탳 湲곗?", "Benchmark"), value: benchmarkScore },
+      { label: t(locale, "비교 기준", "Benchmark"), value: benchmarkScore },
       { label: t(locale, "Agreement", "Agreement"), value: agreementScore },
       { label: t(locale, "Freshness", "Freshness"), value: freshnessScore },
-      { label: t(locale, "?뚯뒪", "Source"), value: sourcePenalty + proxyPenalty }
-    ]
+      { label: t(locale, "소스", "Source"), value: sourcePenalty + proxyPenalty }
+    ])
   };
+}
+
+function deriveStanceFromScore(score: number): "buy" | "hold" | "reduce" {
+  if (score > 0.18) return "buy";
+  if (score < -0.18) return "reduce";
+  return "hold";
+}
+
+function buildWaterfallWithCounterfactual(
+  locale: AppLocale,
+  currentStance: "buy" | "hold" | "reduce",
+  rows: Array<{ label: string; value: number }>
+): Array<{ label: string; value: number; counterfactual: string }> {
+  const stanceLabelKo = (s: "buy" | "hold" | "reduce") =>
+    s === "buy" ? "매수" : s === "reduce" ? "축소" : "Hold";
+  const stanceLabelEn = (s: "buy" | "hold" | "reduce") =>
+    s === "buy" ? "Buy" : s === "reduce" ? "Reduce" : "Hold";
+
+  const unclampedTotal = rows.reduce((sum, it) => sum + it.value, 0);
+  return rows.map((it) => {
+    const withoutScore = Math.max(-1, Math.min(1, unclampedTotal - it.value));
+    const altStance = deriveStanceFromScore(withoutScore);
+    const counterfactual =
+      altStance === currentStance
+        ? tf(
+            locale,
+            `이 항목을 빼도 자세는 ${stanceLabelKo(currentStance)} 유지 (점수 ${withoutScore.toFixed(2)}).`,
+            `Without this row, posture stays ${stanceLabelEn(currentStance)} (score ${withoutScore.toFixed(2)}).`
+          )
+        : tf(
+            locale,
+            `이 항목을 빼면 자세가 ${stanceLabelKo(altStance)}로 바뀜 (점수 ${withoutScore.toFixed(2)}).`,
+            `Without this row, posture flips to ${stanceLabelEn(altStance)} (score ${withoutScore.toFixed(2)}).`
+          );
+    return { ...it, counterfactual };
+  });
 }
 
 function chooseDefaultQuote(marketId: MarketId, quotes: MarketLiveQuote[]) {

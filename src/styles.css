@@ -2412,6 +2412,16 @@ undary-note {
   align-items: center;
 }
 
+.waterfall-row.has-counterfactual {
+  cursor: help;
+  border-radius: 6px;
+  transition: background 140ms ease;
+}
+
+.waterfall-row.has-counterfactual:hover {
+  background: var(--panel-tint);
+}
+
 .waterfall-label,
 .waterfall-value {
   color: var(--text-soft);
