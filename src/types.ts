@@ -202,6 +202,8 @@ export type MacroSeriesPoint = { date: string; value: number };
 export type MacroPayload = {
   eurUsd?: MacroSeriesPoint[];
   hicpYoY?: MacroSeriesPoint[];
+  usdKrw?: MacroSeriesPoint[];
+  usdCny?: MacroSeriesPoint[];
 };
 
 export type ConnectedSourcePayload = {

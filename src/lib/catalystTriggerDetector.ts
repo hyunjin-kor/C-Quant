@@ -31,6 +31,7 @@ import type {
   ConnectedSourceCard,
   ConnectedSourcePayload,
   MacroPayload,
+  MacroSeriesPoint,
   MarketLiveQuote
 } from "../types";
 
@@ -177,15 +178,32 @@ function computeVolumeRatio(card: ConnectedSourceCard | null): number | null {
   return recent / mean;
 }
 
+function pickFxSeries(
+  component: CatalystComponent,
+  macroSeries: MacroPayload | undefined
+): { series: MacroSeriesPoint[]; label: string } | null {
+  if (!macroSeries) return null;
+  const haystack = `${component.family} ${component.variable}`.toLowerCase();
+  if (/usd\/krw|krw|won/.test(haystack)) {
+    if (macroSeries.usdKrw && macroSeries.usdKrw.length > 0) {
+      return { series: macroSeries.usdKrw, label: "USD/KRW" };
+    }
+  }
+  if (/usd\/cny|cny|yuan|rmb|chinese/.test(haystack)) {
+    if (macroSeries.usdCny && macroSeries.usdCny.length > 0) {
+      return { series: macroSeries.usdCny, label: "USD/CNY" };
+    }
+  }
+  if (macroSeries.eurUsd && macroSeries.eurUsd.length > 0) {
+    return { series: macroSeries.eurUsd, label: "EUR/USD" };
+  }
+  return null;
+}
+
 function computeFxPctChange(
-  macroSeries: MacroPayload | undefined,
+  series: MacroSeriesPoint[],
   windowDays: number
 ): number | null {
-  // Today the only wired FX series is EUR/USD (`eurUsd`). When more
-  // tagged series ship (e.g. usdKrw) the classifier can branch by
-  // variable and pick the right one. For now, every fx-jump component
-  // is evaluated against EUR/USD as the canonical macro proxy.
-  const series = macroSeries?.eurUsd;
   if (!series || series.length < windowDays + 1) return null;
   const sorted = [...series]
     .filter((point) => Number.isFinite(point.value))
@@ -291,7 +309,18 @@ function evaluateComponent(
       };
     }
     case "fx-jump": {
-      const pct = computeFxPctChange(payload.macroSeries, config.fxJumpWindow);
+      const picked = pickFxSeries(component, payload.macroSeries);
+      if (!picked) {
+        return {
+          component,
+          signal,
+          triggered: false,
+          observed: null,
+          threshold: config.fxJumpPct,
+          note: "No macro FX series wired for this component yet"
+        };
+      }
+      const pct = computeFxPctChange(picked.series, config.fxJumpWindow);
       if (pct === null) {
         return {
           component,
@@ -299,7 +328,7 @@ function evaluateComponent(
           triggered: false,
           observed: null,
           threshold: config.fxJumpPct,
-          note: `Need ${config.fxJumpWindow + 1} EUR/USD points in macro series`
+          note: `Need ${config.fxJumpWindow + 1} ${picked.label} points in macro series`
         };
       }
       return {
@@ -308,7 +337,7 @@ function evaluateComponent(
         triggered: Math.abs(pct) >= config.fxJumpPct,
         observed: Math.round(pct * 100) / 100,
         threshold: config.fxJumpPct,
-        note: `${pct.toFixed(2)}% EUR/USD over ${config.fxJumpWindow}d`
+        note: `${pct.toFixed(2)}% ${picked.label} over ${config.fxJumpWindow}d`
       };
     }
     case "proxy-divergence": {

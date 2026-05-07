@@ -225,4 +225,62 @@ describe("fx-jump signal", () => {
     expect(fx!.observed).toBeNull();
     expect(fx!.triggered).toBe(false);
   });
+
+  it("USD/KRW component evaluates against usdKrw series when wired", () => {
+    const payload: ConnectedSourcePayload = {
+      ...buildPayload(),
+      macroSeries: {
+        usdKrw: [
+          { date: "2026-04-20", value: 1380 },
+          { date: "2026-04-21", value: 1380 },
+          { date: "2026-04-22", value: 1380 },
+          { date: "2026-04-23", value: 1380 },
+          { date: "2026-04-24", value: 1380 },
+          // +2.9% over 5 days — should fire
+          { date: "2026-04-29", value: 1420 }
+        ],
+        // EUR/USD flat — the picker should NOT use this for a USD/KRW component
+        eurUsd: [
+          { date: "2026-04-20", value: 1.08 },
+          { date: "2026-04-29", value: 1.08 }
+        ]
+      }
+    };
+    const detection = detectScenarioTriggers(fxScenario, payload, DEFAULT_DETECTOR_CONFIG, NOW);
+    const fx = detection.components.find((c) => c.signal === "fx-jump");
+    expect(fx).toBeDefined();
+    expect(fx!.triggered).toBe(true);
+    expect(fx!.note).toContain("USD/KRW");
+  });
+
+  it("falls back to EUR/USD when component is generic and no usdKrw is wired", () => {
+    const genericFxScenario: CatalystScenario = {
+      ...fxScenario,
+      components: [
+        {
+          family: "Macro and Financial",
+          variable: "USD strength vs EUR",
+          sign: "tighten",
+          threshold: "EUR/USD < 1.05"
+        }
+      ]
+    };
+    const payload: ConnectedSourcePayload = {
+      ...buildPayload(),
+      macroSeries: {
+        eurUsd: [
+          { date: "2026-04-20", value: 1.08 },
+          { date: "2026-04-21", value: 1.08 },
+          { date: "2026-04-22", value: 1.08 },
+          { date: "2026-04-23", value: 1.08 },
+          { date: "2026-04-24", value: 1.08 },
+          { date: "2026-04-29", value: 1.05 }
+        ]
+      }
+    };
+    const detection = detectScenarioTriggers(genericFxScenario, payload, DEFAULT_DETECTOR_CONFIG, NOW);
+    const fx = detection.components.find((c) => c.signal === "fx-jump");
+    expect(fx).toBeDefined();
+    expect(fx!.note).toContain("EUR/USD");
+  });
 });

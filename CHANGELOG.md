@@ -31,6 +31,15 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
   silently misclassified as carbon-price jumps. Default threshold is
   1.5% over 5 days. The Drivers "Active patterns now" grid shows the
   new signal in a purple chip.
+- FRED USD/KRW (`DEXKOUS`) and USD/CNY (`DEXCHUS`) wired into
+  `macroSeries.usdKrw` / `.usdCny`. The fx-jump detector now picks the
+  right pair per scenario component: USD/KRW components evaluate
+  against the won series, USD/CNY components against the yuan series,
+  and other FX components fall back to EUR/USD. FRED requires a free
+  `CQUANT_FRED_API_KEY` (registration at fredaccount.stlouisfed.org);
+  the rest of the app degrades silently when the key is unset.
+- New [docs/open-items.md](docs/open-items.md) captures every
+  deliberately-deferred item with the reason and the unblock path.
 - Catalyst event log expanded from 25 → 34 entries. New 2025/2026
   calendar anchors (EU surrender, TNAC, K-ETS surrender, CBAM
   definitive start, ICAP Status Report) plus four scenario-promoting

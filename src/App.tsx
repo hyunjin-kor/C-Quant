@@ -2216,29 +2216,35 @@ export default function App() {
       //   - EUR/USD daily reference: EXR.D.USD.EUR.SP00.A
       //   - Euro-area HICP all-items, annual rate of change:
       //       ICP.M.U2.N.000000.4.ANR
-      const ecbFetches: Array<{
+      type MacroFetchSpec = {
+        adapterId: "ecb-sdw" | "fred";
         seriesId: string;
-        macroKey: "eurUsd" | "hicpYoY";
-        setter: (v: { value: number; date: string }) => void;
-      }> = [
-        { seriesId: "EXR.D.USD.EUR.SP00.A", macroKey: "eurUsd", setter: setEcbEurUsdLatest },
-        { seriesId: "ICP.M.U2.N.000000.4.ANR", macroKey: "hicpYoY", setter: setEcbHicpLatest }
+        macroKey: "eurUsd" | "hicpYoY" | "usdKrw" | "usdCny";
+        setter?: (v: { value: number; date: string }) => void;
+      };
+      const macroFetches: MacroFetchSpec[] = [
+        { adapterId: "ecb-sdw", seriesId: "EXR.D.USD.EUR.SP00.A", macroKey: "eurUsd", setter: setEcbEurUsdLatest },
+        { adapterId: "ecb-sdw", seriesId: "ICP.M.U2.N.000000.4.ANR", macroKey: "hicpYoY", setter: setEcbHicpLatest },
+        // FRED is key-gated; when CQUANT_FRED_API_KEY is unset these
+        // fetches return null and the trigger detector falls back to
+        // EUR/USD as the macro proxy.
+        { adapterId: "fred", seriesId: "DEXKOUS", macroKey: "usdKrw" },
+        { adapterId: "fred", seriesId: "DEXCHUS", macroKey: "usdCny" }
       ];
-      for (const { seriesId, macroKey, setter } of ecbFetches) {
+      for (const { adapterId, seriesId, macroKey, setter } of macroFetches) {
         try {
           if (bridge?.freeFeedsFetch) {
-            const series = await bridge.freeFeedsFetch({
-              adapterId: "ecb-sdw",
-              seriesId
-            });
+            const series = await bridge.freeFeedsFetch({ adapterId, seriesId });
             if (!cancelled && Array.isArray(series) && series.length > 0) {
               const sorted = [...series].sort((a, b) => a.date.localeCompare(b.date));
               const latest = sorted[sorted.length - 1];
-              if (latest && Number.isFinite(latest.value)) {
+              if (latest && Number.isFinite(latest.value) && setter) {
                 setter({ value: latest.value, date: latest.date });
               }
-              // Also push the full series into connectedSources.macroSeries
-              // so the trigger detector can evaluate fx-jump components.
+              // Push the full series into connectedSources.macroSeries
+              // so the trigger detector can evaluate fx-jump components
+              // against the right FX pair (USD/KRW for K-ETS scenarios,
+              // USD/CNY for CN, EUR/USD as the EU / shared default).
               setConnectedSources((prev) => ({
                 ...prev,
                 macroSeries: {
