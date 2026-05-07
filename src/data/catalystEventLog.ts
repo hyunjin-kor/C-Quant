@@ -600,6 +600,55 @@ export const catalystEventLog: CatalystEvent[] = [
         accessed: "2026-05-07"
       }
     ]
+  },
+
+  // 2nd events on previously-1-event scenarios (Phase 3.5, 2026-05-07).
+  // Promotes shared-multi-commodity-stress and eu-ets2-launch-price-stability
+  // to backtest status once the event-study sees ≥2 observations each.
+
+  {
+    id: "shared-2022-russia-ukraine-commodity-peak",
+    scenarioId: "shared-multi-commodity-stress",
+    marketId: "shared",
+    observedAt: "2022-03-08",
+    label: "Russia-Ukraine commodity peak (Brent, TTF, coal)",
+    brief:
+      "Following the 24 February 2022 invasion of Ukraine, multi-commodity stress peaked around 7–8 March 2022: Brent traded above $130/bbl, ICE TTF gas reached ~€345/MWh intraday, and API2 coal cleared above $400/t. The cross-commodity squeeze priced both fuel-switching and recession-fear channels into EUA simultaneously and is the canonical reference for the multi-commodity-stress scenario.",
+    confidence: "verified",
+    references: [
+      {
+        label: "ICE - Brent Crude Futures historical settlements",
+        url: "https://www.ice.com/products/219/Brent-Crude-Futures",
+        accessed: "2026-05-07"
+      },
+      {
+        label: "ICE Endex - Dutch TTF Gas Futures",
+        url: "https://www.ice.com/products/27996665/Dutch-TTF-Gas-Futures",
+        accessed: "2026-05-07"
+      }
+    ]
+  },
+  {
+    id: "eu-ets-revision-council-adoption-2023",
+    scenarioId: "eu-ets2-launch-price-stability",
+    marketId: "eu-ets",
+    observedAt: "2023-04-25",
+    label: "EU Council adopts ETS revision (incl. ETS2)",
+    brief:
+      "EU Council formally adopted the revised EU ETS (Directive (EU) 2023/959) on 25 April 2023, locking in the Fit-for-55 trajectory: faster LRF, ETS2 for buildings and road transport from 2027, MSR2 design, and the €45 (2020 prices) price-stability trigger for ETS2. Council adoption is the first hard-law commitment after the December 2022 trilogue agreement — forward EUA scarcity expectations re-anchored.",
+    confidence: "verified",
+    references: [
+      {
+        label: "Directive (EU) 2023/959 - revised EU ETS",
+        url: "https://eur-lex.europa.eu/eli/dir/2023/959/oj",
+        accessed: "2026-05-07"
+      },
+      {
+        label: "EU Council press release on ETS revision adoption",
+        url: "https://www.consilium.europa.eu/en/press/press-releases/2023/04/25/fit-for-55-council-adopts-key-pieces-of-legislation-delivering-on-2030-climate-targets/",
+        accessed: "2026-05-07"
+      }
+    ]
   }
 ];
 

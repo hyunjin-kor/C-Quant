@@ -19,15 +19,19 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ### Added — public-data wire and calibration coverage
 
-- ECB SDW EUR/USD daily reference rate (series `EXR.D.USD.EUR.SP00.A`)
-  is now fetched on app mount and surfaced inline on the Sources
-  surface ECB feed status card.
-- Catalyst event log expanded from 25 → 30 entries with five 2025/2026
-  calendar anchors (EU surrender deadline, EU TNAC publication window,
-  K-ETS surrender, CBAM definitive period start, ICAP Status Report).
-- Calibration: seven scenarios are now `backtest` status (auto-promoted
+- ECB SDW now surfaces two macro series inline on the Sources surface
+  ECB feed status card: EUR/USD daily reference rate
+  (`EXR.D.USD.EUR.SP00.A`) and Euro-area HICP YoY annual rate of
+  change (`ICP.M.U2.N.000000.4.ANR`).
+- Catalyst event log expanded from 25 → 32 entries with seven new
+  anchors covering the 2025/2026 calendar (EU surrender, TNAC, K-ETS
+  surrender, CBAM definitive start, ICAP Status Report) plus two
+  load-bearing additions for the multi-commodity-stress and ETS2
+  scenarios (Russia–Ukraine commodity peak 2022-03-08; EU Council
+  ETS-revision adoption 2023-04-25).
+- Calibration: nine scenarios are now `backtest` status (auto-promoted
   by the event study once each crossed the ≥2-events threshold), up
-  from one. Eight scenarios remain `heuristic` with one observation
+  from one. Six scenarios remain `heuristic` with one observation
   each, six have no events yet. Model card §6 reflects the new mix.
 
 ### Added — design hand-off aids

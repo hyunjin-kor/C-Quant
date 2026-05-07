@@ -1556,6 +1556,10 @@ export default function App() {
     value: number;
     date: string;
   } | null>(null);
+  const [ecbHicpLatest, setEcbHicpLatest] = useState<{
+    value: number;
+    date: string;
+  } | null>(null);
 
   const selectedMarket = useMemo(
     () => marketProfiles.find((item) => item.id === marketId) ?? marketProfiles[1],
@@ -2197,27 +2201,39 @@ export default function App() {
       } catch {
         if (!cancelled) setFreeFeedStatuses([]);
       }
-      // Demonstrate the ECB SDW wire by pulling the daily EUR/USD reference
-      // rate. Series key = EXR.D.USD.EUR.SP00.A (Daily, USD per EUR, spot,
-      // average). The renderer surfaces the latest data point next to the
-      // ECB feed status card. Failure is silent — the card still shows the
-      // Ready status; only the live value is hidden.
-      try {
-        if (bridge?.freeFeedsFetch) {
-          const series = await bridge.freeFeedsFetch({
-            adapterId: "ecb-sdw",
-            seriesId: "EXR.D.USD.EUR.SP00.A"
-          });
-          if (!cancelled && Array.isArray(series) && series.length > 0) {
-            const sorted = [...series].sort((a, b) => a.date.localeCompare(b.date));
-            const latest = sorted[sorted.length - 1];
-            if (latest && Number.isFinite(latest.value)) {
-              setEcbEurUsdLatest({ value: latest.value, date: latest.date });
+      // Demonstrate the ECB SDW wire by pulling two well-known macro
+      // series and surfacing the latest data point of each next to the
+      // ECB feed status card. Failure is silent — the card still shows
+      // the Ready status; only the live values are hidden.
+      //
+      //   - EUR/USD daily reference: EXR.D.USD.EUR.SP00.A
+      //   - Euro-area HICP all-items, annual rate of change:
+      //       ICP.M.U2.N.000000.4.ANR
+      const ecbFetches: Array<{
+        seriesId: string;
+        setter: (v: { value: number; date: string }) => void;
+      }> = [
+        { seriesId: "EXR.D.USD.EUR.SP00.A", setter: setEcbEurUsdLatest },
+        { seriesId: "ICP.M.U2.N.000000.4.ANR", setter: setEcbHicpLatest }
+      ];
+      for (const { seriesId, setter } of ecbFetches) {
+        try {
+          if (bridge?.freeFeedsFetch) {
+            const series = await bridge.freeFeedsFetch({
+              adapterId: "ecb-sdw",
+              seriesId
+            });
+            if (!cancelled && Array.isArray(series) && series.length > 0) {
+              const sorted = [...series].sort((a, b) => a.date.localeCompare(b.date));
+              const latest = sorted[sorted.length - 1];
+              if (latest && Number.isFinite(latest.value)) {
+                setter({ value: latest.value, date: latest.date });
+              }
             }
           }
+        } catch {
+          // graceful — each series falls back independently
         }
-      } catch {
-        // graceful — feature degrades to the status card alone
       }
     };
     fetchStatuses();
@@ -4091,6 +4107,14 @@ export default function App() {
                       :{" "}
                       <strong>{ecbEurUsdLatest.value.toFixed(4)}</strong>{" "}
                       <span className="free-feed-live-date">({ecbEurUsdLatest.date})</span>
+                    </p>
+                  ) : null}
+                  {feed.provider.includes("ECB") && ecbHicpLatest ? (
+                    <p className="free-feed-live">
+                      {t(locale, "유로존 HICP 연간 변동률 최신", "Euro-area HICP YoY, latest")}
+                      :{" "}
+                      <strong>{ecbHicpLatest.value.toFixed(2)}%</strong>{" "}
+                      <span className="free-feed-live-date">({ecbHicpLatest.date})</span>
                     </p>
                   ) : null}
                   {feed.docUrl ? (
