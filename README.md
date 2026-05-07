@@ -6,9 +6,9 @@
 
 <p align="center"><strong>A decision-support desk for buying, holding, or reducing EU ETS, K-ETS, and China ETS carbon allowances.</strong></p>
 
-C-Quant is a desktop tool that helps an institutional analyst answer one question — **"Should I buy, hold, or reduce carbon allowances right now?"** It reads official auctions, exchange snapshots, and policy bulletins as primary anchors, then layers a research-backed driver matrix, multi-driver catalyst combinations, real-time trigger detection, and backtest-derived multipliers on top, and surfaces a single **buy / hold / reduce** posture with the evidence trail intact.
+C-Quant helps an institutional analyst answer one question — **"Should I buy, hold, or reduce carbon allowances right now?"** Official auctions, exchange snapshots, and policy bulletins anchor the read. A research-backed driver matrix, multi-driver catalyst scenarios, real-time pattern detection, and event-study calibration sit on top. The output is a single **buy / hold / reduce** posture with the evidence trail intact.
 
-It does not execute trades, custody assets, or intermediate settlement. It is research, monitoring, and decision-support software.
+It does not execute trades, custody assets, or intermediate settlement.
 
 [![CI](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml/badge.svg)](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -51,20 +51,13 @@ C-Quant derives buy / hold / reduce by stacking 8 layers. Each layer carries its
 | Microstructure | Auction coverage, open interest, volume, fund positioning, KOC/KAU spread, pilot spillover |
 
 ### Layer 3 — Catalyst combinations
-**21 scenarios — each scenario combines ≥2 drivers** (`src/data/catalystScenarios.ts`).
+**21 scenarios — each combines ≥2 drivers** ([`src/data/catalystScenarios.ts`](src/data/catalystScenarios.ts)).
 
-Representative combinations:
-- **EU cold-snap stack**: temperature anomaly + TTF gas spike + low wind → coal-to-gas dispatch flip → non-linear EUA demand spike
-- **EU MSR + Fit-for-55 stack**: MSR auction-reduction notice + Fit-for-55 reaffirmation → structural forward scarcity
-- **EU hawkish ECB + speculation downshift**: ECB policy surprise + ESMA fund net-long decline + equity drawdown → financialisation-driven selling
-- **EU CBAM expansion + USD strength**: CBAM scope expansion + EUR/USD < 1.05 → coal-gas substitution pressure
-- **EU ETS2 launch + price-stability mechanism**: 2027 ETS2 launch + €45 (2020 prices) trigger → first-2-year regime
-- **K-ETS compliance + KRW weakness + cold winter**: Q1 surrender + USD/KRW > 1,400 + winter LNG burn → import-fuel cost amplifies compliance pressure
-- **K-ETS Phase 4 auction + financial-cap relaxation**: 2026 power auction 15% + Feb 2025 financial-institution access → regime shift
-- **K-ETS penalty multiplier reset**: KAU spot approaches 2.5x trailing 60d average within 4 weeks of surrender → soft ceiling
-- **China Q4 compliance + CCER discount**: Q4 concentration window (79% of 2024 volume) + CCER-CEA spread > 15% discount
-- **China coal shock + power-emissions release**: Qinhuangdao coal +20% / 60d + Carbon Monitor power emissions YoY > +5%
-- **China pilot → national cascade**: Beijing/Chongqing pilot 5d |%| > 10% + Q4 window → spillover
+| Market | Sample combinations |
+| --- | --- |
+| EU | cold-snap stack · MSR + Fit-for-55 · hawkish ECB + speculation downshift · CBAM + USD strength · ETS2 launch + price-stability |
+| K-ETS | compliance + KRW weakness + cold winter · Phase 4 auction + financial-cap relaxation · penalty multiplier reset |
+| China | Q4 compliance + CCER discount · coal shock + power-emissions release · pilot → national cascade |
 
 Every scenario carries `expectedDirection`, `interactionEffect (amplify / offset / regime-shift)`, `playbook`, `historicalAnchor`, and ≥1 primary-source citation.
 
@@ -78,7 +71,7 @@ Live card data is auto-evaluated against four threshold signals (`src/lib/cataly
 When at least half of the testable components fire together, the scenario is flagged **`active`** and surfaces as a card at the top of the Drivers view under "Active patterns now".
 
 ### Layer 5 — Empirical calibration (event-study backtest)
-25 citable historical events (2018–2025) — MSR notices, Fit-for-55, ETS revision trilogue, the 2021–2022 energy crisis, COVID risk-off, K-ETS Fourth Basic Plan, MEE sector-expansion consultation, **CCER restart 2024-01-22**, **K-ETS financial-cap relaxation 2025-02-07**, **CBAM transition start 2023-10-01**, etc. — are evaluated against monthly EU/K/CN ETS price anchors via event study, producing per-scenario `multiplier`, `meanAbsReturn`, and `hitRate`.
+25 citable historical events (2018–2025) — MSR notices, Fit-for-55, ETS revision trilogue, energy-crisis & COVID risk-off, K-ETS Fourth Basic Plan, MEE sector-expansion consultation, CCER restart (2024-01-22), K-ETS financial-cap relaxation (2025-02-07), CBAM transition start (2023-10-01), and others. Each event is evaluated against monthly EU / K / CN price anchors via event study, producing per-scenario `multiplier`, `meanAbsReturn`, and `hitRate`. Full log: [`src/data/catalystEventLog.ts`](src/data/catalystEventLog.ts).
 
 | Calibration status | Meaning |
 | --- | --- |

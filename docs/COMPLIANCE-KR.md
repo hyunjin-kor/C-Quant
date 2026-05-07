@@ -1,7 +1,8 @@
 # C-Quant Compliance Notes — Korea
 
-**Version:** v1.1.x
-**Reviewed:** 2026-04-29
+**Version:** v1.3.x
+**Reviewed:** 2026-05-06
+**Last full review:** 2026-04-29
 **Audience:** Korean-resident operators evaluating C-Quant inside an
 existing compliance perimeter.
 
@@ -53,6 +54,17 @@ The catalyst event log records K-ETS Q1 surrender windows (March
 verification + April surrender) explicitly. The Drivers view surfaces
 the current freshness of the official KAU anchor and flags compliance
 proximity through the catalyst combinations layer.
+
+v1.3.0 expanded the K-ETS-specific driver set substantially. Drivers
+now include `kr_penalty_multiplier` (3× soft ceiling, Kim & Yu 2018),
+`kr_otc_spread` (KOC/KAU inverse spread, Etienne & Yu 2017),
+`kr_allocation_tightness` (expected emissions / free allowance, Jun et
+al. 2021), `kr_attention` (search-query interest), `kr_tariff_insulation`
+(KEPCO regime), and `kr_financial_cap` (institutional access timeline,
+2025-02-07). Operators relying on these drivers for compliance-window
+risk assessment should re-read the cited papers in
+[src/data/researchCatalogue.ts](../src/data/researchCatalogue.ts)
+before publication.
 
 ## Personal information
 

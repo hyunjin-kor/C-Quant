@@ -1,7 +1,8 @@
 # C-Quant Compliance Notes — European Union
 
-**Version:** v1.1.x
-**Reviewed:** 2026-04-29
+**Version:** v1.3.x
+**Reviewed:** 2026-05-06
+**Last full review:** 2026-04-29
 **Audience:** EU-resident operators evaluating C-Quant inside an
 existing compliance perimeter.
 
@@ -46,14 +47,21 @@ guidelines on investment recommendations).
 ## ETS2 transition
 
 The catalyst event log includes the Fit-for-55 proposal and the
-trilogue agreement on ETS revision (2022-12-18). When ETS2 starts
-producing tradable allowances for buildings and road transport, the
-catalyst layer must be extended:
+trilogue agreement on ETS revision (2022-12-18). v1.3.0 also wired an
+**ETS2 launch + price-stability mechanism** scenario in
+[src/data/catalystScenarios.ts](../src/data/catalystScenarios.ts) keyed
+to the 2027 ETS2 launch + €45 (2020 prices) trigger first-2-year
+regime, plus a corresponding `eu_ets2` driver in
+[src/data/research.ts](../src/data/research.ts) cited to Görlach et al.
+2025.
 
-- Add ETS2-specific scenarios (early auction coverage, MSR2 dynamics).
+Remaining work for the ETS2 transition:
+
+- Add MSR2-specific scenarios as the MSR2 mechanism becomes operational.
 - Re-run the event study with ETS2 prices once enough observations
-  exist.
-- Update `docs/MODEL_CARD.md` and the `CHANGELOG.md` per release.
+  exist; promote the ETS2 scenario from `heuristic` to `backtest` when
+  ≥2 ETS2-specific events are in the log.
+- Update [docs/MODEL_CARD.md](MODEL_CARD.md) and [CHANGELOG.md](../CHANGELOG.md) per release.
 
 ## Telemetry, GDPR
 

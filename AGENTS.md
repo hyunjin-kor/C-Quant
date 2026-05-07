@@ -1,18 +1,8 @@
 # C-Quant Agent Harness
 
-## Product Boundary
+This file is a thin pointer. The canonical agent harness — Product Boundary, Truth Rules, Coding Harness, Core Commands, Verification Ladder, Primary Files, Operating Rules — lives in [CLAUDE.md](CLAUDE.md). Read that first.
 
-- C-Quant is a desktop carbon intelligence terminal.
-- It provides research, monitoring, factor tracking, forecasting, and briefing workflows.
-- It does **not** execute orders, intermediate trades, hold assets, or behave like a broker.
-- It does **not** provide one-to-one individualized trade instructions.
-
-## Truth Rules
-
-- Prefer official exchange, ministry, and statistics sources.
-- If a public API is not confirmed from official documentation, label the source as official web flow, not API.
-- Show source freshness and access method whenever possible.
-- Keep model claims bounded. Scenario output is not a calibrated live price target.
+This file keeps only the two things that are unique to the agent surface and not duplicated in CLAUDE.md.
 
 ## UX Benchmark
 
@@ -24,26 +14,6 @@
   - simple navigation
   - visible trust and disclaimer boundaries
 
-## Core Commands
-
-```powershell
-npm.cmd run dev
-npm.cmd run build
-npm.cmd run package:dir
-npm.cmd run package:portable
-```
-
-## Primary Files
-
-- `src/App.tsx`
-- `src/styles.css`
-- `src/data/research.ts`
-- `src/data/platform.ts`
-- `src/data/dataHub.ts`
-- `electron/liveSources.js`
-- `main.js`
-- `preload.js`
-
 ## Definition Of Done
 
 - UI presents EU ETS, K-ETS, and CN ETS on one clear market board.
@@ -51,3 +21,4 @@ npm.cmd run package:portable
 - Factor board and signal layer are understandable without reading code.
 - Subscription value is clear without implying brokerage or trade execution.
 - Desktop build and portable packaging both succeed.
+- Verification ran from the [CLAUDE.md Verification Ladder](CLAUDE.md#verification-ladder) at the tier appropriate to the change, and its outcome is reported.

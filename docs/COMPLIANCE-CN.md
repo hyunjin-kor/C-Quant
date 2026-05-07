@@ -1,7 +1,8 @@
 # C-Quant Compliance Notes — China
 
-**Version:** v1.1.x
-**Reviewed:** 2026-04-29
+**Version:** v1.3.x
+**Reviewed:** 2026-05-06
+**Last full review:** 2026-04-29
 **Audience:** Mainland-China-resident operators or operators serving
 Chinese counterparties evaluating C-Quant.
 
@@ -57,13 +58,25 @@ obligations. C-Quant defaults are local-first:
 ## Sector expansion handling
 
 The catalyst event log records the 2024-09-09 MEE consultation on
-expanding the national ETS to cement, steel, and aluminium. When the
-expansion lands in regulation, the catalyst layer should be re-run:
+expanding the national ETS to cement, steel, and aluminium. v1.3.0
+also added a **pilot → national cascade** scenario keyed to
+Beijing/Chongqing pilot 5-day |%| > 10% + Q4 window spillover (Xiao et
+al. 2022 TVP-VAR ~54% spillover) and a **Q4 compliance + CCER discount**
+scenario tracking the 79% Q4 concentration window (per `cn_q4_concentration`).
 
-1. Add sector-specific scenarios to `catalystScenarios.ts`.
-2. Add the regulatory publication date to `catalystEventLog.ts`.
-3. Re-run the event study; let `catalystCalibration.ts` regenerate.
-4. Update `CHANGELOG.md` and the model card.
+China-specific drivers added in v1.3.0: `cn_eua_spillover` (−0.368
+elasticity, Liao et al. 2025), `cn_power_equity_index` (+1.195),
+`cn_power_emissions` (−0.757 + Carbon Monitor), `cn_pilot_transmission`
+(Xiao et al. TVP-VAR ~54%), `cn_ccer_utilization` (5% cap + restart
+2024-01-22), `cn_usdcny`, and `cn_q4_concentration`.
+
+When the regulatory sector expansion lands, the catalyst layer should
+be re-run:
+
+1. Add sector-specific scenarios to [src/data/catalystScenarios.ts](../src/data/catalystScenarios.ts).
+2. Add the regulatory publication date to [src/data/catalystEventLog.ts](../src/data/catalystEventLog.ts).
+3. Re-run the event study; let [src/data/catalystCalibration.ts](../src/data/catalystCalibration.ts) regenerate.
+4. Update [CHANGELOG.md](../CHANGELOG.md) and [docs/MODEL_CARD.md](MODEL_CARD.md).
 
 ## Reporting language
 

@@ -4,7 +4,232 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
-_Nothing in flight._
+### Documentation harness round (2026-05-05 / 2026-05-06)
+
+A docs-only round. No source, build, or release behaviour changed; the
+following project-handoff and compliance surfaces were resynced with
+v1.2 → v1.3 reality and re-engineered around a Karpathy-style coding
+harness. No CHANGELOG-relevant runtime behaviour changed in this round.
+
+#### Changed — Claude / agent handoff surface
+
+- [CLAUDE.md](CLAUDE.md): rewritten as the canonical handoff. Adds
+  Karpathy-inspired four-rule coding harness (Think Before Coding,
+  Simplicity First, Surgical Changes, Goal-Driven Execution); a 9-tier
+  Verification Ladder mapped to actual `package.json` scripts; an
+  Environment Assumptions block (Node ≥24, Windows-primary, `npm.cmd`
+  vs `npm` convention); expanded Primary Files including
+  `catalyst*.ts`, `materialsResearch.ts`, and
+  `catalystTriggerDetector.ts`; expanded Verified Project Links covering
+  all 15 docs/, root docs, and tooling configs; an End-of-Turn
+  Self-Check checklist.
+- [AGENTS.md](AGENTS.md): slimmed from 54-line stale fork to a
+  21-line thin pointer. Product Boundary, Truth Rules, Core Commands,
+  and Primary Files now delegate to CLAUDE.md. UX Benchmark and
+  Definition Of Done preserved.
+
+#### Changed — strategy & autonomy docs
+
+- [docs/product-strategy.md](docs/product-strategy.md): retired `Lab`
+  surface (CSV upload / backtest chart / walk-forward runner / dataset
+  templates) replaced with the current 4-surface model
+  (`Command` / `Drivers` / `Desk` / `Sources`). Historical 8-hour
+  "Autonomous Build Plan" timeline marked as preserved-in-git-log.
+  "Confirmed Core Source Strategy" split into **Wired today** vs
+  **Aspirational targets** (ENTSO-E / ENTSOG / Eurostat / EEX
+  DataSource REST / KOSIS / KMA relabelled as aspirational).
+- [docs/autonomy-state.md](docs/autonomy-state.md): removed 17 broken
+  `docs/superpowers/` references (the planning artifacts were never
+  committed to the repo). Fixed the `src/components/surfaces/` path.
+  Closed the "refresh historical product docs" queue item.
+- [docs/harness-engineering.md](docs/harness-engineering.md):
+  Verification Gates section now points to the canonical
+  CLAUDE.md verification ladder instead of duplicating it.
+- [docs/project-links.md](docs/project-links.md): `Last audited`
+  bumped + `Next audit due` (2026-08-05) added to enforce a
+  predictable rotation.
+
+#### Changed — model card + compliance docs (v1.1 → v1.3 resync)
+
+- [docs/MODEL_CARD.md](docs/MODEL_CARD.md): §2 now reflects that the
+  catalyst-multiplier layer is empirically calibrated via event study
+  (`heuristic / backtest / calibrated` 3-state taxonomy) rather than
+  heuristic-only as v1.1 stated. §3 Inputs expanded to include
+  `catalystEventLog.ts` (25 events), `historicalPriceAnchors.ts`,
+  `catalystCalibration.ts`, and `researchCatalogue.ts` (44 papers).
+  §6 Calibration row updated to the 3-state taxonomy with
+  `npm run calibration:check` 90-day gate; Backtesting row clarifies
+  that `eventStudy.ts` runs against the curated log while
+  `walkForward.ts` is a separate forecast-estimator track. Header now
+  carries both `Reviewed` and `Last full review` so future audits can
+  see the resync date.
+- [docs/COMPLIANCE.md](docs/COMPLIANCE.md): §6 calibration governance
+  corrected — the `backtest` status is event-study output, not a
+  walk-forward run as the v1.1 text stated. §8 operator checklist
+  updated with the actual calibration path
+  (`src/data/catalystEventLog.ts` rather than `tests/fixtures/`) and
+  cross-referenced to the CLAUDE.md Verification Ladder. §9 change log
+  expanded from 1 row → 5 rows covering v1.1 → v1.3.1 plus this resync.
+- [docs/COMPLIANCE-EU.md](docs/COMPLIANCE-EU.md): ETS2 transition
+  section updated to note that the ETS2 launch + price-stability
+  scenario and `eu_ets2` driver are wired in v1.3.0 (Görlach et al.
+  2025); MSR2 specifics remain future work.
+- [docs/COMPLIANCE-KR.md](docs/COMPLIANCE-KR.md): added a v1.3.0
+  driver-expansion note covering `kr_penalty_multiplier`,
+  `kr_otc_spread`, `kr_allocation_tightness`, `kr_attention`,
+  `kr_tariff_insulation`, and `kr_financial_cap`.
+- [docs/COMPLIANCE-CN.md](docs/COMPLIANCE-CN.md): added the v1.3.0
+  pilot-to-national-cascade and Q4 compliance scenarios + 7
+  China-specific drivers (`cn_eua_spillover`, `cn_power_equity_index`,
+  `cn_power_emissions`, `cn_pilot_transmission`, `cn_ccer_utilization`,
+  `cn_usdcny`, `cn_q4_concentration`).
+
+#### Changed — app icon (hand-crafted, glass-dome composition)
+
+- New app icon replacing the v1.3.1 programmatic "rounded-square + C +
+  chart" mark. The new icon depicts a translucent glass dome encasing a
+  fanned stack of mint-green allowance coins (front coin embossed with
+  "CO₂", a laurel-and-shield compliance seal, and a "1.00 t" tonnage
+  stamp), with a green sprout growing from the front coin into a
+  candlestick price chart inside the dome, and a tiny outside sprout at
+  the lower-left base. Mood: premium, approachable, unmistakably about
+  regulated CO₂ carbon-credit pricing.
+- Source committed at [assets/app-icon-source.png](assets/app-icon-source.png) (614×617 RGBA hand-crafted).
+- [tools/generate-app-icon.py](tools/generate-app-icon.py) rewritten:
+  instead of drawing the icon programmatically, it now loads the source
+  image, center-crops to square, resizes to 1024, applies a 14% rounded
+  corner mask with a 0.6 px feather, and emits the three downstream
+  artefacts.
+- Outputs:
+  - [assets/app-icon.png](assets/app-icon.png) — 512×512, README hero + macOS / Linux build
+  - `assets/app-icon@1024.png` — 1024×1024 high-DPI archive
+  - [assets/app-icon.ico](assets/app-icon.ico) — multi-size 256 / 128 / 64 / 48 / 32 / 16 (Windows build)
+- Reference paths unchanged, so [README.md](README.md) hero,
+  [main.js](main.js) Electron window icon, [package.json](package.json)
+  electron-builder Windows / macOS / Linux icon entries, and
+  [src/App.tsx](src/App.tsx) in-app icon URL all pick up the new visual
+  automatically with no further edits.
+
+#### Added — design / story deliverables (external-facing)
+
+- [docs/figma-spec.md](docs/figma-spec.md): a designer brief covering
+  the four primary surfaces (Command / Drivers / Desk / Sources) with
+  light + dark color tokens, typography ramp, radius / spacing /
+  motion tokens, per-surface layout grids, component anatomy, and
+  states to mock. The brief grounds every value in the live source
+  ([src/styles.css](src/styles.css), [src/components/surfaces/](src/components/surfaces),
+  [docs/USAGE.md](docs/USAGE.md)) so the eventual Figma file does not
+  drift from the running app.
+- [docs/decks/c-quant-story.pptx](docs/decks/c-quant-story.pptx): a
+  12-slide story deck for external presentation. Generated by
+  [tools/build-story-deck.mjs](tools/build-story-deck.mjs) (pptxgenjs).
+  Covers title / decision / pain points / boundary / signal stack /
+  decision surfaces / calibration provenance / compliance / tech /
+  architecture / roadmap / closing. Bilingual KO + EN. Designed as a
+  Canva-import skeleton — Canva accepts .pptx import; a designer can
+  polish the visual layer in Canva without redoing the structure.
+  v2 polish (2026-05-06): added 25 react-icons rasterized via sharp
+  on slides 2/3/4/5/7/10/11; replaced the slide-7 calibration card
+  triplet with a real horizontal bar chart (heuristic 21 / backtest 0
+  / calibrated 0); slide-10 architecture diagram is now a 3-box flow
+  (Renderer → Preload → Main) with arrowed IPC / events labels and a
+  security-baseline strip below.
+- [docs/figma-spec/mockups/{command,drivers,desk,sources}.svg](docs/figma-spec/mockups):
+  4 high-fidelity SVG mockups for the primary surfaces. Generated by
+  [tools/build-figma-mockups.mjs](tools/build-figma-mockups.mjs) using
+  the same design tokens enumerated in [docs/figma-spec.md](docs/figma-spec.md).
+  Figma drag-drop imports SVG and decomposes each visual into vector
+  nodes — these mockups give the designer a complete starting point
+  rather than a blank canvas. Sizes: command/desk/sources at 1440×900,
+  drivers at 1440×2400 (the tallest scrolling surface).
+- KO/EN parity code-level audit (2026-05-06): zero raw Korean
+  literals bypass localization helpers in `src/components/surfaces/`;
+  every `ko: "..."` entry in [src/data/locales.ts](src/data/locales.ts)
+  has a paired `en: "..."`. The autonomy queue annotation was
+  tightened from "needs visual pass" to "code-level audit clean;
+  remaining work is wording-quality only". 53/53 regression tests
+  passing across 15 helper slices.
+
+#### Changed — autonomy ledger truthfulness
+
+- [docs/autonomy-state.md](docs/autonomy-state.md): the "Latest
+  Verified Baseline" section credited cycle 30 with adding
+  `localizeAssistantProvider` to [src/lib/localization.ts](src/lib/localization.ts)
+  and committing `tests/localization-assistant-provider.test.mjs`. As
+  of 2026-05-06 grep, neither artefact exists. The phantom test file
+  was removed from the verified-baseline test command, and a new
+  Current Risks bullet documents the cycle 30 ledger inconsistency.
+  The auto-managed `<!-- AUTONOMY:LAST-RUN -->` block below remains
+  unchanged — it gets overwritten on the next autonomy cycle.
+- The 15 actually-existing localization parity tests were re-verified
+  with `node --test tests/localization*.test.mjs`: 53/53 passing.
+- Three remaining `[ ]` items in the queue were annotated with current
+  state: KO/EN parity (in-progress, regression-tested), Figma screens
+  (external — partly unblocked by the new figma-spec.md), Canva deck
+  (external — partly unblocked by the new c-quant-story.pptx).
+
+#### Changed — npm convention alignment (final)
+
+- [CLAUDE.md](CLAUDE.md) Core Commands block: 22 lines changed from
+  `npm.cmd run …` to `npm run …` to match [README.md](README.md) and
+  [CONTRIBUTING.md](CONTRIBUTING.md). The Environment Assumptions
+  prose explains that `npm.cmd` is only required inside
+  PowerShell-chained scripts and that the `npm.cmd` references inside
+  those scripts must NOT be changed. This resolves an internal
+  contradiction between CLAUDE.md prose and its own code block.
+
+#### Verified — wired-but-unused infrastructure pass
+
+- [electron/backtests.js](electron/backtests.js): full IPC + drawer
+  wired (`backtest-save/load/list/remove`), but `grep` finds zero
+  callers of `desktopBridge.backtestSave` in the renderer. The drawer
+  is empty by default until a strategy-backtest producer is
+  implemented. [docs/data-schema.md](docs/data-schema.md),
+  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and
+  [docs/USAGE.md](docs/USAGE.md) §5 were updated to label this state
+  honestly rather than implying the archive is populated.
+- [electron/watchlist.js](electron/watchlist.js): full IPC + drawer
+  wired AND consumed (`watchlistAdd` is called from the pin command,
+  `watchlistRemove`/`watchlistClear` from the drawer,
+  `watchlistLoad` on drawer mount). No drift; existing
+  ARCHITECTURE.md description is accurate.
+
+#### Added — automated verification hooks
+
+- [.claude/settings.json](.claude/settings.json): introduces a
+  `PostToolUse` hook that automatically runs the relevant verification
+  tier when specific paths are edited.
+  - `src/data/catalyst*.ts` edits trigger `npm run calibration:check`
+    (Tier 4 — 90-day freshness gate on scenario calibration).
+  - `electron/*.js`, `main.js`, `preload.js` edits trigger
+    `npm run ci:verify` (Tier 3 — `node --check` on every Electron
+    entrypoint and script).
+  - Path filter is silent on miss; verification failures surface in the
+    turn output. Documented in [CLAUDE.md](CLAUDE.md) under
+    "Automated Verification Hooks".
+  - Twelve `Bash(npm run …)` permission-allow rules added so the hook
+    and routine human-facing commands run without prompts.
+
+#### Changed — root meta docs
+
+- [SECURITY.md](SECURITY.md): "Supported versions" table updated from
+  the v1.0.x line to v1.3.x maintained + 1.0.x – 1.2.x best-effort.
+- [CONTRIBUTING.md](CONTRIBUTING.md): CI claim updated from
+  "windows-latest" to the actual 3-OS matrix
+  (windows-latest primary; macos-latest + ubuntu-latest advisory)
+  with a link to `.github/workflows/ci.yml`.
+- [package.json](package.json) `author` field changed from "Codex"
+  (historical artefact) to "hyunjin-kor" matching the GitHub remote.
+
+#### Verification
+
+- No CI gate applies to a docs-only round. Manual verification:
+  - Every newly-introduced file path was Glob-checked against disk
+    before being committed (no broken markdown links introduced).
+  - `package.json` parses cleanly (`node -e require('./package.json')`).
+  - The CLAUDE.md / AGENTS.md / harness-engineering.md verification
+    ladder now points to a single canonical 9-tier table; no two docs
+    disagree on what `npm run …` invocation a given tier requires.
 
 ## [1.3.1] — 2026-05-04
 

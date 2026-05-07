@@ -86,36 +86,24 @@ Detailed adaptation notes live in [open-source-benchmark-map.md](./open-source-b
 
 ## Current Interface Architecture
 
-The app now centers charts before text.
+The app centers charts before text. The four current surfaces (matching [README.md](../README.md) "Decision surfaces"):
 
-1. `Board`
-   - Top snapshot cards for EU ETS, K-ETS, and China ETS
-   - Official tape chart for the selected market
-   - Cross-market normalized chart where official series exist
-   - Driver heatmap, volume chart, feed, and catalyst timeline
-2. `Decision`
-   - Driver waterfall
-   - Scenario sliders for the most important drivers
-   - Rule-based posture engine
-   - Structured operator brief with optional LLM expansion
-   - Project intelligence sidecar with lifecycle dossier and registry freshness
-   - Registry operations board with workflow, cadence, and blocker visibility
-   - Integrity overlay for nature-based credit risk
-   - Alert hub and quant-indicator list
-3. `Lab`
-   - CSV upload
-   - Backtest chart and metrics
-   - Walk-forward runner and feature-importance chart
-   - Dataset schema and template export
-4. `Sources`
-   - Source-method coverage chart
-   - Source registry
-   - Credit lifecycle dossier shelf
-   - Registry evidence freshness monitor
-   - Registry operations board
-   - Nature-based risk overlays
-   - Watchlists and proxy links
-   - Trust principles and subscription value
+1. `Command` — "What should I do today, and why?"
+   - Top market strip (EU / KR / CN)
+   - Centre chart of official anchor vs listed proxy
+   - Right-hand decision memo (posture + confidence + support / risk bullets)
+   - Bottom row of the five strongest drivers with freshness chips
+2. `Drivers` — "Which signal is firing right now?"
+   - Decision-support boundary notice
+   - Active patterns now (live scenario cards crossing thresholds)
+   - 21 catalyst combinations ranked by current driver weights
+   - Materials & abatement atlas, calibration provenance, event timeline, public-data feeds, driver heatmap
+3. `Desk` — "I want to focus deeply on one market"
+   - Anchor vs hedge tape chart, range and correlation table, scenario weight sliders
+4. `Sources` — "Where did this datum come from, and how fresh is it?"
+   - Access method, freshness, in-app benchmark catalogue, input coverage, trust registry
+
+The previous `Lab` surface (CSV upload, backtest chart, walk-forward runner, dataset templates) was retired. Do not reintroduce it without a new product decision; briefing support stays evidence-based and non-executing.
 
 ## Evidence Briefing Layer
 
@@ -141,55 +129,55 @@ The app now centers charts before text.
 
 ## Autonomous Build Plan
 
-1. 0:00-0:40
-   - Benchmark successful products and redefine the app as a carbon intelligence terminal.
-2. 0:40-2:00
-   - Replace the old information architecture with a chart-first graph surface.
-3. 2:00-3:20
-   - Build the official market board for EU ETS, K-ETS, and China ETS.
-4. 3:20-4:20
-   - Build the driver heatmap, waterfall, and catalyst timeline.
-5. 4:20-5:10
-   - Build the source registry and trust center.
-6. 5:10-6:10
-   - Build the alert hub, watchlists, and saveable daily brief.
-7. 6:10-7:10
-   - Reorganize the lab around scenario, walk-forward, backtest, and dataset templates.
-8. 7:10-8:00
-   - Rebuild the desktop outputs, update docs, and push to GitHub.
+The original 8-hour autonomous bootstrap plan (benchmark → IA → market board → driver / catalyst layers → source registry → alert hub → lab → packaging) was completed and is preserved in `git log`. It is not the active development plan.
+
+The current development loop is governed by [docs/autonomy-state.md](autonomy-state.md) (queue, risks, latest cycle) and [docs/harness-engineering.md](harness-engineering.md) (loop rules, verification gates, monitor).
 
 ## Harness Engineering
 
-The development harness is intentionally simple and local-first.
+The development harness is intentionally simple and local-first. The canonical reference for commands, verification ladder, and primary files is [CLAUDE.md](../CLAUDE.md). The autonomy loop, control plane, and monitor are documented in [docs/harness-engineering.md](harness-engineering.md).
+
+High-level shape:
 
 - Renderer: React + Vite
 - Desktop shell: Electron
-- Research runner: local Python script for walk-forward validation
-- Packaging: `electron-builder` portable Windows output
-- Source ingestion: Electron main-process fetchers for official sources
-
-Current loop:
-
-1. Update product data or UI in `src/`.
-2. Verify renderer build with `npm.cmd run build`.
-3. Package desktop output with `npm.cmd run package:portable`.
-4. Smoke test the EXE from `release/`.
-5. Push validated changes to GitHub.
+- Packaging: `electron-builder` (portable + NSIS Windows; macOS / Linux advisory)
+- Source ingestion: Electron main-process fetchers for official sources (see [electron/liveSources.js](../electron/liveSources.js))
+- Calibration / event-study evaluation: in-tree TypeScript (no external Python research runner)
 
 ## Confirmed Core Source Strategy
 
-- EU ETS
-  - EEX EU ETS Auctions
-  - EEX DataSource REST API guide
-  - ENTSO-E Transparency Platform
-  - ENTSOG Transparency API
-  - Eurostat API
-- K-ETS
-  - KRX ETS Information Platform
-  - KOSIS Open API
-  - KMA Open MET Data Portal
-- China ETS
-  - MEE carbon-market release feed and development reports
-  - Shanghai Environment and Energy Exchange daily overview
+The wired-today set is the only set the product currently fetches and labels as official anchors. Other sources are aspirational research targets that have **not** been integrated and must not be presented in the UI as live anchors.
 
-External finance portals such as Yahoo Finance are treated as watch links only, not as trusted core sources.
+### Wired today (anchors and proxies actually fetched)
+
+- EU ETS
+  - EEX EU ETS Auctions (official web flow + auction workbook)
+- K-ETS
+  - KRX ETS Information Platform (official web flow)
+  - KRX Open API sample flow for `ets_bydd_trd` (official sample API)
+- China ETS
+  - MEE carbon-market release feed (bulletin-first official web flow)
+  - Shanghai Environment & Energy Exchange daily overview (official web flow)
+- Listed proxies (public chart feed only, never settlement)
+  - ICE EUA December, KRBN, KEUA, CO2.L, KCCA via Yahoo chart endpoint
+- Public-data feeds (Layer 8, license-free)
+  - FRED (St. Louis Fed) — gated by free API key
+  - ECB SDW — open CSV / JSON
+  - ICAP Allowance Price Explorer — public dashboard link
+  - World Bank Carbon Pricing Dashboard — long-horizon comparator
+
+### Aspirational targets (not currently wired; do not surface as live data)
+
+- EEX DataSource REST API
+- ENTSO-E Transparency Platform
+- ENTSOG Transparency API
+- Eurostat API
+- KOSIS Open API
+- KMA Open MET Data Portal
+
+Adding any of these requires a real Electron main-process fetcher in [electron/liveSources.js](../electron/liveSources.js), a freshness label, and a `Source Type` registry entry in [docs/project-links.md](project-links.md). Until that lands, treat them as research notes only.
+
+External finance portals such as Yahoo Finance are listed-proxy chart feeds, not trusted core sources.
+
+License-gated institutional adapters (Refinitiv / Bloomberg / ICE / EEX) only expose `not-configured` status when credentials are missing — they never fabricate, infer, or interpolate prices.

@@ -37,7 +37,7 @@ Security baseline:
 | `electron/sentry.js` | Optional crash upload via `@sentry/electron`. No-op unless `CQUANT_SENTRY_DSN` is set |
 | `electron/exporters.js` | `printToPDF` + RFC 4180 CSV serializer. Save dialog mediated by main |
 | `electron/watchlist.js` | Pinned-view archive with validation, capped at 64 entries |
-| `electron/backtests.js` | Per-run JSON archive at `<userData>/backtests/`, 4 MB cap, ID-validated |
+| `electron/backtests.js` | Generic JSON archive at `<userData>/backtests/`, 4 MB cap, ID-validated. IPC + `BacktestDrawer` are wired (`backtest-save/load/list/remove`), but no renderer code currently calls `backtestSave` — the drawer is empty by default until a strategy backtest producer is implemented |
 | `electron/analytics.js` | Opt-in event dispatcher. No-op unless `analyticsEnabled` setting + `CQUANT_ANALYTICS_ENDPOINT` env var both set |
 
 ## Renderer architecture
@@ -129,9 +129,20 @@ npm run test:node           # node:test
 npm run test:all            # both
 npm run build               # type-check + vite build
 npm run bundle:check        # enforce bundle budgets
-npm run ci:verify           # node --check on every electron entry point
-npm run package:portable    # build + electron-builder portable .exe
+npm run ci:verify           # node --check on every electron entry point + scripts
+npm run calibration:check   # 90-day freshness gate on scenario calibration
+npm run package:dir         # unpacked Electron build
+npm run package:portable    # portable .exe
+npm run package:nsis        # installer .exe (auto-update wired)
+npm run package:mac         # macOS dmg + zip (advisory)
+npm run package:linux       # Linux AppImage + deb (advisory)
+npm run smoke:dir | smoke:portable | smoke:release
+npm run e2e                 # Playwright Electron smoke
 ```
+
+The canonical 9-tier verification ladder for picking which subset of these
+to run for a given change is in
+[../CLAUDE.md#verification-ladder](../CLAUDE.md#verification-ladder).
 
 Bundle budgets (`tools/check-bundle-size.mjs`):
 
@@ -146,8 +157,14 @@ Adjust deliberately when a feature requires more headroom.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on `windows-latest` (matches the package
-target):
+[.github/workflows/ci.yml](../.github/workflows/ci.yml) runs on a 3-OS
+matrix on every push and PR:
+
+- `windows-latest` — primary; matches the Windows package target.
+- `macos-latest` — advisory; allowed to fail until cross-platform packaging stabilises.
+- `ubuntu-latest` — advisory; same.
+
+Steps (per OS):
 
 1. Install (`npm ci`)
 2. Type check
@@ -155,11 +172,19 @@ target):
 4. Format check (continue-on-error)
 5. Vitest
 6. node:test localization suite
-7. `node --check` on Electron entry points
-8. `vite build`
-9. Bundle size budget
+7. `node --check` on Electron entry points + scripts (`ci:verify`)
+8. Calibration freshness gate (`calibration:check`)
+9. `vite build`
+10. Bundle size budget
+11. Playwright Electron smoke (`e2e`)
+
+[.circleci/config.yml](../.circleci/config.yml) also exists and mirrors
+the local Windows release path (`verify_build` → `package_desktop`).
+Confirm which gate is enforced for a given PR before assuming.
 
 ## Renderer libraries
+
+### Shell / chrome
 
 | File | Role |
 |---|---|
@@ -176,6 +201,16 @@ target):
 | `src/lib/i18n.ts` | Additive message catalog (tt(locale, key, params)) |
 | `src/lib/indicators.ts` | Pure SMA/EMA/RSI/Bollinger/log-returns/correlation |
 | `src/lib/desktopBridge.ts` | Typed handle on `window.desktopBridge` |
+
+### Decision-support model layer (v1.2 / v1.3)
+
+| File | Role |
+|---|---|
+| `src/lib/forecast.ts` | Linear weighted sum forecast estimator (intentionally simple, intentionally not OOS-validated) |
+| `src/lib/walkForward.ts` | Generic walk-forward harness: `runWalkForward`, `samplesFromPriceSeries`, `makeBaselineDirectionalModel`. Reviewer-facing track for the forecast estimator |
+| `src/lib/eventStudy.ts` | `evaluateEvent`, `aggregateByScenario`, `runEventStudy`. Calibrates catalyst-multiplier multipliers from a labeled event log |
+| `src/lib/catalystTriggerDetector.ts` | Real-time evaluator: freshness > 24h / price-jump 5d ≥ 5% / volume-jump ≥ 2× / proxy-divergence ≥ 4%. Surfaces "Active patterns now" cards |
+| `src/lib/localization.ts` | KO/EN parity helper; routes through `src/data/locales.ts` |
 
 ## Power UX
 

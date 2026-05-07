@@ -73,17 +73,14 @@ The current loop also borrows a few proven harness ideas from OpenHands V1 and i
 
 ### Verification Gates
 
-- Minimum gate for normal rounds:
-  - `npm.cmd run build`
-- Release gate for packaging-sensitive rounds:
-  - `npm.cmd run package:dir`
-  - `npm.cmd run package:portable`
-- Desktop smoke gate for packaged runs:
-  - `npm.cmd run smoke:dir`
-  - `npm.cmd run smoke:portable`
-  - or `npm.cmd run smoke:release` for both artifacts
-- If a round changes copy, source labeling, or visible decision logic:
-  - verify the screen path manually or with automation before closing the round
+The canonical 9-tier verification ladder lives in [CLAUDE.md → Verification Ladder](../CLAUDE.md#verification-ladder). Use that table to pick the right tier for the change at hand.
+
+Quick mapping for autonomy rounds:
+
+- Normal round minimum: Tier 1 (`type-check`, `lint`) + Tier 2 (`test`, `test:node`) + Tier 5 (`build`).
+- Release-sensitive round: Tiers 1–7 (adds `ci:verify`, `calibration:check` if `src/data/catalyst*` touched, `package:dir`, `package:portable`, `package:nsis`).
+- Packaged smoke gate: Tier 8 (`smoke:dir`, `smoke:portable`, or `smoke:release`).
+- If a round changes copy, source labeling, or visible decision logic, also run Tier 9 (`e2e`) or verify the screen path manually before closing the round.
 
 ### CircleCI Gate
 

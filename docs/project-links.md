@@ -1,6 +1,7 @@
 # Project Links
 
-Last audited: 2026-04-26
+Last audited: 2026-05-05
+Next audit due: 2026-08-05 (or sooner if a new external source is wired)
 
 This file is the single link registry for C-Quant. Keep it factual: add links only after they are present in the repo, provided by the owner, or verified from the service itself.
 

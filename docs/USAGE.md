@@ -212,6 +212,10 @@ Stored at `<userData>/watchlist.json`. Capped at 64 entries (oldest evicted firs
 
 ⌘K → "Open backtest archive". `<userData>/backtests/` 의 저장 파일 목록 (최신순). 각 행에 Load + Delete 버튼.
 
+> **Note (current state)**: The archive infrastructure (IPC, drawer, file store) is wired, but no renderer code currently writes backtests to it — the drawer is empty by default until a strategy-backtest producer is implemented. See [docs/data-schema.md](data-schema.md#1-canonical-storage-tables) `backtest_runs` for the future-state contract.
+>
+> **현재 상태 안내**: 보관함 인프라(IPC, drawer, 파일 저장소)는 모두 연결돼 있지만 현재 렌더러에서 backtest를 저장하는 producer가 아직 없어 기본적으로 비어 있습니다. 전략 backtest 기능이 추가되면 채워질 자리입니다.
+
 **한 줄 요약**: 핀 → 드로어에서 복원. 백테스트도 같은 패턴.
 
 ---

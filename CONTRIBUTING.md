@@ -35,7 +35,7 @@ npm run build          # type-check + vite build
 npm run bundle:check   # enforce bundle budgets
 ```
 
-CI runs the same gates on `windows-latest` for every push and PR.
+CI runs the same gates on every push and PR across `windows-latest` (primary), `macos-latest`, and `ubuntu-latest` (advisory until cross-platform packaging stabilises). See [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 ## Truth rules (from `AGENTS.md` / `CLAUDE.md`)
 

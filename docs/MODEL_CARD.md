@@ -1,7 +1,8 @@
 # C-Quant Model Card
 
-**Version:** v1.1.x
-**Reviewed:** 2026-04-29
+**Version:** v1.3.x
+**Reviewed:** 2026-05-06 (resynced §2, §3, §6 with v1.2 → v1.3 catalyst calibration, event-study, and research-catalogue additions)
+**Last full review:** 2026-04-29
 **Owner:** C-Quant project (research-grade desktop tool)
 
 This is a model card for the decision-support model that powers
@@ -29,25 +30,42 @@ interaction multiplier on top of the same linear sum.
 ## 2. What the model is NOT
 
 - It is **not a calibrated price predictor**. It does not output a
-  price target, and it must not be used as one.
+  price target, and it must not be used as one. The forecast formula
+  in `src/lib/forecast.ts` is a linear weighted sum and is **not**
+  validated against a continuous out-of-sample backtest.
 - It is **not** a trade-execution signal. C-Quant does not route
   orders, custody assets, or behave like a broker.
-- It is **not** trained on labeled historical events. The interaction
-  multipliers are heuristic placeholders (see §6).
-- It is **not** validated against an out-of-sample backtest. The
-  walk-forward harness in `src/lib/walkForward.ts` exists so that a
-  reviewer can plug their own labeled series in and run the evaluation;
-  shipping a calibrated estimator is out of scope.
+
+What ships in v1.3 (was missing in v1.1):
+
+- The catalyst-multiplier layer **is** empirically calibrated against a
+  curated 25-event historical log
+  (`src/data/catalystEventLog.ts`) and monthly price anchors
+  (`src/data/historicalPriceAnchors.ts`) via event study
+  (`src/lib/eventStudy.ts`). Each scenario carries one of three
+  provenance states: `heuristic` (placeholder constant), `backtest`
+  (≥2 events, walk-forward), or `calibrated` (backtested + model-owner
+  reviewed). Read the live state from
+  `src/data/catalystCalibration.ts` rather than assuming everything is
+  heuristic.
+- A walk-forward harness (`src/lib/walkForward.ts`) ships for reviewers
+  who want to validate the forecast estimator against their own labeled
+  driver-history panels. The product itself does not currently run a
+  continuous OOS forecast backtest.
 
 ## 3. Inputs
 
 | Input | Source | Notes |
 | --- | --- | --- |
 | Driver weights | User-controlled scenario sliders | Bounded; default 0 |
-| Official price anchors | EEX (EU), KRX (K), Shanghai Environment & Energy Exchange / MEE feeds (CN) | Public web flow / file; freshness shown in UI |
-| Listed proxies | ICE EUA, KRBN, KEUA, CO2.L (Yahoo chart feed) | Reference proxy, not the official price |
-| Catalyst scenarios | `src/data/catalystScenarios.ts` | Components reference driver IDs from `src/data/research.ts` |
-| Materials atlas | `src/data/materialsResearch.ts` | All entries `verified: false` until human review |
+| Official price anchors (live) | EEX (EU), KRX (K), Shanghai Environment & Energy Exchange / MEE feeds (CN) | Public web flow / file; freshness shown in UI |
+| Listed proxies (live) | ICE EUA, KRBN, KEUA, CO2.L, KCCA (Yahoo chart feed) | Reference proxy, not the official price |
+| Catalyst scenarios | [src/data/catalystScenarios.ts](../src/data/catalystScenarios.ts) — 21 scenarios | Components reference driver IDs from [src/data/research.ts](../src/data/research.ts) |
+| Catalyst event log | [src/data/catalystEventLog.ts](../src/data/catalystEventLog.ts) — 25 events | Each entry has `verified` / `reported` / `context` confidence + primary-source URL |
+| Historical price anchors | [src/data/historicalPriceAnchors.ts](../src/data/historicalPriceAnchors.ts) | Monthly EU / K / CN ETS closing-level series for event study |
+| Calibration table | [src/data/catalystCalibration.ts](../src/data/catalystCalibration.ts) | Pure event-study output per scenario: `multiplier`, `status`, `observations`, `meanAbsReturn`, `hitRate`, `reviewedAt` |
+| Research catalogue | [src/data/researchCatalogue.ts](../src/data/researchCatalogue.ts) — 44 verified papers | Foundation evidence; informs drivers and scenarios. One retracted paper explicitly excluded |
+| Materials atlas | [src/data/materialsResearch.ts](../src/data/materialsResearch.ts) — 10 entries | All entries `verified: false` until human review |
 
 ## 4. Outputs
 
@@ -75,11 +93,12 @@ interaction multiplier on top of the same linear sum.
 
 | Area | Current state | What would close the gap |
 | --- | --- | --- |
-| Calibration | Interaction multipliers are heuristic constants by `interactionEffect`. | Backtest each scenario against a labeled event log; replace each `calibrationStatus: "heuristic"` with `"backtest"` or `"calibrated"` and store the multiplier. |
-| Backtesting | `walkForward.ts` ships, but no historical feature panel is committed. | Connect a verified driver-history source (institutional feed) and run `runWalkForward` per market. |
-| Live institutional feeds | Adapter pattern only. `electron/institutionalFeeds.js` exposes Refinitiv, Bloomberg, ICE, EEX adapters that return `not-configured` until env vars are set. | Procure license, configure env vars, replace `fetchQuote` placeholder with the real provider call. |
-| Compliance review | Boundary statement in CLAUDE.md, README, and the in-app "Decision-support boundary" panel. | Formal compliance review and disclosure language sign-off per jurisdiction. |
-| Model documentation | This file. | Versioned model card per release; track multiplier changes in CHANGELOG. |
+| Calibration | Three-state taxonomy live in `catalystCalibration.ts`: `heuristic` (placeholder), `backtest` (event-study output, ≥2 events, walk-forward), `calibrated` (backtested + model-owner reviewed). The active mix is whatever `catalystCalibration.ts` currently encodes; promotions are gated by [scripts/check-calibration-freshness.mjs](../scripts/check-calibration-freshness.mjs) (90-day threshold, run via `npm run calibration:check`). | Move more scenarios from `heuristic` → `backtest` as the event log gains coverage; promote `backtest` → `calibrated` only after a model-owner review. Each promotion must update `reviewedAt` and ship in the same PR as the underlying evidence. |
+| Continuous backtesting | `walkForward.ts` and `eventStudy.ts` both ship. Event study runs against the 25-event `catalystEventLog.ts` + `historicalPriceAnchors.ts`. A continuous OOS driver-history panel for the linear forecast is **not** committed. | Connect a verified driver-history source (institutional feed) and run `runWalkForward` per market for the forecast estimator (separate from the catalyst layer). |
+| Live institutional feeds | Adapter pattern only. `electron/institutionalFeeds.js` exposes Refinitiv, Bloomberg, ICE, EEX adapters that return `not-configured` until env vars are set; they never fabricate prices. | Procure license, configure env vars, replace `fetchQuote` placeholder with the real provider call. |
+| Free public-data feeds | `electron/freeFeeds.js` ships real adapters for FRED (key-gated) and ECB SDW (open). ICAP and World Bank are exposed as documented entry URLs. | Wire FRED-derived series into specific drivers (e.g. industrial production, credit spreads) so the calibration layer can reference them empirically. |
+| Compliance review | Boundary statement in CLAUDE.md, README, and the in-app "Decision-support boundary" panel. Per-jurisdiction notes in [docs/COMPLIANCE-EU.md](COMPLIANCE-EU.md), [-KR.md](COMPLIANCE-KR.md), [-CN.md](COMPLIANCE-CN.md). | Formal compliance review and disclosure language sign-off per jurisdiction. |
+| Model documentation | This file. | Versioned model card per release; track multiplier changes in `CHANGELOG.md`. |
 
 ## 7. Intended use
 
