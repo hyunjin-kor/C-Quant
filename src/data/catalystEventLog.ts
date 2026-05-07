@@ -495,6 +495,111 @@ export const catalystEventLog: CatalystEvent[] = [
         accessed: "2026-05-04"
       }
     ]
+  },
+
+  // 2025 / 2026 calendar additions ---------------------------------------------
+  // Added 2026-05-07. The five entries below are codified policy and
+  // calendar events (not cherry-picked political headlines) so the
+  // event-study layer can lean on them confidently. Two are "verified"
+  // (the underlying regulation pins the exact date); three are "context"
+  // because the document publication slot moves a few weeks year over
+  // year. Operators should still re-verify before using in regulated
+  // reporting.
+
+  {
+    id: "eu-2024-surrender-2025",
+    scenarioId: "eu-msr-tnac-stack",
+    marketId: "eu-ets",
+    observedAt: "2025-04-30",
+    label: "EU ETS 2024 compliance surrender deadline",
+    brief:
+      "Operators must surrender allowances equal to verified 2024 emissions by 30 April 2025 per Directive 2003/87/EC Article 12(3). The compliance window typically lifts spot demand in March–April as installations true up.",
+    confidence: "verified",
+    references: [
+      {
+        label: "Directive 2003/87/EC (consolidated) - Article 12 surrender",
+        url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02003L0087-20240301",
+        accessed: "2026-05-07"
+      }
+    ]
+  },
+  {
+    id: "eu-tnac-2024-publication-2025",
+    scenarioId: "eu-msr-tnac-stack",
+    marketId: "eu-ets",
+    observedAt: "2025-05-15",
+    label: "EU 2024 TNAC publication window",
+    brief:
+      "EU Commission publishes the Total Number of Allowances in Circulation (TNAC) for the prior calendar year by 15 May each year per MSR Decision (EU) 2015/1814. The TNAC value drives the next year's MSR intake share.",
+    confidence: "verified",
+    references: [
+      {
+        label: "MSR Decision (EU) 2015/1814",
+        url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32015D1814",
+        accessed: "2026-05-07"
+      },
+      {
+        label: "EU Commission - Market Stability Reserve",
+        url: "https://climate.ec.europa.eu/eu-action/eu-emissions-trading-system-eu-ets/market-stability-reserve_en",
+        accessed: "2026-05-07"
+      }
+    ]
+  },
+  {
+    id: "eu-cbam-definitive-start-2026",
+    scenarioId: "eu-cbam-expansion-usd-strength",
+    marketId: "eu-ets",
+    observedAt: "2026-01-01",
+    label: "CBAM definitive period starts",
+    brief:
+      "Per Regulation (EU) 2023/956 Article 36, importers of cement, iron and steel, aluminium, fertilizers, electricity, and hydrogen begin surrendering CBAM certificates on 1 January 2026, ending the 2023–2025 transitional reporting-only regime. Forward EUA scarcity expectations re-anchor as imported embedded emissions enter the EU's pricing perimeter.",
+    confidence: "verified",
+    references: [
+      {
+        label: "Regulation (EU) 2023/956 - CBAM",
+        url: "https://eur-lex.europa.eu/eli/reg/2023/956/oj",
+        accessed: "2026-05-07"
+      },
+      {
+        label: "EU Taxation and Customs - CBAM",
+        url: "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+        accessed: "2026-05-07"
+      }
+    ]
+  },
+  {
+    id: "kr-2024-surrender-2025",
+    scenarioId: "kr-compliance-thin-liquidity",
+    marketId: "k-ets",
+    observedAt: "2025-08-31",
+    label: "K-ETS 2024 compliance surrender deadline",
+    brief:
+      "K-ETS Phase 3 compliance cycle: 2024 verified emissions are surrendered by end of August 2025 per the Greenhouse Gas Emission Trading Act. Q2/Q3 typically sees compliance-driven demand from short-position covered entities as the deadline approaches.",
+    confidence: "context",
+    references: [
+      {
+        label: "ICAP - Korea Emissions Trading System",
+        url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+        accessed: "2026-05-07"
+      }
+    ]
+  },
+  {
+    id: "icap-status-report-2025",
+    scenarioId: "shared-listed-proxy-divergence",
+    marketId: "shared",
+    observedAt: "2025-03-25",
+    label: "ICAP Status Report 2025 release window",
+    brief:
+      "International Carbon Action Partnership publishes its annual cross-jurisdiction ETS status report each spring; the 2025 edition covers EU / UK / California / WCI / RGGI / K-ETS / China and harmonizes coverage, prices, and design metrics. Practitioners use it as a cross-market sanity check on EU vs K vs CN clearing-price spreads.",
+    confidence: "context",
+    references: [
+      {
+        label: "ICAP - Status Report 2025",
+        url: "https://icapcarbonaction.com/en/publications/emissions-trading-worldwide-2025-icap-status-report",
+        accessed: "2026-05-07"
+      }
+    ]
   }
 ];
 
