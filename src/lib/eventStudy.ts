@@ -165,6 +165,17 @@ export function aggregateByScenario(
     const hitRate = decisive.length > 0 ? hits / decisive.length : null;
     // Multiplier scales linearly with observed reaction relative to a 1% baseline,
     // clamped to a defensible band.
+    // Clamp band [0.6, 1.6]: 0.6 prevents pathological zero on single
+    // weak events; 1.6 caps the upper boost a single calibration can
+    // contribute. Known limitation (2026-05-07 audit): every catalyst
+    // scenario saturates at the upper clamp because the historical
+    // anchors are MONTHLY and a typical catalyst-window monthly move
+    // is 5-15%, much larger than the 1% baseline. Widening the clamp
+    // alone (tried 1.6 → 3.0) did not add discrimination — all
+    // scenarios just saturated at 3.0 instead. A real fix needs an
+    // adaptive baseline (proportional to the cross-scenario median or
+    // a daily-anchored series). See docs/macro-card-design.md and
+    // docs/MODEL_CARD.md §6 for the open work item.
     const baseline = 0.01;
     const raw = meanAbsAbnormalReturn / baseline;
     const suggestedMultiplier = Math.min(1.6, Math.max(0.6, raw));

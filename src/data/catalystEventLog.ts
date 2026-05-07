@@ -693,6 +693,28 @@ export const catalystEventLog: CatalystEvent[] = [
         accessed: "2026-05-07"
       }
     ]
+  },
+  {
+    id: "kr-usdkrw-1400-cross-2022",
+    scenarioId: "kr-policy-rate-fx-stack",
+    marketId: "k-ets",
+    observedAt: "2022-09-22",
+    label: "USD/KRW first crosses 1,400 since 2009 GFC",
+    brief:
+      "USD/KRW broke through 1,400 on 22 September 2022 — the first time since the 2009 global financial crisis — driven by the FOMC 75bp hike + BoK lagging response. Korean authorities (MOEF / BoK) issued verbal intervention. Import-fuel cost amplification through the FX channel pressured KAU compliance demand into the Q1 2023 surrender window. The canonical recent reference for the kr-policy-rate-fx-stack scenario.",
+    confidence: "verified",
+    references: [
+      {
+        label: "BoK monetary policy minutes - Sep/Oct 2022",
+        url: "https://www.bok.or.kr/eng/main/contents.do?menuNo=400149",
+        accessed: "2026-05-07"
+      },
+      {
+        label: "ICAP - Korea Emissions Trading System",
+        url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+        accessed: "2026-05-07"
+      }
+    ]
   }
 ];
 

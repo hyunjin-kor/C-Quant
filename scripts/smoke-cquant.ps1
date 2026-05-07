@@ -11,6 +11,12 @@ Set-StrictMode -Version Latest
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $stopScript = Join-Path $PSScriptRoot "stop-running-cquant.ps1"
 
+# Resolve the current package version so the portable path matches
+# release\C-Quant-<version>-portable.exe (electron-builder artifact name).
+$packageJson = Get-Content -Raw (Join-Path $repoRoot "package.json") | ConvertFrom-Json
+$cquantVersion = $packageJson.version
+$portableExe = Join-Path $repoRoot ("release\C-Quant-{0}-portable.exe" -f $cquantVersion)
+
 function Invoke-CleanShutdown {
     & $stopScript | Out-Host
     Start-Sleep -Milliseconds 400
@@ -159,7 +165,7 @@ $targets = switch ($Mode) {
         @(
             [pscustomobject]@{
                 label = "portable"
-                path = Join-Path $repoRoot "release\C-Quant-0.1.0.exe"
+                path = $portableExe
             }
         )
     }
@@ -171,7 +177,7 @@ $targets = switch ($Mode) {
             },
             [pscustomobject]@{
                 label = "portable"
-                path = Join-Path $repoRoot "release\C-Quant-0.1.0.exe"
+                path = $portableExe
             }
         )
     }
