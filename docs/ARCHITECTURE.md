@@ -104,8 +104,9 @@ scrollbars, toasts, command palette, theme toggle, skeletons).
 Cache: `createTtlCache({ maxEntries: 256 })` with per-entry TTL. Expired
 entries are pruned lazily on overflow before LRU eviction.
 
-KRX uses a public sample auth key by default. Override via
-`CQUANT_KRX_AUTH_KEY` environment variable when you have your own key.
+The KRX Open API requires a registered AUTH_KEY per user. Set
+`CQUANT_KRX_AUTH_KEY` in the environment; without it, the K-ETS adapter
+fails with a configuration error.
 
 ## Testing
 

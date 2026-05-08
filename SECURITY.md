@@ -72,10 +72,11 @@ What is **out of scope** for this threat model:
 
 ## Known limitations
 
-- The KRX sample auth key bundled in `electron/liveSources.js` is the
-  publicly documented sample key from the KRX Open API portal. Do not
-  treat it as a secret — replace it with your registered key by setting
-  `CQUANT_KRX_AUTH_KEY` in the environment.
+- The KRX Open API requires a registered AUTH_KEY per user, issued
+  through the KRX Open API portal "My Page" (subject to approval). The
+  K-ETS adapter reads it from `CQUANT_KRX_AUTH_KEY`. When unset, the
+  adapter fails fast with a configuration error rather than using a
+  placeholder.
 - The renderer's electron-updater feed reads from public GitHub releases.
   Anyone who can publish to the release feed can ship code that the
   updater installs. We require code signing to be configured on the

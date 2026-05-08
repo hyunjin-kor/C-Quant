@@ -6,10 +6,10 @@ const KRX_MARKET_PAGE_URL = "https://ets.krx.co.kr/contents/ETS/03/03010000/ETS0
 const KRX_OPEN_API_DETAIL_URL =
   "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=IZiYdcgRQFMeENJPEMKG";
 const KRX_SAMPLE_API_URL = "https://data-dbg.krx.co.kr/svc/sample/apis/gen/ets_bydd_trd";
-// Public KRX sample key documented in their open API portal. Override via
-// CQUANT_KRX_AUTH_KEY when deploying with a real registered key.
-const KRX_PUBLIC_SAMPLE_AUTH_KEY = "74D1B99DFBF345BBA3FB4476510A4BED4C78D13A";
-const KRX_AUTH_KEY = process.env.CQUANT_KRX_AUTH_KEY || KRX_PUBLIC_SAMPLE_AUTH_KEY;
+// KRX Open API requires a registered AUTH_KEY per user (issued through the
+// KRX Open API portal "My Page", subject to approval). Set
+// CQUANT_KRX_AUTH_KEY in the environment to enable the K-ETS adapter.
+const KRX_AUTH_KEY = (process.env.CQUANT_KRX_AUTH_KEY ?? "").trim();
 // Reserved for the eventual KRX scraping path (currently unused — the KRX
 // sample API covers the same surface). Prefixed with _ to silence eslint.
 const _KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
@@ -528,6 +528,11 @@ async function runQuoteTask(config) {
 }
 
 async function fetchKrxApiRowsByDate(compactDate) {
+  if (!KRX_AUTH_KEY) {
+    throw new Error(
+      "KRX adapter not configured: set CQUANT_KRX_AUTH_KEY with your registered KRX Open API key."
+    );
+  }
   return withCache(`krx-day:${compactDate}`, KRX_DAY_CACHE_TTL_MS, async () => {
     const url = `${KRX_SAMPLE_API_URL}?basDd=${compactDate}`;
     const payload = await fetchJson(

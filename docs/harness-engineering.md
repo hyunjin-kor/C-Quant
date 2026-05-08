@@ -31,7 +31,7 @@ The current loop also borrows a few proven harness ideas from OpenHands V1 and i
 
 ### Required Artifacts
 
-- [autonomy-state.md](C:/Users/user/Desktop/C-Quant/docs/autonomy-state.md)
+- [autonomy-state.md](autonomy-state.md)
   - the persistent handoff ledger
   - stores mission, open queue, current risks, and the latest verified cycle
 - `.autonomy/control.json`
@@ -188,7 +188,7 @@ By default the loop starts or resumes with `stop_on_user_return=true`, so any no
 3. Verify factor decomposition and quant playbook panels render for each market.
 4. Verify the evidence briefing layer keeps grounded evidence and does not blur the product boundary.
 5. Rebuild the desktop app and rerun a smoke test.
-6. Update [pdf-reference-audit.md](C:/Users/user/Desktop/C-Quant/docs/pdf-reference-audit.md) if the scope changed.
+6. Update [pdf-reference-audit.md](pdf-reference-audit.md) if the scope changed.
 
 ## Packaged Smoke Gate
 

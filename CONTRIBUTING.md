@@ -14,13 +14,15 @@ cp .env.example .env   # optional — only if you have your own keys
 npm run dev            # Vite + Electron, concurrent
 ```
 
-If you have a registered KRX API key, put it in `.env`:
+To enable the K-ETS live card, register a KRX Open API key via the
+[KRX Open API portal](https://openapi.krx.co.kr/) and put it in `.env`:
 
 ```
 CQUANT_KRX_AUTH_KEY=your-key-here
 ```
 
-Otherwise the bundled public sample key is used.
+Without it, the K-ETS adapter reports a configuration error; the EU and
+China surfaces still work.
 
 ## Quality gates
 
