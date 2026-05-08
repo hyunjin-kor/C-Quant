@@ -55,7 +55,7 @@ The 15 KO/EN parity test files actually present in [tests/](../tests):
 - `npm run package:dir`
 - `npm run package:portable`
 - Most recent `npm run smoke:portable`: passed on 2026-04-20 during cycle 30.
-- A targeted `npx tsc --noEmit --ignoreDeprecations 6.0` check still shows broader pre-existing type debt in `src/App.tsx`, `src/components/InteractiveMarketChart.tsx`, `src/data/locales.ts`, and `src/main.tsx`.
+- A targeted `npx tsc --noEmit --ignoreDeprecations 6.0` check still shows broader pre-existing type debt in `src/App.tsx`, `src/components/InteractiveMarketChart.tsx`, and `src/main.tsx`.
 
 **Ledger correction (2026-05-06)**: The earlier baseline note credited cycle 30 with adding a `localizeAssistantProvider` helper to [src/lib/localization.ts](../src/lib/localization.ts) plus `tests/localization-assistant-provider.test.mjs`. As of 2026-05-06 grep, neither artefact exists in the repository — see [Current Risks](#current-risks). The phantom test reference and accompanying narrative were removed from this section above; the auto-managed Latest Cycle Snapshot block below still carries the original cycle 30 report (it gets overwritten on the next autonomy cycle).
 

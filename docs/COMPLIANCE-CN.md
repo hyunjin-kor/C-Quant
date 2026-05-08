@@ -81,6 +81,6 @@ be re-run:
 ## Reporting language
 
 In-app Chinese localization is currently mediated by the Korean and
-English copy via `localeCopy` in `src/data/locales.ts`. Chinese-language
+English copy via `localizeText` in `src/lib/localization.ts`. Chinese-language
 operators should prefer the English locale until a dedicated `zh`
 locale is added.

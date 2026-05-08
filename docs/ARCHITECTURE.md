@@ -211,7 +211,7 @@ Confirm which gate is enforced for a given PR before assuming.
 | `src/lib/walkForward.ts` | Generic walk-forward harness: `runWalkForward`, `samplesFromPriceSeries`, `makeBaselineDirectionalModel`. Reviewer-facing track for the forecast estimator |
 | `src/lib/eventStudy.ts` | `evaluateEvent`, `aggregateByScenario`, `runEventStudy`. Calibrates catalyst-multiplier multipliers from a labeled event log |
 | `src/lib/catalystTriggerDetector.ts` | Real-time evaluator: freshness > 24h / price-jump 5d ≥ 5% / volume-jump ≥ 2× / proxy-divergence ≥ 4%. Surfaces "Active patterns now" cards |
-| `src/lib/localization.ts` | KO/EN parity helper; routes through `src/data/locales.ts` |
+| `src/lib/localization.ts` | KO/EN parity helper; inline KO/EN dictionary used by `localizeText` / `localizeTextWithFallback` |
 
 ## Power UX
 
