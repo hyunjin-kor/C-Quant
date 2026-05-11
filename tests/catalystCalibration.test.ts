@@ -44,6 +44,16 @@ describe("CATALYST_CALIBRATION", () => {
     );
     expect(backtestRecords.length).toBeGreaterThan(0);
   });
+
+  it("calibrated scenarios must carry backtest evidence in the calibration table", () => {
+    for (const scenario of catalystScenarios) {
+      if (scenario.calibrationStatus !== "calibrated") continue;
+      const record = CATALYST_CALIBRATION.find((r) => r.scenarioId === scenario.id);
+      expect(record).toBeTruthy();
+      expect(record?.status).toBe("backtest");
+      expect(record?.observations ?? 0).toBeGreaterThanOrEqual(2);
+    }
+  });
 });
 
 describe("getCalibrationForScenario / getInteractionMultiplier", () => {
