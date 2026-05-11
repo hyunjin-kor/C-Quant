@@ -1347,23 +1347,6 @@ const KO_CONNECTED_SOURCE_METRIC_LABEL_EXACT: Record<string, string> = {
   "Annual turnover": "연간 거래대금"
 };
 
-const KO_CHAT_GROUNDING_KIND_EXACT: Record<string, string> = {
-  "Official anchor": "공식 앵커",
-  "Listed comparison": "상장 비교",
-  "Official context": "공식 맥락",
-  "Source freshness": "소스 신선도",
-  "Key driver": "핵심 드라이버",
-  "Accounting control": "회계 통제"
-};
-
-const KO_CHAT_GROUNDING_RELIANCE_EXACT: Record<string, string> = {
-  "Primary evidence": "핵심 근거",
-  "Context signal": "맥락 신호",
-  "Proxy benchmark": "프록시 비교",
-  "Research driver": "연구 드라이버",
-  "Accounting control": "회계 통제"
-};
-
 function normalizeOfficialConnectionErrorKey(summary: string) {
   return summary.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -1754,24 +1737,6 @@ export function localizeQuoteCategoryLabel(locale: "ko" | "en", category?: strin
     default:
       return localizeText("ko", raw);
   }
-}
-
-export function localizeChatGroundingKind(locale: "ko" | "en", kind?: string) {
-  const raw = String(kind ?? "").trim();
-  if (!raw || locale !== "ko") {
-    return raw;
-  }
-
-  return KO_CHAT_GROUNDING_KIND_EXACT[raw] ?? localizeText("ko", raw);
-}
-
-export function localizeChatGroundingReliance(locale: "ko" | "en", reliance?: string) {
-  const raw = String(reliance ?? "").trim();
-  if (!raw || locale !== "ko") {
-    return raw;
-  }
-
-  return KO_CHAT_GROUNDING_RELIANCE_EXACT[raw] ?? localizeText("ko", raw);
 }
 
 export function localizeMarketInputFieldDescription(locale: "ko" | "en", description?: string) {
