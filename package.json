@@ -29,6 +29,7 @@
     "test:all": "npm run test && npm run test:node",
     "build": "npm run type-check && vite build",
     "bundle:check": "node tools/check-bundle-size.mjs",
+    "encoding:check": "node tools/check-encoding.mjs",
     "ci:verify": "node --check main.js && node --check preload.js && node --check electron/security.js && node --check electron/cache.js && node --check electron/logger.js && node --check electron/windowState.js && node --check electron/appSettings.js && node --check electron/liveSources.js && node --check electron/autoUpdate.js && node --check electron/sentry.js && node --check electron/exporters.js && node --check electron/watchlist.js && node --check electron/backtests.js && node --check electron/analytics.js && node --check electron/alerts.js && node --check electron/institutionalFeeds.js && node --check electron/freeFeeds.js && node --check scripts/check-calibration-freshness.mjs",
     "calibration:check": "node scripts/check-calibration-freshness.mjs",
     "preview": "vite preview",
