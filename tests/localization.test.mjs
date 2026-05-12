@@ -64,3 +64,27 @@ test("localizeOfficialConnectionError localizes the MEE missing entries error in
     "MEE 목록 페이지에서 탄소시장 항목을 찾지 못했습니다."
   );
 });
+
+test("localizeText returns Korean for catalyst signal price-jump", () => {
+  assert.equal(localization.localizeText("ko", "price-jump"), "가격 급변");
+});
+
+test("localizeText returns Korean for catalyst signal fx-jump", () => {
+  assert.equal(localization.localizeText("ko", "fx-jump"), "환율 급변");
+});
+
+test("localizeText returns Korean for catalyst signal volume-jump", () => {
+  assert.equal(localization.localizeText("ko", "volume-jump"), "거래량 급변");
+});
+
+test("localizeText returns Korean for catalyst signal proxy gap", () => {
+  assert.equal(localization.localizeText("ko", "proxy gap"), "프록시 괴리");
+});
+
+test("localizeText returns Korean for catalyst signal untestable", () => {
+  assert.equal(localization.localizeText("ko", "untestable"), "측정 불가");
+});
+
+test("localizeText keeps English catalyst signal copy unchanged", () => {
+  assert.equal(localization.localizeText("en", "price-jump"), "price-jump");
+});
