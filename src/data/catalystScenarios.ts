@@ -2,7 +2,7 @@ import type { CatalystScenario } from "../types";
 
 const calibratedAt = "2026-07-20";
 
-const reviewedAt = "2026-04-29";
+const reviewedAt = "2026-07-20";
 
 /**
  * Carbon-market catalyst scenarios.
@@ -68,8 +68,8 @@ export const catalystScenarios: CatalystScenario[] = [
         accessed: reviewedAt
       },
       {
-        label: "Energy Economics - weather, energy, and carbon prices",
-        url: "https://www.sciencedirect.com/science/article/pii/S0301421506002121",
+        label: "Alberola, Chevallier & Chèze 2007 - EUA prices vs energy markets and temperatures",
+        url: "https://ideas.repec.org/p/drm/wpaper/2007-33.html",
         accessed: reviewedAt
       }
     ]
@@ -173,7 +173,7 @@ export const catalystScenarios: CatalystScenario[] = [
     id: "eu-compliance-cbam-stack",
     marketIds: ["eu-ets"],
     name: "Compliance surrender season + CBAM importer demand",
-    windowLabel: "Q1 surrender (Mar-Apr)",
+    windowLabel: "Surrender season (Jul-Sep, 30-Sep deadline since 2024)",
     rarity: "common",
     expectedDirection: "higher",
     components: [
@@ -182,7 +182,7 @@ export const catalystScenarios: CatalystScenario[] = [
         family: "Calendar Effects",
         variable: "Surrender deadline",
         sign: "tighten",
-        threshold: "Within 6 weeks of 30-Apr surrender"
+        threshold: "Within 6 weeks of the 30-Sep surrender deadline"
       },
       {
         driverId: "eu_auction_micro",
@@ -521,7 +521,7 @@ export const catalystScenarios: CatalystScenario[] = [
       },
       {
         label: "World Bank - State and Trends of Carbon Pricing",
-        url: "https://www.worldbank.org/en/programs/pricing-carbon",
+        url: "https://www.worldbank.org/en/publication/state-and-trends-of-carbon-pricing",
         accessed: reviewedAt
       }
     ]
@@ -673,7 +673,7 @@ export const catalystScenarios: CatalystScenario[] = [
     id: "eu-ets2-launch-price-stability",
     marketIds: ["eu-ets"],
     name: "ETS2 launch + price-stability mechanism trigger",
-    windowLabel: "ETS2 transition (2027 launch, 2028 first surrender)",
+    windowLabel: "ETS2 transition (2028 launch, 2029 first surrender)",
     rarity: "rare",
     expectedDirection: "ambiguous",
     components: [
@@ -696,13 +696,14 @@ export const catalystScenarios: CatalystScenario[] = [
     calibrationStatus: "heuristic",
     calibratedAt,
     playbook:
-      "ETS2 launches 2027 with a separate cap. Price stability mechanism above €45 (2020 prices) releases additional allowances. Görlach et al. (2025) project €71-€261/tCO2 in 2030 across scenarios. Watch for cross-system spillover into ETS1 expectations.",
+      "ETS2 launches 2028 with a separate cap (start delayed from 2027 by the December 2025 co-legislator deal; first surrender by 2029-05-31). Price stability mechanism above €45 (2020 prices) releases additional allowances. Günther et al. (2025) project €71-€261/tCO2 in 2030 across scenarios. Watch for cross-system spillover into ETS1 expectations.",
     whyItMatters:
       "ETS2 is a new regime; first 2 years will set the basis for institutional positioning. ETS1 may decouple temporarily.",
-    historicalAnchor: "2027-01 launch, 2028-04 first surrender (forward).",
+    historicalAnchor:
+      "2028-01 launch, 2029-05 first surrender (forward; start delayed from 2027 in Dec 2025).",
     references: [
       {
-        label: "Görlach et al. 2025 - Climate Policy",
+        label: "Günther et al. 2025 - Climate Policy",
         url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2485196",
         accessed: reviewedAt
       },
@@ -886,7 +887,7 @@ export const catalystScenarios: CatalystScenario[] = [
       "Jan 22, 2024 CCER restart: first 5 days = 911k tons (~3x mandatory volume); CCER traded at 17% discount after initial premium.",
     references: [
       {
-        label: "Wang et al. 2022 - Carbon Neutrality",
+        label: "Li, Yao & Wang 2022 - Carbon Neutrality",
         url: "https://link.springer.com/article/10.1007/s43979-022-00035-3",
         accessed: reviewedAt
       },

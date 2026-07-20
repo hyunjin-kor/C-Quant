@@ -67,7 +67,7 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "etienne-yu-2017-otc-illiquid",
     markets: ["k-ets"],
     citation:
-      "Etienne & Yu (2017). Inverse price spread and illiquid trading in Korea-ETS. Carbon Management, 8(2).",
+      "Etienne & Yu (2017). Inverse price spread and illiquid trading in Korea-ETS. Carbon Management, 8(3).",
     authors: ["Xiaoli L. Etienne", "Jongmin Yu"],
     year: 2017,
     venue: "Carbon Management",
@@ -129,7 +129,7 @@ export const researchCatalogue: ResearchPaper[] = [
     markets: ["k-ets"],
     citation:
       "Jun, Kim & Oh (2021). Evaluating the impact of the K-ETS on GHG reduction in the first phase. Environmental Economics and Policy Studies, 23, 613–638.",
-    authors: ["Sang-Hoon Jun", "J.Y. Kim", "Hyungna Oh"],
+    authors: ["Sung-Hyun Jun", "J.Y. Kim", "Hyungna Oh"],
     year: 2021,
     venue: "Environmental Economics and Policy Studies",
     url: "https://link.springer.com/article/10.1007/s10018-021-00302-0",
@@ -158,8 +158,8 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "park-2024-firm-value",
     markets: ["k-ets"],
     citation:
-      "Park (2024). Effects of carbon emissions trading on profitability and value: Evidence from Korean listed firms. JIFMA, 35.",
-    authors: ["Park"],
+      "Park, Khue & Lee (2024). The effects of carbon emissions trading on profitability and value: Evidence from Korean listed firms. JIFMA, 35(3).",
+    authors: ["Hyejin Park", "Pham Minh Khue", "Jiyoon Lee"],
     year: 2024,
     venue: "Journal of International Financial Management & Accounting",
     url: "https://onlinelibrary.wiley.com/doi/full/10.1111/jifm.12211",
@@ -188,7 +188,7 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "o-miteva-lee-2023-impact-listed",
     markets: ["k-ets"],
     citation:
-      "O, Miteva & Lee (2023). Impact of Korea's emissions trading scheme on publicly traded firms. PLoS ONE, 18(5), e0285863.",
+      "O, Miteva & Lee (2023). Impact of Korea's emissions trading scheme on publicly traded firms. PLoS ONE, 18(5), e0285863 (correction: PLoS ONE e0306209, 2024).",
     authors: ["Nyonho O", "Daniela A. Miteva", "Yehchan Lee"],
     year: 2023,
     venue: "PLoS ONE",
@@ -219,9 +219,9 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "yim-2024-efficiency-early-stage",
     markets: ["k-ets"],
     citation:
-      "Yim et al. (2024). Efficiency in the Early Stages of Carbon Markets: The Case of K-ETS. Emerging Markets Finance and Trade.",
-    authors: ["Yim", "et al."],
-    year: 2024,
+      "Yoon & Karali (2025). Efficiency in the Early Stages of Carbon Markets: The Case of K-ETS. Emerging Markets Finance and Trade, 61(1).",
+    authors: ["Beomseok Yoon", "Berna Karali"],
+    year: 2025,
     venue: "Emerging Markets Finance and Trade",
     url: "https://www.tandfonline.com/doi/full/10.1080/1540496X.2024.2379460",
     kind: "peer-reviewed",
@@ -279,7 +279,7 @@ export const researchCatalogue: ResearchPaper[] = [
     markets: ["k-ets"],
     citation:
       "Performance Comparison of Predictive Methodologies for Carbon Emission Credit Price in K-ETS (2022). Sustainability, 14(13), 8177.",
-    authors: ["MDPI authors"],
+    authors: ["H. Kim", "Y. Kim", "Y. Ko", "S. Han"],
     year: 2022,
     venue: "Sustainability (MDPI)",
     url: "https://www.mdpi.com/2071-1050/14/13/8177",
@@ -366,8 +366,9 @@ export const researchCatalogue: ResearchPaper[] = [
   {
     id: "carbon-pricing-electricity-constraints-2024",
     markets: ["k-ets"],
-    citation: "Carbon pricing under electricity market constraints (2024). Climate Policy.",
-    authors: ["multiple"],
+    citation:
+      "Barlaup & Biedenkopf (2024). Carbon pricing under electricity market constraints: analyzing rent management dynamics in the Republic of Korea. Climate Policy.",
+    authors: ["Barlaup", "Biedenkopf"],
     year: 2024,
     venue: "Climate Policy (Taylor & Francis)",
     url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2024.2394508",
@@ -668,8 +669,8 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "wang-2022-china-first-cycle",
     markets: ["cn-ets"],
     citation:
-      "Wang et al. (2022). First compliance cycle of China's National ETS: insights and implications. Carbon Neutrality (Springer).",
-    authors: ["Wang", "et al."],
+      "Li, Yao & Wang (2022). First compliance cycle of China's National ETS: insights and implications. Carbon Neutrality (Springer).",
+    authors: ["Jin Li", "Yecheng Yao", "Xifan Wang"],
     year: 2022,
     venue: "Carbon Neutrality (Springer)",
     url: "https://link.springer.com/article/10.1007/s43979-022-00035-3",
@@ -958,7 +959,7 @@ export const researchCatalogue: ResearchPaper[] = [
     markets: ["eu-ets"],
     citation:
       "Tan & Wang (2017). Dependence changes between the carbon price and its fundamentals: A quantile regression approach. Applied Energy, 190, 306–325.",
-    authors: ["Xiao-Ping Tan", "Xin-Yu Wang"],
+    authors: ["Xue-Ping Tan", "Xin-Yu Wang"],
     year: 2017,
     venue: "Applied Energy",
     url: "https://ideas.repec.org/a/eee/appene/v190y2017icp306-325.html",
@@ -1014,8 +1015,8 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "friedrich-2019-speculation",
     markets: ["eu-ets"],
     citation:
-      "Friedrich, Mauer, Pahle & Tietjen (2019). Understanding the explosive trend in EU ETS prices — fundamentals or speculation? arXiv:1906.10572.",
-    authors: ["Friedrich", "Mauer", "Pahle", "Tietjen"],
+      "Friedrich, Fries, Pahle & Edenhofer (2019). Understanding the explosive trend in EU ETS prices — fundamentals or speculation? arXiv:1906.10572.",
+    authors: ["Friedrich", "Fries", "Pahle", "Edenhofer"],
     year: 2019,
     venue: "arXiv",
     url: "https://arxiv.org/abs/1906.10572",
@@ -1038,10 +1039,10 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "bocklet-2019-msr-reform",
     markets: ["eu-ets"],
     citation:
-      "Bocklet, Hintermayer, Schmidt & Wildgrube (2019). The reformed EU ETS — Intertemporal emission trading with restricted banking. Energy Economics.",
+      "Bocklet, Hintermayer, Schmidt & Wildgrube (2019). The reformed EU ETS — Intertemporal emission trading with restricted banking. EWI Working Paper 2019-4 (published version in Energy Economics).",
     authors: ["Bocklet", "Hintermayer", "Schmidt", "Wildgrube"],
     year: 2019,
-    venue: "Energy Economics",
+    venue: "EWI Working Paper 2019-4",
     url: "https://ideas.repec.org/p/ris/ewikln/2019_004.html",
     kind: "peer-reviewed",
     finding:
@@ -1379,8 +1380,8 @@ export const researchCatalogue: ResearchPaper[] = [
     id: "gorlach-2025-ets2",
     markets: ["eu-ets"],
     citation:
-      "Görlach, Bocklet et al. (2025). Carbon prices on the rise? Shedding light on the emerging second EU Emissions Trading System (EU ETS 2). Climate Policy.",
-    authors: ["Görlach", "Bocklet", "et al."],
+      "Günther, Pahle, Govorukha, Osorio & Fotiou (2025). Carbon prices on the rise? Shedding light on the emerging second EU Emissions Trading System (EU ETS 2). Climate Policy.",
+    authors: ["Günther", "Pahle", "Govorukha", "Osorio", "Fotiou"],
     year: 2025,
     venue: "Climate Policy",
     url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2485196",

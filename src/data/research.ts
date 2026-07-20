@@ -1,7 +1,7 @@
 import type { BenchmarkPlatform, MarketProfile, QuantIndicator } from "../types";
 
-const today = "2026-04-08";
-const latestReview = "2026-04-18";
+const today = "2026-07-20";
+const latestReview = "2026-07-20";
 
 export const marketProfiles: MarketProfile[] = [
   {
@@ -203,8 +203,9 @@ export const marketProfiles: MarketProfile[] = [
         note: "Weather changes power demand and renewable output, which feeds thermal generation and EUA demand.",
         sources: [
           {
-            label: "Energy Economics - weather, energy, and carbon prices",
-            url: "https://www.sciencedirect.com/science/article/pii/S0301421506002121",
+            label:
+              "Mansanet-Bataller, Pardo & Valor 2007 - CO2 prices, energy and weather (The Energy Journal)",
+            url: "https://ideas.repec.org/a/sae/enejou/v28y2007i3p73-92.html",
             accessed: today
           },
           {
@@ -288,8 +289,8 @@ export const marketProfiles: MarketProfile[] = [
         note: "Bredin & Parsons (2016) document negative convenience yields persisting from 2008; persistent term-structure premium reveals expectations about banking-rule evolution.",
         sources: [
           {
-            label: "Bredin & Parsons 2016 - Energy Journal",
-            url: "https://ideas.repec.org/a/aen/journl/ej37-3-bredin.html",
+            label: "Bredin & Parsons 2016 - Energy Journal (MIT CEEPR WP 2014-007 version)",
+            url: "https://ceepr.mit.edu/wp-content/uploads/2021/09/2014-007.pdf",
             accessed: today
           }
         ]
@@ -338,10 +339,10 @@ export const marketProfiles: MarketProfile[] = [
         importance: "High",
         direction: "context",
         weight: 0.9,
-        note: "ETS2 launches 2027, full surrender 2028. Price stability mechanism releases additional allowances if price exceeds €45 (2020 prices) in first two years. 2030 estimated range €71-€261/tCO2.",
+        note: "ETS2 launches 2028 (delayed from 2027 by the December 2025 co-legislator deal). Price stability mechanism releases additional allowances if price exceeds €45 (2020 prices) in first two years. 2030 estimated range €71-€261/tCO2.",
         sources: [
           {
-            label: "Görlach et al. 2025 - Climate Policy",
+            label: "Günther et al. 2025 - Climate Policy",
             url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2485196",
             accessed: today
           },
@@ -1368,7 +1369,7 @@ export const benchmarkPlatforms: BenchmarkPlatform[] = [
     source: {
       label: "cets.org.cn",
       url: "https://www.cets.org.cn",
-      accessed: today
+      accessed: "2026-04-08"
     },
     featuresToBorrow: [
       "Policy-event stream",
@@ -1476,7 +1477,7 @@ export const communitySignals = [
     source: {
       label: "G2 - Greenly reviews",
       url: "https://www.g2.com/products/greenly/reviews",
-      accessed: latestReview
+      accessed: "2026-04-18"
     }
   },
   {
@@ -1504,7 +1505,7 @@ export const communitySignals = [
     source: {
       label: "Reddit - Scope 3 Reporting Issues & Concerns",
       url: "https://www.reddit.com/r/lifecycleassessment/comments/18dnkt3/scope_3_reporting_issues_concerns/",
-      accessed: latestReview
+      accessed: "2026-04-18"
     }
   },
   {
@@ -1518,7 +1519,7 @@ export const communitySignals = [
     source: {
       label: "Reddit - Carbon Accounting Pain Points",
       url: "https://www.reddit.com/r/carbonaccounting/comments/1h8x0ng/carbon_accounting_pain_points/",
-      accessed: latestReview
+      accessed: "2026-04-18"
     }
   }
 ];

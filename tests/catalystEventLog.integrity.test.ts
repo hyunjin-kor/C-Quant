@@ -4,6 +4,15 @@ import { catalystScenarios } from "../src/data/catalystScenarios";
 
 // Integrity guards added during the 2026-07 calibration review round.
 
+test("event ids are unique", () => {
+  const seen = new Map<string, number>();
+  for (const e of catalystEventLog) {
+    seen.set(e.id, (seen.get(e.id) ?? 0) + 1);
+  }
+  const dupes = [...seen.entries()].filter(([, n]) => n > 1).map(([id]) => id);
+  expect(dupes).toEqual([]);
+});
+
 test("every event maps to an existing scenario", () => {
   const ids = new Set(catalystScenarios.map((s) => s.id));
   const orphans = catalystEventLog.filter((e) => !ids.has(e.scenarioId));

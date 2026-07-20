@@ -51,7 +51,7 @@ export const catalystEventLog: CatalystEvent[] = [
     references: [
       {
         label: "EU Commission - Fit for 55 package",
-        url: "https://climate.ec.europa.eu/eu-action/european-green-deal/delivering-european-green-deal_en",
+        url: "https://commission.europa.eu/strategy-and-policy/priorities-2019-2024/european-green-deal/delivering-european-green-deal_en",
         accessed: "2026-04-29"
       }
     ]
@@ -167,10 +167,10 @@ export const catalystEventLog: CatalystEvent[] = [
     id: "eu-compliance-2024",
     scenarioId: "eu-compliance-cbam-stack",
     marketId: "eu-ets",
-    observedAt: "2024-04-15",
-    label: "April 2024 surrender window",
+    observedAt: "2024-09-16",
+    label: "September 2024 surrender window (first 30-Sep compliance year)",
     brief:
-      "Approach to the 30 April surrender deadline saw recurring auction coverage tightening through Mar-Apr.",
+      "Approach to the 30 September 2024 surrender deadline — the first year after Directive (EU) 2023/959 moved the deadline from 30 April — saw auction coverage tightening through Aug-Sep.",
     confidence: "verified",
     references: [
       {
@@ -228,13 +228,13 @@ export const catalystEventLog: CatalystEvent[] = [
     observedAt: "2024-02-13",
     label: "MOE liquidity reform package",
     brief:
-      "Korean MOE announced banking and offset reforms; intertemporal scarcity loosened around the compliance window.",
-    confidence: "verified",
+      "Korean MOE announced banking and offset reform direction in February 2024 (Emissions Trading Act enforcement-decree amendment; the resulting access expansion took effect 2025-02-07). A dedicated primary-source URL for the February 2024 announcement is pending; the ICAP factsheet carries the staged-reform context.",
+    confidence: "reported",
     references: [
       {
-        label: "Korean MOE English press release - liquidity reform",
-        url: "https://eng.me.go.kr/eng/web/board/read.do?boardId=1718360&boardMasterId=522&menuId=461",
-        accessed: "2026-04-29"
+        label: "ICAP - K-ETS factsheet (staged reform context)",
+        url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
+        accessed: "2026-07-20"
       }
     ]
   },
@@ -344,7 +344,7 @@ export const catalystEventLog: CatalystEvent[] = [
       },
       {
         label: "World Bank - State and Trends of Carbon Pricing",
-        url: "https://www.worldbank.org/en/programs/pricing-carbon",
+        url: "https://www.worldbank.org/en/publication/state-and-trends-of-carbon-pricing",
         accessed: "2026-04-29"
       }
     ]
@@ -380,11 +380,12 @@ export const catalystEventLog: CatalystEvent[] = [
     observedAt: "2024-01-22",
     label: "CCER market restart",
     brief:
-      "China CCER market restarted after multi-year pause. First 5 days = 911k tons (~3x mandatory market volume); CCER initial peak 107.36 -> 72.81 yuan (21% premium then 17% discount vs CEA).",
-    confidence: "verified",
+      "China CCER market restarted after multi-year pause. First 5 days = 911k tons (~3x mandatory market volume); CCER initial peak 107.36 -> 72.81 yuan (21% premium then 17% discount vs CEA); volume/price statistics from press coverage of the restart, primary tape pending.",
+    confidence: "reported",
     references: [
       {
-        label: "Wang et al. 2022 - Carbon Neutrality (Springer)",
+        label:
+          "Li, Yao & Wang 2022 - Carbon Neutrality (context: CCER cap in first compliance cycle)",
         url: "https://link.springer.com/article/10.1007/s43979-022-00035-3",
         accessed: "2026-05-04"
       },
@@ -419,7 +420,7 @@ export const catalystEventLog: CatalystEvent[] = [
     observedAt: "2025-02-07",
     label: "K-ETS financial-institution access expansion",
     brief:
-      "Banks and insurers permitted broader KAU trading from Feb 7, 2025. Continues the staged regime: 200k (2021) -> 500k (Dec 2022) -> 1m (2023) -> general access (Feb 2025). Yim et al. (2024): Hurst exponent regime breaks coincide with these cap changes.",
+      "Banks and insurers permitted broader KAU trading from Feb 7, 2025. Continues the staged regime: 200k (2021) -> 500k (Dec 2022) -> 1m (2023) -> general access (Feb 2025). Yoon & Karali (2025): Hurst exponent regime breaks coincide with these cap changes.",
     confidence: "verified",
     references: [
       {
@@ -428,9 +429,14 @@ export const catalystEventLog: CatalystEvent[] = [
         accessed: "2026-05-04"
       },
       {
-        label: "Yim et al. 2024 - Emerging Markets Finance and Trade",
+        label: "Yoon & Karali 2025 - Emerging Markets Finance and Trade",
         url: "https://www.tandfonline.com/doi/full/10.1080/1540496X.2024.2379460",
         accessed: "2026-05-04"
+      },
+      {
+        label: "Korean MOE - Environmental Policies: Changes Coming in 2025 (2025-01-01)",
+        url: "https://eng.me.go.kr/eng/web/board/read.do?boardId=1718360&boardMasterId=522&menuId=461",
+        accessed: "2026-07-20"
       }
     ]
   },
@@ -457,7 +463,7 @@ export const catalystEventLog: CatalystEvent[] = [
     ]
   },
   {
-    id: "eu-cbam-transition-start-2023",
+    id: "eu-cbam-transition-start-2023-fx",
     scenarioId: "eu-cbam-expansion-usd-strength",
     marketId: "eu-ets",
     observedAt: "2023-10-01",
@@ -480,7 +486,7 @@ export const catalystEventLog: CatalystEvent[] = [
     observedAt: "2022-12-18",
     label: "EU ETS revision trilogue agreement (incl. ETS2)",
     brief:
-      "Provisional political agreement on EU ETS revision: faster LRF, ETS2 for buildings/road transport, updated MSR rules. ETS2 launches 2027, full surrender 2028; price stability mechanism trigger EUR 45 (2020 prices).",
+      "Provisional political agreement on EU ETS revision: faster LRF, ETS2 for buildings/road transport, updated MSR rules. ETS2 launch was set for 2027 at agreement (later delayed to 2028 by the December 2025 co-legislator deal); price stability mechanism trigger EUR 45 (2020 prices).",
     confidence: "verified",
     references: [
       {
@@ -489,7 +495,7 @@ export const catalystEventLog: CatalystEvent[] = [
         accessed: "2026-05-04"
       },
       {
-        label: "Görlach et al. 2025 - Climate Policy",
+        label: "Günther et al. 2025 - Climate Policy",
         url: "https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2485196",
         accessed: "2026-05-04"
       }
@@ -509,37 +515,15 @@ export const catalystEventLog: CatalystEvent[] = [
     id: "eu-2024-surrender-2025",
     scenarioId: "eu-msr-tnac-stack",
     marketId: "eu-ets",
-    observedAt: "2025-04-30",
+    observedAt: "2025-09-30",
     label: "EU ETS 2024 compliance surrender deadline",
     brief:
-      "Operators must surrender allowances equal to verified 2024 emissions by 30 April 2025 per Directive 2003/87/EC Article 12(3). The compliance window typically lifts spot demand in March–April as installations true up.",
+      "Operators had to surrender allowances equal to verified 2024 emissions by 30 September 2025 — Directive (EU) 2023/959 moved the Article 12(3) deadline from 30 April to 30 September from the 2024 compliance year onward. The window lifts spot demand as installations true up.",
     confidence: "verified",
     references: [
       {
         label: "Directive 2003/87/EC (consolidated) - Article 12 surrender",
         url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02003L0087-20240301",
-        accessed: "2026-05-07"
-      }
-    ]
-  },
-  {
-    id: "eu-tnac-2024-publication-2025",
-    scenarioId: "eu-msr-tnac-stack",
-    marketId: "eu-ets",
-    observedAt: "2025-05-15",
-    label: "EU 2024 TNAC publication window",
-    brief:
-      "EU Commission publishes the Total Number of Allowances in Circulation (TNAC) for the prior calendar year by 15 May each year per MSR Decision (EU) 2015/1814. The TNAC value drives the next year's MSR intake share.",
-    confidence: "verified",
-    references: [
-      {
-        label: "MSR Decision (EU) 2015/1814",
-        url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32015D1814",
-        accessed: "2026-05-07"
-      },
-      {
-        label: "EU Commission - Market Stability Reserve",
-        url: "https://climate.ec.europa.eu/eu-action/eu-emissions-trading-system-eu-ets/market-stability-reserve_en",
         accessed: "2026-05-07"
       }
     ]
@@ -587,16 +571,16 @@ export const catalystEventLog: CatalystEvent[] = [
     id: "icap-status-report-2025",
     scenarioId: "shared-listed-proxy-divergence",
     marketId: "shared",
-    observedAt: "2025-03-25",
-    label: "ICAP Status Report 2025 release window",
+    observedAt: "2025-04-08",
+    label: "ICAP Status Report 2025 release",
     brief:
       "International Carbon Action Partnership publishes its annual cross-jurisdiction ETS status report each spring; the 2025 edition covers EU / UK / California / WCI / RGGI / K-ETS / China and harmonizes coverage, prices, and design metrics. Practitioners use it as a cross-market sanity check on EU vs K vs CN clearing-price spreads.",
     confidence: "context",
     references: [
       {
         label: "ICAP - Status Report 2025",
-        url: "https://icapcarbonaction.com/en/publications/emissions-trading-worldwide-2025-icap-status-report",
-        accessed: "2026-05-07"
+        url: "https://icapcarbonaction.com/en/publications/emissions-trading-worldwide-icap-status-report-2025",
+        accessed: "2026-07-20"
       }
     ]
   },
@@ -705,13 +689,53 @@ export const catalystEventLog: CatalystEvent[] = [
     references: [
       {
         label: "BoK monetary policy minutes - Sep/Oct 2022",
-        url: "https://www.bok.or.kr/eng/main/contents.do?menuNo=400149",
+        url: "https://www.bok.or.kr/eng/bbs/E0000634/view.do?nttId=10073229&menuNo=400069",
         accessed: "2026-05-07"
       },
       {
         label: "ICAP - Korea Emissions Trading System",
         url: "https://icapcarbonaction.com/en/ets/korea-emissions-trading-system-k-ets",
         accessed: "2026-05-07"
+      }
+    ]
+  },
+  // ── Events added 2026-07-20 data-reliability round ─────────────────────
+  {
+    id: "cn-2023-2024-allocation-delay-2024",
+    scenarioId: "cn-quota-distribution-delay",
+    marketId: "cn-ets",
+    observedAt: "2024-10-15",
+    label: "MEE 2023/2024 allocation plan issued ~10 months late",
+    brief:
+      "MEE issued the 2023/2024 power-sector allocation plan on 15 October 2024, bundling two vintages: 2023-vintage allowances distributed by 24 October 2024 with surrender due 31 December 2024 — a compressed pre-compliance window repeating the 2022 delay pattern. The same notice moves the market to an annual compliance cycle.",
+    confidence: "verified",
+    references: [
+      {
+        label: "MEE - 2023/2024 power-sector allocation and surrender notice",
+        url: "https://www.mee.gov.cn/xxgk2018/xxgk/xxgk03/202410/t20241021_1089750.html",
+        accessed: "2026-07-20"
+      },
+      {
+        label: "ICAP - China releases allocation plan for power sector (2023 and 2024)",
+        url: "https://icapcarbonaction.com/en/news/china-releases-allocation-plan-power-sector-2023-and-2024",
+        accessed: "2026-07-20"
+      }
+    ]
+  },
+  {
+    id: "cn-ccer-methodologies-2023",
+    scenarioId: "cn-q4-ccer-substitution",
+    marketId: "cn-ets",
+    observedAt: "2023-10-24",
+    label: "MEE issues first four CCER methodologies",
+    brief:
+      "MEE published the first four CCER project methodologies (afforestation, grid-connected solar-thermal, offshore wind, mangrove restoration) under the Voluntary GHG Emission Reduction Trading Management Measures — the supply-side policy step that reopened the CCER offset pipeline ahead of the January 2024 trading restart.",
+    confidence: "verified",
+    references: [
+      {
+        label: "MEE - notice issuing the first four CCER methodologies",
+        url: "https://www.mee.gov.cn/xxgk2018/xxgk/xxgk06/202310/t20231024_1043877.html",
+        accessed: "2026-07-20"
       }
     ]
   }

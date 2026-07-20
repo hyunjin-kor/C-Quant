@@ -1,6 +1,6 @@
 import type { OpenSourceBenchmark } from "../types";
 
-const accessed = "2026-04-11";
+const accessed = "2026-07-20";
 
 export const openSourceBenchmarks: OpenSourceBenchmark[] = [
   {
@@ -35,7 +35,7 @@ export const openSourceBenchmarks: OpenSourceBenchmark[] = [
       "Let the briefing layer explain where a read comes from, which dataset family backs it, and what still requires manual verification.",
     source: {
       label: "OS-Climate",
-      url: "https://os-climate.org/",
+      url: "https://www.finos.org/os-climate",
       accessed
     }
   },

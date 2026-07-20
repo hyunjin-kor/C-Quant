@@ -155,18 +155,6 @@ function getLiveQuoteConfigs() {
       delayNote: YAHOO_PROXY_DELAY_NOTE
     },
     {
-      id: "keua-proxy",
-      title: "KEUA Europe carbon ETF",
-      symbolCandidates: ["KEUA"],
-      category: "Listed proxy",
-      markets: ["eu-ets", "shared"],
-      provider: YAHOO_PROVIDER_LABEL,
-      sourceUrl: "https://kraneshares.com/etf/keua/",
-      role: "Listed proxy for EU carbon exposure",
-      note: "Proxy only. The official listed hedge anchor remains the ICE EUA future.",
-      delayNote: YAHOO_PROXY_DELAY_NOTE
-    },
-    {
       id: "kcca-proxy",
       title: "KCCA California carbon ETF",
       symbolCandidates: ["KCCA"],

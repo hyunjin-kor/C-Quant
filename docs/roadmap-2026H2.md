@@ -9,23 +9,21 @@ no execution, no custody, no individualized trade instructions.
 
 | Item | Deadline | Why |
 | --- | --- | --- |
-| Calibration review round | 2026-07-28 | `REVIEWED_AT` is 2026-04-29; the 90-day gate in `calibration:check` fails CI after this date. Requires a real pass over the 21 scenarios and the event log, not just a date bump. |
-| External-link audit | 2026-08-05 | Quarterly re-verification of the external source URLs cited across README and docs (the standalone `docs/project-links.md` registry was retired in the 2026-07-20 slimming round). |
-| Source freshness round | with the above | The `accessed` stamps in `src/data/platform.ts` (2026-04-09), `docs/research.md` (2026-04-08), and the benchmark map (2026-04-11) are ~100 days old. Re-verify each source and restamp; Truth Rules forbid restamping without re-verification. |
+| Calibration review round | ~~2026-07-28~~ done 2026-07-20 | Both freshness stamps advanced after the anchors/event-log review; the 90-day gate next trips ~2026-10-18. |
+| External-link audit | ~~2026-08-05~~ done 2026-07-20 | Completed early: all 157 data-layer URLs fetch-verified in the 2026-07-20 data-reliability round (next quarterly pass due 2026-10). |
+| Source freshness round | ~~with the above~~ done 2026-07-20 | All data-layer `accessed`/`reviewedAt` stamps restamped after actual re-verification in the 2026-07-20 audit (four unreachable community URLs keep their last-good dates). |
 
 ## Q3 — data depth (the real quantum jump)
 
 The model's ceiling is set by its evidence base, not its code. Three moves raise it:
 
-1. **Extend the price anchor series past 2025-06.** `historicalPriceAnchors.ts`
-   stops there, which caps event-study precision for every 2025 H2 / 2026 event
-   already in the log. Needs operator-supplied monthly closes from primary
-   sources (EEX, KRX, SEEE) — deliberately not automatable under the
-   no-fabrication rule. This single dataset unblocks re-scoring of ~9 logged
-   events currently evaluated against a truncated series.
-2. **Promote the 4 one-observation scenarios to `backtest`.** Each needs one more
-   codified event. Candidate events should come out of the calibration review
-   round above.
+1. **Extend the price anchor series past 2025-06.** Done 2026-07-20 — monthly
+   anchors now run through 2026-06 for all three markets, collected from
+   verified public records (ICAP API, KRX close reports, CNEEEX bulletins).
+   Next extension due when the 2026-H2 months close.
+2. **Promote the one-observation scenarios to `backtest`.** Done 2026-07-20 —
+   verified MEE events added for the last two China scenarios; every scenario
+   with logged events (15 of 21) is now `backtest`.
 3. **First `calibrated` promotion.** Governance exists (`docs/COMPLIANCE.md`) but
    has never been exercised. Pick the strongest backtest scenario
    (multiplier spread already 0.50–1.86), do the model-owner review, and

@@ -40,7 +40,7 @@ Two free public feeds extend the macro layer: ECB SDW (EUR/USD, no key needed) a
 
 The posture comes from a driver matrix (about 47 weighted drivers per market, sourced from policy documents and academic literature) plus 21 multi-driver catalyst scenarios. A live detector watches for freshness gaps, price jumps, volume spikes, FX moves, and proxy divergence, and flags a scenario as active when enough of its components fire together.
 
-Scenario multipliers are calibrated against a log of 35 citable historical events (2018–2026) via event study. Each multiplier carries a provenance label so you know how much to trust it:
+Scenario multipliers are calibrated against a log of 36 citable historical events (2018–2026) via event study. Each multiplier carries a provenance label so you know how much to trust it:
 
 | Label        | Meaning                                         |
 | ------------ | ----------------------------------------------- |
@@ -48,7 +48,7 @@ Scenario multipliers are calibrated against a log of 35 citable historical event
 | `backtest`   | walk-forward evaluated against 2+ logged events |
 | `calibrated` | backtested and signed off by a model owner      |
 
-Right now 13 of the 21 scenarios are at `backtest`, none at `calibrated`. CI fails if the calibration review goes more than 90 days stale, so the numbers can't quietly rot.
+Right now 15 of the 21 scenarios are at `backtest`, none at `calibrated`. CI fails if the calibration review goes more than 90 days stale, so the numbers can't quietly rot.
 
 None of this is a price forecast. It's a structured way to keep score of the evidence.
 

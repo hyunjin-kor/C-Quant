@@ -1,7 +1,7 @@
 # C-Quant Model Card
 
 **Version:** v1.4.x
-**Reviewed:** 2026-07-20 (resynced §6 with the 2026-07 calibration review round: anchors extended through 2026-06, `cn-mee-sector-expansion` promoted to `backtest`; see docs/calibration-review-2026-07.md)
+**Reviewed:** 2026-07-20 (2026-07 calibration review + full data-reliability round: anchors extended through 2026-06, all 157 source URLs fetch-verified, event log corrected to 36 entries, 15 scenarios at `backtest`; see docs/calibration-review-2026-07.md)
 **Last full review:** 2026-04-29
 **Owner:** C-Quant project (research-grade desktop tool)
 
@@ -39,7 +39,7 @@ interaction multiplier on top of the same linear sum.
 What ships in v1.3 (was missing in v1.1):
 
 - The catalyst-multiplier layer **is** empirically calibrated against a
-  curated 25-event historical log
+  curated 36-event historical log
   (`src/data/catalystEventLog.ts`) and monthly price anchors
   (`src/data/historicalPriceAnchors.ts`) via event study
   (`src/lib/eventStudy.ts`). Each scenario carries one of three
@@ -59,12 +59,12 @@ What ships in v1.3 (was missing in v1.1):
 | --- | --- | --- |
 | Driver weights | User-controlled scenario sliders | Bounded; default 0 |
 | Official price anchors (live) | EEX (EU), KRX (K), Shanghai Environment & Energy Exchange / MEE feeds (CN) | Public web flow / file; freshness shown in UI |
-| Listed proxies (live) | ICE EUA, KRBN, KEUA, CO2.L, KCCA (Yahoo chart feed) | Reference proxy, not the official price |
+| Listed proxies (live) | ICE EUA, KRBN, CO2.L, KCCA (Yahoo chart feed; KEUA dropped after its March 2026 liquidation) | Reference proxy, not the official price |
 | Catalyst scenarios | [src/data/catalystScenarios.ts](../src/data/catalystScenarios.ts) — 21 scenarios | Components reference driver IDs from [src/data/research.ts](../src/data/research.ts) |
-| Catalyst event log | [src/data/catalystEventLog.ts](../src/data/catalystEventLog.ts) — 25 events | Each entry has `verified` / `reported` / `context` confidence + primary-source URL |
+| Catalyst event log | [src/data/catalystEventLog.ts](../src/data/catalystEventLog.ts) — 36 events | Each entry has `verified` / `reported` / `context` confidence + primary-source URL |
 | Historical price anchors | [src/data/historicalPriceAnchors.ts](../src/data/historicalPriceAnchors.ts) | Monthly EU / K / CN ETS closing-level series for event study |
 | Calibration table | [src/data/catalystCalibration.ts](../src/data/catalystCalibration.ts) | Pure event-study output per scenario: `multiplier`, `status`, `observations`, `meanAbsReturn`, `hitRate`, `reviewedAt` |
-| Research catalogue | [src/data/researchCatalogue.ts](../src/data/researchCatalogue.ts) — 44 verified papers | Foundation evidence; informs drivers and scenarios. One retracted paper explicitly excluded |
+| Research catalogue | [src/data/researchCatalogue.ts](../src/data/researchCatalogue.ts) — 45 verified papers | Foundation evidence; informs drivers and scenarios. One retracted paper explicitly excluded |
 | Materials atlas | [src/data/materialsResearch.ts](../src/data/materialsResearch.ts) — 10 entries | All entries `verified: false` until human review |
 
 ## 4. Outputs
@@ -93,8 +93,8 @@ What ships in v1.3 (was missing in v1.1):
 
 | Area | Current state | What would close the gap |
 | --- | --- | --- |
-| Calibration | Three-state taxonomy live in `catalystCalibration.ts`: `heuristic` (placeholder), `backtest` (event-study output, ≥2 events, walk-forward), `calibrated` (backtested + model-owner reviewed). **Active mix as of 2026-07-20: 13 scenarios `backtest`, 8 `heuristic` (2 with 1 observation, 6 with no events yet); 0 `calibrated`.** Backtest scenarios: `eu-msr-tnac-stack`, `eu-cold-snap-stack`, `eu-recession-financial-stack`, `eu-compliance-cbam-stack`, `eu-cbam-expansion-usd-strength`, `eu-ets2-launch-price-stability`, `kr-compliance-thin-liquidity`, `kr-phase4-auction-cap-relax`, `kr-banking-relaxation-stack`, `kr-policy-rate-fx-stack`, `cn-mee-sector-expansion`, `shared-listed-proxy-divergence`, `shared-multi-commodity-stress`. The multiplier uses an **adaptive cross-scenario-median baseline** (introduced 2026-05-07): `raw = meanAbsAR / median(meanAbsAR over backtest scenarios)`, clamped to `[0.5, 2.0]`. The median backtest scenario maps to 1.0; strong scenarios trend toward 2.0, weak ones toward 0.5. Today's spread is 0.50 (weakest, `kr-phase4-auction-cap-relax`) → 2.00 (strongest, `eu-compliance-cbam-stack`, at the clamp ceiling) — real differentiation. Promotions are gated by [scripts/check-calibration-freshness.mjs](../scripts/check-calibration-freshness.mjs) (90-day threshold, run via `npm run calibration:check`). | Move more scenarios from `heuristic` → `backtest` by adding ≥2 citable events per remaining scenario (event-study auto-promotes once the threshold is met). Promote `backtest` → `calibrated` only after a model-owner review of the multiplier, hit rate, and observed reactions. Each promotion must update `reviewedAt` and ship in the same PR as the underlying evidence. |
-| Continuous backtesting | `walkForward.ts` and `eventStudy.ts` both ship. Event study runs against the 35-event `catalystEventLog.ts` + `historicalPriceAnchors.ts` (anchors extended through 2026-06 on 2026-07-20). A continuous OOS driver-history panel for the linear forecast is **not** committed. | Connect a verified driver-history source (institutional feed) and run `runWalkForward` per market for the forecast estimator (separate from the catalyst layer). |
+| Calibration | Three-state taxonomy live in `catalystCalibration.ts`: `heuristic` (placeholder), `backtest` (event-study output, ≥2 events, walk-forward), `calibrated` (backtested + model-owner reviewed). **Active mix as of 2026-07-20 (post link-audit round): 15 scenarios `backtest`, 6 `heuristic` (all six with no logged events yet); 0 `calibrated`.** Backtest scenarios: `eu-msr-tnac-stack`, `eu-cold-snap-stack`, `eu-recession-financial-stack`, `eu-compliance-cbam-stack`, `eu-cbam-expansion-usd-strength`, `eu-ets2-launch-price-stability`, `kr-compliance-thin-liquidity`, `kr-phase4-auction-cap-relax`, `kr-banking-relaxation-stack`, `kr-policy-rate-fx-stack`, `cn-mee-sector-expansion`, `cn-quota-distribution-delay`, `cn-q4-ccer-substitution`, `shared-listed-proxy-divergence`, `shared-multi-commodity-stress`. The multiplier uses an **adaptive cross-scenario-median baseline** (introduced 2026-05-07): `raw = meanAbsAR / median(meanAbsAR over backtest scenarios)`, clamped to `[0.5, 2.0]`. The median backtest scenario maps to 1.0; strong scenarios trend toward 2.0, weak ones toward 0.5. Today's spread is 0.50 (weakest, `kr-phase4-auction-cap-relax`) → 2.00 (strongest, `eu-compliance-cbam-stack`, at the clamp ceiling) — real differentiation. Promotions are gated by [scripts/check-calibration-freshness.mjs](../scripts/check-calibration-freshness.mjs) (90-day threshold, run via `npm run calibration:check`). | Move more scenarios from `heuristic` → `backtest` by adding ≥2 citable events per remaining scenario (event-study auto-promotes once the threshold is met). Promote `backtest` → `calibrated` only after a model-owner review of the multiplier, hit rate, and observed reactions. Each promotion must update `reviewedAt` and ship in the same PR as the underlying evidence. |
+| Continuous backtesting | `walkForward.ts` and `eventStudy.ts` both ship. Event study runs against the 36-event `catalystEventLog.ts` + `historicalPriceAnchors.ts` (anchors extended through 2026-06 on 2026-07-20). A continuous OOS driver-history panel for the linear forecast is **not** committed. | Connect a verified driver-history source (institutional feed) and run `runWalkForward` per market for the forecast estimator (separate from the catalyst layer). |
 | Live institutional feeds | Adapter pattern only. `electron/institutionalFeeds.js` exposes Refinitiv, Bloomberg, ICE, EEX adapters that return `not-configured` until env vars are set; they never fabricate prices. | Procure license, configure env vars, replace `fetchQuote` placeholder with the real provider call. |
 | Free public-data feeds | `electron/freeFeeds.js` ships real adapters for FRED (key-gated) and ECB SDW (open). ICAP and World Bank are exposed as documented entry URLs. | Wire FRED-derived series into specific drivers (e.g. industrial production, credit spreads) so the calibration layer can reference them empirically. |
 | Compliance review | Boundary statement in CLAUDE.md, README, and the in-app "Decision-support boundary" panel. Per-jurisdiction notes in [docs/COMPLIANCE-EU.md](COMPLIANCE-EU.md), [-KR.md](COMPLIANCE-KR.md), [-CN.md](COMPLIANCE-CN.md). | Formal compliance review and disclosure language sign-off per jurisdiction. |

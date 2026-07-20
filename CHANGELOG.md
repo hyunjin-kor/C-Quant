@@ -4,6 +4,32 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Changed — data-reliability audit (all 157 source URLs fetch-verified)
+
+- Event log corrected against primary records: EU surrender events
+  rebuilt around the post-2023/959 deadline (30 September, not
+  30 April); the TNAC event removed (double-counted the 2025-05-28 MSR
+  communication); two Korean events had swapped sources fixed; two
+  entries honestly downgraded `verified` → `reported`; ETS2 wording
+  updated for the 2027→2028 launch delay; a duplicate event id renamed
+  and a uniqueness test added.
+- Two new MEE-primary-source China events (2024 allocation delay, 2023
+  CCER methodologies) promote the last one-observation scenarios:
+  **15 of 21 scenarios now `backtest`** (36 events, spread 0.50–2.00).
+- Nine citation mismatches fixed in the research catalogue (wrong
+  author attributions incl. Yoon & Karali 2025, Günther et al. 2025,
+  Li/Yao/Wang 2022) plus a published-correction note.
+- Dead or miscited links replaced across the data layer: World Bank
+  carbon-pricing page, BOK press URL, ICAP Status Report slug, EEX API
+  PDF, a fabricated ScienceDirect PII (→ Mansanet-Bataller et al. 2007),
+  a retired RePEc handle (→ MIT CEEPR WP), os-climate (→ FINOS), IEA DAC
+  report URL.
+- KEUA (liquidated March 2026) removed from the live proxy rotation and
+  marked delisted in the source registry.
+- All re-verified `accessed`/`reviewedAt` stamps advanced to 2026-07-20;
+  four unreachable community URLs keep their last-good dates. This
+  completes the quarterly external-link audit two weeks early.
+
 ### Fixed
 
 - Infinite render loop when the renderer runs without the Electron

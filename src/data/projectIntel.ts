@@ -1,6 +1,6 @@
 import type { CreditLifecycleDossier, NatureRiskOverlay, RegistryOperationsTrack } from "../types";
 
-const accessed = "2026-04-11";
+const accessed = "2026-07-20";
 
 export const creditLifecycleDossiers: CreditLifecycleDossier[] = [
   {
@@ -269,7 +269,7 @@ export const registryOperationsTracks: RegistryOperationsTrack[] = [
     refreshCadence:
       "Daily check, plus event-driven recheck after new issuance, monitoring, or retirement activity",
     freshnessSla: "Core registry evidence <= 90 days, monitoring support <= 180 days",
-    lastReviewed: "2026-04-11",
+    lastReviewed: "2026-07-20",
     status: "watch",
     operatorRead:
       "The workflow is usable for desk support, but confidence should stay capped if monitoring or retirement evidence lags the market narrative.",
@@ -322,7 +322,7 @@ export const registryOperationsTracks: RegistryOperationsTrack[] = [
     refreshCadence: "Weekly review, plus event-driven checks around issuance and audit updates",
     freshnessSla:
       "Method or audit evidence <= 120 days; operating proof should remain in the current cycle",
-    lastReviewed: "2026-04-11",
+    lastReviewed: "2026-07-20",
     status: "watch",
     operatorRead:
       "Engineered removals are easier to document than forestry sleeves, but comparability still breaks if audit cadence and issuance cadence drift apart.",

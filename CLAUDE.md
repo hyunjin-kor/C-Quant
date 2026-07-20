@@ -174,7 +174,7 @@ For routine code edits the minimum is Tier 1 + 2 + 5. Release rounds run Tiers 1
 - [src/data/dataHub.ts](src/data/dataHub.ts)
 - [src/data/catalystScenarios.ts](src/data/catalystScenarios.ts) — 21 multi-driver scenarios (Layer 3)
 - [src/data/catalystCalibration.ts](src/data/catalystCalibration.ts) — `heuristic / backtest / calibrated` provenance (Layer 5)
-- [src/data/catalystEventLog.ts](src/data/catalystEventLog.ts) — 25 historical events (Layer 5)
+- [src/data/catalystEventLog.ts](src/data/catalystEventLog.ts) — 36 historical events (Layer 5)
 - [src/data/materialsResearch.ts](src/data/materialsResearch.ts) — long-horizon abatement atlas (Layer 7)
 
 **Live evaluation**

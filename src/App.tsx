@@ -1380,12 +1380,6 @@ function getQuoteNoteLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
         "프록시일 뿐입니다. 현지 ETS 공식 정산가로 읽지 마세요.",
         "Proxy only. Do not treat this as an official local ETS settlement."
       );
-    case "keua-proxy":
-      return t(
-        locale,
-        "프록시일 뿐입니다. 공식 상장 헤지 앵커는 여전히 ICE EUA 선물입니다.",
-        "Proxy only. The official listed hedge anchor remains the ICE EUA future."
-      );
     case "kcca-proxy":
       return t(
         locale,
@@ -1460,8 +1454,6 @@ function getQuoteRoleLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
         "현지 ETS 선물이 없을 때 쓰는 상장 탄소 프록시",
         "Listed carbon proxy when local ETS futures are not available"
       );
-    case "keua-proxy":
-      return t(locale, "EU 탄소 익스포저용 상장 프록시", "Listed proxy for EU carbon exposure");
     case "kcca-proxy":
       return t(
         locale,

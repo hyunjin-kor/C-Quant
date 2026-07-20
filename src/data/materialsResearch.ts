@@ -1,6 +1,6 @@
 import type { MaterialResearchEntry } from "../types";
 
-const reviewedAt = "2026-04-29";
+const reviewedAt = "2026-07-20";
 
 /**
  * Materials and abatement-technology atlas.
@@ -94,7 +94,7 @@ export const materialsResearch: MaterialResearchEntry[] = [
     references: [
       {
         label: "IEA - Direct Air Capture",
-        url: "https://www.iea.org/reports/direct-air-capture",
+        url: "https://www.iea.org/reports/direct-air-capture-2022",
         accessed: reviewedAt
       },
       {

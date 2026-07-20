@@ -5,7 +5,7 @@ import type {
   TrustPrinciple
 } from "../types";
 
-const accessed = "2026-04-09";
+const accessed = "2026-07-20";
 
 export const trustPrinciples: TrustPrinciple[] = [
   {
@@ -53,7 +53,7 @@ export const sourceRegistry: SourceRegistryItem[] = [
     markets: ["eu-ets"],
     category: "Premium market data",
     method: "Commercial API",
-    url: "https://www.eex.com/fileadmin/EEX/Downloads/Market_Data/EEX_Group_DataSource/API/EEX_Group_DataSource_REST_API__v2__User_Guide_v004.pdf",
+    url: "https://www.eex.com/en/market-data/documentation",
     appUse: "Future premium route for deeper exchange-grade market data integration.",
     whyItMatters:
       "If the product later needs a commercial exchange feed, this is the official EEX API path rather than a scraped workflow.",
@@ -285,11 +285,11 @@ export const marketWatchItems: MarketWatchItem[] = [
   },
   {
     id: "keua-official",
-    title: "KEUA",
+    title: "KEUA (delisted)",
     category: "Official issuer page",
-    role: "Europe carbon ETF reference",
+    role: "Historical Europe carbon ETF reference",
     url: "https://kraneshares.com/etf/keua/",
-    note: "Issuer page for the Europe carbon ETF."
+    note: "KEUA was liquidated in March 2026 (last NYSE trading day 2026-03-13). Historical reference only."
   },
   {
     id: "yahoo-krbn",
@@ -301,11 +301,11 @@ export const marketWatchItems: MarketWatchItem[] = [
   },
   {
     id: "yahoo-keua",
-    title: "Yahoo KEUA",
+    title: "Yahoo KEUA (delisted)",
     category: "External market watch",
-    role: "Fast comparison chart",
+    role: "Frozen historical chart",
     url: "https://finance.yahoo.com/quote/KEUA/",
-    note: "Use only as a free comparison chart, not as an official carbon source."
+    note: "KEUA was liquidated in March 2026; the chart is frozen history, not a live comparison tape."
   },
   {
     id: "yahoo-co2",

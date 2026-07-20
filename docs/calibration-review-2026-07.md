@@ -71,6 +71,35 @@ now sits at the clamp ceiling). All 222 unit tests pass against the new
 anchors, including the invariant that `calibrated` status requires
 backtest evidence.
 
+## Addendum — same-day data-reliability round (2026-07-20)
+
+A full source audit (all 157 data-layer URLs fetched and judged) ran the
+same day and corrected the log:
+
+- **Factual corrections**: the EU surrender events were rebuilt around
+  the real post-2023/959 deadline (30 September, not 30 April) —
+  `eu-compliance-2024` moved to 2024-09-16 and `eu-2024-surrender-2025`
+  to 2025-09-30. The TNAC-publication event was removed (it
+  double-counted the 2025-05-28 MSR communication and cited the retired
+  15-May deadline). `kr-liquidity-measures-2024` was downgraded to
+  `reported` (its cited MOE release actually documents the 2025 access
+  expansion and now backs `kr-financial-cap-relaxation-2025`), and
+  `cn-ccer-restart-2024` to `reported` (its stats outrun the cited 2022
+  paper). ETS2 wording now reflects the 2027→2028 launch delay.
+- **Additions**: two MEE-primary-source China events
+  (`cn-2023-2024-allocation-delay-2024`, `cn-ccer-methodologies-2023`),
+  promoting the last two one-observation scenarios.
+- **Post-addendum mix**: 36 events; **15 of 21 scenarios `backtest`**
+  (every scenario with logged events), 6 `heuristic` with no events, 0
+  `calibrated`. New guard: event-id uniqueness test (a duplicate CBAM id
+  was found and renamed).
+- Dead/miscited links replaced across the data layer (World Bank, BOK,
+  ICAP slug, EEX API PDF, a fabricated ScienceDirect PII, a retired
+  RePEc handle); nine citation mismatches in the research catalogue
+  fixed (wrong author attributions incl. Yoon & Karali 2025 and Günther
+  et al. 2025). All verified stamps restamped to 2026-07-20; the four
+  unreachable community URLs keep their last-good dates.
+
 ## Follow-ups for the next round
 
 - `cn-quota-distribution-delay` and `cn-q4-ccer-substitution` each need
