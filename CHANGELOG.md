@@ -4,6 +4,25 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Changed — Command surface & shell redesign
+
+- Command hero rebuilt: flat deep-carbon surface (murky gradient and
+  glassmorphism removed), legible white market title, health metrics as
+  single-line status rows, 2×2 stat grid pinned to the card base, and
+  "Verify now" items with accent markers. The duplicate Boundary card
+  was dropped from the hero — the rail's Product-boundary note already
+  carries it.
+- Posture value is now color-coded by stance (buy = green,
+  hold = amber, reduce = red) for first-glance readability.
+- Workspace nav gained inline icons and a quieter hover/active
+  treatment; page titles sized down from 2.55rem to 1.9rem; header
+  meta chips demoted to neutral pills with a live-status dot.
+- Numeric surfaces (hero stats, health tiles, market metrics, feed
+  pills) now use tabular numerals.
+- Dark-theme fixes: market cards and active market pills no longer
+  render hardcoded light backgrounds in dark mode.
+- Screenshots under docs/images/ recaptured with the new design.
+
 ### Changed — calibration review round (2026-07-20)
 
 - Historical price anchors extended from 2025-06 through 2026-06 for

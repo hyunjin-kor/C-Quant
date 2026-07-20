@@ -142,6 +142,34 @@ const EMPTY_SOURCES: ConnectedSourcePayload = {
   warnings: []
 };
 const SURFACES: Surface[] = ["command", "desk", "drivers", "sources"];
+
+const SURFACE_ICONS: Record<Surface, React.ReactNode> = {
+  command: (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <circle cx="8" cy="8" r="6.2" />
+      <path d="M8 8 L10.8 5.2" strokeLinecap="round" />
+      <circle cx="8" cy="8" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  desk: (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <rect x="1.8" y="2.6" width="12.4" height="8.4" rx="1.6" />
+      <path d="M5.6 13.6h4.8" strokeLinecap="round" />
+    </svg>
+  ),
+  drivers: (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <path d="M1.8 8h2.6l1.8-4 2.6 8 1.8-4h3.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  sources: (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <ellipse cx="8" cy="3.6" rx="5.6" ry="2" />
+      <path d="M2.4 3.6v8.8c0 1.1 2.5 2 5.6 2s5.6-.9 5.6-2V3.6" />
+      <path d="M2.4 8c0 1.1 2.5 2 5.6 2s5.6-.9 5.6-2" />
+    </svg>
+  )
+};
 const MARKET_ORDER: MarketId[] = ["eu-ets", "k-ets", "cn-ets"];
 const RANGE_OPTIONS: QuoteRangePreset[] = ["1d", "5d", "1m", "3m", "6m", "1y"];
 const DEFAULT_COMPARE_QUOTE: Record<MarketId, string> = {
@@ -2544,7 +2572,7 @@ export default function App() {
                     : "n/a"}
                 </small>
               </div>
-              <div className="command-stat">
+              <div className={`command-stat posture stance-${selectedDecision.stance}`}>
                 <span>{t(locale, "스탠스", "Posture")}</span>
                 <strong>{getStanceLabel(locale, selectedDecision.stance)}</strong>
                 <small>{Math.round(selectedDecision.confidence * 100)}%</small>
@@ -2558,18 +2586,6 @@ export default function App() {
           </div>
 
           <div className="command-hero-side">
-            <div className="command-brief-card emphasis">
-              <span className="section-kicker">{t(locale, "경계", "Boundary")}</span>
-              <strong>{t(locale, "리서치와 모니터링 전용", "Research and monitoring only")}</strong>
-              <p>
-                {t(
-                  locale,
-                  "이 터미널은 주문 체결, 거래 중개, 자산 수탁을 하지 않습니다. 공식 앵커와 비교 테이프를 하나의 운영 화면에 담아둘 뿐입니다.",
-                  "This terminal does not execute orders, intermediate trades, or custody assets. It keeps official anchors and comparison tapes on one operating surface."
-                )}
-              </p>
-            </div>
-
             <div className="command-health-grid">
               <div className="command-health-tile">
                 <span>{t(locale, "공식 소스 연결됨", "Official sources online")}</span>
@@ -5033,7 +5049,8 @@ export default function App() {
               className={`rail-button ${surface === item ? "active" : ""}`}
               onClick={() => startTransition(() => setSurface(item))}
             >
-              {getSurfaceLabel(locale, item)}
+              <span className="rail-button-icon">{SURFACE_ICONS[item]}</span>
+              <span>{getSurfaceLabel(locale, item)}</span>
             </button>
           ))}
         </div>
