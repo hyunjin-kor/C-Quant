@@ -2,6 +2,10 @@ node_modules/
 dist/
 release/
 .autonomy/
+.claude/worktrees/
+
+# local planning docs kept out of the repo
+/*.pdf
 .superpowers/
 coverage/
 playwright-report/

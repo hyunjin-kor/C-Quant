@@ -13,6 +13,7 @@ export default [
       "release/**",
       "node_modules/**",
       ".autonomy/**",
+      ".claude/worktrees/**",
       "package-lock.json",
       "tools/autonomy-monitor/index.html",
       "coverage/**",
