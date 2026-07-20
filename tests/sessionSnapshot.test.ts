@@ -183,6 +183,13 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime("2026-05-07T07:00:00Z", now)).toBe("5h ago");
   });
 
+  it("localizes relative labels when the app locale is Korean", () => {
+    const now = new Date("2026-05-07T12:00:00Z");
+    expect(formatRelativeTime("2026-05-07T11:59:30Z", now, "ko")).toBe("방금 전");
+    expect(formatRelativeTime("2026-05-07T11:30:00Z", now, "ko")).toBe("30분 전");
+    expect(formatRelativeTime("2026-05-07T07:00:00Z", now, "ko")).toBe("5시간 전");
+  });
+
   it("falls back to a calendar label for >= 24 hours", () => {
     const now = new Date("2026-05-07T12:00:00Z");
     const label = formatRelativeTime("2026-05-05T08:00:00Z", now);

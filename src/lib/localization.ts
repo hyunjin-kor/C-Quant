@@ -531,6 +531,7 @@ const KO_EXACT: Record<string, string> = {
 
   // Catalyst combinations panel
   "Catalyst combinations": "촉매 조합",
+  "Catalyst pattern active": "촉매 패턴 활성화",
   "What changes when more than one driver fires together":
     "두 개 이상의 드라이버가 동시에 발화할 때 무엇이 바뀌는가",
   "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by your current driver weights.":

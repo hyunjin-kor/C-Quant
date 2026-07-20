@@ -4,6 +4,38 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Added — monitoring alerts grow real teeth
+
+- New `price-jump` alert rule kind: fires an OS notification when a
+  market's primary listed proxy moves more than ±N% (2/5/10 presets)
+  over the last five closes — evaluated in the background against the
+  same public chart tape the app renders, honestly labeled as a proxy
+  move rather than the official settlement. Freshness rules unchanged;
+  both kinds share the cooldown machinery (evaluator unit-tested).
+- Catalyst pattern activations now notify during the session: an
+  in-app toast when a scenario crosses its trigger thresholds, plus an
+  OS notification when the window is hidden.
+
+### Fixed
+
+- The "Since your last session" strip no longer mixes languages: the
+  relative-time label follows the app locale (was hardcoded English
+  short forms plus OS-locale dates, e.g. Korean dates inside the
+  English UI).
+- GitHub Actions bumped off the deprecated Node 20 runtime line
+  (checkout/setup-node v7, upload-artifact v7, download-artifact v8)
+  ahead of the September 2026 runner removal.
+
+### Deferred (documented in docs/open-items.md)
+
+- A daily official China close from CNEEEX was investigated and parked:
+  the daily bulletin pages parse cleanly, but their listing is
+  rendered client-side only and the main-site category and CMS API
+  paths sit behind a bot wall, so there is no robust discovery path for
+  "today's bulletin" without fragile ID-guessing. ICAP's public API was
+  evaluated as an alternative and rejected for this purpose — its tail
+  is ~3 months stale.
+
 ## [1.6.0] — 2026-07-20
 
 The trust release: every source URL in the data layer fetch-verified,

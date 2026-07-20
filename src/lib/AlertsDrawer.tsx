@@ -11,6 +11,7 @@ type Props = {
 
 const MARKETS: Array<AlertRule["marketId"]> = ["eu-ets", "k-ets", "cn-ets"];
 const PRESET_AGES: number[] = [60, 240, 720, 1440]; // minutes
+const PRESET_MOVES: number[] = [2, 5, 10]; // percent over 5 sessions
 
 function formatMarketLabel(market: AlertRule["marketId"]): string {
   return market === "eu-ets" ? "EU ETS" : market === "k-ets" ? "K-ETS" : "China ETS";
@@ -27,7 +28,9 @@ export function AlertsDrawer({ open, onClose }: Props) {
   const toast = useToast();
   const [payload, setPayload] = useState<AlertsPayload>({ version: 1, rules: [] });
   const [marketDraft, setMarketDraft] = useState<AlertRule["marketId"]>("k-ets");
+  const [kindDraft, setKindDraft] = useState<AlertRule["kind"]>("freshness");
   const [ageDraft, setAgeDraft] = useState<number>(720);
+  const [moveDraft, setMoveDraft] = useState<number>(5);
 
   const reload = useCallback(async () => {
     const bridge = getBridge();
@@ -63,18 +66,31 @@ export function AlertsDrawer({ open, onClose }: Props) {
   async function addRule() {
     const bridge = getBridge();
     if (!bridge?.alertsAdd) return;
-    const id = `freshness-${marketDraft}-${ageDraft}-${Date.now().toString(36)}`;
-    const rule: AlertRule = {
-      id,
-      kind: "freshness",
-      name: `${formatMarketLabel(marketDraft)} stale > ${formatAgeLabel(ageDraft)}`,
+    const base = {
       marketId: marketDraft,
-      maxAgeMinutes: ageDraft,
       enabled: true,
       createdAt: new Date().toISOString(),
-      lastFiredAt: "",
-      cooldownMinutes: Math.max(60, Math.round(ageDraft / 4))
+      lastFiredAt: ""
     };
+    const rule: AlertRule =
+      kindDraft === "freshness"
+        ? {
+            ...base,
+            id: `freshness-${marketDraft}-${ageDraft}-${Date.now().toString(36)}`,
+            kind: "freshness",
+            name: `${formatMarketLabel(marketDraft)} stale > ${formatAgeLabel(ageDraft)}`,
+            maxAgeMinutes: ageDraft,
+            cooldownMinutes: Math.max(60, Math.round(ageDraft / 4))
+          }
+        : {
+            ...base,
+            id: `price-jump-${marketDraft}-${moveDraft}-${Date.now().toString(36)}`,
+            kind: "price-jump",
+            name: `${formatMarketLabel(marketDraft)} proxy ±${moveDraft}%`,
+            thresholdPercent: moveDraft,
+            lookbackSessions: 5,
+            cooldownMinutes: 720
+          };
     try {
       const next = await bridge.alertsAdd(rule);
       setPayload(next);
@@ -168,18 +184,44 @@ export function AlertsDrawer({ open, onClose }: Props) {
               </select>
             </label>
             <label>
-              <span className="alerts-builder__label">{tt(locale, "alerts.threshold")}</span>
+              <span className="alerts-builder__label">{tt(locale, "alerts.kind")}</span>
               <select
-                value={ageDraft}
-                onChange={(event) => setAgeDraft(Number(event.target.value))}
+                value={kindDraft}
+                onChange={(event) => setKindDraft(event.target.value as AlertRule["kind"])}
               >
-                {PRESET_AGES.map((minutes) => (
-                  <option key={minutes} value={minutes}>
-                    {formatAgeLabel(minutes)}
-                  </option>
-                ))}
+                <option value="freshness">{tt(locale, "alerts.kind.freshness")}</option>
+                <option value="price-jump">{tt(locale, "alerts.kind.priceJump")}</option>
               </select>
             </label>
+            {kindDraft === "freshness" ? (
+              <label>
+                <span className="alerts-builder__label">{tt(locale, "alerts.threshold")}</span>
+                <select
+                  value={ageDraft}
+                  onChange={(event) => setAgeDraft(Number(event.target.value))}
+                >
+                  {PRESET_AGES.map((minutes) => (
+                    <option key={minutes} value={minutes}>
+                      {formatAgeLabel(minutes)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label>
+                <span className="alerts-builder__label">{tt(locale, "alerts.moveThreshold")}</span>
+                <select
+                  value={moveDraft}
+                  onChange={(event) => setMoveDraft(Number(event.target.value))}
+                >
+                  {PRESET_MOVES.map((pct) => (
+                    <option key={pct} value={pct}>
+                      ±{pct}%
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
           <div className="alerts-builder__actions">
             <button type="button" className="button primary small" onClick={addRule}>
@@ -201,7 +243,11 @@ export function AlertsDrawer({ open, onClose }: Props) {
                   <strong>{rule.name}</strong>
                   <span>
                     {formatMarketLabel(rule.marketId)} ·{" "}
-                    {tt(locale, "alerts.maxAge", { age: formatAgeLabel(rule.maxAgeMinutes) })}
+                    {rule.kind === "price-jump"
+                      ? tt(locale, "alerts.move", { pct: String(rule.thresholdPercent ?? 5) })
+                      : tt(locale, "alerts.maxAge", {
+                          age: formatAgeLabel(rule.maxAgeMinutes ?? 0)
+                        })}
                     {rule.lastFiredAt
                       ? ` · ${tt(locale, "alerts.lastFired", {
                           at: new Date(rule.lastFiredAt).toLocaleString()

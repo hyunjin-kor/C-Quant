@@ -48,6 +48,7 @@ import {
 } from "./lib/sessionSnapshot";
 import { buildForecast } from "./lib/forecast";
 import { localizeText, localizeTextWithFallback } from "./lib/localization";
+import { useToast } from "./lib/toast";
 import type {
   CatalystScenario,
   ConnectedSourceCard,
@@ -1546,6 +1547,8 @@ export default function App() {
   const [sourcesError, setSourcesError] = useState<string | null>(null);
   const [sessionDelta, setSessionDelta] = useState<SessionDelta | null>(null);
   const sessionSnapshotSavedRef = useRef(false);
+  const toast = useToast();
+  const prevActivePatternIdsRef = useRef<Set<string> | null>(null);
   const [compareQuoteByMarket, setCompareQuoteByMarket] = useState<Record<MarketId, string>>({
     "eu-ets": readStoredString("cquant:quote:eu-ets", DEFAULT_COMPARE_QUOTE["eu-ets"]),
     "k-ets": readStoredString("cquant:quote:k-ets", DEFAULT_COMPARE_QUOTE["k-ets"]),
@@ -2465,12 +2468,50 @@ export default function App() {
 
     const current = buildSnapshot({ markets, activeScenarioIds: activeIds });
     const previous = loadSnapshot();
-    const delta = computeSessionDelta(previous, current, new Date());
+    const delta = computeSessionDelta(previous, current, new Date(), getUiLocale(locale));
 
     setSessionDelta(delta);
     saveSnapshot(current);
     sessionSnapshotSavedRef.current = true;
-  }, [connectedSources]);
+  }, [connectedSources, locale]);
+
+  // Notify when a catalyst pattern transitions to active during the
+  // session (first evaluation only seeds the baseline). In-app toast
+  // always; an OS notification only when the window is hidden so the
+  // desk keeps working from the tray.
+  useEffect(() => {
+    const cardsWithData = connectedSources.cards.filter((card) => card.asOf);
+    if (cardsWithData.length === 0) return;
+
+    const detections = detectActivePatterns(
+      catalystScenarios,
+      connectedSources,
+      DEFAULT_DETECTOR_CONFIG,
+      new Date()
+    );
+    const activeIds = new Set(detections.filter((d) => d.active).map((d) => d.scenarioId));
+    const previous = prevActivePatternIdsRef.current;
+    prevActivePatternIdsRef.current = activeIds;
+    if (!previous) return;
+
+    for (const scenarioId of activeIds) {
+      if (previous.has(scenarioId)) continue;
+      const scenario = catalystScenarios.find((s) => s.id === scenarioId);
+      const name = scenario ? l(scenario.name) : scenarioId;
+      const title = t(locale, "촉매 패턴 활성화", "Catalyst pattern active");
+      toast.push({ tone: "warning", title, description: name, durationMs: 10000 });
+      if (document.hidden && typeof Notification !== "undefined") {
+        try {
+          new Notification(`C-Quant · ${title}`, { body: name });
+        } catch {
+          // OS notifications are best-effort
+        }
+      }
+    }
+    // The toast context identity changes on every push, so keying on it
+    // would loop; the data refresh is the intended trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectedSources, locale]);
 
   function handleScenarioChange(driverId: string, nextValue: number) {
     setScenarioState((current) => ({

@@ -27,7 +27,7 @@ const exporters = require("./exporters");
 const analytics = require("./analytics");
 const { createWatchlistStore } = require("./watchlist");
 const { createBacktestStore } = require("./backtests");
-const { createAlertsStore, evaluateFreshness } = require("./alerts");
+const { createAlertsStore, evaluateFreshness, evaluatePriceJump } = require("./alerts");
 const { createInstitutionalFeedRegistry } = require("./institutionalFeeds");
 const { createFreeFeedRegistry } = require("./freeFeeds");
 
@@ -377,7 +377,7 @@ function destroyTray() {
   }
 }
 
-function fireFreshnessNotification(triggered, settings) {
+function fireAlertNotifications(triggered, settings) {
   if (!settings?.notificationsEnabled) return;
   if (!Notification.isSupported()) return;
 
@@ -411,9 +411,13 @@ async function runBackgroundRefresh({ reason }) {
     });
 
     const { rules } = await alertsStore.load();
-    const triggered = evaluateFreshness({ rules, payload, now: new Date() });
+    const now = new Date();
+    const triggered = [
+      ...evaluateFreshness({ rules, payload, now }),
+      ...evaluatePriceJump({ rules, payload, now })
+    ];
     if (triggered.length > 0) {
-      fireFreshnessNotification(triggered, settings);
+      fireAlertNotifications(triggered, settings);
     }
   } catch (error) {
     logger.warn("[bg-refresh] failed:", error);

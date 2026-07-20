@@ -111,23 +111,31 @@ export function buildSnapshot(input: {
   };
 }
 
-/** Format a saved-at timestamp into a compact "since when" label. */
-export function formatRelativeTime(savedAtIso: string, now: Date): string {
+/**
+ * Format a saved-at timestamp into a compact "since when" label.
+ * `locale` is the APP locale — passing it (instead of relying on the OS
+ * locale) keeps the label language consistent with the rest of the UI.
+ */
+export function formatRelativeTime(
+  savedAtIso: string,
+  now: Date,
+  locale: "ko" | "en" = "en"
+): string {
   const past = new Date(savedAtIso);
   if (Number.isNaN(past.getTime())) return savedAtIso;
   const ms = now.getTime() - past.getTime();
-  if (ms < 0) return "just now";
   const minutes = Math.floor(ms / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
+  if (ms < 0 || minutes < 1) return locale === "ko" ? "방금 전" : "just now";
+  if (minutes < 60) return locale === "ko" ? `${minutes}분 전` : `${minutes} min ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  // Otherwise show calendar day + time, locale-neutral
+  if (hours < 24) return locale === "ko" ? `${hours}시간 전` : `${hours}h ago`;
+  // Otherwise show calendar day + time in the app locale.
+  const tag = locale === "ko" ? "ko-KR" : "en-US";
   const sameYear = past.getFullYear() === now.getFullYear();
   const dateLabel = sameYear
-    ? past.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-    : past.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-  const timeLabel = past.toLocaleTimeString(undefined, {
+    ? past.toLocaleDateString(tag, { month: "short", day: "numeric" })
+    : past.toLocaleDateString(tag, { year: "numeric", month: "short", day: "numeric" });
+  const timeLabel = past.toLocaleTimeString(tag, {
     hour: "2-digit",
     minute: "2-digit"
   });
@@ -141,7 +149,8 @@ export function formatRelativeTime(savedAtIso: string, now: Date): string {
 export function computeSessionDelta(
   previous: SessionSnapshot | null,
   current: SessionSnapshot,
-  now: Date = new Date()
+  now: Date = new Date(),
+  locale: "ko" | "en" = "en"
 ): SessionDelta | null {
   if (!previous) return null;
 
@@ -180,7 +189,7 @@ export function computeSessionDelta(
 
   return {
     previousSavedAt: previous.savedAt,
-    relativeTimeLabel: formatRelativeTime(previous.savedAt, now),
+    relativeTimeLabel: formatRelativeTime(previous.savedAt, now, locale),
     perMarket,
     newlyFiredScenarioIds,
     clearedScenarioIds,

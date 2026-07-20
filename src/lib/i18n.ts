@@ -96,7 +96,15 @@ const catalog: Catalog = {
     en: "No active rules yet. Pick a market and a threshold above to add one."
   },
   "alerts.market": { ko: "시장", en: "Market" },
+  "alerts.kind": { ko: "종류", en: "Kind" },
+  "alerts.kind.freshness": { ko: "신선도", en: "Freshness" },
+  "alerts.kind.priceJump": { ko: "가격 급변(프록시)", en: "Price jump (proxy)" },
   "alerts.threshold": { ko: "신선도 임계값", en: "Freshness threshold" },
+  "alerts.moveThreshold": { ko: "변동 임계값", en: "Move threshold" },
+  "alerts.move": {
+    ko: "5세션 프록시 변동 ±{{pct}}% 이상",
+    en: "proxy move ≥ ±{{pct}}% over 5 sessions"
+  },
   "alerts.add": { ko: "규칙 추가", en: "Add rule" },
   "alerts.evaluate": { ko: "지금 검사", en: "Evaluate now" },
   "alerts.maxAge": {

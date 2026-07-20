@@ -17,10 +17,15 @@ export type AppSettings = {
 
 export type AlertRule = {
   id: string;
-  kind: "freshness";
+  kind: "freshness" | "price-jump";
   name: string;
   marketId: "eu-ets" | "k-ets" | "cn-ets";
-  maxAgeMinutes: number;
+  /** freshness rules only */
+  maxAgeMinutes?: number;
+  /** price-jump rules only: absolute % move over lookbackSessions closes */
+  thresholdPercent?: number;
+  /** price-jump rules only */
+  lookbackSessions?: number;
   enabled: boolean;
   createdAt: string;
   lastFiredAt: string;

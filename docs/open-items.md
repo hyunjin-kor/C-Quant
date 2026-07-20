@@ -18,8 +18,9 @@ file replaces ad-hoc "TODO" notes scattered across the source.
 
 | Item | What's needed | Why deferred |
 |---|---|---|
-| Add 2nd events for `cn-mee-sector-expansion`, `cn-quota-distribution-delay`, `cn-q4-ccer-substitution` | Primary-source URL + ISO date for each — MEE bulletins, SEEX press releases, Carbon Pulse cross-references work | Each scenario currently sits at 1 observation. Adding events without primary-source verification would break the truth-rule disclaimer in [src/data/catalystEventLog.ts](../src/data/catalystEventLog.ts). Operator should send URLs / dates; I add with `verified` confidence. |
-| Extend price anchors to 2025-Q3+ | EU EUA / KRX KAU / SEEX CEA monthly closing values for 2025-Q3 onward | Existing anchors stop at 2025-06-30. Extending without a verified primary source would mean fabricating prices, which the [historicalPriceAnchors.ts header comment](../src/data/historicalPriceAnchors.ts) explicitly forbids. Operator pulls public chart values; I add. |
+| ~~Add 2nd events for the three 1-observation China scenarios~~ | Done 2026-07-20 | MEE primary-source events added in the data-reliability round; all three scenarios now `backtest`. |
+| ~~Extend price anchors to 2025-Q3+~~ | Done 2026-07-20 | Monthly anchors verified through 2026-06 (ICAP API / KRX close reports / CNEEEX bulletins). Next extension when 2026-H2 months close. |
+| Daily official China close (CNEEEX) | A robust discovery path for "today's bulletin" on overview.cneeex.com | Investigated 2026-07-20: the daily bulletin articles parse cleanly, but their listing is client-side rendered only, and both the main-site category (`www.cneeex.com/sj/mrgk/`, HTTP 420) and the ZCMS front API sit behind a bot wall. No RSS/sitemap. Building on ID-guessing would be fragile; ICAP's public API was evaluated as an alternative and rejected (tail ~3 months stale). Revisit if CNEEEX exposes a static list or feed. |
 
 ## Architecture / design items
 

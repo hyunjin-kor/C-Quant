@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createAlertsStore, evaluateFreshness, normalizeRule } from "../electron/alerts.js";
+import {
+  createAlertsStore,
+  evaluateFreshness,
+  evaluatePriceJump,
+  normalizeRule
+} from "../electron/alerts.js";
 
 let tempDir;
 let filePath;
@@ -224,6 +229,139 @@ describe("evaluateFreshness", () => {
         }
       ],
       payload: { cards: [{ marketId: "eu-ets", asOf: stale }] },
+      now
+    });
+    expect(triggered).toEqual([]);
+  });
+});
+
+describe("normalizeRule (price-jump)", () => {
+  function base() {
+    return {
+      id: "pj-1",
+      kind: "price-jump",
+      name: "K-ETS proxy ±5%",
+      marketId: "k-ets",
+      thresholdPercent: 5,
+      lookbackSessions: 5,
+      cooldownMinutes: 720
+    };
+  }
+
+  it("accepts a valid price-jump rule", () => {
+    const rule = normalizeRule(base());
+    expect(rule).not.toBeNull();
+    expect(rule.kind).toBe("price-jump");
+    expect(rule.thresholdPercent).toBe(5);
+    expect(rule.lookbackSessions).toBe(5);
+    expect(rule.maxAgeMinutes).toBeUndefined();
+  });
+
+  it("defaults lookbackSessions to 5", () => {
+    const rule = normalizeRule({ ...base(), lookbackSessions: undefined });
+    expect(rule?.lookbackSessions).toBe(5);
+  });
+
+  it("rejects out-of-range thresholds", () => {
+    expect(normalizeRule({ ...base(), thresholdPercent: 0.1 })).toBeNull();
+    expect(normalizeRule({ ...base(), thresholdPercent: 80 })).toBeNull();
+    expect(normalizeRule({ ...base(), thresholdPercent: Number.NaN })).toBeNull();
+  });
+
+  it("rejects out-of-range lookback", () => {
+    expect(normalizeRule({ ...base(), lookbackSessions: 0 })).toBeNull();
+    expect(normalizeRule({ ...base(), lookbackSessions: 40 })).toBeNull();
+  });
+});
+
+describe("evaluatePriceJump", () => {
+  const now = new Date("2026-07-20T12:00:00Z");
+
+  function rule(overrides = {}) {
+    return {
+      id: "pj",
+      kind: "price-jump",
+      name: "K-ETS proxy ±5%",
+      marketId: "k-ets",
+      thresholdPercent: 5,
+      lookbackSessions: 5,
+      enabled: true,
+      cooldownMinutes: 720,
+      lastFiredAt: "",
+      ...overrides
+    };
+  }
+
+  function quote(closes, overrides = {}) {
+    return {
+      id: "krbn-proxy",
+      title: "KRBN carbon ETF",
+      status: "connected",
+      markets: ["k-ets", "shared"],
+      series: closes.map((close, index) => ({ date: `2026-07-${10 + index}`, close })),
+      ...overrides
+    };
+  }
+
+  it("fires when the move exceeds the threshold", () => {
+    const closes = [30, 30, 30, 30, 30, 30, 32]; // +6.7% over 5 sessions
+    const triggered = evaluatePriceJump({
+      rules: [rule()],
+      payload: { liveQuotes: [quote(closes)] },
+      now
+    });
+    expect(triggered).toHaveLength(1);
+    expect(triggered[0].movePercent).toBeCloseTo(6.7, 1);
+    expect(triggered[0].message).toContain("KRBN");
+  });
+
+  it("stays quiet under the threshold", () => {
+    const closes = [30, 30, 30, 30, 30, 30, 30.9]; // +3%
+    const triggered = evaluatePriceJump({
+      rules: [rule()],
+      payload: { liveQuotes: [quote(closes)] },
+      now
+    });
+    expect(triggered).toEqual([]);
+  });
+
+  it("fires on downside moves too", () => {
+    const closes = [30, 30, 30, 30, 30, 30, 28]; // -6.7%
+    const triggered = evaluatePriceJump({
+      rules: [rule()],
+      payload: { liveQuotes: [quote(closes)] },
+      now
+    });
+    expect(triggered).toHaveLength(1);
+    expect(triggered[0].movePercent).toBeLessThan(0);
+  });
+
+  it("skips error quotes and other markets", () => {
+    const closes = [30, 30, 30, 30, 30, 30, 32];
+    const triggered = evaluatePriceJump({
+      rules: [rule()],
+      payload: {
+        liveQuotes: [quote(closes, { status: "error" }), quote(closes, { markets: ["eu-ets"] })]
+      },
+      now
+    });
+    expect(triggered).toEqual([]);
+  });
+
+  it("respects the cooldown window", () => {
+    const closes = [30, 30, 30, 30, 30, 30, 32];
+    const triggered = evaluatePriceJump({
+      rules: [rule({ lastFiredAt: "2026-07-20T06:00:00Z" })], // 6h ago < 720m
+      payload: { liveQuotes: [quote(closes)] },
+      now
+    });
+    expect(triggered).toEqual([]);
+  });
+
+  it("skips series shorter than the lookback", () => {
+    const triggered = evaluatePriceJump({
+      rules: [rule()],
+      payload: { liveQuotes: [quote([30, 32])] },
       now
     });
     expect(triggered).toEqual([]);
