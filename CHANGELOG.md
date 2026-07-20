@@ -4,6 +4,19 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Changed — density pass on every surface
+
+- Cut the vertical slack that made screens feel empty: page header
+  collapsed toward a toolbar (title 1.9rem → 1.3rem, tighter
+  subtitle), panel padding 1.2rem → ~1rem, section/grid gaps 1rem →
+  0.75rem, hero/stat/health/verify paddings reduced ~30%, meta chips
+  and buttons one size down, status banners and the session-delta
+  strip compacted.
+- Market cards drop the box-in-box look: inner metric tiles are now
+  flat label/value rows under a hairline divider.
+- At 1440×900 the Command fold now shows the full hero, all three
+  market cards, and the next section headers.
+
 ### Removed — repository slimmed to what runs
 
 - Dropped 29 internal artifacts from the tree (all preserved in git
