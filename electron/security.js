@@ -100,7 +100,9 @@ function buildContentSecurityPolicy({ isDev }) {
     "https://data-dbg.krx.co.kr",
     "https://query1.finance.yahoo.com",
     "https://www.mee.gov.cn",
-    "https://overview.cneeex.com"
+    "https://overview.cneeex.com",
+    "https://api.stlouisfed.org",
+    "https://data-api.ecb.europa.eu"
   ];
 
   const directives = {

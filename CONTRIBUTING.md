@@ -57,7 +57,7 @@ CI runs the same gates on every push and PR across `windows-latest` (primary), `
 - Keep components small and surfaces focused. `App.tsx` is large historically;
   new code should land in `src/components/surfaces/*` or a dedicated module
   under `src/lib/`.
-- Korean source strings live in `src/data/locales.ts`. Renderer code calls
+- Korean source strings live in `src/lib/localization.ts`. Renderer code calls
   `localizeText`/`localizeTextWithFallback` rather than hardcoding strings.
 
 ## Tests

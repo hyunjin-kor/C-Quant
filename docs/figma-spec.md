@@ -144,7 +144,7 @@ Examples of freshness windows live in [electron/liveSources.js](../electron/live
 
 > "What should I do today, and why?"
 
-Source: [src/components/surfaces/CommandSurface.tsx](../src/components/surfaces/CommandSurface.tsx) + [docs/USAGE.md](USAGE.md) §2.
+Source: [src/App.tsx](../src/App.tsx) `renderCommand` + [docs/USAGE.md](USAGE.md) §2.
 
 ### 1.1 Layout (1440 × 900 baseline)
 
@@ -248,7 +248,7 @@ Sections (top to bottom):
 
 > "I want to focus deeply on one market."
 
-Source: [src/components/surfaces/DeskSurface.tsx](../src/components/surfaces/DeskSurface.tsx) + [docs/USAGE.md](USAGE.md) §2.5.
+Source: [src/App.tsx](../src/App.tsx) `renderDesk` + [docs/USAGE.md](USAGE.md) §2.5.
 
 ### 3.1 Layout
 
@@ -288,7 +288,7 @@ Source: [src/components/surfaces/DeskSurface.tsx](../src/components/surfaces/Des
 
 > "Where did this datum come from, and how fresh is it?"
 
-Source: [src/components/surfaces/SourcesSurface.tsx](../src/components/surfaces/SourcesSurface.tsx) + [docs/USAGE.md](USAGE.md) §2.5.
+Source: [src/App.tsx](../src/App.tsx) `renderSources` + [docs/USAGE.md](USAGE.md) §2.5.
 
 ### 4.1 Layout
 

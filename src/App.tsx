@@ -1221,8 +1221,8 @@ function getStanceLabel(locale: AppLocale, stance: DecisionSummary["stance"]) {
 function getSurfaceLabel(locale: AppLocale, surface: Surface) {
   if (surface === "command") return t(locale, "Command", "Command");
   if (surface === "desk") return t(locale, "Desk", "Desk");
-  if (surface === "drivers") return t(locale, "드라이버", "Drivers");
-  if (surface === "sources") return t(locale, "소스", "Sources");
+  if (surface === "drivers") return t(locale, "Drivers", "Drivers");
+  if (surface === "sources") return t(locale, "Sources", "Sources");
   return t(locale, "Command", "Command");
 }
 
