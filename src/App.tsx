@@ -1,4 +1,4 @@
-﻿import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import {
   ColumnChart,
   DonutMeter,
@@ -27,10 +27,7 @@ import {
   quantIndicators
 } from "./data/research";
 import { sourceRegistry, subscriptionFeatures, trustPrinciples } from "./data/platform";
-import {
-  catalystScenarios,
-  scoreScenarioFromDriverWeights
-} from "./data/catalystScenarios";
+import { catalystScenarios, scoreScenarioFromDriverWeights } from "./data/catalystScenarios";
 import { getInteractionMultiplier } from "./data/catalystCalibration";
 import { eventsForMarket } from "./data/catalystEventLog";
 import {
@@ -174,7 +171,7 @@ const DRIVER_FAMILIES: Array<{
 }> = [
   {
     id: "policy",
-    ko: "?뺤콉쨌怨듦툒",
+    ko: "정책·공급",
     en: "Policy & Supply",
     match: (driver) =>
       /policy|supply|cap|reserve|calendar|compliance|allocation/i.test(
@@ -183,20 +180,20 @@ const DRIVER_FAMILIES: Array<{
   },
   {
     id: "power",
-    ko: "?꾨젰쨌?곗뾽",
+    ko: "전력·산업",
     en: "Power & Industry",
     match: (driver) =>
       /power|industrial|manufacturing|industry/i.test(`${driver.category} ${driver.variable}`)
   },
   {
     id: "fuel",
-    ko: "?곕즺 ?꾪솚",
+    ko: "연료 전환",
     en: "Fuel Switching",
     match: (driver) => /fuel|gas|coal|oil|lng|spread/i.test(`${driver.category} ${driver.variable}`)
   },
   {
     id: "macro",
-    ko: "嫄곗떆쨌湲덉쑖",
+    ko: "거시·금융",
     en: "Macro & Financial",
     match: (driver) =>
       /macro|financial|equity|credit|fx|exchange|call rate/i.test(
@@ -205,7 +202,7 @@ const DRIVER_FAMILIES: Array<{
   },
   {
     id: "weather",
-    ko: "?섍꼍쨌湲곗긽",
+    ko: "환경·기상",
     en: "Weather & Environment",
     match: (driver) =>
       /weather|temperature|wind|hydro|aqi|environment/i.test(
@@ -354,9 +351,9 @@ function formatRelativeDays(locale: AppLocale, value: string) {
 
   const days = Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
 
-  if (days <= 0) return t(locale, "?ㅻ뒛 媛깆떊", "Updated today");
-  if (days === 1) return t(locale, "1??寃쎄낵", "1 day old");
-  return t(locale, `${days}??寃쎄낵`, `${days} days old`);
+  if (days <= 0) return t(locale, "오늘 갱신", "Updated today");
+  if (days === 1) return t(locale, "1일 경과", "1 day old");
+  return t(locale, `${days}일 경과`, `${days} days old`);
 }
 
 function getFreshnessDays(value?: string | null) {
@@ -382,7 +379,7 @@ function getFreshnessLevel(days: number | null): FreshnessLevel {
 function getFreshnessLevelLabel(locale: AppLocale, level: FreshnessLevel) {
   switch (level) {
     case "fresh":
-      return t(locale, "理쒖떊", "Fresh");
+      return t(locale, "최신", "Fresh");
     case "watch":
       return t(locale, "Watch", "Watch");
     case "stale":
@@ -405,11 +402,11 @@ function getFreshnessSummary(locale: AppLocale, value?: string | null) {
     return relative;
   }
   if (level === "watch") {
-    return t(locale, `${relative} / ?ы솗???꾩슂`, `${relative} / recheck soon`);
+    return t(locale, `${relative} / 곧 재확인`, `${relative} / recheck soon`);
   }
   return t(
     locale,
-    `${relative} / 怨듭떇媛??ш????꾩슂`,
+    `${relative} / 공식 앵커 재확인 필요`,
     `${relative} / official anchor needs recheck`
   );
 }
@@ -468,7 +465,7 @@ function getRegistryHealthLabel(locale: AppLocale, status: "healthy" | "watch" |
 }
 
 function getChartGuideLabel(locale: AppLocale) {
-  return t(locale, "?뺣?/異뺤냼 / ?쒕옒洹??대룞", "Scroll to zoom / drag to pan");
+  return t(locale, "스크롤로 확대·축소 / 드래그로 이동", "Scroll to zoom / drag to pan");
 }
 
 function formatNumber(locale: AppLocale, value: number, digits = 2) {
@@ -480,7 +477,7 @@ function formatNumber(locale: AppLocale, value: number, digits = 2) {
 
 function formatPercent(locale: AppLocale, value: number | null, digits = 1) {
   if (value === null || !Number.isFinite(value)) {
-    return t(locale, "怨꾩궛 遺덇?", "n/a");
+    return t(locale, "해당 없음", "n/a");
   }
   const signed = value > 0 ? "+" : "";
   return `${signed}${formatNumber(locale, value, digits)}%`;
@@ -488,7 +485,7 @@ function formatPercent(locale: AppLocale, value: number | null, digits = 1) {
 
 function formatSigned(locale: AppLocale, value: number | null, suffix = "") {
   if (value === null || !Number.isFinite(value)) {
-    return t(locale, "怨꾩궛 遺덇?", "n/a");
+    return t(locale, "해당 없음", "n/a");
   }
   const signed = value > 0 ? "+" : "";
   return `${signed}${formatNumber(locale, value, 2)}${suffix}`;
@@ -602,26 +599,26 @@ function getOfficialMethod(card: ConnectedSourceCard | null, locale: AppLocale) 
   }
 
   if (card.id === "eu-ets-official") {
-    return t(locale, "怨듭떇 ?뚯씪", "Official file");
+    return t(locale, "공식 파일", "Official file");
   }
   if (card.id === "k-ets-official") {
-    return t(locale, "怨듭떇 ??API ?섑뵆", "Official web/API sample");
+    return t(locale, "공식 웹/API 샘플", "Official web/API sample");
   }
-  return t(locale, "怨듭떇 ???먮쫫", "Official web flow");
+  return t(locale, "공식 웹 플로우", "Official web flow");
 }
 
 function getOfficialSourceName(locale: AppLocale, card: ConnectedSourceCard | null) {
   if (!card) {
-    return t(locale, "怨듭떇 ?뚯뒪 ?놁쓬", "No official source");
+    return t(locale, "공식 소스가 없습니다", "No official source");
   }
 
   switch (card.id) {
     case "eu-ets-official":
-      return t(locale, "EEX EUA 寃쎈ℓ 由ы룷??", "EEX EUA auction report");
+      return t(locale, "EEX EUA 경매 보고서", "EEX EUA auction report");
     case "k-ets-official":
-      return t(locale, "KRX ETS ?섑뵆 API", "KRX ETS sample API");
+      return t(locale, "KRX ETS 샘플 API", "KRX ETS sample API");
     case "cn-ets-official":
-      return t(locale, "MEE ?꾩냼?쒖옣 諛쒗몴 ?뚯뒪", "MEE carbon-market release feed");
+      return t(locale, "MEE 탄소시장 발표 피드", "MEE carbon-market release feed");
     default:
       return card.sourceName;
   }
@@ -634,15 +631,15 @@ function _getOfficialCoverageLabel(locale: AppLocale, card: ConnectedSourceCard 
 
   switch (card.id) {
     case "eu-ets-official":
-      return t(locale, "EU 怨듭떇 1李?寃쎈ℓ ?뚯씠??", "Official EU primary auction tape");
+      return t(locale, "공식 EU 1차 경매 테이프", "Official EU primary auction tape");
     case "k-ets-official":
       return t(
         locale,
-        "怨듭떇 KRX Open API ?섑뵆 (?쇱씪 ?쒖옣 ?뚯씠??)",
+        "공식 KRX Open API 샘플(일일 시장 테이프)",
         "Official KRX Open API sample (daily market tape)"
       );
     case "cn-ets-official":
-      return t(locale, "怨듭떇 ?뺤콉 / ?댁쁺 ?뚯뒪", "Official policy and operations feed");
+      return t(locale, "공식 정책 및 운영 피드", "Official policy and operations feed");
     default:
       return card.coverage;
   }
@@ -660,7 +657,7 @@ function getOfficialHeadlineLabel(locale: AppLocale, card: ConnectedSourceCard |
   if (card.id === "k-ets-official") {
     const match = card.headline.match(/^(.+) official close$/);
     if (match) {
-      return t(locale, `${match[1]} 怨듭떇 醫낅가`, `${match[1]} official close`);
+      return t(locale, `${match[1]} 공식 종가`, `${match[1]} official close`);
     }
   }
 
@@ -675,7 +672,7 @@ function _getOfficialSummaryLabel(locale: AppLocale, card: ConnectedSourceCard |
   if (card.id === "eu-ets-official") {
     return t(
       locale,
-      `理쒖떊 怨듭떇 1李?寃쎈ℓ???㎎??${getOfficialPriceLabel(card)}?먯꽌 泥댁껜?섏뿀?듬땲??`,
+      `최근 공식 1차 경매는 ${getOfficialPriceLabel(card)}에 낙찰됐습니다.`,
       `Latest official primary auction cleared at ${getOfficialPriceLabel(card)}.`
     );
   }
@@ -683,7 +680,7 @@ function _getOfficialSummaryLabel(locale: AppLocale, card: ConnectedSourceCard |
   if (card.id === "k-ets-official") {
     return t(
       locale,
-      `${getOfficialHeadlineLabel(locale, card)} 湲곗? KRX 怨듭떇 ?섑뵆 API ?곗씠??낅땲??`,
+      `${getOfficialHeadlineLabel(locale, card)}의 공식 KRX 샘플 API 데이터입니다.`,
       `Official KRX sample API data for ${getOfficialHeadlineLabel(locale, card)}.`
     );
   }
@@ -693,12 +690,12 @@ function _getOfficialSummaryLabel(locale: AppLocale, card: ConnectedSourceCard |
     return card.metrics.length > 0
       ? t(
           locale,
-          `理쒖떊 怨듭떇 MEE ?꾩냼?쒖옣 諛쒗몴?쇱? ${asOf}?낅땲??`,
+          `최신 MEE 탄소시장 공식 발표일은 ${asOf}입니다.`,
           `Latest official MEE carbon-market release dated ${asOf}.`
         )
       : t(
           locale,
-          `理쒖떊 怨듭떇 MEE ?꾩냼?쒖옣 諛쒗몴?쇱? ${asOf}?쇰줈, 理쒖떊 ?띾え?붿뿉???レ옄 ?쒖옣 ?듦퀎媛 ?놁뒿?덈떎.`,
+          `최신 MEE 탄소시장 공식 발표일은 ${asOf}입니다. 최신 항목에는 수치화된 시장 통계가 실리지 않았습니다.`,
           `Latest official MEE carbon-market release dated ${asOf}. Numeric market statistics were not published in the latest item.`
         );
   }
@@ -710,7 +707,7 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
   if (note === "The app could not fetch this official source in the current environment.") {
     return t(
       locale,
-      "?? ?쒗솚?쒖꽌 ?깆씠 怨듭떇 ?뚯뒪瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??",
+      "현재 환경에서는 이 공식 소스를 가져오지 못했습니다.",
       "The app could not fetch this official source in the current environment."
     );
   }
@@ -721,7 +718,7 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
   ) {
     return t(
       locale,
-      "???怨듭떇 ?뚯뒪??1李?寃쎈ℓ瑜??ㅻ４硫? ICE 2李? ?쒖옣 ?좊Ъ ?곗씠?곕? ?泥댄븯吏 ?딆뒿?덈떎.",
+      "이 공식 피드는 1차 경매를 다룹니다. ICE 유통시장 선물 데이터를 대체하지 않습니다.",
       "This official feed covers primary auctions. It does not replace ICE secondary-market futures data."
     );
   }
@@ -732,7 +729,7 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
   ) {
     return t(
       locale,
-      "???곗씠?곕뒗 ?쒕퉬???곸꽭 ?섏씠吏?먯꽌 怨듭떆??怨듭떇 KRX Open API ?섑뵆 ?덈뱶?ъ씤?몃? ?ъ슜?⑸땲??",
+      "서비스 상세 페이지에 공개된 공식 KRX Open API 샘플 엔드포인트를 사용합니다.",
       "This uses the official KRX Open API sample endpoint published on the service detail page."
     );
   }
@@ -740,7 +737,7 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
   if (note === "Daily market tape only. Zero-volume rows are preserved as official records.") {
     return t(
       locale,
-      "?쇱씪 ?쒖옣 ?뚯씠?꾨쭔 ?쒓났?섎㈃, 嫄곕옒?됱씠 0???뻾???듭떇 湲곕줉?쇰줈 洹몃? 蹂댁〈?⑸땲??",
+      "일일 시장 테이프만 제공합니다. 거래량 0인 행도 공식 기록으로 보존됩니다.",
       "Daily market tape only. Zero-volume rows are preserved as official records."
     );
   }
@@ -751,7 +748,7 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
   ) {
     return t(
       locale,
-      "???怨듭떇 ?뚯뒪??MEE ?뺤콉 / ?댁쁺 諛쒗몴瑜?諛섏쁺?섎㈃, ?덉젙?쒖씤 ?쇱씪 嫄곕옒???뚯씠?꾧? ?꾨땲?덈떎.",
+      "이 공식 피드는 안정적인 일일 거래소 테이프가 아니라 MEE의 정책·운영 발표를 반영합니다.",
       "This official feed reflects MEE policy and operations releases, not a stable daily exchange tape."
     );
   }
@@ -765,7 +762,7 @@ function getOfficialNoteLabel(locale: AppLocale, note: string) {
     const asOf = dateMatch?.[1] ? formatDate(locale, dateMatch[1]) : "n/a";
     return t(
       locale,
-      `?レ옄 ?댁쁺 吏???몃컙?먯꽌 怨듭떆??理쒖떊 MEE ?띾낫(${asOf})瑜?湲곗??쇰줈 ?⑸땲??`,
+      `수치 운영 지표는 시장 통계가 게재된 최신 MEE 공보(${asOf}) 기준입니다.`,
       `Numeric operating metrics are taken from the latest MEE bulletin with published market statistics (${asOf}).`
     );
   }
@@ -939,7 +936,7 @@ function getMarketChecklist(locale: AppLocale, marketId: MarketId) {
     return [
       t(
         locale,
-        "?ㅼ쓬 EEX 寃쎈ℓ ?쇱젙怨?吏곸쟾 而ㅻ쾭???뺤씤",
+        "다음 EEX 경매 일정과 최근 응찰배율 확인",
         "Check the next EEX auction date and latest cover ratio"
       ),
       t(
@@ -949,7 +946,7 @@ function getMarketChecklist(locale: AppLocale, marketId: MarketId) {
       ),
       t(
         locale,
-        "MSR쨌TNAC 愿??怨듭떇 諛쒗몴 ?щ? ?뺤씤",
+        "MSR 또는 TNAC 관련 공식 공지가 있는지 확인",
         "Review any MSR or TNAC-related official notice"
       )
     ];
@@ -958,17 +955,17 @@ function getMarketChecklist(locale: AppLocale, marketId: MarketId) {
     return [
       t(
         locale,
-        "KAU 嫄곕옒?됱씠 20???됯퇏 ?꾩씤吏 ?뺤씤",
+        "KAU 거래량이 20일 평균을 넘는지 확인",
         "Check whether KAU volume is above the 20-day average"
       ),
       t(
         locale,
-        "?댄뻾 ?쒖쫵쨌寃利앸낫怨??쇱젙 吏꾩엯 ?щ? ?뺤씤",
+        "시장이 이행·보고 시기에 진입하는지 확인",
         "Check whether the market is entering the compliance/reporting window"
       ),
       t(
         locale,
-        "KCU/KOC? ?꾨Ъ 泥닿껐 ?먮쫫 遺꾨━ ?щ? ?뺤씤",
+        "상쇄배출권 흐름이 본 테이프와 괴리되는지 확인",
         "Confirm whether offset flow is diverging from the main tape"
       )
     ];
@@ -976,17 +973,17 @@ function getMarketChecklist(locale: AppLocale, marketId: MarketId) {
   return [
     t(
       locale,
-      "怨듭떇 怨듭? ?댄썑 ??媛寃??뚯씠?꾧? ?덈뒗吏 ?뺤씤",
+      "최근 공지 이후 새 공식 가격 테이프가 나왔는지 확인",
       "Check whether a new official price tape has appeared after the latest notice"
     ),
     t(
       locale,
-      "?뱁꽣 ?뺣?쨌諛곗젙 洹쒖튃 怨듭떆 ?щ? ?뺤씤",
+      "업종 확대나 배정 규칙 업데이트 공지를 확인",
       "Review any sector expansion or allocation update"
     ),
     t(
       locale,
-      "?꾨줉?쒖? 怨듭떇 怨듭? ?먮쫫??遺꾨━?댁꽌 ?쎄린",
+      "프록시 가격 흐름과 공식 정책 흐름을 분리해서 보기",
       "Keep proxy price action separate from official policy flow"
     )
   ];
@@ -1063,18 +1060,18 @@ function buildDecisionSummary(
       stance === "buy"
         ? t(
             locale,
-            "怨듭떇媛믨낵 鍮꾧탳 湲곗???鍮꾧탳??媛숈? 諛⑺뼢?낅땲?? 吏湲덉? 留ㅼ닔 ?곗쐞 ?댁꽍??媛?ν빀?덈떎.",
+            "공식 테이프와 상장 벤치마크가 대체로 일치합니다. 현재 판단은 매수 쪽입니다.",
             "Official tape and listed benchmark are mostly aligned. The current read leans buy."
           )
         : stance === "reduce"
           ? t(
               locale,
-              "怨듭떇媛믨낵 鍮꾧탳 湲곗????쏀빐吏嫄곕굹 ?닿툔?⑸땲?? 吏湲덉? 鍮꾩쨷 異뺤냼 履쎌씠 ?덉쟾?⑸땲??",
+              "공식 앵커와 상장 벤치마크가 약해지거나 괴리되고 있습니다. 여기서는 리스크 축소가 더 깔끔합니다.",
               "The official anchor and listed benchmark are weakening or diverging. Reducing risk is cleaner here."
             )
           : t(
               locale,
-              "?쒖そ 諛⑺뼢?쇰줈 諛湲곕낫??怨듭떇媛??좎?? 鍮꾧탳 湲곗? ?⑹쓽瑜????뺤씤??援ш컙?낅땲??",
+              "지금은 대기 구간입니다. 공식 앵커와 벤치마크의 일치를 확인한 뒤에 기울이세요.",
               "This is a wait zone. Confirm the official anchor and benchmark agreement before leaning harder."
             ),
     support: [
@@ -1082,20 +1079,20 @@ function buildDecisionSummary(
         title: t(locale, "Official anchor", "Official anchor"),
         detail: t(
           locale,
-          `${getOfficialSourceName(locale, card)} 蹂?붾뒗 ${getOfficialChangeLabel(card)}?낅땲??`,
+          `${getOfficialSourceName(locale, card)}이(가) ${getOfficialChangeLabel(card)}을 보이고 있습니다.`,
           `${getOfficialSourceName(locale, card)} is showing ${getOfficialChangeLabel(card)}.`
         )
       },
       {
-        title: t(locale, "?곸옣 湲곗?", "Listed benchmark"),
+        title: t(locale, "상장 벤치마크", "Listed benchmark"),
         detail: t(
           locale,
-          `${benchmark?.title ?? "鍮꾧탳 湲곗? ?놁쓬"} 蹂?붿쑉? ${formatPercent(locale, benchmarkMove, 2)}?낅땲??`,
+          `${benchmark?.title ?? "선택된 벤치마크 없음"}이(가) ${formatPercent(locale, benchmarkMove, 2)} 움직이고 있습니다.`,
           `${benchmark?.title ?? "No benchmark selected"} is moving ${formatPercent(locale, benchmarkMove, 2)}.`
         )
       },
       {
-        title: t(locale, "?듭떖 ?붿씤", "Top drivers"),
+        title: t(locale, "상위 드라이버", "Top drivers"),
         detail: supportDrivers.map((driver) => driver.variable).join(" / ")
       }
     ],
@@ -1103,34 +1100,34 @@ function buildDecisionSummary(
       benchmark?.category === "Listed proxy"
         ? t(
             locale,
-            "?꾩옱 鍮꾧탳 湲곗?? ?꾨줉?쒖엯?덈떎. 怨듭떇 ?뺤궛媛믨낵 1:1濡??쎌쑝硫????⑸땲??",
+            "현재 벤치마크는 프록시입니다. 공식 정산가의 일대일 대체물로 읽지 마세요.",
             "The active benchmark is a proxy. Do not read it as a one-for-one replacement for the official settlement."
           )
         : t(
             locale,
-            "臾대즺 ?쇰뱶 湲곗? ?곸옣 ?뚯씠?꾨뒗 嫄곕옒??吏?곗씠 ?덉쓣 ???덉뒿?덈떎.",
+            "무료 피드에서는 상장 테이프에 거래소 지연이 있을 수 있습니다.",
             "On free feeds the listed tape can still carry exchange delay."
           ),
       card?.status === "limited"
         ? t(
             locale,
-            "怨듭떇 ?뚯뒪媛 ?쒗븳 ?곹깭???좊ː?꾨? ??떠???⑸땲??",
+            "공식 소스가 제한적이므로 확신은 할인해서 봐야 합니다.",
             "The official source is limited, so conviction should be discounted."
           )
         : t(
             locale,
-            "怨듭떇 ?뚯뒪媛 ?곌껐???덉뼱???ㅼ쓬 媛깆떊 ?꾩뿉???먮떒??諛붾????덉뒿?덈떎.",
+            "공식 소스가 연결돼 있어도 다음 갱신 전에 판단이 바뀔 수 있습니다.",
             "Even with the official source connected, the read can change before the next update."
           ),
       stats.correlation !== null && stats.correlation < 0.2
         ? t(
             locale,
-            "怨듭떇媛믨낵 鍮꾧탳 湲곗???理쒓렐 ?숉뻾?깆씠 ?쏀빀?덈떎.",
+            "최근 공식 앵커와 벤치마크의 동행성이 약합니다.",
             "Recent co-movement between the official anchor and the benchmark is weak."
           )
         : t(
             locale,
-            "?꾩옱 ?먮떒? 理쒓렐 ?숉뻾?깆씠 ?좎??쒕떎??媛?뺤뿉 ???덉뒿?덈떎.",
+            "현재 판단은 최근의 테이프 일치가 이어진다는 가정 위에 있습니다.",
             "The current read assumes recent tape agreement continues."
           )
     ],
@@ -1161,8 +1158,7 @@ function buildWaterfallWithCounterfactual(
   const stanceLabelEn = (s: "buy" | "hold" | "reduce") =>
     s === "buy" ? "Buy" : s === "reduce" ? "Reduce" : "Hold";
   // Korean particle: 매수/축소 (vowel-final) take 로; Hold (consonant-final) takes 으로.
-  const stanceParticleKo = (s: "buy" | "hold" | "reduce") =>
-    s === "hold" ? "으로" : "로";
+  const stanceParticleKo = (s: "buy" | "hold" | "reduce") => (s === "hold" ? "으로" : "로");
 
   const unclampedTotal = rows.reduce((sum, it) => sum + it.value, 0);
   return rows.map((it) => {
@@ -1208,13 +1204,13 @@ function getSourceStatusLabel(
   status: ConnectedSourceCard["status"] | MarketLiveQuote["status"]
 ) {
   if (status === "connected") return t(locale, "Connected", "Connected");
-  if (status === "limited") return t(locale, "?쒗븳", "Limited");
+  if (status === "limited") return t(locale, "제한됨", "Limited");
   return t(locale, "?ㅻ쪟", "Error");
 }
 
 function getStanceLabel(locale: AppLocale, stance: DecisionSummary["stance"]) {
-  if (stance === "buy") return t(locale, "留ㅼ닔 ?곗쐞", "Buy bias");
-  if (stance === "reduce") return t(locale, "鍮꾩쨷 異뺤냼", "Reduce");
+  if (stance === "buy") return t(locale, "매수 우위", "Buy bias");
+  if (stance === "reduce") return t(locale, "축소", "Reduce");
   return t(locale, "Hold / wait", "Hold / wait");
 }
 
@@ -1252,20 +1248,20 @@ function getMarketStageNote(locale: AppLocale, marketId: MarketId) {
   if (marketId === "eu-ets") {
     return t(
       locale,
-      "EU ETS 4湲??쒖옣?쇰줈, MSR 湲곕컲 怨듦툒 議곗젙???묐룞?섍퀬 2024?꾨????댁슫???ы븿?먯쑝硫?2027?꾨???嫄대Ъ쨌?꾨줈 ?댁넚 ETS2媛 媛?숇맗?덈떎.",
+      "MSR 기반 공급 관리, 2024년 해운 편입, 2027년 건물·도로수송 대상 ETS2 출범을 앞둔 4기 시장입니다.",
       "Phase 4 market with MSR-driven supply management, maritime inclusion from 2024, and ETS2 standing up for buildings and road transport from 2027."
     );
   }
   if (marketId === "k-ets") {
     return t(
       locale,
-      "3李?怨꾪쉷湲곌컙? 2025?꾧퉴吏?닿퀬, ??李?湲곕낯怨꾪쉷? 2026?꾨???2035?꾧퉴吏 寃쎈ℓ ?뺣?, 踰ㅼ튂留덊겕 媛쒗렪, ?좊룞???묎렐, ?먮룞 ?쒖옣?덉젙 ?μ튂瑜??ㅻ９?덈떎.",
+      "3차 계획기간은 2025년까지이며, 4차 기본계획(2026–2035)은 유상할당 확대, 벤치마킹, 유동성 접근, 자동 시장 안정화를 강화합니다.",
       "Phase 3 runs through 2025; the fourth Basic Plan covers 2026-2035 and raises auctioning, benchmarking, liquidity access, and automatic market stabilization."
     );
   }
   return t(
     locale,
-    "?꾧뎅 ?쒖옣? ?ъ쟾???꾨젰 遺臾?以묒떖?댁?留? 2025??3??20???낅Т怨꾪쉷???곕씪 泥좉컯쨌?쒕찘?맞룹쟾?댁븣猷⑤??꾩쑝濡??뺣? 以묒엯?덈떎.",
+    "전국 시장은 여전히 전력 중심이지만 2025년 3월 20일 업무 계획에 따라 철강·시멘트·알루미늄 제련으로 확대되고 있습니다.",
     "The national market remains power-led but is expanding to steel, cement, and aluminum smelting under the March 20, 2025 work plan."
   );
 }
@@ -1274,20 +1270,20 @@ function getMarketScopeNote(locale: AppLocale, marketId: MarketId) {
   if (marketId === "eu-ets") {
     return t(
       locale,
-      "EU 吏묓뻾???먮즺? 2024-2025 ?곌뎄瑜?湲곗??쇰줈 蹂대㈃ ?뺤콉 怨듦툒, 媛?ㅒ룹쟾?Β룹꽍???곕즺?꾪솚, 嫄곗떆쨌湲덉쑖 ?ㅽ듃?덉뒪, ?댄뻾 ?쒖젏???듭떖 ?붿씤援곗엯?덈떎.",
+      "EU 집행위원회 자료와 2024–2025년 연구는 정책 공급, 가스-전력-석탄 복합, 거시금융 스트레스, 이행 시기가 여전히 지배적 변수군임을 일관되게 보여줍니다.",
       "EU Commission pages and 2024-2025 research consistently show that policy supply, gas-power-coal complex, macro-financial stress, and compliance timing remain the dominant feature families."
     );
   }
   if (marketId === "k-ets") {
     return t(
       locale,
-      "K-ETS???ъ쟾???뺤콉 二쇰룄 ?쒖옣?낅땲?? ?대? 諛곗텧沅??섍툒, ?곸뇙?쒖옣, ?댄뻾 罹섎┛?? ?쒕룄 蹂寃쎌씠 ?몃? 嫄곗떆 蹂?섎낫??癒쇱? ?쏀????⑸땲??",
+      "K-ETS는 구조적으로 정책 주도 시장입니다. 외부 거시 변수보다 내부 할당량 수급, 상쇄 시장, 이행 일정, 시장 설계 변경이 여전히 우선합니다.",
       "K-ETS remains structurally policy-driven. Internal allowance balance, offset markets, compliance calendar, and market design changes still dominate before external macro variables fully take over."
     );
   }
   return t(
     locale,
-    "以묎뎅 ?꾧뎅 ?쒖옣? ?꾨젰?쒖옣 媛쒗쁺, ?앺깂 寃쎌젣?? ?먮떒??湲곕컲 ?좊떦, ?곗씠???덉쭏, ?④퀎???낆쥌 ?뺤옣???듭떖 援ъ“瑜?留뚮벊?덈떎.",
+    "중국 시장은 여전히 전력 부문 개혁, 석탄 경제성, 원단위 기반 할당, 데이터 품질, 단계적 업종 확대가 좌우합니다.",
     "China's market is still shaped by power-sector reform, coal economics, intensity-based allocation, data quality, and staged sector expansion."
   );
 }
@@ -1296,20 +1292,20 @@ function _getMarketSourceNote(locale: AppLocale, marketId: MarketId) {
   if (marketId === "eu-ets") {
     return t(
       locale,
-      "?대뼡 ?⑥씪 ?뚯뒪??媛寃??뺤꽦??100% ?멸낵 遺꾪빐??二쇱? ?딆뒿?덈떎. ???쒗뭹? ?곌뎄濡?寃利앸맂 ?ш큵??蹂?섍뎔???댁쁺 紐⑤뜽 ?낅젰?쇰줈 ?ъ슜?⑸땲??",
+      "가격 형성을 문자 그대로 100% 인과 분해할 수 있는 소스는 없습니다. 이 제품은 연구 근거가 있는 포괄적 변수 유니버스를 실무 모델링에 사용합니다.",
       "No source can prove a literal causal 100% decomposition of price formation. This product uses a research-backed comprehensive feature universe for production modelling."
     );
   }
   if (marketId === "k-ets") {
     return t(
       locale,
-      "?쒓뎅 ?쒖옣? EU ETS蹂대떎 ?뉕린 ?뚮Ц???대? ?쒖옣 援ъ“? ?뺤콉 蹂寃쎌쓣 遺李?蹂?섍? ?꾨땲??1李?蹂?섎줈 ?ㅻ쨪???⑸땲??",
+      "한국 시장은 EU ETS보다 유동성이 얇아 내부 시장 구조와 정책 변화를 부차 변수가 아닌 1차 변수로 다뤄야 합니다.",
       "The Korean market is thinner than EU ETS, so internal market structure and policy changes must be treated as first-order variables, not side features."
     );
   }
   return t(
     locale,
-    "?꾧뎅 ETS 蹂?섎뒗 ?뺤콉 吏묓뻾, ?쒖옣 ?깆닕?? ?꾨젰媛쒗쁺???곕씪 ?붿씤 誘쇨컧?꾧? ?ш쾶 ?щ씪吏????덉뼱 媛뺥븳 ?덉쭚 ?섏〈?깆쓣 ?꾩젣濡??ㅻ쨪???⑸땲??",
+    "전국 ETS 변수는 정책 집행, 시장 성숙도, 전력 개혁에 따라 팩터 로딩이 달라지므로 레짐 의존성을 더 강하게 모델링해야 합니다.",
     "National ETS variables must be modelled with stronger regime dependence because policy implementation, market maturity, and electricity reform can all change factor loadings."
   );
 }
@@ -1319,57 +1315,53 @@ function getForecastDirectionLabel(
   direction: "Bullish" | "Neutral" | "Bearish"
 ) {
   if (direction === "Bullish") {
-    return t(locale, "?곷갑", "Bullish");
+    return t(locale, "강세", "Bullish");
   }
   if (direction === "Bearish") {
-    return t(locale, "?섎갑", "Bearish");
+    return t(locale, "약세", "Bearish");
   }
-  return t(locale, "以묐┰", "Neutral");
+  return t(locale, "중립", "Neutral");
 }
 
 function getQuoteNoteLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
   if (!quote) {
-    return t(locale, "?ㅻ챸 ?놁쓬", "No note");
+    return t(locale, "메모 없음", "No note");
   }
 
   if (quote.note.startsWith("Live quote unavailable:")) {
     const reason = quote.note.slice("Live quote unavailable:".length).trim();
-    return t(
-      locale,
-      `?ㅼ떆媛??쒖꽭瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲?? ${reason}`,
-      `Live quote unavailable: ${reason}`
-    );
+    return t(locale, `실시간 시세 불가: ${reason}`, `Live quote unavailable: ${reason}`);
   }
 
   switch (quote.id) {
     case "eua-dec-benchmark":
       return t(
         locale,
-        "EUA ?곸옣 湲곗??쇰줈 ?곕뒗 12?붾Ъ?낅땲?? ?쇰? 臾대즺 李⑦듃 ?쇰뱶???꾩껜 ?덉뒪?좊━蹂대떎 理쒓렐 媛寃⑹쓣 ??鍮⑤━ ?몄텧?⑸땲??",
+        "12월물 벤치마크 계약이 주요 상장 EUA 기준입니다. 일부 무료 차트 피드는 전체 히스토리보다 실시간 가격을 먼저 노출합니다.",
         "December benchmark contract used as the main listed EUA reference. Some free chart feeds expose the live price faster than the full historical curve."
       );
     case "co2-l-proxy":
       return t(
         locale,
-        "?곸옣???꾩냼 ?꾨줉?쒕줈, EUA 湲곗?臾쇨낵 ?섎????쎌쓣 ???좎슜?⑸땲??",
+        "벤치마크 EUA 선물과 함께 보는 상장 탄소 프록시로 유용합니다.",
         "Useful as a listed carbon proxy alongside the benchmark EUA future."
       );
     case "krbn-proxy":
       return t(
         locale,
-        "?꾨줉???꾩슜?낅땲?? 怨듭떇 吏??ETS ?뺤궛媛믪쑝濡??쎌쑝硫????⑸땲??",
+        "프록시일 뿐입니다. 현지 ETS 공식 정산가로 읽지 마세요.",
         "Proxy only. Do not treat this as an official local ETS settlement."
       );
     case "keua-proxy":
       return t(
         locale,
-        "?꾨줉???꾩슜?낅땲?? 怨듭떇 ?곸옣 ?ㅼ? ?듭빱???ъ쟾??ICE EUA ?좊Ъ?낅땲??",
+        "프록시일 뿐입니다. 공식 상장 헤지 앵커는 여전히 ICE EUA 선물입니다.",
         "Proxy only. The official listed hedge anchor remains the ICE EUA future."
       );
     case "kcca-proxy":
       return t(
         locale,
-        "?꾨줉???꾩슜?낅땲?? ?꾩? ETS ?뺤궛媛믪씠 ?꾨땲??異붽? ?곸옣 ?꾩냼 ?щ━釉뚮줈 ?쎌뼱???⑸땲??",
+        "프록시일 뿐입니다. 보조적인 상장 탄소 슬리브로는 유용하지만 현지 ETS 정산가는 아닙니다.",
         "Proxy only. Useful as an additional listed carbon sleeve, not as a local ETS settlement."
       );
     case "ttf-gas-future":
@@ -1391,13 +1383,13 @@ function getQuoteNoteLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
 
 function getQuoteDelayNoteLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
   if (!quote?.delayNote) {
-    return t(locale, "吏???뺣낫 ?놁쓬", "No delay note");
+    return t(locale, "지연 안내 없음", "No delay note");
   }
 
   if (quote.delayNote === "Reference web chart feed. Exchange delay may apply.") {
     return t(
       locale,
-      "李멸퀬????李⑦듃 ?쇰뱶?낅땲?? 嫄곕옒??吏?곗씠 ?덉쓣 ???덉뒿?덈떎.",
+      "참고용 웹 차트 피드입니다. 거래소 지연이 있을 수 있습니다.",
       "Reference web chart feed. Exchange delay may apply."
     );
   }
@@ -1408,7 +1400,7 @@ function getQuoteDelayNoteLabel(locale: AppLocale, quote?: MarketLiveQuote | nul
   ) {
     return t(
       locale,
-      "李멸퀬????李⑦듃 ?쇰뱶?낅땲?? 怨듭떇 ?꾩냼 媛寃⑹씠 ?꾨땲???곸옣 ?꾨줉?쒕줈留??ъ슜?섏꽭??",
+      "참고용 웹 차트 피드입니다. 공식 탄소 가격이 아닌 상장 프록시로 활용하세요.",
       "Reference web chart feed. Use as a listed proxy, not as the official carbon price."
     );
   }
@@ -1418,34 +1410,34 @@ function getQuoteDelayNoteLabel(locale: AppLocale, quote?: MarketLiveQuote | nul
 
 function getQuoteRoleLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
   if (!quote?.role) {
-    return t(locale, "??븷 ?뺣낫 ?놁쓬", "No role note");
+    return t(locale, "역할 메모 없음", "No role note");
   }
 
   switch (quote.id) {
     case "eua-dec-benchmark":
       return t(
         locale,
-        "EU ?꾩냼 由ъ뒪?ы? ?꾩슜 1李?곸옣 ???뚯씠??",
+        "EU 탄소 리스크의 주요 상장 헤지 테이프",
         "Primary listed hedge tape for EU carbon risk"
       );
     case "ttf-gas-future":
-      return t(locale, "EU ?꾩냼???곕즺?꾪솚 ?붿씤", "Fuel-switching driver for EU carbon");
+      return t(locale, "EU 탄소의 연료 전환 동인", "Fuel-switching driver for EU carbon");
     case "brent-future":
-      return t(locale, "嫄곗떆 ?먮꼫吏 ?꾨줉??", "Macro energy proxy");
+      return t(locale, "거시 에너지 프록시", "Macro energy proxy");
     case "co2-l-proxy":
-      return t(locale, "?곸옣 ??EU ?꾩냼 ?꾨줉??", "Exchange-traded EU carbon proxy");
+      return t(locale, "상장형 EU 탄소 프록시", "Exchange-traded EU carbon proxy");
     case "krbn-proxy":
       return t(
         locale,
-        "濡쒖뺄 ETS ?좊Ъ媛 ?놁쓣 ???곸옣 ?꾩냼 ?꾨줉??",
+        "현지 ETS 선물이 없을 때 쓰는 상장 탄소 프록시",
         "Listed carbon proxy when local ETS futures are not available"
       );
     case "keua-proxy":
-      return t(locale, "EU ?꾩냼 ?몄텧 ?꾩슜 ?곸옣 ?꾨줉??", "Listed proxy for EU carbon exposure");
+      return t(locale, "EU 탄소 익스포저용 상장 프록시", "Listed proxy for EU carbon exposure");
     case "kcca-proxy":
       return t(
         locale,
-        "?쒖옣 媛?由ъ뒪?ы겕 ?좏샇瑜??꾪븳 遺곸쭏誘?꾩냼 ?곸옣 ?꾨줉??",
+        "북미 탄소 시장의 위험 선호를 읽는 상장 프록시",
         "Listed North American carbon proxy for cross-market risk appetite"
       );
     default:
@@ -1459,7 +1451,7 @@ function getQuoteProviderLabel(locale: AppLocale, provider?: string | null) {
   }
 
   if (provider === "Yahoo Finance web chart feed") {
-    return t(locale, "Yahoo Finance ??李⑦듃 ?쇰뱶", "Yahoo Finance web chart feed");
+    return t(locale, "Yahoo Finance 웹차트 피드", "Yahoo Finance web chart feed");
   }
 
   return localizeText(getUiLocale(locale), provider);
@@ -1483,13 +1475,13 @@ function _buildSummaryText(
   return [
     `C-Quant ${market.name}`,
     "",
-    t(locale, "怨듭떇 ?뚯뒪", "Official source"),
+    t(locale, "공식 소스", "Official source"),
     joinReadoutParts(getOfficialSourceName(locale, card), card?.asOf ?? "n/a"),
     "",
     t(locale, "Official anchor", "Official anchor"),
     `${getOfficialPriceLabel(card)} / ${getOfficialChangeLabel(card)}`,
     "",
-    t(locale, "鍮꾧탳 湲곗?", "Benchmark"),
+    t(locale, "벤치마크", "Benchmark"),
     `${benchmark?.title ?? "n/a"} / ${benchmark?.symbol ?? "n/a"} / ${benchmark ? formatPercent(locale, benchmark.changePct, 2) : "n/a"}`,
     "",
     t(locale, "Current stance", "Current stance"),
@@ -1498,10 +1490,10 @@ function _buildSummaryText(
       `${Math.round(decision.confidence * 100)}%`
     ),
     "",
-    t(locale, "?듭떖 ?댁꽍", "Desk read"),
+    t(locale, "데스크 해석", "Desk read"),
     decision.summary,
     "",
-    t(locale, "洹쇨굅", "Support"),
+    t(locale, "지지 근거", "Support"),
     ...decision.support.map((item) => `- ${item.title}: ${item.detail}`),
     "",
     t(locale, "Checks", "Checks"),
@@ -2057,7 +2049,7 @@ export default function App() {
       },
       {
         id: "benchmark",
-        label: selectedCompareQuote?.symbol ?? t(locale, "鍮꾧탳 湲곗?", "Benchmark"),
+        label: selectedCompareQuote?.symbol ?? t(locale, "벤치마크", "Benchmark"),
         color: "#111827"
       }
     ],
@@ -2159,7 +2151,7 @@ export default function App() {
     [scenarioForecast.contributions]
   );
   const sourceRefreshLabel = connectedSources.fetchedAt
-    ? `${t(locale, "?뚯뒪 媛깆떊", "Sources")} ${formatDate(locale, connectedSources.fetchedAt)}`
+    ? `${t(locale, "소스", "Sources")} ${formatDate(locale, connectedSources.fetchedAt)}`
     : t(locale, "Sources not loaded", "Sources not loaded");
 
   useEffect(() => {
@@ -2223,8 +2215,18 @@ export default function App() {
         setter?: (v: { value: number; date: string }) => void;
       };
       const macroFetches: MacroFetchSpec[] = [
-        { adapterId: "ecb-sdw", seriesId: "EXR.D.USD.EUR.SP00.A", macroKey: "eurUsd", setter: setEcbEurUsdLatest },
-        { adapterId: "ecb-sdw", seriesId: "ICP.M.U2.N.000000.4.ANR", macroKey: "hicpYoY", setter: setEcbHicpLatest },
+        {
+          adapterId: "ecb-sdw",
+          seriesId: "EXR.D.USD.EUR.SP00.A",
+          macroKey: "eurUsd",
+          setter: setEcbEurUsdLatest
+        },
+        {
+          adapterId: "ecb-sdw",
+          seriesId: "ICP.M.U2.N.000000.4.ANR",
+          macroKey: "hicpYoY",
+          setter: setEcbHicpLatest
+        },
         // FRED is key-gated; when CQUANT_FRED_API_KEY is unset these
         // fetches return null and the trigger detector falls back to
         // EUR/USD as the macro proxy.
@@ -2478,15 +2480,10 @@ export default function App() {
                   .filter((m) => m.pctChange != null)
                   .map((m) => {
                     const pct = m.pctChange as number;
-                    const tone =
-                      Math.abs(pct) < 0.05 ? "steady" : pct > 0 ? "up" : "down";
-                    const tag =
-                      m.id === "eu-ets" ? "EU" : m.id === "k-ets" ? "KR" : "CN";
+                    const tone = Math.abs(pct) < 0.05 ? "steady" : pct > 0 ? "up" : "down";
+                    const tag = m.id === "eu-ets" ? "EU" : m.id === "k-ets" ? "KR" : "CN";
                     return (
-                      <span
-                        key={m.id}
-                        className={`session-delta-market session-delta-${tone}`}
-                      >
+                      <span key={m.id} className={`session-delta-market session-delta-${tone}`}>
                         {tag}{" "}
                         {tone === "steady"
                           ? t(locale, "보합", "steady")
@@ -2534,12 +2531,12 @@ export default function App() {
 
             <div className="command-hero-metrics">
               <div className="command-stat">
-                <span>{t(locale, "怨듭떇 ?듭빱", "Official anchor")}</span>
+                <span>{t(locale, "공식 앵커", "Official anchor")}</span>
                 <strong>{getOfficialPriceLabel(selectedOfficialCard)}</strong>
                 <small>{getOfficialMethod(selectedOfficialCard, locale)}</small>
               </div>
               <div className="command-stat">
-                <span>{t(locale, "?ㅼ? 湲곗?", "Hedge tape")}</span>
+                <span>{t(locale, "헤지 테이프", "Hedge tape")}</span>
                 <strong>{selectedCompareQuote?.symbol ?? "n/a"}</strong>
                 <small>
                   {selectedCompareQuote?.price !== null && selectedCompareQuote?.price !== undefined
@@ -2548,7 +2545,7 @@ export default function App() {
                 </small>
               </div>
               <div className="command-stat">
-                <span>{t(locale, "?먮떒 媛뺣룄", "Posture")}</span>
+                <span>{t(locale, "스탠스", "Posture")}</span>
                 <strong>{getStanceLabel(locale, selectedDecision.stance)}</strong>
                 <small>{Math.round(selectedDecision.confidence * 100)}%</small>
               </div>
@@ -2562,14 +2559,12 @@ export default function App() {
 
           <div className="command-hero-side">
             <div className="command-brief-card emphasis">
-              <span className="section-kicker">{t(locale, "?쒗뭹 寃쎄퀎", "Boundary")}</span>
-              <strong>
-                {t(locale, "由ъ꽌移샕룸え?덊꽣留??꾩슜", "Research and monitoring only")}
-              </strong>
+              <span className="section-kicker">{t(locale, "경계", "Boundary")}</span>
+              <strong>{t(locale, "리서치와 모니터링 전용", "Research and monitoring only")}</strong>
               <p>
                 {t(
                   locale,
-                  "二쇰Ц ?묒닔, 嫄곕옒 以묎컻, ?먯궛 蹂닿?? ?섏? ?딆뒿?덈떎. 怨듭떇 ?뚯뒪? 鍮꾧탳 湲곗???媛숈? ?붾㈃?먯꽌 ?쎈뒗 ?꾩냼 ?명뀛由ъ쟾???곕??먯엯?덈떎.",
+                  "이 터미널은 주문 체결, 거래 중개, 자산 수탁을 하지 않습니다. 공식 앵커와 비교 테이프를 하나의 운영 화면에 담아둘 뿐입니다.",
                   "This terminal does not execute orders, intermediate trades, or custody assets. It keeps official anchors and comparison tapes on one operating surface."
                 )}
               </p>
@@ -2577,7 +2572,7 @@ export default function App() {
 
             <div className="command-health-grid">
               <div className="command-health-tile">
-                <span>{t(locale, "怨듭떇 ?뚯뒪 ?곌껐", "Official sources online")}</span>
+                <span>{t(locale, "공식 소스 연결됨", "Official sources online")}</span>
                 <strong>{`${deskHealthSummary.officialConnected}/3`}</strong>
               </div>
               <div className="command-health-tile">
@@ -2589,13 +2584,13 @@ export default function App() {
                 <strong>{`${deskHealthSummary.liveConnected}/${connectedSources.liveQuotes.length}`}</strong>
               </div>
               <div className="command-health-tile">
-                <span>{t(locale, "寃쎄퀬", "Warnings")}</span>
+                <span>{t(locale, "경고", "Warnings")}</span>
                 <strong>{deskHealthSummary.warningCount}</strong>
               </div>
             </div>
 
             <div className="command-brief-card">
-              <span className="section-kicker">{t(locale, "吏湲??뺤씤", "Verify now")}</span>
+              <span className="section-kicker">{t(locale, "지금 확인", "Verify now")}</span>
               <ul className="plain-list">
                 {selectedDecision.checks.slice(0, 3).map((item) => (
                   <li key={item}>{l(item)}</li>
@@ -2640,7 +2635,7 @@ export default function App() {
                   <strong>{getOfficialPriceLabel(row.officialCard)}</strong>
                 </div>
                 <div>
-                  <span>{t(locale, "鍮꾧탳 湲곗?", "Benchmark")}</span>
+                  <span>{t(locale, "벤치마크", "Benchmark")}</span>
                   <strong>{row.hedgeQuote?.symbol ?? "n/a"}</strong>
                   <small>
                     {row.hedgeQuote?.price !== null && row.hedgeQuote?.price !== undefined
@@ -2666,12 +2661,12 @@ export default function App() {
             <div className="section-header">
               <div>
                 <span className="section-kicker">
-                  {t(locale, "?좊ː ?꾪궎?띿쿂", "Trust architecture")}
+                  {t(locale, "신뢰 아키텍처", "Trust architecture")}
                 </span>
                 <h2>
                   {t(
                     locale,
-                    "?レ옄蹂대떎 癒쇱? ?쏀엳???댁쁺 ?먯튃",
+                    "시그널보다 먼저 운영 원칙을 보여주기",
                     "Operating principles visible before any signal"
                   )}
                 </h2>
@@ -2679,7 +2674,7 @@ export default function App() {
               <p>
                 {t(
                   locale,
-                  "???レ옄瑜?癒쇱? 蹂댁뿬二쇰릺, 異쒖쿂쨌媛깆떊 ?쒖젏쨌?쒗뭹 寃쎄퀎瑜???긽 媛숈씠 ?〓땲??",
+                  "큰 숫자를 먼저 보여주되 소스 접근 방식, 신선도, 경계는 항상 함께 표시됩니다.",
                   "Large numbers come first, but source method, freshness, and boundary remain visible."
                 )}
               </p>
@@ -2696,7 +2691,7 @@ export default function App() {
 
             <div className="command-split-grid">
               <div className="status-card">
-                <strong>{t(locale, "?꾩옱 李ъ꽦 洹쇨굅", "Supporting evidence")}</strong>
+                <strong>{t(locale, "지지 근거", "Supporting evidence")}</strong>
                 <ul className="plain-list">
                   {selectedDecision.support.slice(0, 3).map((item) => (
                     <li key={item.title}>{`${item.title}: ${item.detail}`}</li>
@@ -2704,14 +2699,14 @@ export default function App() {
                 </ul>
               </div>
               <div className="status-card warning">
-                <strong>{t(locale, "?먮떒??源⑤뒗 議곌굔", "Breaker conditions")}</strong>
+                <strong>{t(locale, "판단 훼손 조건", "Breaker conditions")}</strong>
                 <ul className="plain-list">
                   {(selectedDecision.risks.length > 0
                     ? selectedDecision.risks.slice(0, 3)
                     : [
                         t(
                           locale,
-                          "利됱떆 蹂댁씠??援ъ“??由ъ뒪?щ뒗 ?쒗븳?곸씠吏留??ㅼ쓬 怨듭떇 ?낅뜲?댄듃??怨꾩냽 ?뺤씤?댁빞 ?⑸땲??",
+                          "당장 구조적 변곡은 보이지 않지만 다음 공식 갱신은 여전히 중요합니다.",
                           "No immediate structural break is visible, but the next official update still matters."
                         )
                       ]
@@ -2727,12 +2722,12 @@ export default function App() {
             <div className="section-header">
               <div>
                 <span className="section-kicker">
-                  {t(locale, "怨듭떇 ?곗씠???ㅺ퀎", "Official data map")}
+                  {t(locale, "공식 데이터 맵", "Official data map")}
                 </span>
                 <h2>
                   {t(
                     locale,
-                    "?쒖옣蹂??뚯뒪 泥닿퀎瑜??쒗뭹 ?덉뿉 紐낆떆",
+                    "제품 안에서 소스 체계를 명시하기",
                     "Source system made explicit inside the product"
                   )}
                 </h2>
@@ -2740,7 +2735,7 @@ export default function App() {
               <p>
                 {t(
                   locale,
-                  "API媛 ?뺤씤??寃쎌슦留?API濡??쒓린?섍퀬, ?섎㉧吏??怨듭떇 ???먮쫫 ?먮뒗 怨듭떇 ?뚯씪濡?援щ텇?⑸땲??",
+                  "확인된 API만 API로 표기하고, 나머지는 공식 웹 플로우 또는 공식 파일로 유지합니다.",
                   "Only confirmed APIs are labeled as APIs; the rest remain official web flows or official files."
                 )}
               </p>
@@ -2761,7 +2756,7 @@ export default function App() {
                     className="button ghost small"
                     onClick={() => window.desktopBridge?.openExternal(item.url)}
                   >
-                    {t(locale, "怨듭떇 臾몄꽌", "Open source doc")}
+                    {t(locale, "출처 문서 열기", "Open source doc")}
                   </button>
                 </div>
               ))}
@@ -2910,7 +2905,7 @@ export default function App() {
             <div className="section-header slim">
               <div>
                 <span className="section-kicker">
-                  {t(locale, "?쒗뭹 湲곗?", "Delivery standard")}
+                  {t(locale, "전달 기준", "Delivery standard")}
                 </span>
                 <h2>
                   {t(locale, "What this desktop must deliver", "What this desktop must deliver")}
@@ -2931,12 +2926,12 @@ export default function App() {
             <div className="section-header slim">
               <div>
                 <span className="section-kicker">
-                  {t(locale, "踰ㅼ튂留덊겕 ?덊띁?곗뒪", "Reference platforms")}
+                  {t(locale, "레퍼런스 플랫폼", "Reference platforms")}
                 </span>
                 <h2>
                   {t(
                     locale,
-                    "移댄뵾媛 ?꾨땲???먯튃留?李⑥슜",
+                    "화면을 베끼지 말고 원칙만 가져오기",
                     "Borrow principles, not literal screens"
                   )}
                 </h2>
@@ -2959,7 +2954,7 @@ export default function App() {
                     className="button ghost small"
                     onClick={() => window.desktopBridge?.openExternal(platform.source.url)}
                   >
-                    {t(locale, "?덊띁?곗뒪", "Reference")}
+                    {t(locale, "참조", "Reference")}
                   </button>
                 </div>
               ))}
@@ -3031,19 +3026,15 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-              <span className="section-kicker">{t(locale, "?쒖옣 蹂대뱶", "Market board")}</span>
+              <span className="section-kicker">{t(locale, "시장 보드", "Market board")}</span>
               <h2>
-                {t(
-                  locale,
-                  "???쒖옣??媛숈? 湲곗??쇰줈 蹂닿린",
-                  "Read all three markets on one frame"
-                )}
+                {t(locale, "세 시장을 한 프레임에서 읽기", "Read all three markets on one frame")}
               </h2>
             </div>
             <p>
               {t(
                 locale,
-                "怨듭떇媛? ?ㅼ떆媛?鍮꾧탳 ?뚯씠?? 愿대━, ?ъ??섏쓣 ??以꾩뵫 鍮꾧탳?⑸땲??",
+                "공식 앵커, 실시간 테이프, 괴리, 스탠스를 행 단위로 비교합니다.",
                 "Compare official anchor, live tape, gap, and posture row by row."
               )}
             </p>
@@ -3051,11 +3042,11 @@ export default function App() {
 
           <div className="board-table">
             <div className="board-head">
-              <span>{t(locale, "?쒖옣", "Market")}</span>
+              <span>{t(locale, "시장", "Market")}</span>
               <span>{t(locale, "Official", "Official")}</span>
               <span>{t(locale, "Live tape", "Live tape")}</span>
-              <span>{t(locale, "愿대━", "Gap")}</span>
-              <span>{t(locale, "?곴?", "Correlation")}</span>
+              <span>{t(locale, "격차", "Gap")}</span>
+              <span>{t(locale, "상관성", "Correlation")}</span>
               <span>{t(locale, "Stance", "Stance")}</span>
             </div>
 
@@ -3126,9 +3117,7 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">
-                  {t(locale, "怨듭떇 ?듭빱", "Official anchor")}
-                </span>
+                <span className="section-kicker">{t(locale, "공식 앵커", "Official anchor")}</span>
                 <h2>{getOfficialSourceName(locale, selectedOfficialCard)}</h2>
               </div>
               <p>
@@ -3165,10 +3154,10 @@ export default function App() {
               locale={getIntlLocale(locale)}
               height={320}
               guideLabel={getChartGuideLabel(locale)}
-              emptyTitle={t(locale, "怨듭떇 ?쒓퀎???놁쓬", "No official time series")}
+              emptyTitle={t(locale, "공식 시계열이 없습니다", "No official time series")}
               emptySubtitle={t(
                 locale,
-                "?꾩옱 ?곌껐??怨듭떇 ?쒓퀎?댁씠 ?놁뼱 ?명꽣?숉떚釉?李⑦듃瑜??쒖떆?????놁뒿?덈떎.",
+                "현재 공식 소스에는 인터랙티브 차트에 쓸 연속 시계열이 없습니다.",
                 "The current official source has no continuous series for the interactive chart."
               )}
             />
@@ -3182,12 +3171,12 @@ export default function App() {
               ) : (
                 <div className="status-card">
                   <strong>
-                    {t(locale, "怨듭떇 嫄곕옒???쒓퀎 ?놁쓬", "No official volume series")}
+                    {t(locale, "공식 거래량 시계열이 없습니다", "No official volume series")}
                   </strong>
                   <p>
                     {t(
                       locale,
-                      "?꾩옱 ?곌껐??怨듭떇 ?뚯뒪?먮뒗 ?곗냽 嫄곕옒???쒓퀎媛 ?놁뒿?덈떎. 媛寃?湲곗?媛믨낵 ?뚯뒪 硫붾え瑜??곗꽑 ?뺤씤?섏꽭??",
+                      "현재 공식 소스는 연속 거래량 시계열을 제공하지 않습니다. 가격 앵커와 소스 노트를 먼저 활용하세요.",
                       "The current official source does not expose a continuous volume series. Use the price anchor and source notes first."
                     )}
                   </p>
@@ -3204,7 +3193,7 @@ export default function App() {
                 </span>
                 <h2>
                   {selectedCompareQuote?.title ??
-                    t(locale, "鍮꾧탳 ?뚯씠???놁쓬", "No live tape selected")}
+                    t(locale, "선택된 라이브 테이프가 없습니다", "No live tape selected")}
                 </h2>
               </div>
               <p>
@@ -3256,15 +3245,15 @@ export default function App() {
                 </strong>
               </div>
               <div className="metric-tile">
-                <span>{t(locale, "蹂?붿쑉", "Change")}</span>
+                <span>{t(locale, "변화", "Change")}</span>
                 <strong>{formatPercent(locale, selectedCompareQuote?.changePct ?? null, 2)}</strong>
               </div>
               <div className="metric-tile">
-                <span>{t(locale, "愿대━", "Gap")}</span>
+                <span>{t(locale, "격차", "Gap")}</span>
                 <strong>{formatPercent(locale, compareOutput.stats.gapPct, 2)}</strong>
               </div>
               <div className="metric-tile">
-                <span>{t(locale, "諛⑺뼢 ?쇱튂", "Direction match")}</span>
+                <span>{t(locale, "방향 일치", "Direction match")}</span>
                 <strong>{formatPercent(locale, compareOutput.stats.directionMatchPct, 0)}</strong>
               </div>
             </div>
@@ -3277,7 +3266,7 @@ export default function App() {
               </span>
               <span>{getQuoteProviderLabel(locale, selectedCompareQuote?.provider)}</span>
               <span>
-                {selectedCompareQuote?.exchange || t(locale, "嫄곕옒???뺣낫 ?놁쓬", "No exchange")}
+                {selectedCompareQuote?.exchange || t(locale, "거래소 정보 없음", "No exchange")}
               </span>
               <span>{formatDate(locale, selectedCompareQuote?.asOf ?? "")}</span>
             </div>
@@ -3339,10 +3328,10 @@ export default function App() {
               height={340}
               tone="dark"
               guideLabel={getChartGuideLabel(locale)}
-              emptyTitle={t(locale, "?ㅼ떆媛?鍮꾧탳 李⑦듃 ?놁쓬", "No live comparison chart")}
+              emptyTitle={t(locale, "라이브 비교 차트가 없습니다", "No live comparison chart")}
               emptySubtitle={t(
                 locale,
-                "臾대즺 鍮꾧탳 ?뚯씠???쒓퀎?댁쓣 ?꾩쭅 遺덈윭?ㅼ? 紐삵뻽?듬땲??",
+                "무료 비교 테이프 시계열이 아직 없습니다.",
                 "The free comparison tape series is not available yet."
               )}
             />
@@ -3353,7 +3342,7 @@ export default function App() {
                 <p>{l(selectedDecision.checks[0])}</p>
               </div>
               <div className="note-item">
-                <strong>{t(locale, "鍮꾧탳 湲곗? ??븷", "Why this benchmark")}</strong>
+                <strong>{t(locale, "왜 이 벤치마크인가", "Why this benchmark")}</strong>
                 <p>{getQuoteRoleLabel(locale, selectedCompareQuote)}</p>
               </div>
             </div>
@@ -3363,11 +3352,11 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-              <span className="section-kicker">{t(locale, "鍮꾧탳 李⑦듃", "Relative chart")}</span>
+              <span className="section-kicker">{t(locale, "상대 차트", "Relative chart")}</span>
               <h2>
                 {t(
                   locale,
-                  "怨듭떇媛믨낵 ?곸옣 湲곗???媛숈? 異쒕컻?먯쑝濡?鍮꾧탳",
+                  "공식 앵커와 상장 벤치마크를 같은 스케일로 비교",
                   "Compare official anchor and listed benchmark on one scale"
                 )}
               </h2>
@@ -3375,7 +3364,7 @@ export default function App() {
             <p>
               {t(
                 locale,
-                "媛숈? 援ш컙?먯꽌 100 湲곗??쇰줈 留욎떠 ?吏곸엫???쎌뒿?덈떎.",
+                "두 라인 모두 겹치는 구간을 기준으로 100으로 정규화됩니다.",
                 "Both lines are normalized to 100 over the overlapping window."
               )}
             </p>
@@ -3387,13 +3376,13 @@ export default function App() {
             height={360}
             guideLabel={t(
               locale,
-              "媛숈? 湲곗??좎뿉???뺣?/異뺤냼 鍮꾧탳",
+              "같은 기준선에서 확대하고 비교",
               "Zoom and compare on the same base"
             )}
-            emptyTitle={t(locale, "寃뱀튂??鍮꾧탳 援ш컙 ?놁쓬", "No overlapping comparison range")}
+            emptyTitle={t(locale, "겹치는 비교 구간이 없습니다", "No overlapping comparison range")}
             emptySubtitle={t(
               locale,
-              "怨듭떇 ?듭빱? ?곸옣 鍮꾧탳 ?뚯씠?꾩쓽 寃뱀튂??援ш컙??遺議깊빐 ?곷? 李⑦듃瑜?留뚮뱾 ???놁뒿?덈떎.",
+              "공식 앵커와 상장 비교 테이프의 겹치는 구간이 상대 차트를 그리기에 부족합니다.",
               "The official anchor and listed comparison tape do not share enough overlap for a relative chart."
             )}
           />
@@ -3403,15 +3392,15 @@ export default function App() {
           <div className="panel">
             <div className="section-header slim">
               <div>
-                <span className="section-kicker">{t(locale, "?먮떒 媛뺣룄", "Posture")}</span>
+                <span className="section-kicker">{t(locale, "스탠스", "Posture")}</span>
                 <h2>{getStanceLabel(locale, selectedDecision.stance)}</h2>
               </div>
             </div>
             <PressureBar
               value={selectedDecision.score}
-              negativeLabel={t(locale, "異뺤냼", "Reduce")}
+              negativeLabel={t(locale, "축소", "Reduce")}
               neutralLabel={t(locale, "Hold", "Hold")}
-              positiveLabel={t(locale, "留ㅼ닔 ?곗쐞", "Buy")}
+              positiveLabel={t(locale, "매수", "Buy")}
             />
             <DonutMeter
               value={selectedDecision.confidence}
@@ -3424,8 +3413,8 @@ export default function App() {
           <div className="panel">
             <div className="section-header slim">
               <div>
-                <span className="section-kicker">{t(locale, "?먯닔 遺꾪빐", "Score build")}</span>
-                <h2>{t(locale, "?대뵒???먯닔媛 ?앷꼈?붿?", "Where the score comes from")}</h2>
+                <span className="section-kicker">{t(locale, "점수 구성", "Score build")}</span>
+                <h2>{t(locale, "점수가 어디서 오는가", "Where the score comes from")}</h2>
               </div>
             </div>
             <WaterfallChart
@@ -3438,7 +3427,7 @@ export default function App() {
           <div className="panel">
             <div className="section-header slim">
               <div>
-                <span className="section-kicker">{t(locale, "?먮떒 硫붾え", "Decision memo")}</span>
+                <span className="section-kicker">{t(locale, "판단 메모", "Decision memo")}</span>
                 <h2>{t(locale, "What is moving the read", "What is moving the read")}</h2>
               </div>
             </div>
@@ -3528,13 +3517,13 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-              <span className="section-kicker">{t(locale, "媛寃??붿씤", "Driver map")}</span>
-              <h2>{t(locale, "?쒖옣蹂?媛寃?寃곗젙 援ъ“", "Cross-market driver structure")}</h2>
+              <span className="section-kicker">{t(locale, "드라이버 맵", "Driver map")}</span>
+              <h2>{t(locale, "시장 간 드라이버 구조", "Cross-market driver structure")}</h2>
             </div>
             <p>
               {t(
                 locale,
-                "?곌뎄?먯꽌 ?뺤씤???붿씤??媛議깅퀎濡?臾띠뼱 ???쒖옣??媛숈씠 ?쎌뒿?덈떎.",
+                "세 시장의 연구 근거 기반 팩터 패밀리를 한눈에 읽습니다.",
                 "Read the research-backed factor families across all three markets."
               )}
             </p>
@@ -3611,9 +3600,7 @@ export default function App() {
           <div className="registry-grid">
             {liveActivePatterns.length === 0 ? (
               <div className="registry-card">
-                <span className="registry-method">
-                  {t(locale, "조용함", "Quiet")}
-                </span>
+                <span className="registry-method">{t(locale, "조용함", "Quiet")}</span>
                 <strong>
                   {t(
                     locale,
@@ -3638,9 +3625,7 @@ export default function App() {
                 return (
                   <div key={detection.scenarioId} className="registry-card">
                     <div className="board-meta-row">
-                      <span className="registry-method">
-                        {t(locale, "활성", "Active")}
-                      </span>
+                      <span className="registry-method">{t(locale, "활성", "Active")}</span>
                       <span className="freshness-badge stale">
                         {`${detection.triggeredCount}/${detection.testableCount} ${t(
                           locale,
@@ -3752,11 +3737,7 @@ export default function App() {
                   </li>
                   <li>
                     <strong>
-                      {t(
-                        locale,
-                        "Current driver-weighted score",
-                        "Current driver-weighted score"
-                      )}
+                      {t(locale, "Current driver-weighted score", "Current driver-weighted score")}
                     </strong>
                     <span>{formatSigned(locale, score, "")}</span>
                   </li>
@@ -3995,7 +3976,9 @@ export default function App() {
         <section className="panel">
           <div className="section-header">
             <div>
-              <span className="section-kicker">{t(locale, "Event timeline", "Event timeline")}</span>
+              <span className="section-kicker">
+                {t(locale, "Event timeline", "Event timeline")}
+              </span>
               <h2>
                 {t(
                   locale,
@@ -4126,16 +4109,14 @@ export default function App() {
                   <p>{feed.message}</p>
                   {feed.provider.includes("ECB") && ecbEurUsdLatest ? (
                     <p className="free-feed-live">
-                      {t(locale, "EUR/USD 일별 기준환율 최신", "EUR/USD daily reference, latest")}
-                      :{" "}
+                      {t(locale, "EUR/USD 일별 기준환율 최신", "EUR/USD daily reference, latest")}:{" "}
                       <strong>{ecbEurUsdLatest.value.toFixed(4)}</strong>{" "}
                       <span className="free-feed-live-date">({ecbEurUsdLatest.date})</span>
                     </p>
                   ) : null}
                   {feed.provider.includes("ECB") && ecbHicpLatest ? (
                     <p className="free-feed-live">
-                      {t(locale, "유로존 HICP 연간 변동률 최신", "Euro-area HICP YoY, latest")}
-                      :{" "}
+                      {t(locale, "유로존 HICP 연간 변동률 최신", "Euro-area HICP YoY, latest")}:{" "}
                       <strong>{ecbHicpLatest.value.toFixed(2)}%</strong>{" "}
                       <span className="free-feed-live-date">({ecbHicpLatest.date})</span>
                     </p>
@@ -4160,7 +4141,7 @@ export default function App() {
             <div className="section-header">
               <div>
                 <span className="section-kicker">
-                  {t(locale, "?좏깮 ?쒖옣", "Selected market")}
+                  {t(locale, "선택된 시장", "Selected market")}
                 </span>
                 <h2>{selectedMarket.name}</h2>
               </div>
@@ -4172,7 +4153,7 @@ export default function App() {
                 <span>{t(locale, "Family", "Family")}</span>
                 <span>{t(locale, "Variable", "Variable")}</span>
                 <span>{t(locale, "Weight", "Weight")}</span>
-                <span>{t(locale, "?쎈뒗 諛⑹떇", "How to read")}</span>
+                <span>{t(locale, "읽는 법", "How to read")}</span>
               </div>
               {driverRows.map((driver) => (
                 <div key={driver.id} className="driver-row">
@@ -4668,7 +4649,7 @@ export default function App() {
           <div className="panel">
             <div className="section-header">
               <div>
-                <span className="section-kicker">{t(locale, "?쒕굹由ъ삤", "Scenario")}</span>
+                <span className="section-kicker">{t(locale, "시나리오", "Scenario")}</span>
                 <h2>
                   {t(
                     locale,
@@ -4680,7 +4661,7 @@ export default function App() {
               <p>
                 {t(
                   locale,
-                  "?낅줈???놁씠???꾩옱 ?쒖옣 而⑦뀓?ㅽ듃 ?꾩뿉??誘쇨컧?꾨? 諛붾줈 ?쎌뒿?덈떎.",
+                  "앱 안의 실시간 시장 맥락 위에서 시나리오 민감도를 바로 읽습니다.",
                   "Read scenario sensitivity directly on top of the live in-app market context."
                 )}
               </p>
@@ -4714,7 +4695,7 @@ export default function App() {
                 <strong>{getForecastDirectionLabel(locale, scenarioForecast.direction)}</strong>
               </div>
               <div className="metric-tile">
-                <span>{t(locale, "?먯닔", "Score")}</span>
+                <span>{t(locale, "점수", "Score")}</span>
                 <strong>{formatSigned(locale, scenarioForecast.score, "")}</strong>
               </div>
               <div className="metric-tile">
@@ -4747,7 +4728,7 @@ export default function App() {
               <p>
                 {t(
                   locale,
-                  "怨듭떇 湲곗?媛? 鍮꾧탳 ?뚯씠?? ?쒕씪?대쾭, ?뚯뒪 ?좎꽑?꾨? ???덉뿉??諛붾줈 ?⑹퀜 ?쎌뒿?덈떎.",
+                  "공식 앵커, 비교 테이프, 드라이버, 소스 신선도를 앱 안에서 함께 읽습니다.",
                   "Read the official anchor, comparison tape, drivers, and source freshness together inside the app."
                 )}
               </p>
@@ -4774,7 +4755,7 @@ export default function App() {
 
             <div className="note-list">
               <div className="note-item">
-                <strong>{t(locale, "?곗뒪???댁꽍", "Desk read")}</strong>
+                <strong>{t(locale, "데스크 해석", "Desk read")}</strong>
                 <p>{l(selectedDecision.summary)}</p>
               </div>
               <div className="note-item">
@@ -4788,7 +4769,7 @@ export default function App() {
                       )
                     : t(
                         locale,
-                        "?꾩옱 ?좏깮??鍮꾧탳 ?뚯씠?꾧? ?놁뒿?덈떎.",
+                        "선택된 비교 테이프가 없습니다.",
                         "No comparison tape is selected."
                       )}
                 </p>
@@ -4804,7 +4785,7 @@ export default function App() {
               ))}
               {selectedDecision.checks.slice(0, 3).map((item) => (
                 <li key={item}>
-                  <strong>{t(locale, "吏湲??뺤씤", "Verify now")}</strong>
+                  <strong>{t(locale, "지금 확인", "Verify now")}</strong>
                   <span>{l(item)}</span>
                 </li>
               ))}
@@ -4821,7 +4802,7 @@ export default function App() {
               <h2>
                 {t(
                   locale,
-                  "?ㅽ깲??蹂寃????곗뒪???꾩껜 ?뺤씤",
+                  "스탠스를 바꾸기 전에 데스크 전체를 확인",
                   "Check the whole desk before changing posture"
                 )}
               </h2>
@@ -4829,7 +4810,7 @@ export default function App() {
             <p>
               {t(
                 locale,
-                "怨듭떇 湲곗?媛? 鍮꾧탳 媛? ?곴?, 諛⑺뼢 ?쇱튂, 由ъ뒪?ъ? ?뺤씤 ??ぉ??媛숈? 硫댁뿉???쎌뒿?덈떎.",
+                "공식 변동, 괴리, 상관, 방향 일치, 리스크, 확인 항목을 한 화면에서 읽습니다.",
                 "Read the official change, gap, correlation, direction match, risks, and verification items on one surface."
               )}
             </p>
@@ -4841,22 +4822,22 @@ export default function App() {
               <strong>{getOfficialChangeLabel(selectedOfficialCard)}</strong>
             </div>
             <div className="metric-tile">
-              <span>{t(locale, "愿대━", "Gap")}</span>
+              <span>{t(locale, "격차", "Gap")}</span>
               <strong>{formatPercent(locale, compareOutput.stats.gapPct, 2)}</strong>
             </div>
             <div className="metric-tile">
-              <span>{t(locale, "?곴?", "Correlation")}</span>
+              <span>{t(locale, "상관성", "Correlation")}</span>
               <strong>{formatSigned(locale, compareOutput.stats.correlation, "")}</strong>
             </div>
             <div className="metric-tile">
-              <span>{t(locale, "諛⑺뼢 ?쇱튂", "Direction match")}</span>
+              <span>{t(locale, "방향 일치", "Direction match")}</span>
               <strong>{formatPercent(locale, compareOutput.stats.directionMatchPct, 0)}</strong>
             </div>
           </div>
 
           <div className="command-two-up">
             <div className="status-card">
-              <strong>{t(locale, "吏湲??뺤씤", "Verify now")}</strong>
+              <strong>{t(locale, "지금 확인", "Verify now")}</strong>
               <ul className="plain-list">
                 {selectedDecision.checks.slice(0, 5).map((item) => (
                   <li key={item}>{l(item)}</li>
@@ -4864,14 +4845,14 @@ export default function App() {
               </ul>
             </div>
             <div className="status-card warning">
-              <strong>{t(locale, "由ъ뒪?ъ? 釉뚮젅?댁빱", "Risks and breakers")}</strong>
+              <strong>{t(locale, "리스크와 브레이커", "Risks and breakers")}</strong>
               <ul className="plain-list">
                 {(selectedDecision.risks.length > 0
                   ? selectedDecision.risks.slice(0, 5)
                   : [
                       t(
                         locale,
-                        "利됱떆 蹂댁씠??援ъ“??釉뚮젅?댁빱???쒗븳?곸씠吏留??ㅼ쓬 怨듭떇 ?낅뜲?댄듃??怨꾩냽 ?뺤씤?댁빞 ?⑸땲??",
+                        "당장 구조적 변곡 신호는 보이지 않지만 다음 공식 갱신은 여전히 중요합니다.",
                         "No immediate structural breaker is visible, but the next official update still matters."
                       )
                     ]
@@ -5058,11 +5039,11 @@ export default function App() {
         </div>
 
         <div className="rail-note">
-          <strong>{t(locale, "?쒗뭹 寃쎄퀎", "Product boundary")}</strong>
+          <strong>{t(locale, "제품 경계", "Product boundary")}</strong>
           <p>
             {t(
               locale,
-              "二쇰Ц ?ㅽ뻾?대굹 嫄곕옒 以묎컻???섏? ?딆뒿?덈떎. 怨듭떇媛? 鍮꾧탳 湲곗?, 媛寃??붿씤, ?뚯뒪 ?좊ː瑜????붾㈃?먯꽌 ?쎈뒗 ?곗뒪?ъ엯?덈떎.",
+              "이 데스크톱은 주문을 전달하거나 거래를 중개하지 않습니다. 공식 앵커, 상장 벤치마크, 가격 드라이버, 소스 신뢰도를 위한 의사결정 데스크입니다.",
               "This desktop does not route orders or intermediate trades. It is a decision desk for official anchors, listed benchmarks, price drivers, and source trust."
             )}
           </p>
@@ -5082,7 +5063,7 @@ export default function App() {
               {surface === "command"
                 ? t(
                     locale,
-                    "怨듭떇 ?듭빱, ?ㅼ떆媛?鍮꾧탳 ?뚯씠?? ?뚯뒪 ?좊ː, 援щ룆 媛移섎? ???붾㈃?먯꽌 ?쎈뒗 ?곸쐞 ?댁쁺硫댁엯?덈떎.",
+                    "공식 앵커, 실시간 비교 테이프, 소스 신뢰도, 구독 가치를 한눈에 보는 최상위 운영 화면입니다.",
                     "A top-level operating surface for official anchors, live comparison tapes, source trust, and subscription value."
                   )
                 : getMarketHeadline(locale, marketId)}
@@ -5091,7 +5072,7 @@ export default function App() {
 
           <div className="head-actions">
             <div className="live-chip">
-              {t(locale, "?쇱씠釉?李⑦듃 30珥?媛깆떊", "Live chart refreshes every 30s")}
+              {t(locale, "라이브 차트는 30초마다 갱신", "Live chart refreshes every 30s")}
             </div>
             <div className="feed-pill">{sourceRefreshLabel}</div>
             <button type="button" className="button primary" onClick={handleRefresh}>
