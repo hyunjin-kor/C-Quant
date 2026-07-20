@@ -17,7 +17,7 @@ C-Quant pulls official data from the EU ETS, Korea's K-ETS, and China's national
 It is decision support, not a trading tool. It doesn't place orders, hold assets, or give individualized trade instructions.
 
 <p align="center">
-  <img src="docs/images/shot-command-light.png" alt="Command surface" width="100%"/>
+  <img src="docs/images/shot-command-dark.png" alt="Command surface" width="100%"/>
 </p>
 
 ## How a session goes

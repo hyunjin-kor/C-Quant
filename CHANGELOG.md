@@ -4,6 +4,22 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Changed — dark-first visual identity
+
+- Dark is now the default theme for new installs (renderer and
+  Electron settings defaults; saved preferences are untouched, and
+  light/system stay one toggle away).
+- Brand accent moved from Toss blue to indigo (#4f5ee8 light /
+  #7c8cff dark) so the accent no longer competes with the buy/reduce
+  semantic green/red. Dark-theme primary buttons flip to dark-ink text
+  for contrast on the lighter accent.
+- Sharper geometry across the app: radius tokens 10/14/18/22 →
+  8/10/14/18, hardcoded card radii 22-28px → 12-16px, buttons and
+  meta chips from pills to rounded rectangles.
+- Key figures (hero stats, health tiles, market metrics) render in the
+  mono stack for a terminal read; light canvas moved to a soft gray so
+  panels separate without heavy shadows.
+
 ### Changed — Command surface & shell redesign
 
 - Command hero rebuilt: flat deep-carbon surface (murky gradient and

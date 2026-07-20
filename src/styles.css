@@ -12,10 +12,10 @@
   --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Mono", "Consolas", monospace;
 
   /* Toss canvas (light) — clinical white, near-zero tint */
-  --bg: #ffffff;
+  --bg: #f5f6f8;
   --panel: #ffffff;
-  --panel-muted: #f9fafb;
-  --panel-tint: #f2f4f6;
+  --panel-muted: #f3f4f7;
+  --panel-tint: #eceef2;
 
   /* Toss ink hierarchy — cool gray, high contrast */
   --text-strong: #191f28;
@@ -29,10 +29,10 @@
   --line-strong: #d1d6db;
 
   /* Toss signature blue */
-  --accent: #0064ff;
-  --accent-strong: #0050c7;
-  --accent-soft: #e8f2ff;
-  --accent-ink: #003e99;
+  --accent: #4f5ee8;
+  --accent-strong: #3f4ed8;
+  --accent-soft: #eceeff;
+  --accent-ink: #333fae;
 
   /* Semantic palette — Toss styling. Korean stock convention follows
      red = up, blue = down. We keep --green / --red as the legacy
@@ -45,8 +45,8 @@
   --yellow-soft: #fff3e0;
 
   /* Rail — Toss dark navy / charcoal */
-  --rail: #1b1f23;
-  --rail-soft: #8b95a1;
+  --rail: #0b0e14;
+  --rail-soft: #7e8a9b;
 
   /* Cool, low-tint shadows (Toss is almost flat) */
   --shadow: 0 8px 24px rgba(25, 31, 40, 0.06), 0 1px 2px rgba(25, 31, 40, 0.04);
@@ -54,10 +54,10 @@
   --shadow-lift: 0 12px 32px rgba(25, 31, 40, 0.08), 0 2px 4px rgba(25, 31, 40, 0.06);
 
   /* Geometry */
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 22px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
 
   /* Motion */
   --motion-fast: 140ms;
@@ -66,48 +66,48 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* Focus ring — Toss blue */
-  --focus-ring: 0 0 0 3px rgba(0, 100, 255, 0.24);
+  /* Focus ring — indigo */
+  --focus-ring: 0 0 0 3px rgba(79, 94, 232, 0.24);
 }
 
 /* Toss dark theme. Activated via <html data-theme="dark"> from the renderer. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0e1014;
-  --panel: #17191c;
-  --panel-muted: #1c1f23;
-  --panel-tint: #21252b;
+  --bg: #0a0d13;
+  --panel: #10141c;
+  --panel-muted: #151a24;
+  --panel-tint: #1b2130;
 
-  --text-strong: #f2f4f6;
-  --text-base: #d1d6db;
-  --text-soft: #8b95a1;
-  --text-mute: #6b7684;
-  --text-on-accent: #ffffff;
+  --text-strong: #edf1f7;
+  --text-base: #b9c2cf;
+  --text-soft: #7e8a9b;
+  --text-mute: #57626f;
+  --text-on-accent: #0c1020;
 
-  --line: #2c3037;
-  --line-strong: #3a3f48;
+  --line: #202836;
+  --line-strong: #2c3646;
 
-  --accent: #3d86ff;
-  --accent-strong: #5a99ff;
-  --accent-soft: #15233d;
-  --accent-ink: #d6e6ff;
+  --accent: #7c8cff;
+  --accent-strong: #98a5ff;
+  --accent-soft: #191e36;
+  --accent-ink: #cbd3ff;
 
-  --green: #2ed670;
-  --green-soft: #14241c;
-  --red: #ff5f6d;
-  --red-soft: #2a1a1d;
-  --yellow: #ffb43d;
-  --yellow-soft: #2a1f10;
+  --green: #34d399;
+  --green-soft: #10241c;
+  --red: #fb7185;
+  --red-soft: #2a171d;
+  --yellow: #f5b04a;
+  --yellow-soft: #2a2114;
 
-  --rail: #07080a;
+  --rail: #070a10;
   --rail-soft: #6b7684;
 
-  --shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.55);
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.55);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.5);
 
-  --focus-ring: 0 0 0 3px rgba(61, 134, 255, 0.32);
+  --focus-ring: 0 0 0 3px rgba(124, 140, 255, 0.32);
 }
 
 /* When the user has not picked a theme yet, follow the OS preference. */
@@ -115,40 +115,40 @@
   :root:not([data-theme]) {
     color-scheme: dark;
 
-    --bg: #0e1014;
-    --panel: #17191c;
-    --panel-muted: #1c1f23;
-    --panel-tint: #21252b;
+    --bg: #0a0d13;
+    --panel: #10141c;
+    --panel-muted: #151a24;
+    --panel-tint: #1b2130;
 
-    --text-strong: #f2f4f6;
-    --text-base: #d1d6db;
-    --text-soft: #8b95a1;
-    --text-mute: #6b7684;
-    --text-on-accent: #ffffff;
+    --text-strong: #edf1f7;
+    --text-base: #b9c2cf;
+    --text-soft: #7e8a9b;
+    --text-mute: #57626f;
+    --text-on-accent: #0c1020;
 
-    --line: #2c3037;
-    --line-strong: #3a3f48;
+    --line: #202836;
+    --line-strong: #2c3646;
 
-    --accent: #3d86ff;
-    --accent-strong: #5a99ff;
-    --accent-soft: #15233d;
-    --accent-ink: #d6e6ff;
+    --accent: #7c8cff;
+    --accent-strong: #98a5ff;
+    --accent-soft: #191e36;
+    --accent-ink: #cbd3ff;
 
-    --green: #2ed670;
-    --green-soft: #14241c;
-    --red: #ff5f6d;
-    --red-soft: #2a1a1d;
-    --yellow: #ffb43d;
-    --yellow-soft: #2a1f10;
+    --green: #34d399;
+    --green-soft: #10241c;
+    --red: #fb7185;
+    --red-soft: #2a171d;
+    --yellow: #f5b04a;
+    --yellow-soft: #2a2114;
 
-    --rail: #07080a;
+    --rail: #070a10;
     --rail-soft: #6b7684;
 
-    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.55);
-    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
-    --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.55);
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.45);
+    --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.5);
 
-    --focus-ring: 0 0 0 3px rgba(61, 134, 255, 0.32);
+    --focus-ring: 0 0 0 3px rgba(124, 140, 255, 0.32);
   }
 }
 
@@ -230,22 +230,17 @@ textarea::placeholder {
   flex-direction: column;
   gap: 1.1rem;
   padding: 1.1rem 1rem 1rem;
-  background: linear-gradient(180deg, #1b1f23 0%, #2a2f37 100%);
+  background: var(--rail);
   color: #f2f4f6;
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   overflow-y: auto;
-}
-
-:root[data-theme="dark"] .app-rail {
-  background: linear-gradient(180deg, #07080a 0%, #11141a 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .rail-brand,
 .rail-note,
 .rail-button,
 .rail-locale {
-  border-radius: 18px;
+  border-radius: 12px;
 }
 
 .rail-brand {
@@ -449,7 +444,7 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border-radius: 999px;
+  border-radius: 8px;
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -477,8 +472,8 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.74rem 1.1rem;
-  border-radius: 999px;
+  padding: 0.62rem 1rem;
+  border-radius: 10px;
   font-weight: 600;
   letter-spacing: -0.005em;
   transition:
@@ -726,7 +721,7 @@ textarea::placeholder {
   grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.95fr);
   gap: 1.4rem;
   padding: 1.5rem 1.6rem;
-  border-radius: 24px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   background:
     linear-gradient(
@@ -734,9 +729,15 @@ textarea::placeholder {
       transparent 55%,
       color-mix(in srgb, var(--command-accent, var(--accent)) 10%, transparent) 100%
     ),
-    linear-gradient(180deg, #131a28 0%, #0d1320 100%);
+    linear-gradient(180deg, #151c2b 0%, #0f1522 100%);
   box-shadow: 0 16px 40px rgba(10, 15, 26, 0.2);
   color: #f4f7fc;
+}
+
+.command-stat strong,
+.command-health-tile strong,
+.command-market-metrics strong {
+  font-family: var(--font-mono);
 }
 
 .command-hero-main,
@@ -747,7 +748,7 @@ textarea::placeholder {
 .command-market-card,
 .principle-card,
 .registry-card {
-  border-radius: 22px;
+  border-radius: 12px;
 }
 
 .command-hero-main {
@@ -995,8 +996,8 @@ textarea::placeholder {
 .command-market-metrics div {
   display: grid;
   gap: 0.22rem;
-  padding: 0.85rem 0.9rem;
-  border-radius: 18px;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
   border: 1px solid var(--line);
   background: var(--panel-muted);
 }
