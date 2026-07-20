@@ -4,11 +4,41 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-07-20
+
+### Changed — repo hygiene and toolchain
+
+- Removed dead renderer code left behind by earlier refactors: the
+  unwired `CommandSurface` / `DeskSurface` / `SourcesSurface`
+  components, `src/data/experience.ts`, and `src/data/locales.ts`
+  (−3,859 lines). Workspace nav tabs now stay in English under the KO
+  locale.
+- `electron/security.js` CSP `connect-src` now lists FRED and ECB SDW
+  explicitly, matching the feeds the renderer actually calls.
+- New `tools/check-encoding.mjs` + `npm run encoding:check` guards
+  against mojibake regressions in Korean copy.
+- Dependency refresh: `npm audit` down from 22 vulnerabilities
+  (4 critical) to 0. Vitest 2 → 4 (drops the vulnerable bundled Vite
+  and the two `overrides` pins), @sentry/electron 7.15, Electron
+  41.10.x security patches, plus semver-safe minor updates across the
+  toolchain. All 219 unit tests and 55 node:test cases pass unchanged.
+- ESLint now ignores `.claude/worktrees/**`, and `.gitignore` covers
+  session worktrees and local planning PDFs.
+
+### Fixed — Korean source encoding
+
+- Repaired 174 CP949-mangled Korean literals that had shipped inside
+  `src/App.tsx` since v1.0 (inline `t()` arguments and driver-family
+  labels; runtime display was unaffected because `localizeText()`
+  resolves Korean from `KO_EXACT`). Restored from the KO_EXACT
+  dictionary where possible and re-translated the remainder; the file
+  is now UTF-8 without BOM and `npm run encoding:check` is clean.
+
 ### Changed — Drivers / Command surface daily-use polish
 
 - Drivers → "Active patterns now": each fired scenario card now shows
   the four trigger types as a compact grid (`status · signal · variable
-  · observed-vs-threshold`) with the original detector note as a hover
+· observed-vs-threshold`) with the original detector note as a hover
   tooltip.
 - Command: a "Since your last session" delta strip appears at the top
   showing per-market price moves, freshness changes, and active-pattern
