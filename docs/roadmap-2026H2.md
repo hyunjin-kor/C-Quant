@@ -10,7 +10,7 @@ no execution, no custody, no individualized trade instructions.
 | Item | Deadline | Why |
 | --- | --- | --- |
 | Calibration review round | 2026-07-28 | `REVIEWED_AT` is 2026-04-29; the 90-day gate in `calibration:check` fails CI after this date. Requires a real pass over the 21 scenarios and the event log, not just a date bump. |
-| Link registry audit | 2026-08-05 | `docs/project-links.md` self-imposed quarterly audit. |
+| External-link audit | 2026-08-05 | Quarterly re-verification of the external source URLs cited across README and docs (the standalone `docs/project-links.md` registry was retired in the 2026-07-20 slimming round). |
 | Source freshness round | with the above | The `accessed` stamps in `src/data/platform.ts` (2026-04-09), `docs/research.md` (2026-04-08), and the benchmark map (2026-04-11) are ~100 days old. Re-verify each source and restamp; Truth Rules forbid restamping without re-verification. |
 
 ## Q3 — data depth (the real quantum jump)

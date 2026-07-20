@@ -39,6 +39,5 @@ file replaces ad-hoc "TODO" notes scattered across the source.
 ## What this file is NOT
 
 - A personal todo list — only items deferred *for a reason* land here.
-- A roadmap — those live in [docs/product-strategy.md](product-strategy.md)
-  and [docs/autonomy-state.md](autonomy-state.md).
+- A roadmap — that lives in [docs/roadmap-2026H2.md](roadmap-2026H2.md).
 - A bug tracker — bugs go to GitHub Issues.

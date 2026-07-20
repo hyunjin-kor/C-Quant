@@ -68,7 +68,7 @@ Apply these four rules to every code change.
 - Node `>=24` (see [.nvmrc](.nvmrc) and the `engines` field in [package.json](package.json)). If `nvm use` reports a mismatch, fix it before debugging build failures.
 - Primary target: Windows 10/11. macOS / Linux packaging stays advisory.
 - For human-facing daily commands, plain `npm run …` works on Windows, macOS, and Linux. [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md) follow this convention.
-- Inside a PowerShell-chained script that calls npm (`package:dir`, `package:portable`, and the autonomy `*.ps1` scripts), the explicit `npm.cmd` is **required** so PowerShell resolves the Node executable. If you write a new PowerShell script that needs to invoke npm, follow that pattern. Do not change the existing `npm.cmd` references inside those scripts to plain `npm` — they will break under PowerShell.
+- Inside a PowerShell-chained script that calls npm (`package:dir`, `package:portable`), the explicit `npm.cmd` is **required** so PowerShell resolves the Node executable. If you write a new PowerShell script that needs to invoke npm, follow that pattern. Do not change the existing `npm.cmd` references inside those scripts to plain `npm` — they will break under PowerShell.
 
 ## Verified Project Links
 
@@ -78,30 +78,20 @@ Apply these four rules to every code change.
 - Default branch: `main`
 - Releases: https://github.com/hyunjin-kor/C-Quant/releases
 - Issues: https://github.com/hyunjin-kor/C-Quant/issues
-- CI: GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) is the live badge in [README.md](README.md). [.circleci/config.yml](.circleci/config.yml) also exists and mirrors the local Windows release path; confirm which gate is enforced for a given PR before assuming.
+- CI: GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) is the enforced gate and the live badge in [README.md](README.md).
 
 **Project docs**
 
-- Product strategy: [docs/product-strategy.md](docs/product-strategy.md)
 - Roadmap (2026 H2): [docs/roadmap-2026H2.md](docs/roadmap-2026H2.md)
 - Calibration review (2026-07): [docs/calibration-review-2026-07.md](docs/calibration-review-2026-07.md)
-- Harness notes: [docs/harness-engineering.md](docs/harness-engineering.md)
-- Autonomy ledger: [docs/autonomy-state.md](docs/autonomy-state.md)
 - Open items (deferred work inventory): [docs/open-items.md](docs/open-items.md)
 - Research baseline: [docs/research.md](docs/research.md)
 - Data schema: [docs/data-schema.md](docs/data-schema.md)
-- Macro card design (ECB SDW wiring note): [docs/macro-card-design.md](docs/macro-card-design.md)
 - Architecture map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Usage walkthrough: [docs/USAGE.md](docs/USAGE.md)
 - Model card: [docs/MODEL_CARD.md](docs/MODEL_CARD.md)
 - Compliance (general): [docs/COMPLIANCE.md](docs/COMPLIANCE.md)
 - Compliance (EU / KR / CN): [docs/COMPLIANCE-EU.md](docs/COMPLIANCE-EU.md), [docs/COMPLIANCE-KR.md](docs/COMPLIANCE-KR.md), [docs/COMPLIANCE-CN.md](docs/COMPLIANCE-CN.md)
-- Open-source benchmark map: [docs/open-source-benchmark-map.md](docs/open-source-benchmark-map.md)
-- PDF reference audit: [docs/pdf-reference-audit.md](docs/pdf-reference-audit.md)
-- Figma spec (designer brief): [docs/figma-spec.md](docs/figma-spec.md)
-- Figma SVG mockups (Figma-importable): [docs/figma-spec/mockups/](docs/figma-spec/mockups)
-- Story deck (Canva-import): [docs/decks/c-quant-story.pptx](docs/decks/c-quant-story.pptx)
-- Link registry: [docs/project-links.md](docs/project-links.md)
 
 **Root docs**
 
@@ -150,11 +140,6 @@ npm run smoke:release        # both above
 
 # Renderer E2E
 npm run e2e
-
-# Autonomy loop control plane
-npm run autonomy:start | pause | resume | stop | idle | status
-npm run autonomy:cycle       # run one verification cycle
-npm run autonomy:monitor     # operator dashboard server
 ```
 
 ## Verification Ladder
@@ -254,7 +239,7 @@ The harness is working if all of these are true:
 
 ## Current Migration Notes
 
-- The repository is connected to GitHub through `origin`.
-- Both [.circleci/config.yml](.circleci/config.yml) and [.github/workflows/ci.yml](.github/workflows/ci.yml) are present. The README CI badge points to GitHub Actions; CircleCI mirrors the local Windows release path. Confirm which gate is enforced before assuming.
+- The repository is connected to GitHub through `origin`. GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) is the only CI; the CircleCI mirror was removed in the 2026-07-20 slimming round.
 - No blog URL, marketing site URL, or social profile URL is configured in project docs or package metadata as of the 2026-04-26 audit.
+- 2026-07-20 slimming round: autonomy loop scripts/monitor, design hand-off artifacts (figma-spec, story deck), and the meta/planning docs (product-strategy, project-links, pdf-reference-audit, open-source-benchmark-map, harness-engineering, autonomy-state, macro-card-design) were removed from the tree to keep the repo to what runs, builds, and documents the methodology. They remain in git history if ever needed.
 - The removed offline chat flow should not be reintroduced without a new product decision. Keep future briefing support evidence-based and non-executing.

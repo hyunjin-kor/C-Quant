@@ -4,6 +4,22 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Removed — repository slimmed to what runs
+
+- Dropped 29 internal artifacts from the tree (all preserved in git
+  history): the autonomy loop control plane (PowerShell scripts,
+  monitor server, ledger, harness notes, and the `autonomy:*` npm
+  scripts), design hand-off material (figma-spec + SVG mockups, story
+  deck, their build tools), meta/planning docs (product-strategy,
+  project-links registry, pdf-reference audit, open-source benchmark
+  map, macro-card design note), the CircleCI mirror config, unused CSV
+  templates and `db/schema.sql`, oversized icon source PNGs, and the
+  screenshot-corner tool. GitHub Actions is now the only CI.
+- The methodology surface is untouched: all `src/` code, tests, the
+  calibration/event-log data layer, model card, compliance docs,
+  research baseline, data schema, usage guide, and architecture map
+  stay.
+
 ### Changed — dark-first visual identity
 
 - Dark is now the default theme for new installs (renderer and

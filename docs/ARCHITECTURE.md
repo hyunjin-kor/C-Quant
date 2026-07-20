@@ -179,9 +179,8 @@ Steps (per OS):
 10. Bundle size budget
 11. Playwright Electron smoke (`e2e`)
 
-[.circleci/config.yml](../.circleci/config.yml) also exists and mirrors
-the local Windows release path (`verify_build` → `package_desktop`).
-Confirm which gate is enforced for a given PR before assuming.
+GitHub Actions is the only CI gate; the former CircleCI mirror was
+removed in the 2026-07-20 repository slimming round.
 
 ## Renderer libraries
 
