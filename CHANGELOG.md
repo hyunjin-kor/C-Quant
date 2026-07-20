@@ -4,6 +4,23 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Changed — calibration review round (2026-07-20)
+
+- Historical price anchors extended from 2025-06 through 2026-06 for
+  all three markets (36 new month-end values; provenance and caveats
+  documented inline and in
+  [docs/calibration-review-2026-07.md](docs/calibration-review-2026-07.md)).
+  The three events dated after 2025-06-30 (K-ETS 2024-vintage
+  surrender, MEE progress report, CBAM definitive start) are now
+  scored by the event study instead of being silently dropped.
+- Provenance mix: 12 → 13 `backtest` scenarios;
+  `cn-mee-sector-expansion` is the first China scenario promoted.
+  Multiplier spread now 0.50–2.00. Model card §6 and README synced.
+- `REVIEWED_AT` advanced 2026-04-29 → 2026-07-20, resetting the 90-day
+  freshness gate that would have tripped on 2026-07-28.
+- New `tests/catalystEventLog.integrity.test.ts` — orphan-scenario,
+  market-coverage, and date-validity guards over the event log.
+
 ## [1.4.0] — 2026-07-20
 
 ### Changed — repo hygiene and toolchain

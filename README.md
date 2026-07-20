@@ -48,7 +48,7 @@ Scenario multipliers are calibrated against a log of 35 citable historical event
 | `backtest`   | walk-forward evaluated against 2+ logged events |
 | `calibrated` | backtested and signed off by a model owner      |
 
-Right now 11 of the 21 scenarios are at `backtest`, none at `calibrated`. CI fails if the calibration review goes more than 90 days stale, so the numbers can't quietly rot.
+Right now 13 of the 21 scenarios are at `backtest`, none at `calibrated`. CI fails if the calibration review goes more than 90 days stale, so the numbers can't quietly rot.
 
 None of this is a price forecast. It's a structured way to keep score of the evidence.
 

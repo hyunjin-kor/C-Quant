@@ -84,6 +84,7 @@ Apply these four rules to every code change.
 
 - Product strategy: [docs/product-strategy.md](docs/product-strategy.md)
 - Roadmap (2026 H2): [docs/roadmap-2026H2.md](docs/roadmap-2026H2.md)
+- Calibration review (2026-07): [docs/calibration-review-2026-07.md](docs/calibration-review-2026-07.md)
 - Harness notes: [docs/harness-engineering.md](docs/harness-engineering.md)
 - Autonomy ledger: [docs/autonomy-state.md](docs/autonomy-state.md)
 - Open items (deferred work inventory): [docs/open-items.md](docs/open-items.md)

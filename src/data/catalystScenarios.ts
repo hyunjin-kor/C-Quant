@@ -1,6 +1,6 @@
 import type { CatalystScenario } from "../types";
 
-const calibratedAt = "2026-04-29";
+const calibratedAt = "2026-07-20";
 
 const reviewedAt = "2026-04-29";
 

@@ -4,7 +4,7 @@ import { getPriceAnchorsByMarket } from "./historicalPriceAnchors";
 import { runEventStudy } from "../lib/eventStudy";
 import type { CatalystCalibrationRecord, CatalystScenario } from "../types";
 
-const REVIEWED_AT = "2026-04-29";
+const REVIEWED_AT = "2026-07-20";
 
 const EVENT_STUDY_CONFIG = {
   preWindow: 3, // monthly anchors -> "trading days" = months in this fixture

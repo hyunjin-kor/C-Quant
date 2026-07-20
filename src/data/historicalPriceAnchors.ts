@@ -59,7 +59,26 @@ export const EU_ETS_PRICE_ANCHORS: HistoricalPriceAnchor[] = [
   { date: "2024-12-31", close: 70 },
   { date: "2025-04-30", close: 68 },
   { date: "2025-05-30", close: 73 },
-  { date: "2025-06-30", close: 72 }
+  { date: "2025-06-30", close: 72 },
+  // 2025-07 .. 2026-06 extension (added 2026-07-20). Primary bulk source:
+  // ICAP Allowance Price Explorer secondary-market EUR series (public JSON
+  // API), cross-checked to the cent against Advantag broker weekly reports
+  // and gmk.center / Carbon Pulse press coverage. The benchmark rolls from
+  // the Dec-2025 to the Dec-2026 ICE contract in mid-December 2025. The
+  // 2026-04 and 2026-06 entries are final-week closes rather than exact
+  // last-day settles (ICAP series gap); both corroborated by press.
+  { date: "2025-07-31", close: 73 },
+  { date: "2025-08-29", close: 73 },
+  { date: "2025-09-30", close: 76 },
+  { date: "2025-10-31", close: 79 },
+  { date: "2025-11-28", close: 83 },
+  { date: "2025-12-31", close: 87 },
+  { date: "2026-01-30", close: 81 },
+  { date: "2026-02-27", close: 70 },
+  { date: "2026-03-31", close: 73 },
+  { date: "2026-04-30", close: 74 },
+  { date: "2026-05-29", close: 81 },
+  { date: "2026-06-30", close: 80 }
 ];
 
 /**
@@ -80,7 +99,27 @@ export const K_ETS_PRICE_ANCHORS: HistoricalPriceAnchor[] = [
   { date: "2024-03-29", close: 8500 },
   { date: "2024-12-31", close: 9000 },
   { date: "2025-04-30", close: 9300 },
-  { date: "2025-06-30", close: 9500 }
+  { date: "2025-06-30", close: 9500 },
+  // 2025-07 .. 2026-06 extension (added 2026-07-20). Source: Daily eNews
+  // same-day KRX close reports (per-article closing-price sentences),
+  // cross-checked against ekn.kr / electimes monthly recaps. Exact
+  // last-trading-day closes, not rounded to hundreds like the earlier
+  // press-level entries. The covered benchmark vintage rolls KAU24 ->
+  // KAU25 between 2025-08 and 2025-09; the ~1,000 KRW step at that
+  // boundary is the vintage roll, not a pure price move (same convention
+  // as the EUA front-month roll above).
+  { date: "2025-07-31", close: 8420 },
+  { date: "2025-08-29", close: 9490 },
+  { date: "2025-09-30", close: 10500 },
+  { date: "2025-10-31", close: 10400 },
+  { date: "2025-11-28", close: 11000 },
+  { date: "2025-12-30", close: 10400 },
+  { date: "2026-01-30", close: 12400 },
+  { date: "2026-02-27", close: 13750 },
+  { date: "2026-03-31", close: 15600 },
+  { date: "2026-04-30", close: 17050 },
+  { date: "2026-05-29", close: 24550 },
+  { date: "2026-06-30", close: 22800 }
 ];
 
 /**
@@ -99,7 +138,26 @@ export const CN_ETS_PRICE_ANCHORS: HistoricalPriceAnchor[] = [
   { date: "2024-08-30", close: 92 },
   { date: "2024-09-30", close: 95 },
   { date: "2024-12-31", close: 100 },
-  { date: "2025-06-30", close: 88 }
+  { date: "2025-06-30", close: 88 },
+  // 2025-07 .. 2026-06 extension (added 2026-07-20). Series: CEA
+  // comprehensive price (综合价格) close, the level quoted by CNEEEX, MEE,
+  // and press. Sources: CNEEEX daily bulletins (overview.cneeex.com) and
+  // Xinhua-Finance reposts of the same bulletins, cross-checked against
+  // carbonmarket.cn weekly tables and ccn.ac.cn per-vintage tables.
+  // 2026-02 (80.50) and 2026-04 (79.50) sit on the half-yuan; integers
+  // are rounded half-up.
+  { date: "2025-07-31", close: 72 },
+  { date: "2025-08-29", close: 69 },
+  { date: "2025-09-30", close: 58 },
+  { date: "2025-10-31", close: 52 },
+  { date: "2025-11-28", close: 60 },
+  { date: "2025-12-31", close: 75 },
+  { date: "2026-01-30", close: 79 },
+  { date: "2026-02-27", close: 81 },
+  { date: "2026-03-31", close: 80 },
+  { date: "2026-04-30", close: 80 },
+  { date: "2026-05-29", close: 81 },
+  { date: "2026-06-30", close: 83 }
 ];
 
 /**
