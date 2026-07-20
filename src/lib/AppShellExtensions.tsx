@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "./theme";
 import { useToast } from "./toast";
 import { useRegisterCommands, type Command } from "./commandPalette";
@@ -451,9 +451,15 @@ export function AppShellExtensions() {
 
   useRegisterCommands(commands);
 
-  // Bridge-missing notice once at startup.
+  // Bridge-missing notice once at startup. The ref guard is what makes
+  // "once" true: `toast` is a context value whose identity changes on
+  // every push, so without the guard this effect re-fires after its own
+  // push and loops the renderer ("Maximum update depth exceeded" in any
+  // non-Electron browser).
+  const bridgeNoticeShown = useRef(false);
   useEffect(() => {
-    if (bridgeAvailable) return;
+    if (bridgeAvailable || bridgeNoticeShown.current) return;
+    bridgeNoticeShown.current = true;
     toast.push({
       tone: "warning",
       title: "Running without the desktop bridge",
