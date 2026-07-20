@@ -4,6 +4,8 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.8.1] — 2026-07-21
+
 ### Fixed
 
 - Intraday (1D/5D) live-tape charts no longer flatten: Yahoo intraday
