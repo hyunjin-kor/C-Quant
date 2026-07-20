@@ -4,6 +4,13 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-07-20
+
+The trust release: every source URL in the data layer fetch-verified,
+the event log corrected against primary records, the last
+one-observation scenarios promoted, and the two remaining known bugs
+fixed.
+
 ### Changed — data-reliability audit (all 157 source URLs fetch-verified)
 
 - Event log corrected against primary records: EU surrender events
