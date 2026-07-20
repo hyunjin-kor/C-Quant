@@ -4,6 +4,15 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows resource editing re-enabled: `win.signAndEditExecutable:
+  false` (meant to skip code signing) was also skipping icon and
+  version-metadata embedding on the packaged `C-Quant.exe`. Replaced
+  with `signExecutable: false` per electron-builder's own guidance —
+  signing stays off until a certificate lands, but the executable now
+  carries the app icon and metadata.
+
 ## [1.7.0] — 2026-07-20
 
 The watchdog release: the alert system learns to watch price action

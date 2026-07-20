@@ -113,7 +113,7 @@
       }
     ],
     "win": {
-      "signAndEditExecutable": false,
+      "signExecutable": false,
       "icon": "assets/app-icon.ico",
       "target": [
         "portable",
