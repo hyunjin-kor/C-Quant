@@ -95,6 +95,7 @@
   "build": {
     "appId": "com.cquant.desktop",
     "productName": "C-Quant",
+    "electronDist": "node_modules/electron/dist",
     "directories": {
       "output": "release"
     },

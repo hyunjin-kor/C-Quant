@@ -4,6 +4,22 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Fixed
+
+- Infinite render loop when the renderer runs without the Electron
+  bridge (any plain browser): the startup "bridge missing" toast
+  effect re-fired on its own push because the toast context identity
+  changes with every toast. A ref guard makes the notice truly
+  once-per-mount.
+- Local Windows packaging no longer dies on
+  `EPERM: rename win-unpacked.tmp` — electron-builder now stages the
+  app from `node_modules/electron/dist` (`build.electronDist`) instead
+  of downloading and extracting its own copy, removing the
+  rename step that antivirus scanning kept racing. Side effects: no
+  network fetch during packaging and each platform must package on its
+  own OS (already how the release matrix works; cross-OS `package:all`
+  from one machine is not supported).
+
 ## [1.5.0] — 2026-07-20
 
 The terminal-identity release: dark-first redesign, a professional
