@@ -4,167 +4,57 @@
 
 <h1 align="center">C-Quant</h1>
 
-<p align="center"><strong>A decision-support desk for buying, holding, or reducing EU ETS, K-ETS, and China ETS carbon allowances.</strong></p>
+<p align="center">A desktop research terminal for the three big compliance carbon markets.</p>
 
-C-Quant helps an institutional analyst answer one question — **"Should I buy, hold, or reduce carbon allowances right now?"** Official auctions, exchange snapshots, and policy bulletins anchor the read. A research-backed driver matrix, multi-driver catalyst scenarios, real-time pattern detection, and event-study calibration sit on top. The output is a single **buy / hold / reduce** posture with the evidence trail intact.
+<p align="center">
+  <a href="https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml"><img src="https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/></a>
+  <a href=".nvmrc"><img src="https://img.shields.io/badge/node-%3E%3D24-brightgreen" alt="Node 24+"/></a>
+</p>
 
-It does not execute trades, custody assets, or intermediate settlement.
+C-Quant pulls official data from the EU ETS, Korea's K-ETS, and China's national ETS, and turns it into one daily read: buy, hold, or reduce. It shows its work. Every number links back to the source it came from, every freshness badge tells you how old that source is, and every model multiplier says whether it was backtested or is still a placeholder.
 
-[![CI](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml/badge.svg)](https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node 24+](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](.nvmrc)
+It is decision support, not a trading tool. It doesn't place orders, hold assets, or give individualized trade instructions.
 
----
-
-## What decision it supports
-
-| User question | How C-Quant answers |
-| --- | --- |
-| Buy EUA now? | Official auction result + driver-weighted score + active catalyst patterns → **posture (buy / hold / reduce)** + confidence |
-| Reduce K-ETS exposure? | KRX close + compliance-window proximity + freshness of policy notices |
-| Is the Chinese market at an inflection point? | MEE bulletin + sector-expansion scenario activity + daily turnover |
-| Which signal should I weight today? | Auto-detection of currently active multi-driver scenarios + backtest hit rate |
-| How much can I trust the output? | Every multiplier carries a calibration provenance: heuristic / backtest / calibrated |
-
----
-
-## The signal stack
-
-C-Quant derives buy / hold / reduce by stacking 8 layers. Each layer carries its primary source and a freshness label.
-
-### Layer 1 — Official anchor
-- **EU**: EEX EU ETS primary auction workbook + auction page (official web flow)
-- **K-ETS**: KRX ETS Information Platform + KRX Open API sample (`ets_bydd_trd`)
-- **China**: Shanghai Environment & Energy Exchange daily overview + MEE carbon-market bulletin feed
-- Each card carries a `fresh / watch / stale` freshness badge
-
-### Layer 2 — Driver matrix
-~47 drivers across 6 families per market, with weights derived from peer-reviewed and policy literature. Each driver is `weight × direction × importance × note + sources[]`.
-
-| Family | What lives here |
-| --- | --- |
-| Policy supply | MSR / TNAC, cap path, allocation share, K-ETS Fourth Basic Plan, ETS2, CBAM, Korean penalty multiplier |
-| Power complex | Wholesale electricity, clean spark spread, wind / solar generation share, China power-sector emissions |
-| Fuel switching | TTF gas, Rotterdam coal, Brent, Qinhuangdao coal, Asian LNG |
-| Macro & financial | Industrial production, credit spreads, EUR/USD, USD/KRW, USD/CNY, equity drawdowns, ECB / Fed policy shocks |
-| Weather & seasonality | Temperature anomaly, heating demand, precipitation, K-ETS compliance window, China Q4 concentration |
-| Microstructure | Auction coverage, open interest, volume, fund positioning, KOC/KAU spread, pilot spillover |
-
-### Layer 3 — Catalyst combinations
-**21 scenarios — each combines ≥2 drivers** ([`src/data/catalystScenarios.ts`](src/data/catalystScenarios.ts)).
-
-| Market | Sample combinations |
-| --- | --- |
-| EU | cold-snap stack · MSR + Fit-for-55 · hawkish ECB + speculation downshift · CBAM + USD strength · ETS2 launch + price-stability |
-| K-ETS | compliance + KRW weakness + cold winter · Phase 4 auction + financial-cap relaxation · penalty multiplier reset |
-| China | Q4 compliance + CCER discount · coal shock + power-emissions release · pilot → national cascade |
-
-Every scenario carries `expectedDirection`, `interactionEffect (amplify / offset / regime-shift)`, `playbook`, `historicalAnchor`, and ≥1 primary-source citation.
-
-### Layer 4 — Active patterns auto-detection (real-time)
-Live card data is auto-evaluated against four threshold signals (`src/lib/catalystTriggerDetector.ts`):
-- **Freshness**: official card age > 24h
-- **Price-jump**: 5-day |%change| ≥ 5%
-- **Volume-jump**: latest bar ≥ 2× the trailing 5-bar mean
-- **Proxy-divergence**: official close vs primary listed proxy |gap| ≥ 4%
-
-When at least half of the testable components fire together, the scenario is flagged **`active`** and surfaces as a card at the top of the Drivers view under "Active patterns now".
-
-### Layer 5 — Empirical calibration (event-study backtest)
-25 citable historical events (2018–2025) — MSR notices, Fit-for-55, ETS revision trilogue, energy-crisis & COVID risk-off, K-ETS Fourth Basic Plan, MEE sector-expansion consultation, CCER restart (2024-01-22), K-ETS financial-cap relaxation (2025-02-07), CBAM transition start (2023-10-01), and others. Each event is evaluated against monthly EU / K / CN price anchors via event study, producing per-scenario `multiplier`, `meanAbsReturn`, and `hitRate`. Full log: [`src/data/catalystEventLog.ts`](src/data/catalystEventLog.ts).
-
-| Calibration status | Meaning |
-| --- | --- |
-| `heuristic` | Placeholder constant by `interactionEffect` (1.25 / 1.10 / 0.7) |
-| `backtest` | Walk-forward evaluated with ≥2 events — multiplier is data-driven |
-| `calibrated` | Backtested **and** model-owner reviewed (currently 0; governance defined) |
-
-`npm run calibration:check` enforces a 90-day freshness threshold on every push / PR.
-
-### Layer 6 — Listed proxy gap
-ICE EUA December, KRBN, KEUA, CO2.L, KCCA — pulled via the public Yahoo chart feed and compared against the official anchor. When the gap crosses the trailing 1-year 90th percentile for two consecutive sessions, it surfaces as an information-leakage signal.
-
-### Layer 7 — Materials & abatement atlas (long-horizon supply-demand)
-10 entries — amine PCC, MOF, DAC, green hydrogen, hydrogen DRI steel, low-clinker cement, biochar, BECCS, renewable LCOE — cited from primary IPCC AR6 / IEA / IRENA / GCCA / ICVCM / Verra reports. Tracks how shifts in cost ranges and readiness reshape the long-horizon allowance demand curve.
-
-### Layer 8 — Public-data feeds (extensible external data)
-- **FRED** (St. Louis Fed) — gated by a free API key, with a real `fetchSeries()` implementation
-- **ECB SDW** — open CSV / JSON, no key required
-- **ICAP Allowance Price Explorer** — public dashboard link
-- **World Bank Carbon Pricing Dashboard** — long-horizon cross-jurisdiction comparator
-
-The institutional adapters (Refinitiv / Bloomberg / ICE / EEX) are license-gated. When credentials are missing, they only expose a `not-configured` status; they never fabricate prices.
-
----
-
-## Decision surfaces
-
-Every session walks the same four steps: read the official anchor → compare with the listed proxy → check the drivers and active scenarios → decide the posture.
-
-### Command — "What should I do today, and why?"
 <p align="center">
   <img src="docs/images/shot-command-light.png" alt="Command surface" width="100%"/>
 </p>
 
-Top market strip (EU / KR / CN) → centre chart of anchor vs proxy → right-hand decision memo (posture + confidence + support / risk bullets) → bottom row of the five strongest drivers and freshness chips.
+## How a session goes
 
-### Drivers — "Which signal is firing right now?"
-<p align="center">
-  <img src="docs/images/shot-drivers-light.png" alt="Drivers surface" width="100%"/>
-</p>
+You open the app and land on Command: prices for all three markets, a chart comparing the official close against listed proxies, and a short memo saying what the current posture is and why. From there,
 
-This is the **core** screen of C-Quant. From top to bottom:
-1. **Decision-support boundary** notice (this is not a calibrated price predictor)
-2. **Active patterns now** — live scenario cards that crossed their thresholds
-3. **Catalyst combinations** — 21 scenarios, ranked by the score implied by your current driver weights
-4. **Materials & abatement atlas** — long-horizon supply-demand pointers
-5. **Institutional feeds status** — Refinitiv / Bloomberg / ICE / EEX (license-gated)
-6. **Calibration provenance** — per-scenario multiplier + observations + hit rate + status
-7. **Event timeline** — 25 historical events
-8. **Public-data feeds status** — FRED / ECB SDW / ICAP / World Bank
-9. **Driver families heatmap** — cross-market comparison
+- **Drivers** shows which catalyst scenarios are firing right now, ranked by your driver weights, with the calibration evidence behind each multiplier laid out next to it.
+- **Desk** narrows to a single market when you're writing a brief, keeping the other two in the margin for context.
+- **Sources** lists where every datum came from, how it was accessed, and when it was last fresh. It's the screen to open in a compliance review.
 
-### Desk — "I want to focus deeply on one market"
-<p align="center">
-  <img src="docs/images/shot-desk-light.png" alt="Desk surface" width="100%"/>
-</p>
+The typical loop is the same every day: read the official anchor, compare it with the listed tape, check what's firing, decide the posture.
 
-Focus on one market (EU / K / CN) with the cross-market context kept beside it: anchor vs hedge tape chart, range and correlation table, scenario weight sliders. Use it when writing a market-specific brief.
+## Where the data comes from
 
-### Sources — "Where did this datum come from, and how fresh is it?"
-<p align="center">
-  <img src="docs/images/shot-sources-light.png" alt="Sources surface" width="100%"/>
-</p>
+Official anchors first: the EEX auction workbook for the EU, the KRX ETS platform for Korea, and MEE bulletins for China. Listed proxies (ICE EUA futures, KRBN, KEUA and friends) come from public chart feeds and are always labeled as proxies, never mixed in with official settlement prices.
 
-Access method, freshness, in-app benchmark catalogue, input coverage, and trust registry for every primary source. The first screen to open during a compliance review.
+Two free public feeds extend the macro layer: ECB SDW (EUR/USD, no key needed) and FRED (USD/KRW, USD/CNY — needs a free API key). Institutional adapters for Refinitiv, Bloomberg, ICE, and EEX exist but stay in a `not-configured` state until you add credentials. They never invent prices.
 
-➡️ Screen-by-screen walkthrough: [docs/USAGE.md](docs/USAGE.md)
+## The model, honestly
 
----
+The posture comes from a driver matrix (about 47 weighted drivers per market, sourced from policy documents and academic literature) plus 21 multi-driver catalyst scenarios. A live detector watches for freshness gaps, price jumps, volume spikes, FX moves, and proxy divergence, and flags a scenario as active when enough of its components fire together.
 
-## What it does NOT do (boundary)
+Scenario multipliers are calibrated against a log of 35 citable historical events (2018–2026) via event study. Each multiplier carries a provenance label so you know how much to trust it:
 
-| Area | State |
-| --- | --- |
-| Order routing / execution | **NO** — use a licensed broker |
-| Custody / settlement | **NO** — use a licensed registry / custodian |
-| Individualised buy / sell recommendations | **NO** — operator judgement + compliance review |
-| Replacement for primary disclosure | **NO** — use the source documents directly |
-| Fabricated institutional pricing | **NO** — unconfigured adapters only show `not-configured` |
-| Fabricated citations | **NO** — DOI / blog / vendor URLs are never guessed |
+| Label        | Meaning                                         |
+| ------------ | ----------------------------------------------- |
+| `heuristic`  | placeholder constant, not yet backed by events  |
+| `backtest`   | walk-forward evaluated against 2+ logged events |
+| `calibrated` | backtested and signed off by a model owner      |
 
-Jurisdictional compliance notes:
-- [docs/COMPLIANCE.md](docs/COMPLIANCE.md) — general boundary + calibration governance
-- [docs/COMPLIANCE-EU.md](docs/COMPLIANCE-EU.md) — MiFID II / MAR / BMR / CSRD
-- [docs/COMPLIANCE-KR.md](docs/COMPLIANCE-KR.md) — Capital Markets Act / GHG Emission Trading Act / PIPA
-- [docs/COMPLIANCE-CN.md](docs/COMPLIANCE-CN.md) — Securities Law / PIPL / Provisional Carbon Trading Regulations
-- [docs/MODEL_CARD.md](docs/MODEL_CARD.md) — model card (inputs / outputs / limits / maintenance)
+Right now 11 of the 21 scenarios are at `backtest`, none at `calibrated`. CI fails if the calibration review goes more than 90 days stale, so the numbers can't quietly rot.
 
----
+None of this is a price forecast. It's a structured way to keep score of the evidence.
 
-## Quick start
+## Running it
 
-> Requires Node 24 (see `.nvmrc`) and Windows 10/11 as the primary target. macOS / Linux builds are advisory.
+Node 24+ and Windows 10/11 are the primary targets (macOS and Linux builds exist but are advisory).
 
 ```powershell
 nvm use
@@ -172,77 +62,37 @@ npm install
 npm run dev          # Vite + Electron
 ```
 
-Distribution build:
+Packaged builds are on the [Releases](https://github.com/hyunjin-kor/C-Quant/releases) page, or build your own:
 
 ```powershell
-npm run package:portable     # C-Quant-X.Y.Z-portable.exe
-npm run package:nsis         # C-Quant-Setup-X.Y.Z.exe (auto-update wired)
+npm run package:portable     # portable .exe
+npm run package:nsis         # installer, auto-update wired
 ```
 
-Release artifacts are published on the [Releases](https://github.com/hyunjin-kor/C-Quant/releases) page. SmartScreen will warn on first launch — click **More info → Run anyway**.
+The binaries aren't code-signed yet, so SmartScreen will warn on first launch. Click "More info", then "Run anyway".
 
----
-
-## Quality gates
+## Development
 
 ```bash
-npm run type-check           # tsc --noEmit
-npm run lint                 # ESLint flat config
-npm test                     # vitest — 23 files, 197 tests
-npm run test:node            # node:test — 53 localization tests
-npm run build                # type-check + vite build
-npm run ci:verify            # syntax check all electron entrypoints + scripts
-npm run calibration:check    # 90-day freshness threshold for scenario calibration
-npm run bundle:check         # bundle size budget
-npm run e2e                  # Playwright Electron smoke
+npm run type-check
+npm run lint
+npm run test:all             # vitest + node:test
+npm run build
+npm run calibration:check    # 90-day calibration freshness gate
+npm run encoding:check       # guards Korean copy against mojibake
+npm run e2e                  # Playwright smoke
 ```
 
-CI runs the full set on every push / PR across Windows, macOS, and Linux. macOS and Linux remain advisory until cross-platform packaging stabilises.
+Electron 41, React 19, TypeScript, Vite 8, Vitest 4. Three processes (main / preload / renderer) with a single IPC perimeter; everything persists under the Electron `userData` directory. The module map lives in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow.
 
----
+## What it deliberately won't do
 
-## Tech
+No order routing, no custody, no settlement — use a licensed broker and registry. No individualized buy/sell calls. No fabricated data: unconfigured feeds say so, unverified sources are labeled `official web flow` rather than "API", and citations are never guessed. The full boundary and per-jurisdiction notes are in [docs/COMPLIANCE.md](docs/COMPLIANCE.md) ([EU](docs/COMPLIANCE-EU.md) · [KR](docs/COMPLIANCE-KR.md) · [CN](docs/COMPLIANCE-CN.md)), and the model's limits are documented in [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 
-- **Electron 41** + **React 19** + **TypeScript 6** + **Vite 8**
-- **Vitest 2** (197 unit tests across 23 files) + **Playwright** (E2E smoke) + **node:test** (legacy localization)
-- **electron-builder** (portable + NSIS Windows, dmg / zip macOS, AppImage / deb Linux)
-- **electron-updater** + Sentry (DSN-gated, opt-in)
-- Korean-text support: Pretendard variable font, Korean number units (만 / 억 / 조)
-- Three execution contexts (main / preload / renderer), one IPC perimeter, all persistence under `<userData>`
+## More docs
 
-Full module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-
----
-
-## Project meta
-
-| Doc | Contents |
-| --- | --- |
-| [docs/USAGE.md](docs/USAGE.md) | Screen-by-screen usage guide |
-| [docs/MODEL_CARD.md](docs/MODEL_CARD.md) | Model card (I/O, limits, maintenance) |
-| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | General compliance + calibration governance |
-| [docs/COMPLIANCE-EU.md](docs/COMPLIANCE-EU.md) | EU jurisdiction (MiFID II / MAR / BMR / CSRD) |
-| [docs/COMPLIANCE-KR.md](docs/COMPLIANCE-KR.md) | Korea jurisdiction (Capital Markets Act / GHG ETS Act / PIPA) |
-| [docs/COMPLIANCE-CN.md](docs/COMPLIANCE-CN.md) | China jurisdiction (Securities Law / PIPL / Carbon Trading) |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Process and module map |
-| [CHANGELOG.md](CHANGELOG.md) | Release history |
-| [SECURITY.md](SECURITY.md) | Threat model |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guide |
-| [LICENSE](LICENSE) | MIT |
-
----
-
-## Truth boundary
-
-- Sources without a confirmed public API are labelled `Official Web` or `Official File`, not `Public API`.
-- Listed tapes available only via public chart feeds are labelled **listed proxy** or **linked tape** and kept separate from official carbon sources.
-- Scenario and signal outputs are constrained to evidence-backed research support; they do not fabricate official facts and do not behave like execution assistance.
-- China ETS daily exchange pages can be rate-limited or blocked in some environments, so the China layer remains bulletin-first until a stable official feed is reachable.
-- Institutional feed adapters (Refinitiv / Bloomberg / ICE / EEX) only expose a `not-configured` status when credentials are missing; they never infer prices.
-- Materials atlas costs and potentials are quoted as **ranges** from the underlying primary report. Every entry starts as `verified: false`; the "Verified" badge appears only after the operator has personally verified it.
-
----
+[docs/USAGE.md](docs/USAGE.md) walks through each screen. [CHANGELOG.md](CHANGELOG.md) has the release history, [SECURITY.md](SECURITY.md) the threat model.
 
 ## License
 
-[MIT](LICENSE) — third-party deps keep their own licenses.
+[MIT](LICENSE). Third-party dependencies keep their own licenses.

@@ -47,7 +47,7 @@ Apply these four rules to every code change.
 - Do not refactor things that aren't broken.
 - Match existing style, even if you would do it differently.
 - If you notice unrelated dead code, mention it — do not delete it.
-- Remove imports/variables/functions that *your* changes made unused. Leave pre-existing dead code alone unless asked.
+- Remove imports/variables/functions that _your_ changes made unused. Leave pre-existing dead code alone unless asked.
 - Test: every changed line should trace directly to the user's request.
 
 ### 4. Goal-Driven Execution — define success, then loop
@@ -73,6 +73,7 @@ Apply these four rules to every code change.
 ## Verified Project Links
 
 **Repository**
+
 - GitHub remote: `https://github.com/hyunjin-kor/C-Quant.git`
 - Default branch: `main`
 - Releases: https://github.com/hyunjin-kor/C-Quant/releases
@@ -80,7 +81,9 @@ Apply these four rules to every code change.
 - CI: GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) is the live badge in [README.md](README.md). [.circleci/config.yml](.circleci/config.yml) also exists and mirrors the local Windows release path; confirm which gate is enforced for a given PR before assuming.
 
 **Project docs**
+
 - Product strategy: [docs/product-strategy.md](docs/product-strategy.md)
+- Roadmap (2026 H2): [docs/roadmap-2026H2.md](docs/roadmap-2026H2.md)
 - Harness notes: [docs/harness-engineering.md](docs/harness-engineering.md)
 - Autonomy ledger: [docs/autonomy-state.md](docs/autonomy-state.md)
 - Open items (deferred work inventory): [docs/open-items.md](docs/open-items.md)
@@ -100,6 +103,7 @@ Apply these four rules to every code change.
 - Link registry: [docs/project-links.md](docs/project-links.md)
 
 **Root docs**
+
 - Agent harness: [AGENTS.md](AGENTS.md)
 - Public-facing surface: [README.md](README.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
@@ -107,6 +111,7 @@ Apply these four rules to every code change.
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 **External (public)**
+
 - Blog / marketing site: not configured in this repository as of 2026-04-26.
 
 ## Core Commands
@@ -155,27 +160,29 @@ npm run autonomy:monitor     # operator dashboard server
 
 Pick the lowest tier that exercises what you changed. Going lower than required is not surgical; going higher than required wastes time.
 
-| Tier | When to run | Commands |
-| --- | --- | --- |
-| 1. Type & lint | Any TS edit | `type-check`, `lint` |
-| 2. Tests | Logic / data / lib edits | `test`, `test:node` (or `test:all`) |
-| 3. Electron syntax | Edit under `electron/`, `main.js`, `preload.js`, `scripts/` | `ci:verify` |
-| 4. Calibration | Edit `src/data/catalyst*` or freshness logic | `calibration:check` |
-| 5. Build | Anything that ships in the renderer bundle | `build` |
-| 6. Bundle budget | Renderer bundle size–sensitive | `bundle:check` |
-| 7. Package | Release-sensitive (icons, electron-builder, native deps) | `package:dir`, `package:portable`, `package:nsis` |
-| 8. Smoke | After packaging | `smoke:dir`, `smoke:portable`, or `smoke:release` |
-| 9. E2E | Renderer flows / IPC perimeter | `e2e` |
+| Tier               | When to run                                                 | Commands                                          |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------------------- |
+| 1. Type & lint     | Any TS edit                                                 | `type-check`, `lint`                              |
+| 2. Tests           | Logic / data / lib edits                                    | `test`, `test:node` (or `test:all`)               |
+| 3. Electron syntax | Edit under `electron/`, `main.js`, `preload.js`, `scripts/` | `ci:verify`                                       |
+| 4. Calibration     | Edit `src/data/catalyst*` or freshness logic                | `calibration:check`                               |
+| 5. Build           | Anything that ships in the renderer bundle                  | `build`                                           |
+| 6. Bundle budget   | Renderer bundle size–sensitive                              | `bundle:check`                                    |
+| 7. Package         | Release-sensitive (icons, electron-builder, native deps)    | `package:dir`, `package:portable`, `package:nsis` |
+| 8. Smoke           | After packaging                                             | `smoke:dir`, `smoke:portable`, or `smoke:release` |
+| 9. E2E             | Renderer flows / IPC perimeter                              | `e2e`                                             |
 
 For routine code edits the minimum is Tier 1 + 2 + 5. Release rounds run Tiers 1–8, plus Tier 9 if renderer flows changed.
 
 ## Primary Files
 
 **Renderer entry & shell**
+
 - [src/App.tsx](src/App.tsx)
 - [src/styles.css](src/styles.css)
 
 **Data layer (most-edited research surface)**
+
 - [src/data/research.ts](src/data/research.ts)
 - [src/data/platform.ts](src/data/platform.ts)
 - [src/data/dataHub.ts](src/data/dataHub.ts)
@@ -185,14 +192,17 @@ For routine code edits the minimum is Tier 1 + 2 + 5. Release rounds run Tiers 1
 - [src/data/materialsResearch.ts](src/data/materialsResearch.ts) — long-horizon abatement atlas (Layer 7)
 
 **Live evaluation**
+
 - [src/lib/catalystTriggerDetector.ts](src/lib/catalystTriggerDetector.ts) — Layer 4 active-pattern detector
 
 **Electron / main process**
+
 - [main.js](main.js)
 - [preload.js](preload.js)
 - [electron/liveSources.js](electron/liveSources.js)
 
 **Project metadata & tooling configs**
+
 - [package.json](package.json)
 - [tsconfig.json](tsconfig.json) — TypeScript strict-mode config
 - [.editorconfig](.editorconfig)
@@ -221,10 +231,10 @@ For routine code edits the minimum is Tier 1 + 2 + 5. Release rounds run Tiers 1
 
 [.claude/settings.json](.claude/settings.json) configures a `PostToolUse` hook that runs the relevant verification tier automatically when you edit specific paths:
 
-| When you edit | The hook runs |
-| --- | --- |
-| `src/data/catalyst*.ts` | `npm run calibration:check` (Tier 4) |
-| `electron/*.js`, `main.js`, `preload.js` | `npm run ci:verify` (Tier 3) |
+| When you edit                            | The hook runs                        |
+| ---------------------------------------- | ------------------------------------ |
+| `src/data/catalyst*.ts`                  | `npm run calibration:check` (Tier 4) |
+| `electron/*.js`, `main.js`, `preload.js` | `npm run ci:verify` (Tier 3)         |
 
 The hook is path-filtered (no-op for unrelated files) and silent on success. If a verification fails, the failure surfaces in the turn output. The hook does not replace the Verification Ladder — for full coverage of a change, still run the appropriate higher tiers (build / package / smoke / e2e).
 
@@ -239,7 +249,7 @@ The harness is working if all of these are true:
 - Adjacent code, comments, and formatting were not touched.
 - A verification command actually ran, and its outcome (pass / fail) is reported.
 - Source labels (`official web flow`, `linked tape`, `not-configured`, calibration provenance) match reality, not aspiration.
-- Clarifying questions were asked *before* implementation, not after a wrong turn.
+- Clarifying questions were asked _before_ implementation, not after a wrong turn.
 
 ## Current Migration Notes
 
