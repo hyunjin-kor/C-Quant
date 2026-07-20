@@ -295,9 +295,9 @@ If either is missing, every event call is a no-op. There's no fallback DSN baked
 
 둘 중 하나라도 빠지면 모든 이벤트는 no-op. 바이너리에 fallback DSN이 박혀있지 않습니다.
 
-Crash reporting via Sentry is similarly opt-in (`CQUANT_SENTRY_DSN`). See [SECURITY.md](../SECURITY.md) for the full threat model.
+Crash reporting via Sentry is similarly opt-in (`CQUANT_SENTRY_DSN`). See [SECURITY.md](../.github/SECURITY.md) for the full threat model.
 
-Sentry 크래시 리포트도 같은 패턴 (`CQUANT_SENTRY_DSN`). 전체 위협 모델은 [SECURITY.md](../SECURITY.md).
+Sentry 크래시 리포트도 같은 패턴 (`CQUANT_SENTRY_DSN`). 전체 위협 모델은 [SECURITY.md](../.github/SECURITY.md).
 
 **한 줄 요약**: 기본 OFF. 명시적으로 켜야만 분석 데이터가 나갑니다.
 

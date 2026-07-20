@@ -119,7 +119,7 @@ Note: the walk-forward harness in [src/lib/walkForward.ts](../src/lib/walkForwar
 - [ ] Run `npm run calibration:check` and confirm 0 stale entries (90-day threshold).
 - [ ] Update [CHANGELOG.md](../CHANGELOG.md) with any calibration promotions and reviewer sign-off.
 - [ ] Confirm the auto-updater is pointed at a controlled release feed (mirror inside the perimeter for KR / CN deployments).
-- [ ] Sign Windows / macOS binaries with the deployment certificate (see [SECURITY.md](../SECURITY.md) hardening checklist).
+- [ ] Sign Windows / macOS binaries with the deployment certificate (see [SECURITY.md](../.github/SECURITY.md) hardening checklist).
 - [ ] Run `npm run type-check`, `npm run lint`, `npm run test:all`, `npm run ci:verify`, and `npm run build` clean (Tier 1–5 of the [CLAUDE.md Verification Ladder](../CLAUDE.md#verification-ladder)).
 
 ## 9. Change log

@@ -15,21 +15,21 @@ const {
 const path = require("node:path");
 const fs = require("node:fs/promises");
 
-const { getConnectedSources, getLiveQuoteHistory } = require("./electron/liveSources");
-const security = require("./electron/security");
-const logger = require("./electron/logger");
-const { createTtlCache: _createTtlCache } = require("./electron/cache");
-const { createWindowStateStore } = require("./electron/windowState");
-const { createSettingsStore } = require("./electron/appSettings");
-const sentry = require("./electron/sentry");
-const autoUpdate = require("./electron/autoUpdate");
-const exporters = require("./electron/exporters");
-const analytics = require("./electron/analytics");
-const { createWatchlistStore } = require("./electron/watchlist");
-const { createBacktestStore } = require("./electron/backtests");
-const { createAlertsStore, evaluateFreshness } = require("./electron/alerts");
-const { createInstitutionalFeedRegistry } = require("./electron/institutionalFeeds");
-const { createFreeFeedRegistry } = require("./electron/freeFeeds");
+const { getConnectedSources, getLiveQuoteHistory } = require("./liveSources");
+const security = require("./security");
+const logger = require("./logger");
+const { createTtlCache: _createTtlCache } = require("./cache");
+const { createWindowStateStore } = require("./windowState");
+const { createSettingsStore } = require("./appSettings");
+const sentry = require("./sentry");
+const autoUpdate = require("./autoUpdate");
+const exporters = require("./exporters");
+const analytics = require("./analytics");
+const { createWatchlistStore } = require("./watchlist");
+const { createBacktestStore } = require("./backtests");
+const { createAlertsStore, evaluateFreshness } = require("./alerts");
+const { createInstitutionalFeedRegistry } = require("./institutionalFeeds");
+const { createFreeFeedRegistry } = require("./freeFeeds");
 
 // CQUANT_LOAD_DIST forces the main process to load dist/index.html instead of
 // the Vite dev server. Used by the screenshot capture tool so it can launch
@@ -79,7 +79,7 @@ function appendStartupDiagnostic(label, detail) {
 }
 
 function getRendererEntryPath() {
-  return path.resolve(path.join(__dirname, "dist", "index.html"));
+  return path.resolve(path.join(__dirname, "..", "dist", "index.html"));
 }
 
 function isTrustedAppUrl(value) {
@@ -297,7 +297,7 @@ function armStartupWatchdog(window) {
 }
 
 function getWindowIconPath() {
-  return path.join(__dirname, "assets", "app-icon.png");
+  return path.join(__dirname, "..", "assets", "app-icon.png");
 }
 
 // ─── Tray + background refresh ──────────────────────────────────────────────
@@ -634,7 +634,7 @@ function createWindow() {
     return window;
   }
 
-  window.loadFile(path.join(__dirname, "dist", "index.html"));
+  window.loadFile(path.join(__dirname, "..", "dist", "index.html"));
   return window;
 }
 

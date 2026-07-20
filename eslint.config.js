@@ -15,7 +15,6 @@ export default [
       ".autonomy/**",
       ".claude/worktrees/**",
       "package-lock.json",
-      "tools/autonomy-monitor/index.html",
       "coverage/**",
       "playwright-report/**",
       "test-results/**"
@@ -53,7 +52,7 @@ export default [
     }
   },
   {
-    files: ["main.js", "preload.js", "electron/**/*.js"],
+    files: ["electron/**/*.js"],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 },
       sourceType: "commonjs"
@@ -69,7 +68,7 @@ export default [
     }
   },
   {
-    files: ["tools/**/*.{js,mjs}", "scripts/**/*.{js,mjs}"],
+    files: ["scripts/**/*.{js,mjs}"],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 },
       sourceType: "module"

@@ -24,7 +24,7 @@
           {
             "type": "command",
             "shell": "bash",
-            "command": "f=$(node -e \"process.stdout.write(JSON.parse(require('fs').readFileSync(0,'utf8')).tool_input?.file_path || '')\" 2>/dev/null); [ -z \"$f\" ] && exit 0; n=$(printf '%s' \"$f\" | tr '\\\\' '/'); case \"$n\" in *src/data/catalyst*.ts) npm run calibration:check ;; *electron/*.js|*main.js|*preload.js) npm run ci:verify ;; esac",
+            "command": "f=$(node -e \"process.stdout.write(JSON.parse(require('fs').readFileSync(0,'utf8')).tool_input?.file_path || '')\" 2>/dev/null); [ -z \"$f\" ] && exit 0; n=$(printf '%s' \"$f\" | tr '\\\\' '/'); case \"$n\" in *src/data/catalyst*.ts) npm run calibration:check ;; *electron/*.js) npm run ci:verify ;; esac",
             "timeout": 90,
             "statusMessage": "Verification gate (calibration:check / ci:verify)"
           }

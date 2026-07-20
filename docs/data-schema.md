@@ -12,7 +12,7 @@ retired된 Lab 화면(CSV 업로드 + 워크포워드 러너 UI)은 v1.2 시점�
 
 SQL 정의는 [db/schema.sql](../db/schema.sql)에 있습니다.
 
-**현재 상태 (2026-05-06 검증)**: 위 스키마는 **aspirational seed**입니다. `src/`, `electron/`, `scripts/`, `tools/` 어디에도 이 테이블들을 읽거나 쓰는 코드가 없습니다. 검토자가 자신의 PostgreSQL/JSONB 환경에 동일 컬럼 체계를 도입하고 싶을 때의 골격으로만 사용하세요.
+**현재 상태 (2026-05-06 검증)**: 위 스키마는 **aspirational seed**입니다. `src/`, `electron/`, `scripts/` 어디에도 이 테이블들을 읽거나 쓰는 코드가 없습니다. 검토자가 자신의 PostgreSQL/JSONB 환경에 동일 컬럼 체계를 도입하고 싶을 때의 골격으로만 사용하세요.
 
 - `market_daily_features`
   - 시장별 일간 정규화 feature store

@@ -9,8 +9,8 @@ C-Quant is an Electron app. Three execution contexts:
 
 | Context | Code | Responsibilities |
 |---|---|---|
-| Main process | `main.js`, `electron/**/*.js` | Window lifecycle, IPC handlers, file I/O, fetching from official sources, persistence (settings, window state), logging, CSP injection |
-| Preload | `preload.js` | Bridge that exposes a typed, allow-listed API to the renderer via `contextBridge.exposeInMainWorld("desktopBridge", …)` |
+| Main process | `electron/**/*.js` | Window lifecycle, IPC handlers, file I/O, fetching from official sources, persistence (settings, window state), logging, CSP injection |
+| Preload | `electron/preload.js` | Bridge that exposes a typed, allow-listed API to the renderer via `contextBridge.exposeInMainWorld("desktopBridge", …)` |
 | Renderer | `src/**` | React 19 UI: market boards, drivers, sources, copilot. Reads/writes settings via the bridge |
 
 Security baseline:
@@ -26,7 +26,7 @@ Security baseline:
 
 | File | Role |
 |---|---|
-| `main.js` | App lifecycle, window creation, IPC handlers, CSP injection, crash reporter, process error handlers |
+| `electron/main.js` | App lifecycle, window creation, IPC handlers, CSP injection, crash reporter, process error handlers |
 | `electron/security.js` | Pure helpers: `isTrustedAppUrl`, `normalizeExternalUrl`, `sanitizeQuoteHistoryPayload`, `escapeHtml`, `buildContentSecurityPolicy` |
 | `electron/cache.js` | TTL + LRU cache used by `liveSources` |
 | `electron/logger.js` | File-rotating logger that writes to `<userData>/logs/cquant.log` (1MB rotation, 4 keep) |
@@ -145,7 +145,7 @@ The canonical 9-tier verification ladder for picking which subset of these
 to run for a given change is in
 [../CLAUDE.md#verification-ladder](../CLAUDE.md#verification-ladder).
 
-Bundle budgets (`tools/check-bundle-size.mjs`):
+Bundle budgets (`scripts/check-bundle-size.mjs`):
 
 | Asset | Limit |
 |---|---|

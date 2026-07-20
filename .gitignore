@@ -6,6 +6,7 @@ release/
 
 # local planning docs kept out of the repo
 /*.pdf
+local/
 .superpowers/
 coverage/
 playwright-report/

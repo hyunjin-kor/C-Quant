@@ -83,7 +83,7 @@ npm run encoding:check       # guards Korean copy against mojibake
 npm run e2e                  # Playwright smoke
 ```
 
-Electron 41, React 19, TypeScript, Vite 8, Vitest 4. Three processes (main / preload / renderer) with a single IPC perimeter; everything persists under the Electron `userData` directory. The module map lives in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow.
+Electron 41, React 19, TypeScript, Vite 8, Vitest 4. Three processes (main / preload / renderer) with a single IPC perimeter; everything persists under the Electron `userData` directory. The module map lives in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [CONTRIBUTING.md](.github/CONTRIBUTING.md) covers the workflow.
 
 ## What it deliberately won't do
 
@@ -91,7 +91,7 @@ No order routing, no custody, no settlement — use a licensed broker and regist
 
 ## More docs
 
-[docs/USAGE.md](docs/USAGE.md) walks through each screen. [CHANGELOG.md](CHANGELOG.md) has the release history, [SECURITY.md](SECURITY.md) the threat model.
+[docs/USAGE.md](docs/USAGE.md) walks through each screen. [CHANGELOG.md](CHANGELOG.md) has the release history, [SECURITY.md](.github/SECURITY.md) the threat model.
 
 ## License
 

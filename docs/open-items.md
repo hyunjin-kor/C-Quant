@@ -10,7 +10,7 @@ file replaces ad-hoc "TODO" notes scattered across the source.
 
 | Item | Cost / blocker | What landing it requires |
 |---|---|---|
-| Windows code-signing certificate | USD 200–500/year (DigiCert, Sectigo, GlobalSign) | Buy → export `.pfx` → `CSC_LINK` + `CSC_KEY_PASSWORD` GitHub secrets. [.github/workflows/release.yml](../.github/workflows/release.yml) signs automatically once present. Step-by-step in [SECURITY.md §"Setting up code signing"](../SECURITY.md). |
+| Windows code-signing certificate | USD 200–500/year (DigiCert, Sectigo, GlobalSign) | Buy → export `.pfx` → `CSC_LINK` + `CSC_KEY_PASSWORD` GitHub secrets. [.github/workflows/release.yml](../.github/workflows/release.yml) signs automatically once present. Step-by-step in [SECURITY.md §"Setting up code signing"](../.github/SECURITY.md). |
 | macOS Developer ID + notarization | USD 99/year (Apple Developer Program) | `CSC_NAME` + `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD` + `APPLE_TEAM_ID` GitHub secrets. release.yml notarizes automatically. |
 | FRED API key | USD 0 (free) | Register at https://fredaccount.stlouisfed.org → set `CQUANT_FRED_API_KEY` in `.env`. The USD/KRW (`DEXKOUS`) and USD/CNY (`DEXCHUS`) fetches in [src/App.tsx](../src/App.tsx) activate immediately; the trigger detector picks the right FX series per scenario via `pickFxSeries`. |
 

@@ -4,6 +4,25 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-07-20
+
+The terminal-identity release: dark-first redesign, a professional
+density pass, the 2026-07 calibration review with anchors extended
+through 2026-06, and a repository reorganized down to what runs.
+
+### Changed — repository layout
+
+- All main-process code now lives under `electron/` (`main.js` and
+  `preload.js` moved in; internal requires and `dist`/`assets` paths
+  adjusted). `package.json#main` points at `electron/main.js`.
+- `tools/` merged into `scripts/` — one folder for dev/ops utilities
+  (capture-screenshots, check-bundle-size, check-encoding,
+  generate-app-icon join the calibration/smoke scripts).
+- `CONTRIBUTING.md` and `SECURITY.md` moved to `.github/`, where GitHub
+  surfaces them natively; root now carries only README, CHANGELOG,
+  LICENSE, NOTICE, and the agent handoff files.
+- Leftover empty directories from the earlier slimming round removed.
+
 ### Changed — density pass on every surface
 
 - Cut the vertical slack that made screens feel empty: page header

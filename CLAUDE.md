@@ -67,7 +67,7 @@ Apply these four rules to every code change.
 
 - Node `>=24` (see [.nvmrc](.nvmrc) and the `engines` field in [package.json](package.json)). If `nvm use` reports a mismatch, fix it before debugging build failures.
 - Primary target: Windows 10/11. macOS / Linux packaging stays advisory.
-- For human-facing daily commands, plain `npm run …` works on Windows, macOS, and Linux. [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md) follow this convention.
+- For human-facing daily commands, plain `npm run …` works on Windows, macOS, and Linux. [README.md](README.md) and [CONTRIBUTING.md](.github/CONTRIBUTING.md) follow this convention.
 - Inside a PowerShell-chained script that calls npm (`package:dir`, `package:portable`), the explicit `npm.cmd` is **required** so PowerShell resolves the Node executable. If you write a new PowerShell script that needs to invoke npm, follow that pattern. Do not change the existing `npm.cmd` references inside those scripts to plain `npm` — they will break under PowerShell.
 
 ## Verified Project Links
@@ -98,8 +98,8 @@ Apply these four rules to every code change.
 - Agent harness: [AGENTS.md](AGENTS.md)
 - Public-facing surface: [README.md](README.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
-- Security: [SECURITY.md](SECURITY.md)
-- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security: [.github/SECURITY.md](.github/SECURITY.md)
+- Contributing: [CONTRIBUTING.md](.github/CONTRIBUTING.md)
 
 **External (public)**
 
@@ -146,17 +146,17 @@ npm run e2e
 
 Pick the lowest tier that exercises what you changed. Going lower than required is not surgical; going higher than required wastes time.
 
-| Tier               | When to run                                                 | Commands                                          |
-| ------------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| 1. Type & lint     | Any TS edit                                                 | `type-check`, `lint`                              |
-| 2. Tests           | Logic / data / lib edits                                    | `test`, `test:node` (or `test:all`)               |
-| 3. Electron syntax | Edit under `electron/`, `main.js`, `preload.js`, `scripts/` | `ci:verify`                                       |
-| 4. Calibration     | Edit `src/data/catalyst*` or freshness logic                | `calibration:check`                               |
-| 5. Build           | Anything that ships in the renderer bundle                  | `build`                                           |
-| 6. Bundle budget   | Renderer bundle size–sensitive                              | `bundle:check`                                    |
-| 7. Package         | Release-sensitive (icons, electron-builder, native deps)    | `package:dir`, `package:portable`, `package:nsis` |
-| 8. Smoke           | After packaging                                             | `smoke:dir`, `smoke:portable`, or `smoke:release` |
-| 9. E2E             | Renderer flows / IPC perimeter                              | `e2e`                                             |
+| Tier               | When to run                                              | Commands                                          |
+| ------------------ | -------------------------------------------------------- | ------------------------------------------------- |
+| 1. Type & lint     | Any TS edit                                              | `type-check`, `lint`                              |
+| 2. Tests           | Logic / data / lib edits                                 | `test`, `test:node` (or `test:all`)               |
+| 3. Electron syntax | Edit under `electron/` or `scripts/`                     | `ci:verify`                                       |
+| 4. Calibration     | Edit `src/data/catalyst*` or freshness logic             | `calibration:check`                               |
+| 5. Build           | Anything that ships in the renderer bundle               | `build`                                           |
+| 6. Bundle budget   | Renderer bundle size–sensitive                           | `bundle:check`                                    |
+| 7. Package         | Release-sensitive (icons, electron-builder, native deps) | `package:dir`, `package:portable`, `package:nsis` |
+| 8. Smoke           | After packaging                                          | `smoke:dir`, `smoke:portable`, or `smoke:release` |
+| 9. E2E             | Renderer flows / IPC perimeter                           | `e2e`                                             |
 
 For routine code edits the minimum is Tier 1 + 2 + 5. Release rounds run Tiers 1–8, plus Tier 9 if renderer flows changed.
 
@@ -183,8 +183,8 @@ For routine code edits the minimum is Tier 1 + 2 + 5. Release rounds run Tiers 1
 
 **Electron / main process**
 
-- [main.js](main.js)
-- [preload.js](preload.js)
+- [electron/main.js](electron/main.js)
+- [electron/preload.js](electron/preload.js)
 - [electron/liveSources.js](electron/liveSources.js)
 
 **Project metadata & tooling configs**
@@ -217,10 +217,10 @@ For routine code edits the minimum is Tier 1 + 2 + 5. Release rounds run Tiers 1
 
 [.claude/settings.json](.claude/settings.json) configures a `PostToolUse` hook that runs the relevant verification tier automatically when you edit specific paths:
 
-| When you edit                            | The hook runs                        |
-| ---------------------------------------- | ------------------------------------ |
-| `src/data/catalyst*.ts`                  | `npm run calibration:check` (Tier 4) |
-| `electron/*.js`, `main.js`, `preload.js` | `npm run ci:verify` (Tier 3)         |
+| When you edit           | The hook runs                        |
+| ----------------------- | ------------------------------------ |
+| `src/data/catalyst*.ts` | `npm run calibration:check` (Tier 4) |
+| `electron/*.js`         | `npm run ci:verify` (Tier 3)         |
 
 The hook is path-filtered (no-op for unrelated files) and silent on success. If a verification fails, the failure surfaces in the turn output. The hook does not replace the Verification Ladder — for full coverage of a change, still run the appropriate higher tiers (build / package / smoke / e2e).
 
