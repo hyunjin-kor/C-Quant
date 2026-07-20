@@ -241,10 +241,7 @@ export type MarketLiveQuote = {
 export type SourceRegistryMarket = MarketProfile["id"] | "shared";
 
 export type SourceRegistryMethod =
-  | "Official Web"
-  | "Official File"
-  | "Public API"
-  | "Commercial API";
+  "Official Web" | "Official File" | "Public API" | "Commercial API";
 
 export type SourceRegistryItem = {
   id: string;
@@ -389,11 +386,7 @@ export type CatalystScenario = {
 };
 
 export type MaterialResearchType =
-  | "carbon-capture"
-  | "low-carbon-fuel"
-  | "industrial-decarb"
-  | "nature-based"
-  | "removal";
+  "carbon-capture" | "low-carbon-fuel" | "industrial-decarb" | "nature-based" | "removal";
 
 export type MaterialResearchReadiness = "lab" | "pilot" | "early-deploy" | "scale";
 
@@ -433,9 +426,9 @@ export type ResearchCitationKind =
   | "industry-report";
 
 export type ResearchEvidenceStrength =
-  | "strong"        // multiple peer-reviewed studies converge
-  | "moderate"      // one peer-reviewed paper + corroboration
-  | "exploratory";  // single working paper or single methodology
+  | "strong" // multiple peer-reviewed studies converge
+  | "moderate" // one peer-reviewed paper + corroboration
+  | "exploratory"; // single working paper or single methodology
 
 export type ResearchVariableMapping = {
   /** Variable as the paper names it. */

@@ -265,8 +265,7 @@ export function InteractiveMarketChart({
       const nextValues = chartSeries
         .map(({ definition, api }) => {
           const rawValue = param.seriesData.get(api) as
-            | { value?: number; close?: number }
-            | undefined;
+            { value?: number; close?: number } | undefined;
           const numeric =
             typeof rawValue?.value === "number"
               ? rawValue.value

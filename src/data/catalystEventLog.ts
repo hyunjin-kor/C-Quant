@@ -79,8 +79,7 @@ export const catalystEventLog: CatalystEvent[] = [
     marketId: "eu-ets",
     observedAt: "2025-05-28",
     label: "MSR reduces 2025 auction volume by 276M tonnes",
-    brief:
-      "Commission notice on MSR auction reduction for 2025, tightening near-term supply.",
+    brief: "Commission notice on MSR auction reduction for 2025, tightening near-term supply.",
     confidence: "verified",
     references: [
       {

@@ -4,10 +4,7 @@ import {
   detectActivePatterns,
   detectScenarioTriggers
 } from "../src/lib/catalystTriggerDetector";
-import type {
-  CatalystScenario,
-  ConnectedSourcePayload
-} from "../src/types";
+import type { CatalystScenario, ConnectedSourcePayload } from "../src/types";
 
 const NOW = new Date("2026-04-29T12:00:00Z");
 
@@ -78,21 +75,36 @@ function buildPayload(): ConnectedSourcePayload {
 
 describe("detectScenarioTriggers", () => {
   it("flags freshness when card is older than threshold", () => {
-    const detection = detectScenarioTriggers(baseScenario, buildPayload(), DEFAULT_DETECTOR_CONFIG, NOW);
+    const detection = detectScenarioTriggers(
+      baseScenario,
+      buildPayload(),
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
     const fresh = detection.components.find((c) => c.signal === "freshness");
     expect(fresh).toBeDefined();
     expect(fresh!.triggered).toBe(true);
   });
 
   it("flags price-jump when 5d % change exceeds threshold", () => {
-    const detection = detectScenarioTriggers(baseScenario, buildPayload(), DEFAULT_DETECTOR_CONFIG, NOW);
+    const detection = detectScenarioTriggers(
+      baseScenario,
+      buildPayload(),
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
     const jump = detection.components.find((c) => c.signal === "price-jump");
     expect(jump).toBeDefined();
     expect(jump!.triggered).toBe(true);
   });
 
   it("scenario goes active when half or more components fire", () => {
-    const detection = detectScenarioTriggers(baseScenario, buildPayload(), DEFAULT_DETECTOR_CONFIG, NOW);
+    const detection = detectScenarioTriggers(
+      baseScenario,
+      buildPayload(),
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
     expect(detection.active).toBe(true);
     expect(detection.triggerRatio).toBeGreaterThanOrEqual(0.5);
   });
@@ -123,7 +135,12 @@ describe("detectScenarioTriggers", () => {
         }
       ]
     };
-    const detection = detectScenarioTriggers(scenario, buildPayload(), DEFAULT_DETECTOR_CONFIG, NOW);
+    const detection = detectScenarioTriggers(
+      scenario,
+      buildPayload(),
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
     expect(detection.componentCount).toBe(3);
     expect(detection.testableCount).toBeLessThan(detection.componentCount);
     expect(detection.active).toBe(true);
@@ -152,7 +169,9 @@ describe("fx-jump signal", () => {
     ]
   };
 
-  function payloadWithMacro(eurUsd: Array<{ date: string; value: number }>): ConnectedSourcePayload {
+  function payloadWithMacro(
+    eurUsd: Array<{ date: string; value: number }>
+  ): ConnectedSourcePayload {
     return {
       ...buildPayload(),
       macroSeries: { eurUsd }
@@ -181,11 +200,11 @@ describe("fx-jump signal", () => {
     const detection = detectScenarioTriggers(
       fxScenario,
       payloadWithMacro([
-        { date: "2026-04-20", value: 1.10 },
-        { date: "2026-04-21", value: 1.10 },
-        { date: "2026-04-22", value: 1.10 },
-        { date: "2026-04-23", value: 1.10 },
-        { date: "2026-04-24", value: 1.10 },
+        { date: "2026-04-20", value: 1.1 },
+        { date: "2026-04-21", value: 1.1 },
+        { date: "2026-04-22", value: 1.1 },
+        { date: "2026-04-23", value: 1.1 },
+        { date: "2026-04-24", value: 1.1 },
         // -2.7% over 5 days, exceeds default 1.5% fxJumpPct
         { date: "2026-04-29", value: 1.07 }
       ]),
@@ -278,7 +297,12 @@ describe("fx-jump signal", () => {
         ]
       }
     };
-    const detection = detectScenarioTriggers(genericFxScenario, payload, DEFAULT_DETECTOR_CONFIG, NOW);
+    const detection = detectScenarioTriggers(
+      genericFxScenario,
+      payload,
+      DEFAULT_DETECTOR_CONFIG,
+      NOW
+    );
     const fx = detection.components.find((c) => c.signal === "fx-jump");
     expect(fx).toBeDefined();
     expect(fx!.note).toContain("EUR/USD");

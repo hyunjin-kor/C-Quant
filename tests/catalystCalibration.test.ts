@@ -39,9 +39,7 @@ describe("CATALYST_CALIBRATION", () => {
   });
 
   it("at least one scenario reaches backtest status from the bundled event log", () => {
-    const backtestRecords = CATALYST_CALIBRATION.filter(
-      (record) => record.status === "backtest"
-    );
+    const backtestRecords = CATALYST_CALIBRATION.filter((record) => record.status === "backtest");
     expect(backtestRecords.length).toBeGreaterThan(0);
   });
 

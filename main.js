@@ -879,8 +879,7 @@ ipcMain.handle("free-feeds-fetch", async (event, payload) => {
   return freeFeedRegistry.fetchSeries(payload.adapterId, payload.seriesId, {
     observationStart:
       typeof payload.observationStart === "string" ? payload.observationStart : undefined,
-    observationEnd:
-      typeof payload.observationEnd === "string" ? payload.observationEnd : undefined
+    observationEnd: typeof payload.observationEnd === "string" ? payload.observationEnd : undefined
   });
 });
 

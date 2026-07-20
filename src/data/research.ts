@@ -254,7 +254,8 @@ export const marketProfiles: MarketProfile[] = [
       {
         id: "eu_speculation",
         category: "Market Microstructure",
-        variable: "Investment fund net position share + open interest growth (financialisation index)",
+        variable:
+          "Investment fund net position share + open interest growth (financialisation index)",
         importance: "High",
         direction: "context",
         weight: 0.85,
@@ -354,7 +355,8 @@ export const marketProfiles: MarketProfile[] = [
       {
         id: "eu_cbam",
         category: "Policy Supply",
-        variable: "CBAM certificate price linkage (= EUA quarterly auction average 2026, weekly 2027+)",
+        variable:
+          "CBAM certificate price linkage (= EUA quarterly auction average 2026, weekly 2027+)",
         importance: "High",
         direction: "higher",
         weight: 0.85,

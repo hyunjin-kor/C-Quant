@@ -2478,7 +2478,7 @@ textarea::placeholder {
 }
 
 .trigger-signal.trigger-signal-price-jump {
-  background: rgba(0, 100, 255, 0.10);
+  background: rgba(0, 100, 255, 0.1);
   color: var(--accent);
 }
 
@@ -2488,7 +2488,7 @@ textarea::placeholder {
 }
 
 .trigger-signal.trigger-signal-proxy-divergence {
-  background: rgba(240, 68, 82, 0.10);
+  background: rgba(240, 68, 82, 0.1);
   color: var(--red);
 }
 

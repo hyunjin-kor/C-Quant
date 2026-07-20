@@ -174,12 +174,9 @@ export function computeSessionDelta(
   const newlyFiredScenarioIds = current.activeScenarioIds.filter((id) => !prevActive.has(id));
   const clearedScenarioIds = previous.activeScenarioIds.filter((id) => !currActive.has(id));
 
-  const anyPriceMove = perMarket.some(
-    (m) => m.pctChange != null && Math.abs(m.pctChange) >= 0.05
-  );
+  const anyPriceMove = perMarket.some((m) => m.pctChange != null && Math.abs(m.pctChange) >= 0.05);
   const anyFreshnessChange = perMarket.some((m) => m.freshnessChanged);
-  const anyPatternChange =
-    newlyFiredScenarioIds.length > 0 || clearedScenarioIds.length > 0;
+  const anyPatternChange = newlyFiredScenarioIds.length > 0 || clearedScenarioIds.length > 0;
 
   return {
     previousSavedAt: previous.savedAt,

@@ -109,8 +109,7 @@ export const researchCatalogue: ResearchPaper[] = [
       {
         variableLabel: "Penalty multiplier (3× rolling average)",
         expectedSign: "+",
-        quantitativeAnchor:
-          "Penalty = 3 × average market price; cap KRW 100,000/tCO₂e",
+        quantitativeAnchor: "Penalty = 3 × average market price; cap KRW 100,000/tCO₂e",
         samplePeriod: "Analytical model"
       }
     ],
@@ -367,8 +366,7 @@ export const researchCatalogue: ResearchPaper[] = [
   {
     id: "carbon-pricing-electricity-constraints-2024",
     markets: ["k-ets"],
-    citation:
-      "Carbon pricing under electricity market constraints (2024). Climate Policy.",
+    citation: "Carbon pricing under electricity market constraints (2024). Climate Policy.",
     authors: ["multiple"],
     year: 2024,
     venue: "Climate Policy (Taylor & Francis)",
@@ -597,7 +595,8 @@ export const researchCatalogue: ResearchPaper[] = [
     ],
     dataSources: [
       {
-        label: "Beijing / Chongqing / Guangdong / Tianjin / Hubei / Shenzhen / Shanghai pilot exchanges",
+        label:
+          "Beijing / Chongqing / Guangdong / Tianjin / Hubei / Shenzhen / Shanghai pilot exchanges",
         url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8961101/",
         accessed: reviewedAt
       }
@@ -942,9 +941,7 @@ export const researchCatalogue: ResearchPaper[] = [
     kind: "working-paper",
     finding:
       "Backloading legislation drove substantial price declines as market confidence in stringency was shaken during the legislative process. Regulatory events themselves move prices.",
-    variables: [
-      { variableLabel: "Regulatory event indicator", expectedSign: "context" }
-    ],
+    variables: [{ variableLabel: "Regulatory event indicator", expectedSign: "context" }],
     dataSources: [
       {
         label: "EU Commission legislative timeline + EUA Dec futures",
@@ -970,7 +967,11 @@ export const researchCatalogue: ResearchPaper[] = [
       "Three-phase quantile dependence: coal/gas show evolving 'production restraint → aggregated demand → substitution' pattern; oil shows 'substitution → production restraint' reversal; industrial production unstable in Phases II–III; carbon VaR driven primarily by energy prices.",
     variables: [
       { variableLabel: "Coal/gas (quantile-dependent)", expectedSign: "context" },
-      { variableLabel: "Industrial production (regime-unstable)", driverId: "eu_industry", expectedSign: "context" }
+      {
+        variableLabel: "Industrial production (regime-unstable)",
+        driverId: "eu_industry",
+        expectedSign: "context"
+      }
     ],
     dataSources: [
       {
@@ -1021,9 +1022,7 @@ export const researchCatalogue: ResearchPaper[] = [
     kind: "working-paper",
     finding:
       "2018 reform triggered explosive price growth indicative of speculative behaviour; bubble-detection and time-varying regression suggest reform pushed market into a speculative regime.",
-    variables: [
-      { variableLabel: "Speculative regime indicator", expectedSign: "context" }
-    ],
+    variables: [{ variableLabel: "Speculative regime indicator", expectedSign: "context" }],
     dataSources: [
       {
         label: "EUA Dec futures + bubble-detection methodology",
@@ -1049,7 +1048,11 @@ export const researchCatalogue: ResearchPaper[] = [
       "MSR shifts emissions to future but is allowance-preserving; cancellation mechanism reduces overall cap and raises long-run prices; LRF increase is the main price driver of the reform.",
     variables: [
       { variableLabel: "MSR cancellation rate", driverId: "eu_tnac_msr", expectedSign: "+" },
-      { variableLabel: "LRF (linear reduction factor)", driverId: "eu_supply_cap", expectedSign: "+" }
+      {
+        variableLabel: "LRF (linear reduction factor)",
+        driverId: "eu_supply_cap",
+        expectedSign: "+"
+      }
     ],
     dataSources: [
       {
@@ -1075,8 +1078,17 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "Structural inversion ~mid-2016 around the Paris Agreement. Oil exhibits the strongest impact (response ±1.20). Pre-2016 oil negative, post-2016 positive; STOXX600 effect flips from positive (short horizon, pre-2016) to negative (medium horizon, post-2016); electricity goes from negative to positive.",
     variables: [
-      { variableLabel: "Oil (post-2016)", driverId: "eu_oil", expectedSign: "+", quantitativeAnchor: "Response magnitude ±1.20 (TVP-VAR)" },
-      { variableLabel: "STOXX600 (medium horizon, post-2016)", driverId: "eu_financial", expectedSign: "-" },
+      {
+        variableLabel: "Oil (post-2016)",
+        driverId: "eu_oil",
+        expectedSign: "+",
+        quantitativeAnchor: "Response magnitude ±1.20 (TVP-VAR)"
+      },
+      {
+        variableLabel: "STOXX600 (medium horizon, post-2016)",
+        driverId: "eu_financial",
+        expectedSign: "-"
+      },
       { variableLabel: "Electricity (post-2016)", driverId: "eu_power", expectedSign: "+" }
     ],
     dataSources: [
@@ -1103,7 +1115,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "Investment funds hold ~0.7% of outstanding open positions (late 2021), up marginally from 0.6% (2020). Speculative activity below historical highs. Up to ~90% of carbon price fluctuation explained by fundamentals. Little change in market structure over 5 years despite market doubling.",
     variables: [
-      { variableLabel: "Investment fund position share", expectedSign: "context", quantitativeAnchor: "~0.7% of OI (late 2021)" }
+      {
+        variableLabel: "Investment fund position share",
+        expectedSign: "context",
+        quantitativeAnchor: "~0.7% of OI (late 2021)"
+      }
     ],
     dataSources: [
       {
@@ -1155,7 +1171,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "Identifies carbon policy shocks via high-frequency window around EU ETS regulatory announcements. Restrictive carbon shock raises energy prices, cuts emissions, spurs green innovation, but contracts activity. 1 SD shock → real GDP −0.2%, equity prices >−2%.",
     variables: [
-      { variableLabel: "EU ETS regulatory shock", expectedSign: "+", quantitativeAnchor: "1 SD shock → GDP −0.2%, equity >−2%" }
+      {
+        variableLabel: "EU ETS regulatory shock",
+        expectedSign: "+",
+        quantitativeAnchor: "1 SD shock → GDP −0.2%, equity >−2%"
+      }
     ],
     dataSources: [
       {
@@ -1181,7 +1201,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "1% PPI energy shock from carbon price drops EU gross fixed capital formation by ~0.5% in year 1, accumulating to >1% after two years; greenfield FDI to non-EU rises (leakage indicator).",
     variables: [
-      { variableLabel: "Carbon → EU GFCF (investment)", expectedSign: "-", quantitativeAnchor: "1% PPI energy → −0.5% GFCF y1, >−1% cumulative" },
+      {
+        variableLabel: "Carbon → EU GFCF (investment)",
+        expectedSign: "-",
+        quantitativeAnchor: "1% PPI energy → −0.5% GFCF y1, >−1% cumulative"
+      },
       { variableLabel: "Greenfield FDI to non-EU (leakage)", expectedSign: "+" }
     ],
     dataSources: [
@@ -1208,7 +1232,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "Explanatory power of energy fundamentals (oil, gas, coal, electricity, clean dark/spark spreads) collapses from ~30% (Phase I) to <5% in Phases III/IV. Crude oil retains the strongest individual signal. Established price-driver models do not fit Phase IV well.",
     variables: [
-      { variableLabel: "Energy fundamentals R²", expectedSign: "context", quantitativeAnchor: "~30% (Phase I) → <5% (Phase III/IV)" },
+      {
+        variableLabel: "Energy fundamentals R²",
+        expectedSign: "context",
+        quantitativeAnchor: "~30% (Phase I) → <5% (Phase III/IV)"
+      },
       { variableLabel: "Crude oil (Phase IV strongest)", driverId: "eu_oil", expectedSign: "+" }
     ],
     dataSources: [
@@ -1235,7 +1263,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "Cap going to ~zero by ~2040 marks 'ETS endgame'. Market dynamics fundamentally change as supply approaches zero; signals re-pricing risk and convexity in cap path.",
     variables: [
-      { variableLabel: "Cap → zero convexity (long horizon)", driverId: "eu_supply_cap", expectedSign: "+" }
+      {
+        variableLabel: "Cap → zero convexity (long horizon)",
+        driverId: "eu_supply_cap",
+        expectedSign: "+"
+      }
     ],
     dataSources: [
       {
@@ -1251,8 +1283,7 @@ export const researchCatalogue: ResearchPaper[] = [
   {
     id: "esma-2024-carbon-markets",
     markets: ["eu-ets"],
-    citation:
-      "ESMA (2024). EU Carbon Markets Report 2024. ESMA50-43599798-10379.",
+    citation: "ESMA (2024). EU Carbon Markets Report 2024. ESMA50-43599798-10379.",
     authors: ["ESMA"],
     year: 2024,
     venue: "ESMA report",
@@ -1261,8 +1292,17 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "~406 funds hold ~6% of all EUA positions (2023), turning increasingly short as prices fell. 206 companies long, 118 banks/IFs short in derivatives. Primary auction concentrated: top ~10 buyers = 90% of volume. Most secondary trading via on-exchange futures.",
     variables: [
-      { variableLabel: "Investment fund position share", expectedSign: "context", quantitativeAnchor: "~6% of EUA positions (2023)" },
-      { variableLabel: "Auction concentration", driverId: "eu_auction_micro", expectedSign: "context", quantitativeAnchor: "Top 10 buyers = 90% of auctioned volume" }
+      {
+        variableLabel: "Investment fund position share",
+        expectedSign: "context",
+        quantitativeAnchor: "~6% of EUA positions (2023)"
+      },
+      {
+        variableLabel: "Auction concentration",
+        driverId: "eu_auction_micro",
+        expectedSign: "context",
+        quantitativeAnchor: "Top 10 buyers = 90% of auctioned volume"
+      }
     ],
     dataSources: [
       {
@@ -1288,7 +1328,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "EU ETS reduced ~1.2 GtCO₂ (3.8%) over 2008–2016 vs counterfactual; covered-sector emissions 8.1–11.5% lower. Policy effectiveness despite low prices is itself a credibility-driver anchor.",
     variables: [
-      { variableLabel: "EU ETS effectiveness (cumulative reduction)", expectedSign: "context", quantitativeAnchor: "~1.2 GtCO₂ saved 2008–2016 (3.8%)" }
+      {
+        variableLabel: "EU ETS effectiveness (cumulative reduction)",
+        expectedSign: "context",
+        quantitativeAnchor: "~1.2 GtCO₂ saved 2008–2016 (3.8%)"
+      }
     ],
     dataSources: [
       {
@@ -1314,7 +1358,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "EU ETS induced regulated manufacturing firms to cut CO₂ 14–16% with no detectable activity contraction; no leakage evidence; firms made targeted abatement investments.",
     variables: [
-      { variableLabel: "Firm-level abatement response", expectedSign: "context", quantitativeAnchor: "14–16% cut, no activity contraction" }
+      {
+        variableLabel: "Firm-level abatement response",
+        expectedSign: "context",
+        quantitativeAnchor: "14–16% cut, no activity contraction"
+      }
     ],
     dataSources: [
       {
@@ -1340,7 +1388,11 @@ export const researchCatalogue: ResearchPaper[] = [
     finding:
       "ETS2 launches 2027, full surrender 2028. Price stability mechanism releases additional allowances if price exceeds €45 (2020 prices) in first two years. Estimated price range €71–€261/tCO₂ in 2030.",
     variables: [
-      { variableLabel: "ETS2 price stability trigger", expectedSign: "context", quantitativeAnchor: "€45 (2020 prices) trigger; 2030 €71–€261 range" }
+      {
+        variableLabel: "ETS2 price stability trigger",
+        expectedSign: "context",
+        quantitativeAnchor: "€45 (2020 prices) trigger; 2030 €71–€261 range"
+      }
     ],
     dataSources: [
       {
@@ -1365,9 +1417,7 @@ export const researchCatalogue: ResearchPaper[] = [
     kind: "working-paper",
     finding:
       "Bayesian VAR with stochastic volatility; baseline + supply/demand factors; multi-horizon forecasts vs survey expectations and provider forecasts. Forecast scaffolding usable as a methodology pattern in C-Quant.",
-    variables: [
-      { variableLabel: "Macro factor structure (BVAR)", expectedSign: "context" }
-    ],
+    variables: [{ variableLabel: "Macro factor structure (BVAR)", expectedSign: "context" }],
     dataSources: [
       {
         label: "Macro factor panel + EUA Dec futures",

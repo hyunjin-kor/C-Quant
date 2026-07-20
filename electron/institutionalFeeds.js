@@ -69,7 +69,8 @@ function createRefinitivAdapter() {
           provider: "Refinitiv (LSEG) Data Platform",
           message:
             "Set CQUANT_REFINITIV_APP_KEY and CQUANT_REFINITIV_USERNAME, plus the password via the Electron secret store, to enable.",
-          docUrl: "https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/refinitiv-data-platform-apis"
+          docUrl:
+            "https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/refinitiv-data-platform-apis"
         };
       }
       return {

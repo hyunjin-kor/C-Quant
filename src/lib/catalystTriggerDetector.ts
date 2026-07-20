@@ -36,12 +36,7 @@ import type {
 } from "../types";
 
 export type DetectionSignal =
-  | "freshness"
-  | "price-jump"
-  | "volume-jump"
-  | "proxy-divergence"
-  | "fx-jump"
-  | "untestable";
+  "freshness" | "price-jump" | "volume-jump" | "proxy-divergence" | "fx-jump" | "untestable";
 
 export type DetectorConfig = {
   freshnessHours: number;
@@ -88,9 +83,7 @@ export type ScenarioDetection = {
 
 function classifyComponentSignal(component: CatalystComponent): DetectionSignal {
   const haystack = `${component.family} ${component.variable}`.toLowerCase();
-  if (
-    /freshness|stale|update|publish|publication|notice|bulletin|reporting/.test(haystack)
-  ) {
+  if (/freshness|stale|update|publish|publication|notice|bulletin|reporting/.test(haystack)) {
     return "freshness";
   }
   if (/proxy|listed|ice eua front-month|krbn|ko2|co2\.l/.test(haystack)) {
@@ -200,10 +193,7 @@ function pickFxSeries(
   return null;
 }
 
-function computeFxPctChange(
-  series: MacroSeriesPoint[],
-  windowDays: number
-): number | null {
+function computeFxPctChange(series: MacroSeriesPoint[], windowDays: number): number | null {
   if (!series || series.length < windowDays + 1) return null;
   const sorted = [...series]
     .filter((point) => Number.isFinite(point.value))
@@ -221,8 +211,10 @@ function computeProxyDivergence(
 ): number | null {
   if (!card || !proxy) return null;
   const officialPrice = parseFloat(
-    (card.metrics?.find((metric) => /official|close|price|settlement/i.test(metric.label))
-      ?.value ?? "")
+    (
+      card.metrics?.find((metric) => /official|close|price|settlement/i.test(metric.label))
+        ?.value ?? ""
+    )
       .toString()
       .replace(/[^0-9.-]/g, "")
   );

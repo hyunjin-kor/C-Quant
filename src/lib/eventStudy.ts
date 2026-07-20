@@ -113,10 +113,7 @@ export function evaluateEvent(
   const postSlice = returns.slice(idx, postEnd);
   if (postSlice.length === 0) return null;
 
-  const postCumulativeReturn = postSlice.reduce(
-    (acc, item) => (1 + acc) * (1 + item.ret) - 1,
-    0
-  );
+  const postCumulativeReturn = postSlice.reduce((acc, item) => (1 + acc) * (1 + item.ret) - 1, 0);
 
   let abnormalReturn = postCumulativeReturn - preMeanReturn * postSlice.length;
   if (typeof config.clampAbsReturn === "number" && Number.isFinite(config.clampAbsReturn)) {
@@ -223,8 +220,7 @@ export function runEventStudy(
 ): { results: EventStudyEventResult[]; stats: EventStudyScenarioStat[] } {
   const results: EventStudyEventResult[] = [];
   for (const event of events) {
-    const series =
-      priceSeriesByMarket[event.marketId] ?? priceSeriesByMarket["shared"] ?? [];
+    const series = priceSeriesByMarket[event.marketId] ?? priceSeriesByMarket["shared"] ?? [];
     if (!series.length) continue;
     const result = evaluateEvent(event, series, config, expectedDirectionByScenarioId);
     if (result) results.push(result);

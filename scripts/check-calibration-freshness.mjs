@@ -77,9 +77,7 @@ const rows = [
   { label: "Calibration REVIEWED_AT", date: reviewedAtCalibration }
 ];
 
-console.log(
-  `\nCalibration freshness check (max age = ${maxAgeDays} days)\n` + "-".repeat(70)
-);
+console.log(`\nCalibration freshness check (max age = ${maxAgeDays} days)\n` + "-".repeat(70));
 let stale = 0;
 for (const row of rows) {
   const age = ageDays(row.date);
@@ -95,9 +93,7 @@ console.log("-".repeat(70));
 console.log(`Catalyst events in log: ${eventCount}`);
 
 if (stale > 0) {
-  console.error(
-    `\n${stale} calibration timestamp(s) older than ${maxAgeDays} days.`
-  );
+  console.error(`\n${stale} calibration timestamp(s) older than ${maxAgeDays} days.`);
   console.error(
     "Action: re-run the event study, bump the reviewedAt fields, log the change in CHANGELOG.md per docs/MODEL_CARD.md §9."
   );

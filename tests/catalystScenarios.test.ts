@@ -73,9 +73,7 @@ describe("getInteractionMultiplier", () => {
     };
     const result = getInteractionMultiplier(sparse);
     expect(result.status).toBe("heuristic");
-    expect(result.multiplier).toBe(
-      HEURISTIC_INTERACTION_MULTIPLIERS[sparse.interactionEffect]
-    );
+    expect(result.multiplier).toBe(HEURISTIC_INTERACTION_MULTIPLIERS[sparse.interactionEffect]);
   });
 });
 
@@ -96,9 +94,7 @@ describe("scoreScenarioFromDriverWeights", () => {
   });
 
   it("offsets dampens when interaction effect is offset", () => {
-    const offsetScenario = catalystScenarios.find(
-      (s) => s.interactionEffect === "offset"
-    );
+    const offsetScenario = catalystScenarios.find((s) => s.interactionEffect === "offset");
     if (!offsetScenario) throw new Error("expected at least one offset scenario");
     const weights: Record<string, number> = {};
     for (const c of offsetScenario.components) {

@@ -4,11 +4,11 @@
 
 The `main` branch and the most recent tagged release receive security fixes.
 
-| Series | Status          | Notes                                                                     |
-| ------ | --------------- | ------------------------------------------------------------------------- |
-| 1.3.x  | ✅ Maintained   | Current line. Critical security patches and high-severity bugs land here. |
-| 1.0.x – 1.2.x | ⚠️ Best-effort | Earlier 1.x lines receive critical security patches only. Upgrade to 1.3 when possible. |
-| < 1.0  | ❌ Unmaintained | Pre-release tags exist for historical reference only. Upgrade to 1.3.     |
+| Series        | Status          | Notes                                                                                   |
+| ------------- | --------------- | --------------------------------------------------------------------------------------- |
+| 1.3.x         | ✅ Maintained   | Current line. Critical security patches and high-severity bugs land here.               |
+| 1.0.x – 1.2.x | ⚠️ Best-effort  | Earlier 1.x lines receive critical security patches only. Upgrade to 1.3 when possible. |
+| < 1.0         | ❌ Unmaintained | Pre-release tags exist for historical reference only. Upgrade to 1.3.                   |
 
 The current line is supported until the next minor is published, plus a
 60-day overlap. The overlap window is documented on each minor release in

@@ -199,8 +199,7 @@ export const catalystScenarios: CatalystScenario[] = [
       "Watch EEX auction coverage and the futures-spot basis; compliance buyers compress shorter-dated tenors first.",
     whyItMatters:
       "Compliance seasonality remains a recurring liquidity and short-term demand pattern even as the market matures.",
-    historicalAnchor:
-      "Recurrent Mar-Apr basis tightening in 2018-2024.",
+    historicalAnchor: "Recurrent Mar-Apr basis tightening in 2018-2024.",
     references: [
       {
         label: "EU Commission - ETS Reporting Tool",
@@ -661,8 +660,7 @@ export const catalystScenarios: CatalystScenario[] = [
       "CBAM mechanically links importer cost to EUA auction price. Downstream expansion enlarges the demand pool; concurrent USD strength pressures coal-to-gas substitution and amplifies the floor.",
     whyItMatters:
       "CBAM linkage is a structural floor: the broader the scope, the more durable the EUA price support.",
-    historicalAnchor:
-      "2023-10-01: CBAM transitional reporting started. Definitive 2026-01.",
+    historicalAnchor: "2023-10-01: CBAM transitional reporting started. Definitive 2026-01.",
     references: [
       {
         label: "EU Commission - CBAM",
@@ -701,8 +699,7 @@ export const catalystScenarios: CatalystScenario[] = [
       "ETS2 launches 2027 with a separate cap. Price stability mechanism above €45 (2020 prices) releases additional allowances. Görlach et al. (2025) project €71-€261/tCO2 in 2030 across scenarios. Watch for cross-system spillover into ETS1 expectations.",
     whyItMatters:
       "ETS2 is a new regime; first 2 years will set the basis for institutional positioning. ETS1 may decouple temporarily.",
-    historicalAnchor:
-      "2027-01 launch, 2028-04 first surrender (forward).",
+    historicalAnchor: "2027-01 launch, 2028-04 first surrender (forward).",
     references: [
       {
         label: "Görlach et al. 2025 - Climate Policy",
@@ -752,8 +749,7 @@ export const catalystScenarios: CatalystScenario[] = [
     calibratedAt,
     playbook:
       "Park & Lee (2021): firms shift from banking to trading near compliance. Compliance demand coincides with import-fuel cost spike. Tan et al. (2024) caveat: KEPCO tariff freeze dampens pass-through, so watch tariff regime variable.",
-    whyItMatters:
-      "Korea is import-dependent; FX + cold winter compound compliance pressure.",
+    whyItMatters: "Korea is import-dependent; FX + cold winter compound compliance pressure.",
     historicalAnchor:
       "Q1 2022 KRW weakness + cold winter coincided with KAU pull into March surrender.",
     references: [
@@ -1037,8 +1033,7 @@ export function scoreScenarioFromDriverWeights(
       if (!component.driverId) return 0;
       const weight = driverWeights[component.driverId];
       if (typeof weight !== "number" || Number.isNaN(weight)) return 0;
-      const sign =
-        component.sign === "tighten" ? 1 : component.sign === "loosen" ? -1 : 0.5;
+      const sign = component.sign === "tighten" ? 1 : component.sign === "loosen" ? -1 : 0.5;
       return weight * sign;
     })
     .reduce((sum, value) => sum + value, 0);

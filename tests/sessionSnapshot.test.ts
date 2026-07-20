@@ -52,10 +52,7 @@ describe("sessionSnapshot helpers", () => {
   });
 
   it("loadSnapshot returns null when stored JSON is malformed", () => {
-    (window as unknown as { localStorage: Storage }).localStorage.setItem(
-      STORAGE_KEY,
-      "not-json"
-    );
+    (window as unknown as { localStorage: Storage }).localStorage.setItem(STORAGE_KEY, "not-json");
     expect(loadSnapshot()).toBeNull();
   });
 

@@ -1,8 +1,5 @@
 import { catalystEventLog } from "./catalystEventLog";
-import {
-  catalystScenarios,
-  getHeuristicInteractionMultiplier
-} from "./catalystScenarios";
+import { catalystScenarios, getHeuristicInteractionMultiplier } from "./catalystScenarios";
 import { getPriceAnchorsByMarket } from "./historicalPriceAnchors";
 import { runEventStudy } from "../lib/eventStudy";
 import type { CatalystCalibrationRecord, CatalystScenario } from "../types";
@@ -64,9 +61,7 @@ export const CATALYST_CALIBRATION: CatalystCalibrationRecord[] = buildCatalystCa
 export function getCalibrationForScenario(
   scenario: CatalystScenario
 ): CatalystCalibrationRecord | null {
-  return (
-    CATALYST_CALIBRATION.find((record) => record.scenarioId === scenario.id) ?? null
-  );
+  return CATALYST_CALIBRATION.find((record) => record.scenarioId === scenario.id) ?? null;
 }
 
 /**

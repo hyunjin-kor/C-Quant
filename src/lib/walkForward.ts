@@ -70,7 +70,9 @@ export type WalkForwardReport = {
   sharpeApprox: number | null;
 };
 
-export function makeBaselineDirectionalModel(weights: WalkForwardFeatureMap = {}): WalkForwardModel {
+export function makeBaselineDirectionalModel(
+  weights: WalkForwardFeatureMap = {}
+): WalkForwardModel {
   let frozen: WalkForwardFeatureMap = { ...weights };
 
   return {
