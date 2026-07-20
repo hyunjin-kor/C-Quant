@@ -4,6 +4,14 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Fixed
+
+- Intraday (1D/5D) live-tape charts no longer flatten: Yahoo intraday
+  buckets with no prints come back as price 0, which passed the
+  finite-number guard and stretched the candle chart's scale to zero.
+  Zero/negative closes are now dropped at the series builder, so the
+  5-minute candles render on a proper price axis.
+
 ## [1.8.0] — 2026-07-21
 
 The out-of-the-box release: all three markets now connect to official

@@ -327,7 +327,9 @@ function buildSeriesFromYahoo(timestamps, quote, options = {}) {
 
   for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
     const close = Number(closes[index]);
-    if (!Number.isFinite(close)) {
+    // Yahoo intraday buckets with no prints come back as 0 — a price of
+    // 0 is never real for these tapes and flattens the chart scale.
+    if (!Number.isFinite(close) || close <= 0) {
       continue;
     }
 
