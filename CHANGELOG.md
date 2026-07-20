@@ -4,6 +4,11 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.7.0] — 2026-07-20
+
+The watchdog release: the alert system learns to watch price action
+and live catalyst activations, not just data staleness.
+
 ### Added — monitoring alerts grow real teeth
 
 - New `price-jump` alert rule kind: fires an OS notification when a
