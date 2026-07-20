@@ -4,6 +4,11 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.8.0] — 2026-07-21
+
+The out-of-the-box release: all three markets now connect to official
+sources with zero configuration.
+
 ### Added — K-ETS official data without an API key
 
 - The K-ETS adapter now works out of the box: when no
