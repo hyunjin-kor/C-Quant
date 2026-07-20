@@ -60,12 +60,15 @@ jobs:
         run: npm run build
 
       # ── Windows: portable + NSIS ──────────────────────────────────
+      # electron-builder is invoked directly with --publish never: the
+      # renderer is already built in the previous step, and uploading to
+      # the GitHub release is this workflow's job (below), not
+      # electron-builder's — without the flag it demands GH_TOKEN on
+      # tagged CI runs and fails.
       - name: Package Windows
         if: matrix.os == 'windows-latest'
         shell: bash
-        run: |
-          npm run package:portable
-          npm run package:nsis
+        run: npx electron-builder --win portable nsis --publish never
         env:
           # Code signing secrets are optional. When absent,
           # electron-builder produces unsigned binaries (current state).
@@ -76,7 +79,7 @@ jobs:
       # ── macOS: dmg + zip ──────────────────────────────────────────
       - name: Package macOS
         if: matrix.os == 'macos-latest'
-        run: npm run package:mac
+        run: npx electron-builder --mac --publish never
         env:
           # Apple code signing + notarization secrets are optional.
           # When absent the dmg/zip are produced unsigned and Gatekeeper
@@ -90,7 +93,7 @@ jobs:
       # ── Linux: AppImage + deb ─────────────────────────────────────
       - name: Package Linux
         if: matrix.os == 'ubuntu-latest'
-        run: npm run package:linux
+        run: npx electron-builder --linux --publish never
 
       - name: Upload build artefacts
         uses: actions/upload-artifact@v4
