@@ -94,6 +94,5 @@ jobs:
 
       - name: Run Playwright smoke
         run: npm run e2e
-        continue-on-error: true
         env:
           CQUANT_DISABLE_UPDATER: "1"

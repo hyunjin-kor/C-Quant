@@ -25,6 +25,16 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 - ESLint now ignores `.claude/worktrees/**`, and `.gitignore` covers
   session worktrees and local planning PDFs.
 
+### Fixed — E2E smoke test had been silently failing since v1.0
+
+- `e2e/smoke.spec.ts` set `NODE_ENV=production`, but `main.js` decides
+  dev vs dist by `CQUANT_LOAD_DIST`, so every run pointed at a Vite dev
+  server that wasn't there and timed out after 60s. The test now sets
+  `CQUANT_LOAD_DIST=1` and passes in ~2s.
+- Removed `continue-on-error: true` from the CI e2e job — the failure
+  had been masked into a green check for months. The smoke test now
+  actually gates.
+
 ### Fixed — Korean source encoding
 
 - Repaired 174 CP949-mangled Korean literals that had shipped inside

@@ -17,8 +17,9 @@ test("electron app launches and reports ready", async () => {
     args: [appPath],
     env: {
       ...process.env,
-      // Tell main.js we're in production-equivalent mode so it loads dist/.
-      NODE_ENV: "production",
+      // Tell main.js to load dist/ instead of the Vite dev server
+      // (main.js keys off CQUANT_LOAD_DIST, not NODE_ENV).
+      CQUANT_LOAD_DIST: "1",
       CQUANT_DISABLE_UPDATER: "1"
     }
   });
