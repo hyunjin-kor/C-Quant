@@ -4,6 +4,19 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Added — K-ETS official data without an API key
+
+- The K-ETS adapter now works out of the box: when no
+  `CQUANT_KRX_AUTH_KEY` is configured it uses the same public OTP +
+  data request the ets.krx.co.kr price page performs in the browser
+  (labeled `official web flow`), instead of showing a not-configured
+  error. Live verification: KAU25 close, day change, volume, and a
+  ~40-session official daily series (with OHLC candles) — which also
+  fills the "No official series" gap on the K-ETS chart panel.
+- Setting `CQUANT_KRX_AUTH_KEY` still switches to the documented KRX
+  Open API sample endpoint; the access-method label follows whichever
+  path served the data.
+
 ### Fixed
 
 - Windows resource editing re-enabled: `win.signAndEditExecutable:

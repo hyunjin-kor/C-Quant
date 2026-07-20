@@ -532,6 +532,12 @@ const KO_EXACT: Record<string, string> = {
   // Catalyst combinations panel
   "Catalyst combinations": "촉매 조합",
   "Catalyst pattern active": "촉매 패턴 활성화",
+  "KRX ETS information platform": "KRX 배출권시장 정보플랫폼",
+  "Official web flow (daily market tape)": "공식 웹 플로우(일일 시장 테이프)",
+  "Official web flow: the same public data request the KRX ETS price page performs, no API key involved.":
+    "공식 웹 플로우: KRX 배출권 시세 페이지가 수행하는 것과 동일한 공개 데이터 요청이며, API 키가 필요 없습니다.",
+  "Set CQUANT_KRX_AUTH_KEY to switch to the documented KRX Open API sample endpoint.":
+    "CQUANT_KRX_AUTH_KEY를 설정하면 문서화된 KRX Open API 샘플 엔드포인트로 전환됩니다.",
   "What changes when more than one driver fires together":
     "두 개 이상의 드라이버가 동시에 발화할 때 무엇이 바뀌는가",
   "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by your current driver weights.":

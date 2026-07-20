@@ -631,7 +631,11 @@ function getOfficialMethod(card: ConnectedSourceCard | null, locale: AppLocale) 
     return t(locale, "공식 파일", "Official file");
   }
   if (card.id === "k-ets-official") {
-    return t(locale, "공식 웹/API 샘플", "Official web/API sample");
+    // The K-ETS adapter runs keyless against the public price page by
+    // default and switches to the Open API sample when a key is set.
+    return card.coverage?.includes("web flow")
+      ? t(locale, "공식 웹 플로우", "Official web flow")
+      : t(locale, "공식 웹/API 샘플", "Official web/API sample");
   }
   return t(locale, "공식 웹 플로우", "Official web flow");
 }

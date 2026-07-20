@@ -10,10 +10,11 @@ const KRX_SAMPLE_API_URL = "https://data-dbg.krx.co.kr/svc/sample/apis/gen/ets_b
 // KRX Open API portal "My Page", subject to approval). Set
 // CQUANT_KRX_AUTH_KEY in the environment to enable the K-ETS adapter.
 const KRX_AUTH_KEY = (process.env.CQUANT_KRX_AUTH_KEY ?? "").trim();
-// Reserved for the eventual KRX scraping path (currently unused — the KRX
-// sample API covers the same surface). Prefixed with _ to silence eslint.
-const _KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
-const _KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
+// Keyless official web flow: the OTP + data POST pair the public
+// ets.krx.co.kr price page performs in the browser. Used as the default
+// K-ETS adapter when no CQUANT_KRX_AUTH_KEY is configured.
+const KRX_DATA_URL = "https://ets.krx.co.kr/contents/ETS/99/ETS99000001.jspx";
+const KRX_OTP_URL = "https://ets.krx.co.kr/contents/COM/GenerateOTP.jspx";
 const MEE_LIST_URL = "https://www.mee.gov.cn/ywgz/ydqhbh/wsqtkz/";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
 const YAHOO_PROVIDER_LABEL = "Yahoo Finance web chart feed";
@@ -725,7 +726,170 @@ async function fetchEuEtsCard() {
   });
 }
 
+function parseKrxNumber(value) {
+  const numeric = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+/**
+ * Keyless official web flow: the same OTP + data POST the public
+ * ets.krx.co.kr price page performs in the browser. No login or API
+ * key is involved — this is the price table every visitor sees.
+ * Returns rows across the requested compact-date range.
+ */
+async function fetchKrxWebFlowRows(fromCompact, toCompact) {
+  const otp = await fetchText(
+    `${KRX_OTP_URL}?bld=${encodeURIComponent("ETS/03/03010000/ets03010000_05")}&name=grid`,
+    { headers: { ...DEFAULT_HEADERS, referer: KRX_MARKET_PAGE_URL } },
+    15000
+  );
+  const code = otp.trim();
+  if (!code || code.length < 32 || code.includes("<")) {
+    throw new Error("KRX ETS page did not issue a data token (OTP).");
+  }
+
+  const body = new URLSearchParams({
+    code,
+    fromdate: fromCompact,
+    todate: toCompact,
+    pagePath: "/contents/ETS/03/03010000/ETS03010000.jsp"
+  });
+  const payload = await fetchJson(
+    KRX_DATA_URL,
+    {
+      method: "POST",
+      headers: {
+        ...DEFAULT_HEADERS,
+        referer: KRX_MARKET_PAGE_URL,
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
+      },
+      body: body.toString()
+    },
+    20000
+  );
+
+  const rows = Array.isArray(payload?.DS1) ? payload.DS1 : [];
+  if (rows.length === 0) {
+    throw new Error("KRX ETS price page returned no rows for the requested range.");
+  }
+  return rows;
+}
+
+async function fetchKrxCardViaWebFlow() {
+  const now = new Date();
+  const from = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const toCompact = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const fromCompact = from.toISOString().slice(0, 10).replace(/-/g, "");
+
+  const rows = await withCache(`krx-webflow:${toCompact}`, KRX_DAY_CACHE_TTL_MS, () =>
+    fetchKrxWebFlowRows(fromCompact, toCompact)
+  );
+
+  // Group by instrument (KAU vintages, KOC, ...) and pick the KAU with
+  // the highest traded volume across the window — the compliance-active
+  // vintage, matching the sample-API selection rule.
+  const byInstrument = new Map();
+  for (const row of rows) {
+    const name = normalizeWhitespace(row?.isu_eng_abbrv ?? "");
+    if (!name) continue;
+    if (!byInstrument.has(name)) byInstrument.set(name, []);
+    byInstrument.get(name).push(row);
+  }
+
+  let activeName = "";
+  let activeVolume = -1;
+  for (const [name, instrumentRows] of byInstrument) {
+    if (!/^KAU/i.test(name)) continue;
+    const volume = instrumentRows.reduce(
+      (sum, row) => sum + (parseKrxNumber(row.acc_trdvol) ?? 0),
+      0
+    );
+    if (volume > activeVolume) {
+      activeVolume = volume;
+      activeName = name;
+    }
+  }
+  if (!activeName) {
+    throw new Error("KRX ETS price page returned no KAU rows.");
+  }
+
+  const series = byInstrument
+    .get(activeName)
+    .map((row) => {
+      const close = parseKrxNumber(row.tdd_clsprc);
+      const open = parseKrxNumber(row.tdd_opnprc);
+      const high = parseKrxNumber(row.tdd_hgprc);
+      const low = parseKrxNumber(row.tdd_lwprc);
+      return {
+        date: normalizeWhitespace(row.trd_dd ?? ""),
+        value: close,
+        close,
+        // Zero OHLC rows mean "no session trades printed"; keep only real candles.
+        ...(open && high && low ? { open, high, low } : {}),
+        volume: parseKrxNumber(row.acc_trdvol) ?? 0
+      };
+    })
+    .filter((point) => /^\d{4}-\d{2}-\d{2}$/.test(point.date) && point.value !== null)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (series.length === 0) {
+    throw new Error("KRX ETS price page rows had no parsable closes.");
+  }
+
+  const latestPoint = series[series.length - 1];
+  const latestRow = byInstrument
+    .get(activeName)
+    .find((row) => normalizeWhitespace(row.trd_dd ?? "") === latestPoint.date);
+  const change = parseKrxNumber(latestRow?.cmpprevdd_prc) ?? 0;
+  const returnPct = parseKrxNumber(latestRow?.fluc_rt) ?? 0;
+  const recentVolumes = series.map((point) => point.volume ?? 0).slice(-20);
+  const averageVolume =
+    recentVolumes.length > 0
+      ? recentVolumes.reduce((sum, value) => sum + value, 0) / recentVolumes.length
+      : 0;
+
+  return {
+    id: "k-ets-official",
+    marketId: "k-ets",
+    sourceName: "KRX ETS information platform",
+    coverage: "Official web flow (daily market tape)",
+    sourceUrl: KRX_MARKET_PAGE_URL,
+    status: "connected",
+    asOf: latestPoint.date,
+    headline: `${activeName} official close`,
+    summary: `Official KRX ETS price-page data for ${activeName} on ${latestPoint.date} (web flow).`,
+    metrics: [
+      { label: "Close", value: `KRW ${formatNumber(latestPoint.value, 0)}` },
+      {
+        label: "Day change",
+        value: `${change >= 0 ? "+" : ""}${formatNumber(change, 0)} KRW`
+      },
+      { label: "Return", value: `${formatNumber(returnPct, 2)}%` },
+      { label: "Volume", value: `${formatNumber(latestPoint.volume ?? 0, 0)} t` },
+      { label: "20d avg volume", value: `${formatNumber(averageVolume, 0)} t` }
+    ],
+    notes: [
+      "Official web flow: the same public data request the KRX ETS price page performs, no API key involved.",
+      "Set CQUANT_KRX_AUTH_KEY to switch to the documented KRX Open API sample endpoint.",
+      "Daily market tape only. Zero-volume rows are preserved as official records."
+    ],
+    series,
+    seriesLabel: "Official close",
+    volumeSeries: series.map((point) => ({
+      date: point.date,
+      value: point.volume ?? 0
+    })),
+    links: makeLinks(
+      { label: "KRX ETS market page", url: KRX_MARKET_PAGE_URL },
+      { label: "KRX Open API detail", url: KRX_OPEN_API_DETAIL_URL }
+    )
+  };
+}
+
 async function fetchKrxCard() {
+  if (!KRX_AUTH_KEY) {
+    return withCache("card:k-ets-official", KRX_CARD_CACHE_TTL_MS, fetchKrxCardViaWebFlow);
+  }
   return withCache("card:k-ets-official", KRX_CARD_CACHE_TTL_MS, async () => {
     const latestSnapshot = await fetchLatestKrxTradingSnapshot();
     const activeInstrument = chooseActiveKrxApiInstrument(latestSnapshot.rows);
