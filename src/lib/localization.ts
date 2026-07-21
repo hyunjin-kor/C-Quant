@@ -536,6 +536,9 @@ const KO_EXACT: Record<string, string> = {
   "Includes the in-session live snapshot from the official price page (market hours 10:00-12:00 KST).":
     "공식 시세 페이지의 장중 실시간 스냅샷을 포함합니다(장 운영 10:00-12:00 KST).",
   "KRX ETS information platform": "KRX 배출권시장 정보플랫폼",
+  "Research-weighted score": "연구 가중 점수",
+  "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by the research-backed driver weights and interaction strength.":
+    "단일 이벤트는 드뭅니다. 대부분의 ETS 체제 전환은 둘 이상의 드라이버가 동시에 발화하는 조합에서 옵니다. 아래 각 행은 단일 이벤트가 아닌 리서치 기반 조합이며, 연구 기반 드라이버 가중치와 상호작용 강도로 도출된 점수로 정렬됩니다.",
   "Large numbers come first, but source method, freshness, and boundary remain visible.":
     "큰 숫자를 먼저 보여주되, 소스 접근 방식·신선도·경계는 항상 함께 표시됩니다.",
   "Only confirmed APIs are labeled as APIs; the rest remain official web flows or official files.":

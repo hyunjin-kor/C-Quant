@@ -4,6 +4,28 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Fixed — catalyst scenario scores were always zero
+
+- Found during an interaction audit: the "Catalyst combinations" list
+  ranked scenarios by a driver-weighted score that was always 0.00 on
+  every card, because the only control that set those weights (a
+  scenario-slider surface) had been retired to a dead, never-rendered
+  `_renderSignals` function, and an effect reset the weights to zero on
+  every market switch. The copy still claimed the rows were "ranked by
+  the score implied by your current driver weights."
+- Scenario weights are now seeded from the documented research driver
+  matrix (each driver at its research weight), so scores are meaningful
+  and differentiated (e.g. bullish policy-tightening scenarios rank
+  positive, bearish deleveraging scenarios negative) and the ranking
+  actually orders the list. Copy updated to say "research-backed driver
+  weights and interaction strength"; the per-card label is now
+  "Research-weighted score". No effect on the market posture, which is
+  computed separately.
+- Removed the dead code this exposed: `_renderSignals`,
+  `handleScenarioChange`, the zero-reset effect, and the now-unused
+  `buildForecast` / `getForecastDirectionLabel` / `scenarioForecast` /
+  `scenarioWaterfall` chain.
+
 ### Changed — Korean locale now covers research content
 
 - Full-locale pass: 439 research/data strings that stayed English in

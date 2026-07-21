@@ -46,7 +46,6 @@ import {
   type MarketSnapshot,
   type SessionDelta
 } from "./lib/sessionSnapshot";
-import { buildForecast } from "./lib/forecast";
 import { localizeText, localizeTextWithFallback } from "./lib/localization";
 import { useToast } from "./lib/toast";
 import type {
@@ -1352,19 +1351,6 @@ function _getMarketSourceNote(locale: AppLocale, marketId: MarketId) {
   );
 }
 
-function getForecastDirectionLabel(
-  locale: AppLocale,
-  direction: "Bullish" | "Neutral" | "Bearish"
-) {
-  if (direction === "Bullish") {
-    return t(locale, "강세", "Bullish");
-  }
-  if (direction === "Bearish") {
-    return t(locale, "약세", "Bearish");
-  }
-  return t(locale, "중립", "Neutral");
-}
-
 function getQuoteNoteLabel(locale: AppLocale, quote?: MarketLiveQuote | null) {
   if (!quote) {
     return t(locale, "메모 없음", "No note");
@@ -1570,7 +1556,19 @@ export default function App() {
   const [compareQuoteHistory, setCompareQuoteHistory] = useState<MarketLiveQuote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-  const [scenarioState, setScenarioState] = useState<Record<string, number>>({});
+  // Seed every driver at its research-backed weight so the catalyst
+  // scenario scores/ranking reflect the documented driver matrix. The
+  // interactive weight-tuning surface was retired, so this stays a
+  // fixed research baseline rather than a user-mutable state.
+  const [scenarioState] = useState<Record<string, number>>(() => {
+    const seed: Record<string, number> = {};
+    for (const market of marketProfiles) {
+      for (const driver of market.drivers) {
+        seed[driver.id] = driver.weight;
+      }
+    }
+    return seed;
+  });
   const [institutionalFeedStatuses, setInstitutionalFeedStatuses] = useState<
     Array<{
       status: "ready" | "not-configured" | "error";
@@ -2174,26 +2172,6 @@ export default function App() {
       })),
     [compareOutput.points, comparisonSeries, locale]
   );
-  const scenarioDrivers = useMemo(
-    () =>
-      selectedMarket.drivers
-        .slice()
-        .sort((left, right) => right.weight - left.weight)
-        .slice(0, 6),
-    [selectedMarket]
-  );
-  const scenarioForecast = useMemo(
-    () => buildForecast(marketId, scenarioState),
-    [marketId, scenarioState]
-  );
-  const scenarioWaterfall = useMemo(
-    () =>
-      scenarioForecast.contributions.slice(0, 6).map((item) => ({
-        label: item.variable.length > 22 ? `${item.variable.slice(0, 22)}...` : item.variable,
-        value: item.contribution
-      })),
-    [scenarioForecast.contributions]
-  );
   const sourceRefreshLabel = connectedSources.fetchedAt
     ? `${t(locale, "소스", "Sources")} ${formatDate(locale, connectedSources.fetchedAt)}`
     : t(locale, "Sources not loaded", "Sources not loaded");
@@ -2215,14 +2193,6 @@ export default function App() {
       inspectorScrollRef.current.scrollTop = 0;
     }
   }, [surface, marketId]);
-
-  useEffect(() => {
-    const nextState: Record<string, number> = {};
-    for (const driver of scenarioDrivers) {
-      nextState[driver.id] = 0;
-    }
-    setScenarioState(nextState);
-  }, [scenarioDrivers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2533,13 +2503,6 @@ export default function App() {
     // would loop; the data refresh is the intended trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectedSources, locale]);
-
-  function handleScenarioChange(driverId: string, nextValue: number) {
-    setScenarioState((current) => ({
-      ...current,
-      [driverId]: nextValue
-    }));
-  }
 
   function renderCommand() {
     return (
@@ -3758,8 +3721,8 @@ export default function App() {
             <p>
               {t(
                 locale,
-                "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by your current driver weights.",
-                "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by your current driver weights."
+                "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by the research-backed driver weights and interaction strength.",
+                "Single events are rare. Most ETS regime shifts come from combinations of two or more drivers firing together. Each row below is a research-backed combination, not an isolated event, and is ranked by the score implied by the research-backed driver weights and interaction strength."
               )}
             </p>
           </div>
@@ -3806,9 +3769,7 @@ export default function App() {
                     <span>{l(scenario.historicalAnchor)}</span>
                   </li>
                   <li>
-                    <strong>
-                      {t(locale, "Current driver-weighted score", "Current driver-weighted score")}
-                    </strong>
+                    <strong>{t(locale, "연구 가중 점수", "Research-weighted score")}</strong>
                     <span>{formatSigned(locale, score, "")}</span>
                   </li>
                 </ul>
@@ -4710,234 +4671,6 @@ export default function App() {
     );
   }
 
-  /*
-   */
-  function _renderSignals() {
-    return (
-      <>
-        <section className="lab-grid">
-          <div className="panel">
-            <div className="section-header">
-              <div>
-                <span className="section-kicker">{t(locale, "시나리오", "Scenario")}</span>
-                <h2>
-                  {t(
-                    locale,
-                    "Move the top drivers and read the scenario",
-                    "Move the top drivers and read the scenario"
-                  )}
-                </h2>
-              </div>
-              <p>
-                {t(
-                  locale,
-                  "앱 안의 실시간 시장 맥락 위에서 시나리오 민감도를 바로 읽습니다.",
-                  "Read scenario sensitivity directly on top of the live in-app market context."
-                )}
-              </p>
-            </div>
-
-            <div className="scenario-list">
-              {scenarioDrivers.map((driver) => (
-                <label key={driver.id} className="slider-row">
-                  <div>
-                    <strong>{driver.variable}</strong>
-                    <span>{driver.importance}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={-1}
-                    max={1}
-                    step={0.05}
-                    value={scenarioState[driver.id] ?? 0}
-                    onChange={(event) =>
-                      handleScenarioChange(driver.id, Number(event.target.value))
-                    }
-                  />
-                  <strong>{formatSigned(locale, scenarioState[driver.id] ?? 0, "")}</strong>
-                </label>
-              ))}
-            </div>
-
-            <div className="metric-strip">
-              <div className="metric-tile">
-                <span>{t(locale, "諛⑺뼢", "Direction")}</span>
-                <strong>{getForecastDirectionLabel(locale, scenarioForecast.direction)}</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "점수", "Score")}</span>
-                <strong>{formatSigned(locale, scenarioForecast.score, "")}</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "Confidence", "Confidence")}</span>
-                <strong>{Math.round(scenarioForecast.confidence * 100)}%</strong>
-              </div>
-            </div>
-
-            <WaterfallChart
-              items={scenarioWaterfall}
-              positiveColor={selectedTheme.positive}
-              negativeColor={selectedTheme.negative}
-            />
-          </div>
-
-          <div className="panel">
-            <div className="section-header">
-              <div>
-                <span className="section-kicker">
-                  {t(locale, "Integrated decision pack", "Integrated decision pack")}
-                </span>
-                <h2>
-                  {t(
-                    locale,
-                    "Operating read with no upload required",
-                    "Operating read with no upload required"
-                  )}
-                </h2>
-              </div>
-              <p>
-                {t(
-                  locale,
-                  "공식 앵커, 비교 테이프, 드라이버, 소스 신선도를 앱 안에서 함께 읽습니다.",
-                  "Read the official anchor, comparison tape, drivers, and source freshness together inside the app."
-                )}
-              </p>
-            </div>
-
-            <div className="metric-strip">
-              <div className="metric-tile">
-                <span>{t(locale, "Current stance", "Current stance")}</span>
-                <strong>{getStanceLabel(locale, selectedDecision.stance)}</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "Confidence", "Confidence")}</span>
-                <strong>{Math.round(selectedDecision.confidence * 100)}%</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "Official anchor", "Official anchor")}</span>
-                <strong>{getOfficialPriceLabel(selectedOfficialCard)}</strong>
-              </div>
-              <div className="metric-tile">
-                <span>{t(locale, "Freshness", "Freshness")}</span>
-                <strong>{getFreshnessSummary(locale, selectedOfficialCard?.asOf)}</strong>
-              </div>
-            </div>
-
-            <div className="note-list">
-              <div className="note-item">
-                <strong>{t(locale, "데스크 해석", "Desk read")}</strong>
-                <p>{l(selectedDecision.summary)}</p>
-              </div>
-              <div className="note-item">
-                <strong>{t(locale, "Comparison tape", "Comparison tape")}</strong>
-                <p>
-                  {selectedCompareQuote
-                    ? joinReadoutParts(
-                        selectedCompareQuote.symbol,
-                        formatPercent(locale, selectedCompareQuote.changePct, 2),
-                        getSourceStatusLabel(locale, selectedCompareQuote.status)
-                      )
-                    : t(
-                        locale,
-                        "선택된 비교 테이프가 없습니다.",
-                        "No comparison tape is selected."
-                      )}
-                </p>
-              </div>
-            </div>
-
-            <ul className="bullet-list">
-              {selectedDecision.support.slice(0, 3).map((item) => (
-                <li key={item.title}>
-                  <strong>{l(item.title)}</strong>
-                  <span>{l(item.detail)}</span>
-                </li>
-              ))}
-              {selectedDecision.checks.slice(0, 3).map((item) => (
-                <li key={item}>
-                  <strong>{t(locale, "지금 확인", "Verify now")}</strong>
-                  <span>{l(item)}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">
-                {t(locale, "Operator checklist", "Operator checklist")}
-              </span>
-              <h2>
-                {t(
-                  locale,
-                  "스탠스를 바꾸기 전에 데스크 전체를 확인",
-                  "Check the whole desk before changing posture"
-                )}
-              </h2>
-            </div>
-            <p>
-              {t(
-                locale,
-                "공식 변동, 괴리, 상관, 방향 일치, 리스크, 확인 항목을 한 화면에서 읽습니다.",
-                "Read the official change, gap, correlation, direction match, risks, and verification items on one surface."
-              )}
-            </p>
-          </div>
-
-          <div className="metric-strip">
-            <div className="metric-tile">
-              <span>{t(locale, "Official change", "Official change")}</span>
-              <strong>{getOfficialChangeLabel(selectedOfficialCard)}</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "격차", "Gap")}</span>
-              <strong>{formatPercent(locale, compareOutput.stats.gapPct, 2)}</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "상관성", "Correlation")}</span>
-              <strong>{formatSigned(locale, compareOutput.stats.correlation, "")}</strong>
-            </div>
-            <div className="metric-tile">
-              <span>{t(locale, "방향 일치", "Direction match")}</span>
-              <strong>{formatPercent(locale, compareOutput.stats.directionMatchPct, 0)}</strong>
-            </div>
-          </div>
-
-          <div className="command-two-up">
-            <div className="status-card">
-              <strong>{t(locale, "지금 확인", "Verify now")}</strong>
-              <ul className="plain-list">
-                {selectedDecision.checks.slice(0, 5).map((item) => (
-                  <li key={item}>{l(item)}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="status-card warning">
-              <strong>{t(locale, "리스크와 브레이커", "Risks and breakers")}</strong>
-              <ul className="plain-list">
-                {(selectedDecision.risks.length > 0
-                  ? selectedDecision.risks.slice(0, 5)
-                  : [
-                      t(
-                        locale,
-                        "당장 구조적 변곡 신호는 보이지 않지만 다음 공식 갱신은 여전히 중요합니다.",
-                        "No immediate structural breaker is visible, but the next official update still matters."
-                      )
-                    ]
-                ).map((item) => (
-                  <li key={item}>{l(item)}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <InputCoverageGrid blocks={selectedInputBlocks} locale={locale} compact />
-        </section>
-      </>
-    );
-  }
   function renderInspector() {
     return (
       <aside className="app-inspector" ref={inspectorScrollRef}>
