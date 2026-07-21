@@ -9,12 +9,15 @@ import { join } from "node:path";
 
 const ASSETS_DIR = "dist/assets";
 
-// Budgets last bumped 2026-05-07: main JS 350 -> 420 KB to admit
-// the v1.3 driver-matrix / catalyst-scenarios / event-log expansion.
-// Vendor and CSS unchanged. Future ratchets should be deliberate
-// and noted here.
+// Budgets last bumped 2026-07-21: main JS 420 -> 560 KB to admit the
+// full Korean localization dictionary (439 research/data string
+// translations, ~98 KB raw / ~36 KB gzip). It ships in the main chunk
+// because localizeText resolves synchronously everywhere; for a
+// local-disk Electron app the load cost is effectively zero. Prior
+// bump 2026-05-07 (350 -> 420) admitted the v1.3 data expansion.
+// Vendor and CSS unchanged. Future ratchets should be deliberate.
 const BUDGETS = [
-  { match: /^index-.*\.js$/, label: "main JS chunk", maxBytes: 420 * 1024 },
+  { match: /^index-.*\.js$/, label: "main JS chunk", maxBytes: 560 * 1024 },
   { match: /^vendor-react-.*\.js$/, label: "vendor-react chunk", maxBytes: 250 * 1024 },
   { match: /^vendor-charts-.*\.js$/, label: "vendor-charts chunk", maxBytes: 250 * 1024 },
   { match: /^index-.*\.css$/, label: "main CSS chunk", maxBytes: 80 * 1024 }
