@@ -4,6 +4,10 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-07-21
+
+The live-desk release: official Korean prices stream in-session.
+
 ### Added — live K-ETS official price during market hours
 
 - During the KRX session (10:00-12:00 KST) the keyless web-flow
