@@ -1133,7 +1133,9 @@ function buildDecisionSummary(
       },
       {
         title: t(locale, "상위 드라이버", "Top drivers"),
-        detail: supportDrivers.map((driver) => driver.variable).join(" / ")
+        detail: supportDrivers
+          .map((driver) => localizeText(getUiLocale(locale), driver.variable))
+          .join(" / ")
       }
     ],
     risks: [
@@ -1243,9 +1245,9 @@ function getSourceStatusLabel(
   locale: AppLocale,
   status: ConnectedSourceCard["status"] | MarketLiveQuote["status"]
 ) {
-  if (status === "connected") return t(locale, "Connected", "Connected");
+  if (status === "connected") return t(locale, "연결됨", "Connected");
   if (status === "limited") return t(locale, "제한됨", "Limited");
-  return t(locale, "?ㅻ쪟", "Error");
+  return t(locale, "오류", "Error");
 }
 
 function getStanceLabel(locale: AppLocale, stance: DecisionSummary["stance"]) {
@@ -2689,7 +2691,7 @@ export default function App() {
             >
               <div className="command-market-top">
                 <div>
-                  <span className="section-kicker">{row.market.region}</span>
+                  <span className="section-kicker">{l(row.market.region)}</span>
                   <h3>{row.market.name}</h3>
                 </div>
                 <span className={`freshness-badge ${row.freshnessLevel}`}>
@@ -5031,14 +5033,14 @@ export default function App() {
             <div>
               <span>{t(locale, "공식 소스", "Official")}</span>
               <strong className={`tone-${getSourceTone(selectedOfficialCard?.status ?? "error")}`}>
-                {selectedOfficialCard?.status ?? "error"}
+                {getSourceStatusLabel(locale, selectedOfficialCard?.status ?? "error")}
               </strong>
               <p className="field-note">{getOfficialMethod(selectedOfficialCard, locale)}</p>
             </div>
             <div>
               <span>{t(locale, "상장 비교", "Listed")}</span>
               <strong className={`tone-${getSourceTone(selectedCompareQuote?.status ?? "error")}`}>
-                {selectedCompareQuote?.status ?? "error"}
+                {getSourceStatusLabel(locale, selectedCompareQuote?.status ?? "error")}
               </strong>
               <p className="field-note">
                 {getQuoteProviderLabel(locale, selectedCompareQuote?.provider)}

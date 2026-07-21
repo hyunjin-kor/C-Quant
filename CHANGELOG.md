@@ -4,6 +4,25 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Changed — Korean locale now covers research content
+
+- Full-locale pass: 439 research/data strings that stayed English in
+  the Korean UI are now translated — every catalyst-scenario name,
+  window label, historical anchor, and driver component (variable +
+  threshold), all driver notes and event briefs, materials-atlas
+  entries, source-reference labels, and region labels. A recursive
+  scan of the data layer confirms the only remaining English is
+  academic citations (author-year + journal), which stay in original
+  form by convention, and tickers/market names (KRBN, EU ETS, …).
+- Numbers, dates, units, acronyms (MSR/CBAM/KAU/CEA/…), author
+  citations, and journal names were preserved verbatim during
+  translation; domain terms use consistent Korean (배출권, 이행,
+  상쇄, 유동성, …).
+- Source-trust status now localizes ("connected" → "연결됨") — it was
+  rendering the raw enum — and the "상위 드라이버" summary localizes
+  each driver variable before joining. Fixed a mojibake "Error" label
+  in getSourceStatusLabel.
+
 ### Fixed — driver heatmap and Korean UI leaks
 
 - Cross-market driver heatmap no longer collapses two of three markets
