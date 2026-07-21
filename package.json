@@ -1,6 +1,6 @@
 {
   "name": "c-quant",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "private": true,
   "description": "Carbon decision-support desktop for EU ETS, K-ETS, and China ETS — research, monitoring, and briefing.",
   "repository": {

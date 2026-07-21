@@ -4,6 +4,8 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.9.1] — 2026-07-21
+
 ### Changed
 
 - Light is the default theme again for new installs (renderer +
