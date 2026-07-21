@@ -141,9 +141,8 @@ npm run smoke:dir | smoke:portable | smoke:release
 npm run e2e                 # Playwright Electron smoke
 ```
 
-The canonical 9-tier verification ladder for picking which subset of these
-to run for a given change is in
-[../CLAUDE.md#verification-ladder](../CLAUDE.md#verification-ladder).
+Pick the lowest tier that exercises your change; the CI gates that run on
+every push are described in [CONTRIBUTING.md](../.github/CONTRIBUTING.md).
 
 Bundle budgets (`scripts/check-bundle-size.mjs`):
 

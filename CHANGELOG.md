@@ -171,7 +171,7 @@ and live catalyst activations, not just data staleness.
   (checkout/setup-node v7, upload-artifact v7, download-artifact v8)
   ahead of the September 2026 runner removal.
 
-### Deferred (documented in docs/open-items.md)
+### Deferred
 
 - A daily official China close from CNEEEX was investigated and parked:
   the daily bulletin pages parse cleanly, but their listing is
@@ -317,8 +317,7 @@ through 2026-06, and a repository reorganized down to what runs.
 
 - Historical price anchors extended from 2025-06 through 2026-06 for
   all three markets (36 new month-end values; provenance and caveats
-  documented inline and in
-  [docs/calibration-review-2026-07.md](docs/calibration-review-2026-07.md)).
+  documented inline in the calibration data files).
   The three events dated after 2025-06-30 (K-ETS 2024-vintage
   surrender, MEE progress report, CBAM definitive start) are now
   scored by the event study instead of being silently dropped.
@@ -404,8 +403,8 @@ through 2026-06, and a repository reorganized down to what runs.
   and other FX components fall back to EUR/USD. FRED requires a free
   `CQUANT_FRED_API_KEY` (registration at fredaccount.stlouisfed.org);
   the rest of the app degrades silently when the key is unset.
-- New [docs/open-items.md](docs/open-items.md) captures every
-  deliberately-deferred item with the reason and the unblock path.
+- A deferred-work inventory now captures every deliberately-deferred
+  item with the reason and the unblock path.
 - Catalyst event log expanded from 25 → 34 entries. New 2025/2026
   calendar anchors (EU surrender, TNAC, K-ETS surrender, CBAM
   definitive start, ICAP Status Report) plus four scenario-promoting

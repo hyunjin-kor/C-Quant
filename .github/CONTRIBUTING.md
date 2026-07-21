@@ -39,7 +39,7 @@ npm run bundle:check   # enforce bundle budgets
 
 CI runs the same gates on every push and PR across `windows-latest` (primary), `macos-latest`, and `ubuntu-latest` (advisory until cross-platform packaging stabilises). See [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
-## Truth rules (from `AGENTS.md` / `CLAUDE.md`)
+## Truth rules
 
 1. **Prefer official exchange, ministry, and statistics sources.** Vendor
    feeds are reference proxies, never primary anchors.

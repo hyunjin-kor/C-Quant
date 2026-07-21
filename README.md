@@ -10,6 +10,7 @@
   <a href="https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml"><img src="https://github.com/hyunjin-kor/C-Quant/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/></a>
   <a href=".nvmrc"><img src="https://img.shields.io/badge/node-%3E%3D24-brightgreen" alt="Node 24+"/></a>
+  <a href="https://github.com/hyunjin-kor/C-Quant/releases"><img src="https://img.shields.io/github/v/release/hyunjin-kor/C-Quant?color=6366f1" alt="Latest release"/></a>
 </p>
 
 C-Quant pulls official data from the EU ETS, Korea's K-ETS, and China's national ETS, and turns it into one daily read: buy, hold, or reduce. It shows its work. Every number links back to the source it came from, every freshness badge tells you how old that source is, and every model multiplier says whether it was backtested or is still a placeholder.
@@ -17,28 +18,57 @@ C-Quant pulls official data from the EU ETS, Korea's K-ETS, and China's national
 It is decision support, not a trading tool. It doesn't place orders, hold assets, or give individualized trade instructions.
 
 <p align="center">
-  <img src="docs/images/shot-command-dark.png" alt="Command surface" width="100%"/>
+  <img src="docs/images/shot-command-light.png" alt="C-Quant Command surface: official anchors, live comparison charts, and posture for all three markets" width="100%"/>
 </p>
+
+## Install & run
+
+Download the latest packaged build from the [Releases](https://github.com/hyunjin-kor/C-Quant/releases) page:
+
+- **`C-Quant-<version>-portable.exe`** — no installer, runs from anywhere. Best for a quick look.
+- **`C-Quant-Setup-<version>.exe`** — Windows installer with auto-update wired in.
+
+The binaries aren't code-signed yet, so on first launch Windows SmartScreen shows a warning. Click **More info → Run anyway**. macOS `.dmg` and Linux `AppImage` builds are attached to each release too, but Windows 10/11 is the primary target.
+
+That's the whole setup — no account, no API key, no configuration. The app opens straight onto live official anchors.
 
 ## How a session goes
 
-You open the app and land on Command: prices for all three markets, a chart comparing the official close against listed proxies, and a short memo saying what the current posture is and why. From there,
+You open the app and land on **Command**: prices for all three markets, a chart comparing the official close against listed proxies, and a short memo saying what the current posture is and why. The typical loop is the same every day — read the official anchor, compare it with the listed tape, check what's firing, decide the posture.
 
-- **Drivers** shows which catalyst scenarios are firing right now, ranked by your driver weights, with the calibration evidence behind each multiplier laid out next to it.
-- **Desk** narrows to a single market when you're writing a brief, keeping the other two in the margin for context.
-- **Sources** lists where every datum came from, how it was accessed, and when it was last fresh. It's the screen to open in a compliance review.
+From the left rail you move between four surfaces:
 
-The typical loop is the same every day: read the official anchor, compare it with the listed tape, check what's firing, decide the posture.
+**Drivers** shows the factor structure behind each market's posture — six research-backed families (policy, power, fuel switching, macro, weather, liquidity) tilted up, down, or neutral — plus which catalyst scenarios are firing right now, ranked by the research-backed driver weights and interaction strength, with the calibration evidence behind each multiplier laid out next to it.
+
+<p align="center">
+  <img src="docs/images/shot-drivers-light.png" alt="Drivers surface: cross-market driver structure and active catalyst scenarios" width="100%"/>
+</p>
+
+**Sources** lists where every datum came from, how it was accessed, and when it was last fresh — the screen to open in a compliance review. **Desk** narrows to a single market when you're writing a brief, keeping the other two in the margin for context.
+
+<p align="center">
+  <img src="docs/images/shot-sources-light.png" alt="Sources surface: access method, freshness, and status for every official anchor" width="100%"/>
+</p>
+
+There's a command palette on **Ctrl/⌘ + K** for jumping between markets and surfaces without leaving the keyboard.
+
+## Fully localized (한국어 · English)
+
+The entire interface — every scenario name, driver label, source note, and status badge — ships in Korean and English, switchable from the top-left toggle. Korean is the default.
+
+<p align="center">
+  <img src="docs/images/shot-command-light-ko.png" alt="C-Quant Command surface in Korean" width="100%"/>
+</p>
 
 ## Where the data comes from
 
-Official anchors first: the EEX auction workbook for the EU, the KRX ETS platform for Korea, and MEE bulletins for China. Listed proxies (ICE EUA futures, KRBN, KEUA and friends) come from public chart feeds and are always labeled as proxies, never mixed in with official settlement prices.
+Official anchors first: the EEX auction workbook for the EU, the KRX ETS platform for Korea, and MEE bulletins for China. The KRX anchor uses the same public web request the KRX price page performs — no API key needed — including the in-session live snapshot during market hours (10:00–12:00 KST). Listed proxies (ICE EUA futures, KRBN, KEUA and friends) come from public chart feeds and are always labeled as proxies, never mixed in with official settlement prices.
 
 Two free public feeds extend the macro layer: ECB SDW (EUR/USD, no key needed) and FRED (USD/KRW, USD/CNY — needs a free API key). Institutional adapters for Refinitiv, Bloomberg, ICE, and EEX exist but stay in a `not-configured` state until you add credentials. They never invent prices.
 
 ## The model, honestly
 
-The posture comes from a driver matrix (about 47 weighted drivers per market, sourced from policy documents and academic literature) plus 21 multi-driver catalyst scenarios. A live detector watches for freshness gaps, price jumps, volume spikes, FX moves, and proxy divergence, and flags a scenario as active when enough of its components fire together.
+The posture comes from a driver matrix (about 50 weighted drivers across the three markets — 16 to 18 each, sourced from policy documents and academic literature) plus 21 multi-driver catalyst scenarios. A live detector watches for freshness gaps, price jumps, volume spikes, FX moves, and proxy divergence, and flags a scenario as active when enough of its components fire together.
 
 Scenario multipliers are calibrated against a log of 36 citable historical events (2018–2026) via event study. Each multiplier carries a provenance label so you know how much to trust it:
 
@@ -48,11 +78,11 @@ Scenario multipliers are calibrated against a log of 36 citable historical event
 | `backtest`   | walk-forward evaluated against 2+ logged events |
 | `calibrated` | backtested and signed off by a model owner      |
 
-Right now 15 of the 21 scenarios are at `backtest`, none at `calibrated`. CI fails if the calibration review goes more than 90 days stale, so the numbers can't quietly rot.
+Right now 15 of the 21 scenarios reach `backtest`, none are at `calibrated`. CI fails if the calibration review goes more than 90 days stale, so the numbers can't quietly rot.
 
 None of this is a price forecast. It's a structured way to keep score of the evidence.
 
-## Running it
+## Building from source
 
 Node 24+ and Windows 10/11 are the primary targets (macOS and Linux builds exist but are advisory).
 
@@ -62,14 +92,12 @@ npm install
 npm run dev          # Vite + Electron
 ```
 
-Packaged builds are on the [Releases](https://github.com/hyunjin-kor/C-Quant/releases) page, or build your own:
+Package your own binaries:
 
 ```powershell
 npm run package:portable     # portable .exe
 npm run package:nsis         # installer, auto-update wired
 ```
-
-The binaries aren't code-signed yet, so SmartScreen will warn on first launch. Click "More info", then "Run anyway".
 
 ## Development
 

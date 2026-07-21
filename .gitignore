@@ -2,7 +2,16 @@ node_modules/
 dist/
 release/
 .autonomy/
-.claude/worktrees/
+
+# local dev harness & agent config — kept out of the public repo
+.claude/
+CLAUDE.md
+AGENTS.md
+
+# internal planning docs — kept local, not shipped in the public repo
+docs/open-items.md
+docs/roadmap-2026H2.md
+docs/calibration-review-2026-07.md
 
 # local planning docs kept out of the repo
 /*.pdf

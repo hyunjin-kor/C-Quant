@@ -1,7 +1,7 @@
 # C-Quant Model Card
 
 **Version:** v1.4.x
-**Reviewed:** 2026-07-20 (2026-07 calibration review + full data-reliability round: anchors extended through 2026-06, all 157 source URLs fetch-verified, event log corrected to 36 entries, 15 scenarios at `backtest`; see docs/calibration-review-2026-07.md)
+**Reviewed:** 2026-07-20 (2026-07 calibration review + full data-reliability round: anchors extended through 2026-06, all 157 source URLs fetch-verified, event log corrected to 36 entries, 15 scenarios at `backtest`)
 **Last full review:** 2026-04-29
 **Owner:** C-Quant project (research-grade desktop tool)
 
@@ -97,7 +97,7 @@ What ships in v1.3 (was missing in v1.1):
 | Continuous backtesting | `walkForward.ts` and `eventStudy.ts` both ship. Event study runs against the 36-event `catalystEventLog.ts` + `historicalPriceAnchors.ts` (anchors extended through 2026-06 on 2026-07-20). A continuous OOS driver-history panel for the linear forecast is **not** committed. | Connect a verified driver-history source (institutional feed) and run `runWalkForward` per market for the forecast estimator (separate from the catalyst layer). |
 | Live institutional feeds | Adapter pattern only. `electron/institutionalFeeds.js` exposes Refinitiv, Bloomberg, ICE, EEX adapters that return `not-configured` until env vars are set; they never fabricate prices. | Procure license, configure env vars, replace `fetchQuote` placeholder with the real provider call. |
 | Free public-data feeds | `electron/freeFeeds.js` ships real adapters for FRED (key-gated) and ECB SDW (open). ICAP and World Bank are exposed as documented entry URLs. | Wire FRED-derived series into specific drivers (e.g. industrial production, credit spreads) so the calibration layer can reference them empirically. |
-| Compliance review | Boundary statement in CLAUDE.md, README, and the in-app "Decision-support boundary" panel. Per-jurisdiction notes in [docs/COMPLIANCE-EU.md](COMPLIANCE-EU.md), [-KR.md](COMPLIANCE-KR.md), [-CN.md](COMPLIANCE-CN.md). | Formal compliance review and disclosure language sign-off per jurisdiction. |
+| Compliance review | Boundary statement in the README and the in-app "Decision-support boundary" panel. Per-jurisdiction notes in [docs/COMPLIANCE-EU.md](COMPLIANCE-EU.md), [-KR.md](COMPLIANCE-KR.md), [-CN.md](COMPLIANCE-CN.md). | Formal compliance review and disclosure language sign-off per jurisdiction. |
 | Model documentation | This file. | Versioned model card per release; track multiplier changes in `CHANGELOG.md`. |
 
 ## 7. Intended use
