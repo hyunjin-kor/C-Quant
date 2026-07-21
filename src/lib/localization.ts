@@ -536,6 +536,10 @@ const KO_EXACT: Record<string, string> = {
   "Includes the in-session live snapshot from the official price page (market hours 10:00-12:00 KST).":
     "공식 시세 페이지의 장중 실시간 스냅샷을 포함합니다(장 운영 10:00-12:00 KST).",
   "KRX ETS information platform": "KRX 배출권시장 정보플랫폼",
+  "Large numbers come first, but source method, freshness, and boundary remain visible.":
+    "큰 숫자를 먼저 보여주되, 소스 접근 방식·신선도·경계는 항상 함께 표시됩니다.",
+  "Only confirmed APIs are labeled as APIs; the rest remain official web flows or official files.":
+    "확인된 API만 API로 표기하고, 나머지는 공식 웹 플로우 또는 공식 파일로 유지합니다.",
   "Official web flow (daily market tape)": "공식 웹 플로우(일일 시장 테이프)",
   "Official web flow: the same public data request the KRX ETS price page performs, no API key involved.":
     "공식 웹 플로우: KRX 배출권 시세 페이지가 수행하는 것과 동일한 공개 데이터 요청이며, API 키가 필요 없습니다.",
@@ -1163,7 +1167,60 @@ Object.assign(KO_EXACT, {
     "2026-04-09 기준 공식 Gold Standard 레지스트리 페이지에서 확인했습니다."
 });
 
+// Korean copy for strings surfaced by the 2026-07 UI leak audit.
 Object.assign(KO_EXACT, {
+  "A strong trading desk alone is not enough. Accounting boundary, verification evidence, and retirement planning have to sit beside it.":
+    "강력한 트레이딩 데스크만으로는 부족합니다. 회계 경계, 검증 근거, 상쇄 소각 계획이 함께 있어야 합니다.",
+  "Compare official anchor, live tape, gap, and posture row by row.":
+    "공식 앵커, 실시간 테이프, 괴리, 스탠스를 행 단위로 비교합니다.",
+  "Continuous official price data is not available yet.": "연속 공식 가격 데이터가 아직 없습니다.",
+  "Daily market tape only. Zero-volume rows are preserved as official records.":
+    "일일 시장 테이프만 제공합니다. 거래량 0인 행도 공식 기록으로 보존됩니다.",
+  "December benchmark contract used as the main listed EUA reference. Some free chart feeds expose the live price faster than the full historical curve.":
+    "12월물 벤치마크 계약을 주요 상장 EUA 기준으로 사용합니다. 일부 무료 차트 피드는 전체 히스토리보다 실시간 가격을 더 빨리 노출합니다.",
+  "Listed North American carbon proxy for cross-market risk appetite":
+    "시장 간 위험 선호를 읽는 북미 상장 탄소 프록시",
+  "Listed carbon proxy when local ETS futures are not available":
+    "현지 ETS 선물이 없을 때 쓰는 상장 탄소 프록시",
+  Multiplier: "배수",
+  freshness: "신선도",
+  "No immediate structural break is visible, but the next official update still matters.":
+    "당장 구조적 변곡은 보이지 않지만, 다음 공식 갱신은 여전히 중요합니다.",
+  "No immediate structural breaker is visible, but the next official update still matters.":
+    "당장 구조적 변곡 신호는 보이지 않지만, 다음 공식 갱신은 여전히 중요합니다.",
+  "Persefoni, Watershed, Patch, Sylvera, and BeZero each solve a different layer. C-Quant should borrow their logic without copying execution or certification roles.":
+    "Persefoni, Watershed, Patch, Sylvera, BeZero는 각기 다른 층위를 해결합니다. C-Quant는 실행·인증 역할을 베끼지 않고 그 로직만 참고해야 합니다.",
+  "Primary listed hedge tape for EU carbon risk": "EU 탄소 리스크의 주요 상장 헤지 테이프",
+  "Projects like Hyperledger, OS-Climate, and OpenGHG are more useful for provenance, normalization, registry evidence, and reproducible retrieval than for screen design.":
+    "Hyperledger, OS-Climate, OpenGHG 같은 프로젝트는 화면 설계보다 출처·정규화·레지스트리 근거·재현 가능한 조회에 더 유용합니다.",
+  "Proxy only. Do not treat this as an official local ETS settlement.":
+    "프록시일 뿐입니다. 현지 ETS 공식 정산가로 읽지 마세요.",
+  "Proxy only. Useful as an additional listed carbon sleeve, not as a local ETS settlement.":
+    "프록시일 뿐입니다. 현지 ETS 정산가가 아니라 보조적인 상장 탄소 슬리브로 활용하세요.",
+  "Read scenario sensitivity directly on top of the live in-app market context.":
+    "앱 안의 실시간 시장 맥락 위에서 시나리오 민감도를 바로 읽습니다.",
+  "Read the official anchor, comparison tape, drivers, and source freshness together inside the app.":
+    "공식 앵커, 비교 테이프, 드라이버, 소스 신선도를 앱 안에서 함께 읽습니다.",
+  "Read the official change, gap, correlation, direction match, risks, and verification items on one surface.":
+    "공식 변동, 괴리, 상관, 방향 일치, 리스크, 확인 항목을 한 화면에서 읽습니다.",
+  "The app could not fetch this official source in the current environment.":
+    "현재 환경에서는 이 공식 소스를 가져오지 못했습니다.",
+  "The current official source does not expose a continuous volume series. Use the price anchor and source notes first.":
+    "현재 공식 소스는 연속 거래량 시계열을 제공하지 않습니다. 가격 앵커와 소스 노트를 먼저 활용하세요.",
+  "The current official source has no continuous series for the interactive chart.":
+    "현재 공식 소스에는 인터랙티브 차트에 쓸 연속 시계열이 없습니다.",
+  "The free comparison tape series is not available yet.":
+    "무료 비교 테이프 시계열이 아직 없습니다.",
+  "The official anchor and listed comparison tape do not share enough overlap for a relative chart.":
+    "공식 앵커와 상장 비교 테이프의 겹치는 구간이 상대 차트를 그리기에 부족합니다.",
+  "This official feed covers primary auctions. It does not replace ICE secondary-market futures data.":
+    "이 공식 피드는 1차 경매를 다룹니다. ICE 유통시장 선물 데이터를 대체하지 않습니다.",
+  "This official feed reflects MEE policy and operations releases, not a stable daily exchange tape.":
+    "이 공식 피드는 안정적인 일일 거래소 테이프가 아니라 MEE의 정책·운영 발표를 반영합니다.",
+  "This uses the official KRX Open API sample endpoint published on the service detail page.":
+    "서비스 상세 페이지에 공개된 공식 KRX Open API 샘플 엔드포인트를 사용합니다.",
+  "Useful as a listed carbon proxy alongside the benchmark EUA future.":
+    "벤치마크 EUA 선물과 함께 보는 상장 탄소 프록시로 유용합니다.",
   "Latest methodology framing and project boundary are available.":
     "최신 방법론 framing과 프로젝트 경계 문서를 확인할 수 있습니다.",
   "Still recent enough for analysis, but not current-quarter fresh.":
@@ -1206,6 +1263,14 @@ const KO_PATTERNS: Array<{
   {
     pattern: /^(\d+) days old$/,
     translate: ([, days]) => `${days}일 경과`
+  },
+  {
+    pattern: /^(.+) \/ official anchor needs recheck$/,
+    translate: ([, relative]) => `${relative} / 공식 앵커 재확인 필요`
+  },
+  {
+    pattern: /^(.+) \/ recheck soon$/,
+    translate: ([, relative]) => `${relative} / 곧 재확인`
   },
   {
     pattern: /^(.+) is moving (.+)\.$/,

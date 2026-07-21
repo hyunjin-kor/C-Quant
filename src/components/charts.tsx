@@ -652,10 +652,12 @@ export function ColumnChart({
 
 function heatColor(value: number) {
   const safe = clamp(value, -1, 1);
-  if (safe > 0) {
+  // Match the +/-/0 label threshold so a cell labeled "0" always reads
+  // neutral gray rather than a faint red/green tint.
+  if (safe > 0.15) {
     return `rgba(45, 196, 129, ${0.18 + safe * 0.5})`;
   }
-  if (safe < 0) {
+  if (safe < -0.15) {
     return `rgba(255, 111, 97, ${0.18 + Math.abs(safe) * 0.5})`;
   }
   return "rgba(80, 92, 120, 0.12)";

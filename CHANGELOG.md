@@ -4,6 +4,24 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Fixed — driver heatmap and Korean UI leaks
+
+- Cross-market driver heatmap no longer collapses two of three markets
+  to all-zeros: cell values were `familyWeight × marketStance`, so any
+  market on a neutral "hold" posture (K-ETS and China here) showed 0
+  for every factor family regardless of its actual drivers. Cells now
+  show each family's own weight-averaged directional tilt (higher =
+  bullish, lower = bearish, context = neutral), a real per-market
+  structure signal independent of the overall posture. Example:
+  K-ETS Power & Industry now correctly reads bearish.
+- Heatmap cell color now uses the same ±0.15 threshold as the +/-/0
+  label, so a cell labeled "0" always reads neutral gray instead of a
+  faint red/green tint.
+- Translated 30 UI strings that stayed English in the Korean locale —
+  panel body copy ("Large numbers come first…", "Only confirmed APIs…"),
+  proxy/anchor notes, chart-empty messages, and the "official anchor
+  needs recheck" / "recheck soon" freshness labels.
+
 ## [1.9.1] — 2026-07-21
 
 ### Changed

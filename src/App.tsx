@@ -2046,16 +2046,24 @@ export default function App() {
         label: t(locale, family.ko, family.en),
         values: MARKET_ORDER.map((id) => {
           const profile = marketProfiles.find((item) => item.id === id) ?? marketProfiles[0];
-          const decision = marketBoardRows.find((row) => row.market.id === id)?.decision;
-          const totalWeight = profile.drivers
-            .filter((driver) => family.match(driver))
-            .reduce((sum, driver) => sum + driver.weight, 0);
-          const normalized = Math.min(totalWeight / 3, 1);
-          const direction = decision?.stance === "buy" ? 1 : decision?.stance === "reduce" ? -1 : 0;
-          return normalized * direction;
+          const familyDrivers = profile.drivers.filter((driver) => family.match(driver));
+          if (familyDrivers.length === 0) return 0;
+          // Weight-averaged directional tilt of this family's own drivers
+          // (higher = bullish +, lower = bearish -, context = neutral).
+          // This is a per-market structural signal, independent of the
+          // market's overall posture — so a neutral (hold) market still
+          // shows the shape of its factor families instead of all zeros.
+          let signed = 0;
+          let magnitude = 0;
+          for (const driver of familyDrivers) {
+            const dir = driver.direction === "higher" ? 1 : driver.direction === "lower" ? -1 : 0;
+            signed += dir * driver.weight;
+            magnitude += driver.weight;
+          }
+          return magnitude > 0 ? Math.max(-1, Math.min(1, signed / magnitude)) : 0;
         })
       })),
-    [locale, marketBoardRows]
+    [locale]
   );
   const driverRows = useMemo(
     () =>
