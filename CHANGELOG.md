@@ -4,6 +4,12 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-07-21
+
+The fully-Korean, audited release: complete Korean localization, a real
+scenario-scoring fix found by a proactive interaction audit, the driver
+heatmap corrected, light default restored, and hero spacing cleaned up.
+
 ### Fixed — catalyst scenario scores were always zero
 
 - Found during an interaction audit: the "Catalyst combinations" list
