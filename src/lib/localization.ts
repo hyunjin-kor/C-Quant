@@ -532,6 +532,9 @@ const KO_EXACT: Record<string, string> = {
   // Catalyst combinations panel
   "Catalyst combinations": "촉매 조합",
   "Catalyst pattern active": "촉매 패턴 활성화",
+  Last: "현재가",
+  "Includes the in-session live snapshot from the official price page (market hours 10:00-12:00 KST).":
+    "공식 시세 페이지의 장중 실시간 스냅샷을 포함합니다(장 운영 10:00-12:00 KST).",
   "KRX ETS information platform": "KRX 배출권시장 정보플랫폼",
   "Official web flow (daily market tape)": "공식 웹 플로우(일일 시장 테이프)",
   "Official web flow: the same public data request the KRX ETS price page performs, no API key involved.":
@@ -1215,6 +1218,10 @@ const KO_PATTERNS: Array<{
   {
     pattern: /^(.+) official close$/,
     translate: ([, instrument]) => `${instrument} 공식 종가`
+  },
+  {
+    pattern: /^(.+) official live price$/,
+    translate: ([, instrument]) => `${instrument} 공식 실시간가`
   },
   {
     pattern: /^Latest official primary auction cleared at (.+)\.$/,

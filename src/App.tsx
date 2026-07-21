@@ -577,7 +577,8 @@ function buildVolumePoints(series: ConnectedSourceSeriesPoint[] | undefined): Ch
 
 function getOfficialPriceLabel(card: ConnectedSourceCard | null) {
   return (
-    findMetric(card, ["auction price", "close", "year-end close", "average price"])?.value ?? "n/a"
+    findMetric(card, ["last", "auction price", "close", "year-end close", "average price"])
+      ?.value ?? "n/a"
   );
 }
 
@@ -688,6 +689,10 @@ function getOfficialHeadlineLabel(locale: AppLocale, card: ConnectedSourceCard |
   }
 
   if (card.id === "k-ets-official") {
+    const liveMatch = card.headline.match(/^(.+) official live price$/);
+    if (liveMatch) {
+      return t(locale, `${liveMatch[1]} 공식 실시간가`, `${liveMatch[1]} official live price`);
+    }
     const match = card.headline.match(/^(.+) official close$/);
     if (match) {
       return t(locale, `${match[1]} 공식 종가`, `${match[1]} official close`);

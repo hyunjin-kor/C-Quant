@@ -24,6 +24,9 @@ const YAHOO_PROXY_DELAY_NOTE =
 const EU_CARD_CACHE_TTL_MS = 10 * 60 * 1000;
 const KRX_DAY_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 const KRX_CARD_CACHE_TTL_MS = 15 * 60 * 1000;
+// The keyless web-flow card carries an in-session live snapshot, so it
+// refreshes on a much shorter cycle (daily rows stay cached for 12h).
+const KRX_LIVE_CARD_CACHE_TTL_MS = 60 * 1000;
 const CN_CARD_CACHE_TTL_MS = 30 * 60 * 1000;
 const QUOTE_CACHE_TTL_MS = 30 * 1000;
 const liveSourcesCache = createTtlCache({ maxEntries: 256 });
@@ -777,6 +780,60 @@ async function fetchKrxWebFlowRows(fromCompact, toCompact) {
   return rows;
 }
 
+/**
+ * In-session live snapshot from the same public price page (grid
+ * ets03010000_04). Outside the 10:00-12:00 KST session the grid returns
+ * an empty result — callers treat null as "no live data right now".
+ * Note: this grid's JSON keys are misaligned with their values; only
+ * the coherent fields (isu_cd, tdd_clsprc, cmpprevdd_prc, fluc_rt,
+ * tdd_opnprc/hgprc/lwprc, acc_trdvol) are used.
+ */
+async function fetchKrxIntradaySnapshot(instrumentName) {
+  const otp = await fetchText(
+    `${KRX_OTP_URL}?bld=${encodeURIComponent("ETS/03/03010000/ets03010000_04")}&name=grid`,
+    { headers: { ...DEFAULT_HEADERS, referer: KRX_MARKET_PAGE_URL } },
+    15000
+  );
+  const code = otp.trim();
+  if (!code || code.length < 32 || code.includes("<")) return null;
+
+  const body = new URLSearchParams({
+    code,
+    pagePath: "/contents/ETS/03/03010000/ETS03010000.jsp"
+  });
+  const payload = await fetchJson(
+    KRX_DATA_URL,
+    {
+      method: "POST",
+      headers: {
+        ...DEFAULT_HEADERS,
+        referer: KRX_MARKET_PAGE_URL,
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
+      },
+      body: body.toString()
+    },
+    15000
+  );
+
+  const rows = Array.isArray(payload?.result) ? payload.result : [];
+  const row = rows.find((entry) => normalizeWhitespace(entry?.isu_cd ?? "") === instrumentName);
+  if (!row) return null;
+
+  const close = parseKrxNumber(row.tdd_clsprc);
+  if (!close || close <= 0) return null;
+
+  const open = parseKrxNumber(row.tdd_opnprc);
+  const high = parseKrxNumber(row.tdd_hgprc);
+  const low = parseKrxNumber(row.tdd_lwprc);
+  return {
+    close,
+    change: parseKrxNumber(row.cmpprevdd_prc) ?? 0,
+    returnPct: parseKrxNumber(row.fluc_rt) ?? 0,
+    volume: parseKrxNumber(row.acc_trdvol) ?? 0,
+    ...(open && high && low ? { open, high, low } : {})
+  };
+}
+
 async function fetchKrxCardViaWebFlow() {
   const now = new Date();
   const from = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
@@ -838,12 +895,33 @@ async function fetchKrxCardViaWebFlow() {
     throw new Error("KRX ETS price page rows had no parsable closes.");
   }
 
+  // During the 10:00-12:00 KST session, fold in the live snapshot from
+  // the same official page (grid _04). Best-effort: null outside hours.
+  const live = await fetchKrxIntradaySnapshot(activeName).catch(() => null);
+  const todayIso = toIsoDate(now);
+  if (live) {
+    const livePoint = {
+      date: todayIso,
+      value: live.close,
+      close: live.close,
+      ...(live.open && live.high && live.low
+        ? { open: live.open, high: live.high, low: live.low }
+        : {}),
+      volume: live.volume
+    };
+    if (series.length > 0 && series[series.length - 1].date === todayIso) {
+      series[series.length - 1] = livePoint;
+    } else {
+      series.push(livePoint);
+    }
+  }
+
   const latestPoint = series[series.length - 1];
   const latestRow = byInstrument
     .get(activeName)
     .find((row) => normalizeWhitespace(row.trd_dd ?? "") === latestPoint.date);
-  const change = parseKrxNumber(latestRow?.cmpprevdd_prc) ?? 0;
-  const returnPct = parseKrxNumber(latestRow?.fluc_rt) ?? 0;
+  const change = live ? live.change : (parseKrxNumber(latestRow?.cmpprevdd_prc) ?? 0);
+  const returnPct = live ? live.returnPct : (parseKrxNumber(latestRow?.fluc_rt) ?? 0);
   const recentVolumes = series.map((point) => point.volume ?? 0).slice(-20);
   const averageVolume =
     recentVolumes.length > 0
@@ -858,10 +936,12 @@ async function fetchKrxCardViaWebFlow() {
     sourceUrl: KRX_MARKET_PAGE_URL,
     status: "connected",
     asOf: latestPoint.date,
-    headline: `${activeName} official close`,
-    summary: `Official KRX ETS price-page data for ${activeName} on ${latestPoint.date} (web flow).`,
+    headline: live ? `${activeName} official live price` : `${activeName} official close`,
+    summary: live
+      ? `Official KRX ETS price-page data for ${activeName} on ${latestPoint.date} (web flow, in-session live snapshot).`
+      : `Official KRX ETS price-page data for ${activeName} on ${latestPoint.date} (web flow).`,
     metrics: [
-      { label: "Close", value: `KRW ${formatNumber(latestPoint.value, 0)}` },
+      { label: live ? "Last" : "Close", value: `KRW ${formatNumber(latestPoint.value, 0)}` },
       {
         label: "Day change",
         value: `${change >= 0 ? "+" : ""}${formatNumber(change, 0)} KRW`
@@ -872,6 +952,11 @@ async function fetchKrxCardViaWebFlow() {
     ],
     notes: [
       "Official web flow: the same public data request the KRX ETS price page performs, no API key involved.",
+      ...(live
+        ? [
+            "Includes the in-session live snapshot from the official price page (market hours 10:00-12:00 KST)."
+          ]
+        : []),
       "Set CQUANT_KRX_AUTH_KEY to switch to the documented KRX Open API sample endpoint.",
       "Daily market tape only. Zero-volume rows are preserved as official records."
     ],
@@ -890,7 +975,7 @@ async function fetchKrxCardViaWebFlow() {
 
 async function fetchKrxCard() {
   if (!KRX_AUTH_KEY) {
-    return withCache("card:k-ets-official", KRX_CARD_CACHE_TTL_MS, fetchKrxCardViaWebFlow);
+    return withCache("card:k-ets-official", KRX_LIVE_CARD_CACHE_TTL_MS, fetchKrxCardViaWebFlow);
   }
   return withCache("card:k-ets-official", KRX_CARD_CACHE_TTL_MS, async () => {
     const latestSnapshot = await fetchLatestKrxTradingSnapshot();

@@ -4,6 +4,19 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Added — live K-ETS official price during market hours
+
+- During the KRX session (10:00-12:00 KST) the keyless web-flow
+  adapter now folds in the official price page's own in-session
+  snapshot (grid `ets03010000_04`, verified live on 2026-07-21):
+  current price, day change/return, session OHLC, and running volume,
+  with today's candle appended to the official series. The card
+  headline switches to "official live price", the price metric is
+  labeled "Last" instead of "Close", a note declares the in-session
+  snapshot, and the web-flow card refreshes on a 60-second cycle
+  (daily rows stay cached 12h). Outside market hours the grid returns
+  empty and the card falls back to the daily close unchanged.
+
 ## [1.8.1] — 2026-07-21
 
 ### Fixed
