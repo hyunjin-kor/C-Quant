@@ -650,7 +650,9 @@ function getOfficialSourceName(locale: AppLocale, card: ConnectedSourceCard | nu
     case "eu-ets-official":
       return t(locale, "EEX EUA 경매 보고서", "EEX EUA auction report");
     case "k-ets-official":
-      return t(locale, "KRX ETS 샘플 API", "KRX ETS sample API");
+      // Reflect whichever path served the data (web flow vs Open API
+      // sample) instead of a fixed label.
+      return localizeText(getUiLocale(locale), card.sourceName);
     case "cn-ets-official":
       return t(locale, "MEE 탄소시장 발표 피드", "MEE carbon-market release feed");
     default:

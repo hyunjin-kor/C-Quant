@@ -82,11 +82,11 @@ function applyThemeToDocument(theme: ThemePreference, reducedMotion: boolean) {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // Initial values come from localStorage so the first paint is correct;
   // they're then reconciled with the persisted Electron settings.
-  // Dark is the default desk experience; "system"/"light" remain one
+  // Light is the default desk experience; "system"/"dark" remain one
   // toggle away and any previously saved preference wins.
   const [theme, setThemeState] = useState<ThemePreference>(() => {
-    const raw = readLocalString(THEME_STORAGE_KEY, "dark");
-    return raw === "light" || raw === "system" ? raw : "dark";
+    const raw = readLocalString(THEME_STORAGE_KEY, "light");
+    return raw === "dark" || raw === "system" ? raw : "light";
   });
   const [locale, setLocaleState] = useState<AppLocale>(() => {
     const raw = readLocalString(LOCALE_STORAGE_KEY, readSystemLocale());

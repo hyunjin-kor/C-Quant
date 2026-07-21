@@ -15,7 +15,7 @@ const ALLOWED_THEMES = new Set(["light", "dark", "system"]);
 const ALLOWED_LOCALES = new Set(["ko", "en"]);
 
 const DEFAULTS = {
-  theme: "dark",
+  theme: "light",
   locale: "ko",
   reducedMotion: false,
   surface: "command",

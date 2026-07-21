@@ -4,6 +4,25 @@ All notable changes to C-Quant. We follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Changed
+
+- Light is the default theme again for new installs (renderer +
+  Electron settings defaults; saved preferences and the toggle are
+  unchanged).
+
+### Fixed
+
+- Command hero no longer leaves a large vertical void in its left
+  column: the stat tiles were pinned to the card base with
+  `margin-top: auto`, so when the right column (health tiles + verify
+  list) was taller, the left copy and tiles were pushed apart. The
+  columns now top-align and the tiles sit directly under the summary.
+- The K-ETS official source name now reflects the path that actually
+  served the data ("KRX ETS information platform" on the keyless web
+  flow, "KRX ETS sample API" with a configured key) instead of a fixed
+  "sample API" label that contradicted the "Official web flow" access
+  method shown beside it.
+
 ## [1.9.0] — 2026-07-21
 
 The live-desk release: official Korean prices stream in-session.
